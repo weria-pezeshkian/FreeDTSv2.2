@@ -67,12 +67,18 @@ bool FrameTensionCouplingFlag =(pState->m_FrameTension).State;
     
 //== Reading from the mesh
     m_pBox     = (pState->m_pMesh)->m_pBox;
-    m_pAllV=(pState->m_pMesh)->m_pAllV;
-    m_pAllT=(pState->m_pMesh)->m_pAllT;
-    m_pAllLinks=(pState->m_pMesh)->m_pLinks;
+    m_pAllV=(pState->m_pMesh)->m_pActiveV;
+    m_pAllT=(pState->m_pMesh)->m_pActiveT;
+    m_pAllLinks=(pState->m_pMesh)->m_pActiveL;
     m_pHalfLinks1=(pState->m_pMesh)->m_pHL;
     m_pHalfLinks2=(pState->m_pMesh)->m_pMHL;
     m_pInclusions=(pState->m_pMesh)->m_pInclusion;
+    
+    //========= VTU files
+        WritevtuFiles VTU(pState);
+        std::string file="conf0.vtu";
+        VTU.Writevtu(m_pAllV,m_pAllT,m_pHalfLinks1,file);
+    
     if(pState->m_IndexFile == true)
     ReadIndexFile(pState->m_IndexFileName);
 //=========================================================================================
@@ -108,10 +114,7 @@ double *tot_Energy = &(pState->m_TotEnergy);
 std::cout<<"----> Note: Total energy of the starting configuration is: "<<*tot_Energy<<std::endl;
 #endif
 
-//========= VTU files
-    WritevtuFiles VTU(pState);
-    std::string file="conf0.vtu";
-    VTU.Writevtu(m_pAllV,m_pAllT,m_pAllLinks,file);
+
 #if TEST_MODE == Enabled
 #pragma omp critical
 std::cout<<"----> We printed our first configuration into a vtu file "<<std::endl;
@@ -170,6 +173,9 @@ int SigmaPTau = (pState->m_FrameTension).updatePeriod;
     LinkFlipMC *mc_LFlip = pState->GetMCMoveLinkFlip();
     VertexMCMove *mc_VMove = pState->GetMCAVertexMove();
     InclusionMCMove *mc_IncMove = pState->GetInclusionMCMove();
+    OpenEdgeEvolutionWithConstantVertex * mc_edge_evo = pState->GetOpenEdgeEvolutionWithConstantVertex();
+    
+    
     Restart *pRestart = pState->GetRestart();
     BTSFile btsFile ((pState->m_TRJBTS).btsFile_name, (pState->m_RESTART).restartState, "w");
     Traj_XXX TSIFile (m_pBox,(pState->m_TRJTSI).tsiFolder_name);
@@ -297,6 +303,10 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
                     InRate+=mc_IncMove->GetMoveValidity();
                     totalinmove++;
             }
+           // Edge evolotion
+           {
+                  mc_edge_evo->MC_Move();
+           }
            
         } // end of if(VerexORbox>QQ)
         else
@@ -510,8 +520,8 @@ bool MC_Simulation::CheckMesh(MESH *pMesh)
 {
     bool isok = true;
     Vec3D *pBox     = pMesh->m_pBox;
-    std::vector<vertex*> pV= pMesh->m_pAllV;
-    std::vector<links*> pL=pMesh->m_pLinks;
+    std::vector<vertex*> pV= pMesh->m_pActiveV;
+    std::vector<links*> pL=pMesh->m_pActiveL;
     // Check if there are any pair of vertices that are to close
     for (int i=0;i<pV.size();i++)
     for (int j=i+1;j<pV.size();j++)

@@ -1,9 +1,7 @@
 #if !defined(AFX_State_H_INCLUDED_)
 #define AFX_State_H_INCLUDED_
-#include "inclusion.h"
-#include "triangle.h"
-#include "vertex.h"
-#include "links.h"
+
+#include "MESH.h"
 #include "SimDef.h"
 #include "CreateMashBluePrint.h"
 #include "Inclusion_Interaction_Map.h"
@@ -21,6 +19,11 @@
 #include "Apply_Osmotic_Pressure.h"
 #include "Apply_Constant_Area.h"
 #include "Apply_Constant_Vertex_Area.h"
+#include "OpenEdgeEvolutionWithConstantVertex.h"
+
+/*#include "inclusion.h"
+#include "triangle.h"
+#include "vertex.h"*/
 
 
 /*
@@ -105,29 +108,6 @@ struct STRUC_ActiveTwoStateInclusion {
     double persentage;
     double gama;
 };
-struct MESH {  // a data structure for a self consistent mesh
-
-private:
-    std::vector<vertex>         m_Vertex;
-    std::vector<triangle>       m_Triangle;
-    std::vector<links>          m_Links;
-    std::vector<inclusion>      m_Inclusion;
-    Vec3D                       m_Box;
-public:
-    std::vector <InclusionType> m_InclusionType;
-    std::vector <InclusionType*> m_pInclusionType;
-    std::vector<vertex*>        m_pAllV;
-    std::vector<triangle*>      m_pAllT;
-    std::vector<links*>         m_pLinks;
-    std::vector<links*>         m_pHL;
-    std::vector<links*>         m_pMHL;
-    std::vector<inclusion*>      m_pInclusion;
-    Vec3D                       *m_pBox;
-    
-    void GenerateMesh(MeshBluePrint meshblueprint, double kappa, double kappag);
-    MeshBluePrint Convert_Mesh_2_BluePrint(MESH *mesh);
-
-};
 class State
 {
 public:
@@ -149,7 +129,8 @@ inline InclusionMCMove *GetInclusionMCMove()                     {return &m_IncM
 inline Restart *GetRestart()                                    {return &m_Restart;}
 inline CoupleToWallPotential *GetRigidWallCoupling()                                    {return &m_RigidWallCoupling;}
 inline ActiveTwoStateInclusion *GetActiveTwoStateInclusion()                                    {return &m_ActiveTwoStateInclusion;}
-
+inline OpenEdgeEvolutionWithConstantVertex *GetOpenEdgeEvolutionWithConstantVertex()                                    {return &m_OpenEdgeEvolutionWithConstantVertex;}
+    
 public:
     
     bool m_Healthy;   // To check if the input data are read correctly
@@ -208,6 +189,7 @@ public:
     InclusionMCMove m_IncMove;
     Restart m_Restart;
     CoupleToWallPotential m_RigidWallCoupling;
+    OpenEdgeEvolutionWithConstantVertex m_OpenEdgeEvolutionWithConstantVertex;
 
 private:
     MESH          m_Mesh;

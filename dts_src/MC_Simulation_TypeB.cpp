@@ -64,9 +64,9 @@ bool FrameTensionCouplingFlag =(pState->m_FrameTension).State;
     
 //== Reading from the mesh
     m_pBox     = (pState->m_pMesh)->m_pBox;
-    m_pAllV=(pState->m_pMesh)->m_pAllV;
-    m_pAllT=(pState->m_pMesh)->m_pAllT;
-    m_pAllLinks=(pState->m_pMesh)->m_pLinks;
+    m_pAllV=(pState->m_pMesh)->m_pSurfV;
+    m_pAllT=(pState->m_pMesh)->m_pActiveT;
+    m_pAllLinks=(pState->m_pMesh)->m_pActiveL;
     m_pHalfLinks1=(pState->m_pMesh)->m_pHL;
     m_pHalfLinks2=(pState->m_pMesh)->m_pMHL;
     m_pInclusions=(pState->m_pMesh)->m_pInclusion;
@@ -483,8 +483,8 @@ bool MC_Simulation_TypeB::CheckMesh(MESH *pMesh)
 {
     bool isok = true;
     Vec3D *pBox     = pMesh->m_pBox;
-    std::vector<vertex*> pV= pMesh->m_pAllV;
-    std::vector<links*> pL=pMesh->m_pLinks;
+    std::vector<vertex*> pV= pMesh->m_pActiveV;
+    std::vector<links*> pL=pMesh->m_pActiveL;
     // Check if there are any pair of vertices that are to close
     for (int i=0;i<pV.size();i++)
     for (int j=i+1;j<pV.size();j++)

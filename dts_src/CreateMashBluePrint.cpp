@@ -43,7 +43,7 @@ MeshBluePrint CreateMashBluePrint::MashBluePrintFromInput_Top(std::string inputf
     m_MeshBluePrint.binclusion = m_InclusionMap;
     m_MeshBluePrint.binctype = m_AllInclusionType;
     m_MeshBluePrint.simbox = m_Box;
-    
+    m_MeshBluePrint.excluded_id = m_ExcludedID;
     return m_MeshBluePrint;
 }
 CreateMashBluePrint::~CreateMashBluePrint()
@@ -73,7 +73,7 @@ void CreateMashBluePrint::Read_TSIFile(std::string tsifile)
     std::ifstream tsi;
     tsi.open(tsifile.c_str());
     std::string str;
-    int nver,ntr,ninc;
+    int nver,ntr,ninc,nexc,id;
     while (true)
     {
         tsi>>str;
@@ -122,6 +122,7 @@ void CreateMashBluePrint::Read_TSIFile(std::string tsifile)
                 {
                     Vertex_Map v;
                     v.id=i;
+                    v.include = true;
                     v.x=f.String_to_Double(S[1]);
                     v.y=f.String_to_Double(S[2]);
                     v.z=f.String_to_Double(S[3]);
@@ -190,7 +191,14 @@ void CreateMashBluePrint::Read_TSIFile(std::string tsifile)
         }
         else if(str=="exclusion")
         {
-            break;
+            tsi>>nexc;
+            getline(tsi,str);
+            for (int i=0;i<nexc;i++)
+            {
+                tsi>>id;
+                m_ExcludedID.push_back(id);
+            }
+
         }
         else
         {
@@ -272,6 +280,7 @@ void CreateMashBluePrint::Read_Mult_QFile(std::string topfile)
             }
             Vertex_Map v;
             v.id=vid;
+            v.include =true;
             v.x=f.String_to_Double(b[1]);
             v.y=f.String_to_Double(b[2]);
             v.z=f.String_to_Double(b[3]);

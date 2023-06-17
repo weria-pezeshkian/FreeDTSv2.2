@@ -197,43 +197,54 @@ void WritevtuFiles::Writevtu(std::vector< vertex* > ver, std::vector< triangle* 
 {
 Vec3D m_Box=*m_pBox;
     // First make all the triangles visualizable
+ 
+
+    
         for (std::vector<triangle *>::iterator it = triangle1.begin() ; it != triangle1.end(); ++it)
         {
 			(*it)->UpdateRepresentation(true);
         }
-    // then check the trinagle visualizablity
-        for (std::vector<links *>::iterator it = links1.begin() ; it != links1.end(); ++it)
+        for (std::vector<triangle *>::iterator it = triangle1.begin() ; it != triangle1.end(); ++it)
         {
-		vertex * v1=(*it)->GetV1();
-		vertex * v2=(*it)->GetV2();
+            vertex * v1=(*it)->GetV1();
+            vertex * v2=(*it)->GetV2();
             vertex * v3=(*it)->GetV3();
+            double x1=v1->GetVXPos();
+            double x2=v2->GetVXPos();
+            double x3=v3->GetVXPos();
+            double y1=v1->GetVYPos();
+            double y2=v2->GetVYPos();
+            double y3=v3->GetVYPos();
+            double z1=v1->GetVZPos();
+            double z2=v2->GetVZPos();
+            double z3=v3->GetVZPos();
+ 
+            bool rep=true;
+            {
+                double dx=x2-x1;
+                double dy=y2-y1;
+                double dz=z2-z1;
+            if(fabs(dx)>m_Box(0)/2.0 || fabs(dy)>m_Box(1)/2.0 || fabs(dz)>m_Box(2)/2.0)
+                rep=false;
 
+                 dx=x3-x1;
+                 dy=y3-y1;
+                 dz=z3-z1;
+            if(fabs(dx)>m_Box(0)/2.0 || fabs(dy)>m_Box(1)/2.0 || fabs(dz)>m_Box(2)/2.0)
+                rep=false;
 
-		double x1=v1->GetVXPos();
-		double x2=v2->GetVXPos();
-		double y1=v1->GetVYPos();
-		double y2=v2->GetVYPos();
-		double z1=v1->GetVZPos();
-		double z2=v2->GetVZPos();
-		double dx=x2-x1;
-		double dy=y2-y1;
-		double dz=z2-z1;
+                 dx=x3-x2;
+                 dy=y3-y2;
+                 dz=z3-z2;
+            if(fabs(dx)>m_Box(0)/2.0 || fabs(dy)>m_Box(1)/2.0 || fabs(dz)>m_Box(2)/2.0)
+                rep=false;
+            }
             
-            
-		bool rep=true;
+            if(rep==false)
+            (*it)->UpdateRepresentation(false);
+        }
+    // then check the trinagle visualizablity
 
-		if(fabs(dx)>m_Box(0)/2.0 || fabs(dy)>m_Box(1)/2.0 || fabs(dz)>m_Box(2)/2.0)
-		{
-
-			rep=false;
-		}
-		if(rep==false)
-		{
-			((*it)->GetTriangle())->UpdateRepresentation(rep);
-		
-		}
-
-	}
 int numv=ver.size();
 int numtri=triangle1.size();
 int numtrirep=0;
@@ -298,14 +309,11 @@ Output<<"      </PointData>"<<"\n";
 Output<<"      <Points>"<<"\n";
 Output<<"        <DataArray type=\"Float32\" NumberOfComponents=\"3\" Format=\"ascii\">"<<"\n";
 
-
-for (int i=0;i<numv;i++)
+for (std::vector<vertex*>::iterator it = ver.begin() ; it != ver.end(); ++it)
 {
-vertex* a=ver.at(i);
-Output<<"          "<<a->GetVXPos()<<" "<<a->GetVYPos()<<" "<<a->GetVZPos()<<" "<<"\n";
-
-
+Output<<"          "<<(*it)->GetVXPos()<<" "<<(*it)->GetVYPos()<<" "<<(*it)->GetVZPos()<<" "<<"\n";
 }
+    
 Output<<"        </DataArray>"<<"\n";
 Output<<"      </Points>"<<"\n";
 

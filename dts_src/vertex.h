@@ -23,7 +23,7 @@ public:
 	 ~vertex();
 
 // A set of function to get vertex variables (since all of them are private)
-	    inline const int GetVID()                       const  {return m_ID;}
+	    inline int GetVID()                                 {return m_ID;}
         inline double GetVXPos()                            {return m_X;}
         inline double GetVYPos()                            {return m_Y;}
         inline double GetVZPos()                            {return m_Z;}

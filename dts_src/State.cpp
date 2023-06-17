@@ -553,6 +553,20 @@ void State::ReadInputFile(std::string file)
             else
                 m_Parallel_Tempering.State = false;
         }
+        else if(firstword == "OpenEdgeEvolutionWithConstantVertex")
+        {
+            // OpenEdgeEvolutionWithConstantVertex  = on PT_steps  PT_minbeta    PT_maxbeta
+            std::string state;
+            input>>str>>state;
+            getline(input,rest);
+            bool edgestate = false;
+            if(state=="on"|| state=="yes"|| state=="On"|| state=="ON"|| state=="Yes"|| state=="YES")
+                edgestate = true;
+            
+            
+            OpenEdgeEvolutionWithConstantVertex  tem(edgestate,&m_Mesh);
+            m_OpenEdgeEvolutionWithConstantVertex = tem;
+        }
         else if(firstword == "OutPutTRJ_BTS")
         {
             input>>str>>(m_TRJBTS.btsPeriod)>>(m_TRJBTS.btsPrecision)>>(m_TRJBTS.btsFile_name);
@@ -649,234 +663,12 @@ void State::WriteStateLog()
     if (m_VolumeConstraint.State == true)
     state = "on";
     statelog<<"Volume_Constraint = "<<state<<"  "<<(m_VolumeConstraint.EQSteps)<<" "<<(m_VolumeConstraint.DeltaP)<<"  "<<(m_VolumeConstraint.K)<<"  "<<(m_VolumeConstraint.targetV)<<std::endl;
+    
+    //statelog<<" OpenEdgeEvolutionWithConstantVertex = .... "<<std::endl;
      //if(m_SpringPotentialBetweenTwoGroups->GetState()==true)
     //if (m_CoupleGCurvature->GetState() == true)
    // if (m_RigidWallCoupling->GetState() == true)
    
     statelog.close();
 }
-void MESH::GenerateMesh(MeshBluePrint meshblueprint, double kappa, double kappag)
-{
-    m_Box = meshblueprint.simbox;
-    m_pBox = &m_Box;
-    m_InclusionType = meshblueprint.binctype;
-    
-    for (std::vector<InclusionType>::iterator it = m_InclusionType.begin() ; it != m_InclusionType.end(); ++it)
-        m_pInclusionType.push_back(&(*it));
-    // Making vertices
-    for (std::vector<Vertex_Map>::iterator it = (meshblueprint.bvertex).begin() ; it != (meshblueprint.bvertex).end(); ++it)
-    {
-        vertex v(it->id,it->x,it->y,it->z);
-        v.UpdateBox(m_pBox);
-        v.UpdateGroup(it->domain);
-        v.UpdateKappa(kappa/2.0,kappag);
-        m_Vertex.push_back(v);
-    }
-    // Making triangles
-    for (std::vector<Triangle_Map>::iterator it = (meshblueprint.btriangle).begin() ; it != (meshblueprint.btriangle).end(); ++it)
-    {
-        bool pr=true;
-        triangle T(it->id,&(m_Vertex.at(it->v1)),&(m_Vertex.at(it->v2)),&(m_Vertex.at(it->v3)));
-        m_Triangle.push_back(T);
-    }
-    //make inclusions
-    for (std::vector<Inclusion_Map>::iterator it = (meshblueprint.binclusion).begin() ; it != (meshblueprint.binclusion).end(); ++it)
-    {
-        inclusion Tinc(it->id);
-        if(m_Vertex.size()<it->vid+1)
-        {
-        std::cout<<"----> Error: Inclusion vertex id is out of range "<<std::endl;
-            exit(0);
-        }
-        Tinc.Updatevertex(&(m_Vertex.at(it->vid)));
-        Tinc.UpdateInclusionTypeID(it->tid);
-        Vec3D D(it->x,it->y,0);
-        Tinc.UpdateLocalDirection(D);
-        m_Inclusion.push_back(Tinc);
-        (m_Vertex.at(it->vid)).UpdateOwnInclusion(true);
-    }
-    for (std::vector<inclusion>::iterator it = m_Inclusion.begin() ; it != m_Inclusion.end(); ++it)
-        m_pInclusion.push_back(&(*it));
-    for (std::vector<vertex>::iterator it = m_Vertex.begin() ; it != m_Vertex.end(); ++it)
-        m_pAllV.push_back(&(*it));
-    
-    int li=-1;
-    
-    for (std::vector<triangle>::iterator it = m_Triangle.begin() ; it != m_Triangle.end(); ++it)
-    {
-        
-        m_pAllT.push_back(&(*it));
-        (it->GetV1())->AddtoTraingleList(&(*it));
-        (it->GetV1())->AddtoNeighbourVertex((it->GetV2()));
-        (it->GetV2())->AddtoTraingleList(&(*it));
-        (it->GetV2())->AddtoNeighbourVertex((it->GetV3()));
-        (it->GetV3())->AddtoTraingleList(&(*it));
-        (it->GetV3())->AddtoNeighbourVertex((it->GetV1()));
-        
-        /// create links
-        li++;
-        int id1=li;
-        li++;
-        int id2=li;
-        li++;
-        int id3=li;
-        
-        links l1(id1,it->GetV1(),it->GetV2(),&(*it));
-        l1.UpdateV3(it->GetV3());
-        
-        links l2(id2,it->GetV2(),it->GetV3(),&(*it));
-        l2.UpdateV3(it->GetV1());
-        
-        links l3(id3,it->GetV3(),it->GetV1(),&(*it));
-        l3.UpdateV3(it->GetV2());
-        m_Links.push_back(l1);
-        m_Links.push_back(l2);
-        m_Links.push_back(l3);
-        
-    }
-    li=-1;
-    for (std::vector<triangle>::iterator it = m_Triangle.begin() ; it != m_Triangle.end(); ++it)
-    {
-        li++;
-        int id1=li;
-        li++;
-        int id2=li;
-        li++;
-        int id3=li;
-        links * l1=&(m_Links.at(id1));
-        links * l2=&(m_Links.at(id2));
-        links * l3=&(m_Links.at(id3));
-        l1->UpdateNeighborLink1(l2);
-        l1->UpdateNeighborLink2(l3);
-        l2->UpdateNeighborLink1(l3);
-        l2->UpdateNeighborLink2(l1);
-        l3->UpdateNeighborLink1(l1);
-        l3->UpdateNeighborLink2(l2);
-        
-        
-        (it->GetV1())->AddtoLinkList(l1);
-        (it->GetV2())->AddtoLinkList(l2);
-        (it->GetV3())->AddtoLinkList(l3);
-        
-    }
-    for (std::vector<links>::iterator it = m_Links.begin() ; it != m_Links.end(); ++it)
-    {
-        bool foundM=false;
-        if((it)->GetMirrorFlag()==true)
-        {
-            m_pMHL.push_back(it->GetMirrorLink());
-            m_pHL.push_back(&(*it));
-            foundM = true;
-        }
-        else
-        {
-            vertex *v1=it->GetV1();
-            vertex *v2=it->GetV2();
-            
-            std::vector<links*>  lList = v2->GetVLinkList();
-            for (std::vector<links*>::iterator it2 = lList.begin() ; it2 != lList.end(); ++it2)
-            {
-                if(((*it2)->GetV2())->GetVID()==v1->GetVID())
-                {
-                    it->UpdateMirrorLink((*it2));
-                    (*it2)->UpdateMirrorLink(&(*it));
-                    it->UpdateMirrorFlag(true);
-                    (*it2)->UpdateMirrorFlag(true);
-                    foundM = true;
-                    break;
-                }
-            }
-        }
-        if(foundM == false)
-        {
-            std::string A=" Warning : This system does not look like a closed system or the triangles orination are not consistent ";
-            std::cout<<A<<"\n";
-        }
-        
-    }
-    int nomirror=0;
-    for (std::vector<links>::iterator it = m_Links.begin() ; it != m_Links.end(); ++it)
-    {
-        if(it->GetMirrorFlag()==false)
-        {
-            nomirror++;
-        }
-        
-    }
-    if(nomirror!=0)
-    {
-        std::cout<<nomirror<<"----> Error: links without mirror \n";
-    }
-    for (std::vector<links>::iterator it = m_Links.begin() ; it != m_Links.end(); ++it)
-    {
-        
-        m_pLinks.push_back(&(*it));
-    }
-    for (std::vector<inclusion*>::iterator it = m_pInclusion.begin() ; it != m_pInclusion.end(); ++it)
-    {
-        ((*it)->Getvertex())->UpdateInclusion((*it));
-        int inc_typeid=(*it)->GetInclusionTypeID();
-        if(m_InclusionType.size()-1<inc_typeid)
-        {
-            std::cout<<" Error: inclusion with typeid of "<<inc_typeid<<" has not been defined \n";
-            exit(0);
-        }
-        (*it)->UpdateInclusionType(&(m_InclusionType.at(inc_typeid)));
-    }
-}
-MeshBluePrint MESH::Convert_Mesh_2_BluePrint(MESH *mesh)
-{
-    MeshBluePrint BluePrint;
-    std::vector<Vertex_Map> bvertex;       // a vector of all vertices (only the blueprint not the object) in the mesh
-    std::vector<Triangle_Map> btriangle;   // a vector of all triangles (only the blueprint not the object) in the mesh
-    std::vector<Inclusion_Map> binclusion; // a vector of all inclusions (only the blueprint not the object) in the mesh
-    std::vector <InclusionType> binctype;  // a vector containing all inclsuion type and a default one
-    Vec3D simbox;
-    
-    // vertex member of the blue print
-    std::vector<vertex*> pV = mesh->m_pAllV;
-    for (std::vector<vertex *>::iterator it = pV.begin() ; it != pV.end(); ++it)
-    {
-        Vertex_Map tvm;
-        tvm.x = (*it)->GetVXPos();
-        tvm.y = (*it)->GetVYPos();
-        tvm.z = (*it)->GetVZPos();
-        tvm.id = (*it)->GetVID();
-        tvm.domain = (*it)->GetGroup();
-        bvertex.push_back(tvm);
-    }
-    // triangle map member of the blue print
-    std::vector<triangle*> pT = mesh->m_pAllT;
-    for (std::vector<triangle *>::iterator it = pT.begin() ; it != pT.end(); ++it)
-    {
-        Triangle_Map ttm;
-        ttm.v1 = ((*it)->GetV1())->GetVID();
-        ttm.v2 = ((*it)->GetV2())->GetVID();
-        ttm.v3 = ((*it)->GetV3())->GetVID();
-        ttm.id = (*it)->GetTriID();
-        btriangle.push_back(ttm);
-    }
-    
-    // inclusion map member of the blue print
-    std::vector<inclusion*> pInc = mesh->m_pInclusion;
-    for (std::vector<inclusion *>::iterator it = pInc.begin() ; it != pInc.end(); ++it)
-    {
-        Inclusion_Map tim;
-        tim.x = ((*it)->GetLDirection())(0);
-        tim.y = ((*it)->GetLDirection())(1);
-        tim.vid = ((*it)->Getvertex())->GetVID();
-        tim.tid = ((*it)->GetInclusionType())->ITid;
-        tim.id = ((*it)->GetID());
-        binclusion.push_back(tim);
 
-    }
-    // inclusion type map member of the blue print
-    BluePrint.binctype = mesh->m_InclusionType;
-    // Add other map into the mesh map
-    BluePrint.bvertex = bvertex;
-    BluePrint.btriangle = btriangle;
-    BluePrint.binclusion = binclusion;
-    BluePrint.simbox = *(mesh->m_pBox);
-    
-    return BluePrint;
-}

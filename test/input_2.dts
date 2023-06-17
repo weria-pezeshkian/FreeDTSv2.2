@@ -1,0 +1,10 @@
+Integrator                      = MC
+MC_Moves                        = 0 0 0
+Initial_Step                    = 1
+Final_Step                      = 0
+Display_periodic                = 1000
+OutPutEnergy_periodic           = 100
+Restart_periodic                = 10000
+Kappa                           = 20 0
+OutPutTRJ_TSI                   = 1000  10  TrjTSI
+GeneralOutputFilename           = output
