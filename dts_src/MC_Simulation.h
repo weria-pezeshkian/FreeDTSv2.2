@@ -21,12 +21,15 @@ private:
     double m_Beta;
     double m_minAngle, m_Lmin2, m_Lmax2;
     Vec3D * m_pBox;
-    std::vector<vertex*>      m_pAllV;
-    std::vector<triangle*>    m_pAllT;
-    std::vector<links*>       m_pAllLinks;
-    std::vector<links*>       m_pHalfLinks1;
-    std::vector<links*>       m_pHalfLinks2;
-    std::vector<inclusion*>   m_pInclusions;
+    std::vector<vertex*>      &m_pActiveV;
+    std::vector<triangle*>    &m_pActiveT;
+    std::vector<links*>       &m_pActiveL;
+    std::vector<links*>       &m_pHalfLinks1;
+    std::vector<links*>       &m_pHalfLinks2;
+    std::vector<inclusion*>   &m_pInclusions;
+    std::vector<vertex*>      &m_pSurfV;
+    std::vector<vertex*>      &m_pEdgeV;  
+    std::vector<links*>       &m_pEdgeL;
     
 private:
     void  CenterIntheBox();

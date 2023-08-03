@@ -9,21 +9,23 @@ links::links(int id, vertex *v1, vertex *v2, triangle *t1)
     m_V1=v1;
     m_V2=v2;
     m_SimTimeStep=-1;
-m_ID=id;
+    m_ID=id;
     m_LinkSide = 0;
-
-m_mirorflag=false;
-m_Show=true;
-
+    m_mirorflag=false;
+    m_Show=true;
+    m_EdgeSize = 0;
+    m_LinkType = 0;
 }
 links::links(int id)
 {
     m_IntEnergy = 0;
-m_ID=id;
+    m_ID=id;
     m_LinkSide = 0;
-m_mirorflag=false;
-m_Show=true;
+    m_mirorflag=false;
+    m_Show=true;
     m_SimTimeStep=-1;
+    m_EdgeSize = 0;
+    m_LinkType = 0;
 }
 
 links::~links()
@@ -76,28 +78,23 @@ void links::UpdateNormal()
 
    if(this->GetMirrorFlag()==true)
    {
-
-
-
-
-    Vec3D v2=(m_mirorlink->GetTriangle())->GetNormalVector();
-    Vec3D v1=m_T1->GetNormalVector();
-    m_Normal=v1+v2;
-    
-
-     
-    
-    double norm=m_Normal.norm();
-    m_Normal=m_Normal*(1.0/norm);
+       Vec3D v2=(m_mirorlink->GetTriangle())->GetNormalVector();
+       Vec3D v1=m_T1->GetNormalVector();
+       m_Normal=v1+v2;
+       double norm=m_Normal.norm();
+       m_Normal=m_Normal*(1.0/norm);
        if(norm==0)
        {
-           std::cout<<"Links normall vector error \n";
+           std::cout<<"error 2022----> one of the normals has zero size; normal link cannot be defined  \n";
+           exit(0);
        }
-
-    
-    
-    m_mirorlink->PutNormal(m_Normal);
-    
+       m_mirorlink->PutNormal(m_Normal);
+    }
+    else
+    {
+        // this is an edge link
+        std::cout<<"error ----> normal vector for edge links has not been defined   \n";
+        exit(0);
     }
 
 }
@@ -115,160 +112,127 @@ void links::PutShapeOperator(Vec3D Be,double He)
 void links::UpdateIntEnergy(double en)
 {
     m_IntEnergy = en;
-    
 }
 void links::UpdateShapeOperator(Vec3D *pBox)
 {
-
-Vec3D Box=(*pBox);
+    UpdateEdgeVector(pBox);
    if(this->GetMirrorFlag()==true)
    {
-    double x1=m_V1->GetVXPos();
-    double y1=m_V1->GetVYPos();
-    double z1=m_V1->GetVZPos();
-    double x2=m_V2->GetVXPos();
-    double y2=m_V2->GetVYPos();
-    double z2=m_V2->GetVZPos();
-    
-    double dx1=x2-x1;
-    if(fabs(dx1)>Box(0)/2.0)
-    {
-        
-        
-        if(dx1<0)
-        dx1=Box(0)+dx1;
-        else if(dx1>0)
-        dx1=dx1-Box(0);
-        
-        
-        
-    }
-    double dy1=y2-y1;
-    if(fabs(dy1)>Box(1)/2.0)
-    {
-        
-        
-        if(dy1<0)
-        dy1=Box(1)+dy1;
-        else if(dy1>0)
-        dy1=dy1-Box(1);
-        
-        
-    }
-    double dz1=z2-z1;
-    if(fabs(dz1)>Box(2)/2.0)
-    {
-        if(dz1<0)
-        dz1=Box(2)+dz1;
-        else if(dz1>0)
-        dz1=dz1-Box(2);
-    }
-  
-    Vec3D Re(dx1,dy1,dz1);
-    double renorm=(Re.norm());
-    Re=Re*(1.0/renorm);
-    Vec3D Be=m_Normal*Re;
-    
-    double size=Be.norm();
+       Vec3D Re = m_EdgeVector;
+       Re=Re*(1.0/m_EdgeSize);
+       Vec3D Be=m_Normal*Re;
 
-    //====== Finding the size of the Be vector to make it normaized
-    if(size!=0)
-    {
-    size=1.0/size;
-    }
-    else
-    {
-     std::cout<<" Error: There is an problem it should be resolved \n";    
-    }
-    Be=Be*size;
-    
-    
-    Vec3D Nf1=(m_mirorlink->GetTriangle())->GetNormalVector();
-    Vec3D Nf2=m_T1->GetNormalVector();
+    //====== Finding the size of the Be vector to make it normaized; this should not be needed
+    // just have it so in case.
+       double size=Be.norm();
+       if(size!=0)
+       {
+           size=1.0/size;
+       }
+       else
+       {
+           std::cout<<" error 7634---> this should not happen \n";
+           exit(0);
+       }
+       Be=Be*size;
+       Vec3D Nf1=(m_mirorlink->GetTriangle())->GetNormalVector();
+       Vec3D Nf2=m_T1->GetNormalVector();
 
-
-//==================
-/*
-    double  si=Re.dot(Nf1*Nf2,Re);
-    if(si<0)
-    {
-        si=-1;
-    }
-    else if(si>0)
-    {
-        si=1;
-    }
-    else
-    {
-        si=0;
-    }
-    
-
-    double ta=Re.dot(Nf1,Nf2);
-    if(ta>1 && ta<1.01)
-    {
-	m_Dihedral=PI;
-    }
-    else if(ta>1.01)
-    {
-	std::cout<<"ERROR: somthing wrong with this link \n";
-    }
-    else
-    {
-    m_Dihedral=si*acos(ta)+PI;    //  This can be optiemzed
-    }
-    double He1=cos(m_Dihedral/2.0)*renorm;  *///He=2*cos(m_Dihedral/2.0)*renorm;
        
-     
-//=======================================================
-//============= a fast way to caluclate He
-//============================================================
-       
-       
-    double sign=Re.dot(Nf1*Nf2,Re);
-    double tangle=Re.dot(Nf1,Nf2);
-    double He=0;
+//=== this is different from the orginal paper; it is faster
+//==========
+       double sign=Re.dot(Nf1*Nf2,Re);
+       double tangle=Re.dot(Nf1,Nf2);
+       double He=0;
 
- if(tangle<1)
- { 
-    if(sign>0   )
-    {
-       He=-renorm*sqrt(0.5*(1.0-tangle));
-    }
-    else if(sign<0)
-    {
-        He=renorm*sqrt(0.5*(1.0-tangle));  //He=2*cos(m_Dihedral/2.0)*renorm;
-    }
-    else
-    {
-        He=0;
-    }
- }
- else if(tangle>=1 && tangle<1.01)
-  {
-	He=0;
+       if(tangle<1)
+       {
+           if(sign>0)
+           {
+               He=-m_EdgeSize*sqrt(0.5*(1.0-tangle));
+           }
+           else if(sign<0)
+           {
+            He=m_EdgeSize*sqrt(0.5*(1.0-tangle));  //He=2*cos(m_Dihedral/2.0)*renorm;
+           }
+           else
+           {
+            He=0;
+           }
+       }
+       else if(tangle>=1 && tangle<1.01)
+       {
+           // in case some numerical probelm happens; 1.01 is too large however,
+           He=0;
    
-  }
-  else if(tangle>1.01)
-  {
-	std::cout<<"ERROR: somthing wrong with this link \n";
-  }    
+       }
+       else if(tangle>1.01)
+       {
+           std::cout<<"error--->: somthing wrong with this link \n";
+           exit(0);
+       }
 	
        m_Be=Be;
        m_He=He;
-
-    
-
-    
+       m_mirorlink->PutShapeOperator(m_Be,m_He);
 
 
-
-    m_mirorlink->PutShapeOperator(m_Be,m_He);
-
+  }
+  else
+  {
 
   }
 
 
+}
+void links::UpdateEdgeVector(Vec3D *pBox)
+{
+        double x1=m_V1->GetVXPos();
+        double y1=m_V1->GetVYPos();
+        double z1=m_V1->GetVZPos();
+        double x2=m_V2->GetVXPos();
+        double y2=m_V2->GetVYPos();
+        double z2=m_V2->GetVZPos();
+        
+        double dx1=x2-x1;
+        if(fabs(dx1)>(*pBox)(0)/2.0)
+        {
+            if(dx1<0)
+            dx1=(*pBox)(0)+dx1;
+            else if(dx1>0)
+            dx1=dx1-(*pBox)(0);
+        }
+        double dy1=y2-y1;
+        if(fabs(dy1)>(*pBox)(1)/2.0)
+        {
+            if(dy1<0)
+            dy1=(*pBox)(1)+dy1;
+            else if(dy1>0)
+            dy1=dy1-(*pBox)(1);
+        }
+        double dz1=z2-z1;
+        if(fabs(dz1)>(*pBox)(2)/2.0)
+        {
+            if(dz1<0)
+            dz1=(*pBox)(2)+dz1;
+            else if(dz1>0)
+            dz1=dz1-(*pBox)(2);
+        }
+      
+        Vec3D Re(dx1,dy1,dz1);
+        m_EdgeVector = Re;
+        m_EdgeSize=(m_EdgeVector.norm());
+    
+        if(this->GetMirrorFlag()==true)
+        {
+            m_mirorlink->PutEdgeVector(m_EdgeVector*(-1),m_EdgeSize);
+        }
+
+}
+void links::PutEdgeVector(Vec3D v, double l)
+{
+    m_EdgeSize   = l;
+    m_EdgeVector = v;
 }
 void links::Flip()
 {
@@ -287,50 +251,32 @@ void links::Flip()
     links *l3=m_mirorlink->GetNeighborLink1();
     links *l4=m_mirorlink->GetNeighborLink2();
 
+       m_V1->RemoveFromNeighbourVertex(m_V2);
+       m_V2->RemoveFromNeighbourVertex(m_V1);
+       V4->AddtoNeighbourVertex(m_V3);
+       m_V3->AddtoNeighbourVertex(V4);
 
-   
+       m_V1->RemoveFromLinkList(this);
+       m_V2->RemoveFromLinkList(m_mirorlink);
+       V4->AddtoLinkList(this);
+       m_V3->AddtoLinkList(m_mirorlink);
+       m_V1->RemoveFromTraingleList(T2);
+       m_V2->RemoveFromTraingleList(m_T1);
+       m_V3->AddtoTraingleList(T2);
+       V4->AddtoTraingleList(m_T1);
 
-
-
-
-m_V1->RemoveFromNeighbourVertex(m_V2);
-m_V2->RemoveFromNeighbourVertex(m_V1);
-V4->AddtoNeighbourVertex(m_V3);
-m_V3->AddtoNeighbourVertex(V4);
-
-m_V1->RemoveFromLinkList(this);
-m_V2->RemoveFromLinkList(m_mirorlink);
-V4->AddtoLinkList(this);
-m_V3->AddtoLinkList(m_mirorlink);
-m_V1->RemoveFromTraingleList(T2);
-m_V2->RemoveFromTraingleList(m_T1);
-m_V3->AddtoTraingleList(T2);
-V4->AddtoTraingleList(m_T1);
-
-
-    
-    this->UpdateNeighborLink1(l2);
-    this->UpdateNeighborLink2(l3);    
-    m_mirorlink->UpdateNeighborLink1(l4);
-    m_mirorlink->UpdateNeighborLink2(l1);
-    
-
-    
-
-    l1->UpdateV3(V4);
-    l2->UpdateV3(V4);
-    l3->UpdateV3(m_V3);
-    l4->UpdateV3(m_V3);
-    
-     
-
-
-    l1->UpdateNeighborLink1(m_mirorlink);
-    l1->UpdateNeighborLink2(l4);
-    
-    
-    l2->UpdateNeighborLink1(l3);
-    l2->UpdateNeighborLink2(this);
+       this->UpdateNeighborLink1(l2);
+       this->UpdateNeighborLink2(l3);
+       m_mirorlink->UpdateNeighborLink1(l4);
+       m_mirorlink->UpdateNeighborLink2(l1);
+       l1->UpdateV3(V4);
+       l2->UpdateV3(V4);
+       l3->UpdateV3(m_V3);
+       l4->UpdateV3(m_V3);
+       l1->UpdateNeighborLink1(m_mirorlink);
+       l1->UpdateNeighborLink2(l4);
+       l2->UpdateNeighborLink1(l3);
+       l2->UpdateNeighborLink2(this);
     
     l3->UpdateNeighborLink1(this);
     l3->UpdateNeighborLink2(l2);
@@ -363,11 +309,15 @@ V4->AddtoTraingleList(m_T1);
       *(m_mirorlink->GetTriangle()) = tm2;
     
    
-}
+   }
+    else
+    {
+        std::cout<<"error---> a link without a mirror, possibly an edge link, is asked to be flipped, such an action is not possible \n";
+        exit(0);
+    }
     
 }
-
-
+// this function are from old time; should be removed soon
 void links::ReadLinkFromFile(std::ifstream *inputfile,std::vector <vertex *> pv, std::vector <links *> pL, std::vector <triangle *> pT)
 {
     int id,n,v1,v2,v3,l1,l2;

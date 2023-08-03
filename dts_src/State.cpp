@@ -147,11 +147,15 @@ State::State(std::vector <std::string> argument)
 #endif
     // Generating couplings
     PositionRescaleFrameTensionCoupling TEM(m_FrameTension.Tau,this);
+    //Curvature CurvatureCalculations
+    //m_CurvatureCalculations = CurvatureCalculations;
     m_RescaleTenCoupl = TEM;
     LinkFlipMC LPTEM (this);
     m_LinkFlipMC = LPTEM;
     VertexMCMove TVM (this);
     m_VertexMoveMC = TVM;
+    EdgeVertexMCMove EVM (this);
+    m_EdgeVertexMoveMC = EVM;
     InclusionMCMove TIM(this);
     m_IncMove = TIM;
     if(m_STRUC_ActiveTwoStateInclusion.state==true)
@@ -557,14 +561,16 @@ void State::ReadInputFile(std::string file)
         {
             // OpenEdgeEvolutionWithConstantVertex  = on PT_steps  PT_minbeta    PT_maxbeta
             std::string state;
-            input>>str>>state;
+            int rate;
+            double lambda, k1,k2;
+            input>>str>>state>>rate>>lambda>>k1>>k2;
             getline(input,rest);
             bool edgestate = false;
             if(state=="on"|| state=="yes"|| state=="On"|| state=="ON"|| state=="Yes"|| state=="YES")
                 edgestate = true;
             
             
-            OpenEdgeEvolutionWithConstantVertex  tem(edgestate,&m_Mesh);
+            OpenEdgeEvolutionWithConstantVertex  tem(edgestate,&m_Mesh,rate,lambda,k2,k2);
             m_OpenEdgeEvolutionWithConstantVertex = tem;
         }
         else if(firstword == "OutPutTRJ_BTS")

@@ -15,10 +15,14 @@ class Curvature
 {
 public:
     
-	Curvature(vertex *p);
+	Curvature();
 	 ~Curvature();
 
 public:
+    
+    void SurfVertexCurvature(vertex *p);
+    void EdgeVertexCurvature(vertex *p);
+
 private:
     vertex * m_pVertex;
 private:

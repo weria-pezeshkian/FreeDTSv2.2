@@ -3,7 +3,15 @@
 
 #include "Curvature.h"
 #include "Tensor2.h"
-Curvature::Curvature(vertex * pvertex)
+Curvature::Curvature()
+{
+    
+}
+Curvature::~Curvature()
+{
+
+}
+void Curvature::SurfVertexCurvature(vertex * pvertex)
 {
     m_pVertex=pvertex;
     std::vector<triangle *> Ntr=m_pVertex->GetVTraingleList();
@@ -18,26 +26,20 @@ Curvature::Curvature(vertex * pvertex)
         Normal=Normal+v;
         Area+=a;
     }
-
     Area=Area/3.0;
-   
-
-  
     if(Area==0)
     {
-    std::cout<<Ntr.size()<<"\n";
-	std::string sms=" error----> vertex has a zero area \n";
-	std::cout<<sms<<"\n";
+        std::cout<<Ntr.size()<<"\n";
+        std::string sms=" error----> vertex has a zero area \n";
+        std::cout<<sms<<"\n";
         exit(0);
     }
     else if(Area<0)
     {
-	std::string sms=" error----> vertex has a negetive area \n";
-	std::cout<<sms<<"\n";
+        std::string sms=" error----> vertex has a negetive area \n";
+        std::cout<<sms<<"\n";
         exit(0);
     }
-
-
     double no=Normal.norm();
     no=1.0/no;
     Normal=Normal*no;
@@ -53,42 +55,57 @@ Curvature::Curvature(vertex * pvertex)
     Tensor2 Pt=P.Transpose(P);
     std::vector<links *> NLinks=m_pVertex->GetVLinkList();
 
+    // what if the edge vertex has one trinagle?
     for (std::vector<links *>::iterator it = NLinks.begin() ; it != NLinks.end(); ++it)
     {
        if((*it)->GetMirrorFlag()==true)
-	   {
-        Vec3D ve=(*it)->GetNormal();
-        double we=ve.dot(Normal,ve);
-        
+       {
+           Vec3D ve=(*it)->GetNormal();
+           double we=ve.dot(Normal,ve);
+           Vec3D Be=(*it)->GetBe();
+           double he=(*it)->GetHe();
+           Vec3D Se = P*Be;
 
-        Vec3D Be=(*it)->GetBe();
-        double he=(*it)->GetHe();
-        Vec3D Se;
-        for (int n=0;n<3;n++)
-        {
-            Se(0)=Se(0)+P(0,n)*Be(n);
-            Se(1)=Se(1)+P(1,n)*Be(n);
-            Se(2)=Se(2)+P(2,n)*Be(n);
-        }
+           // ff should be 1 but just for sake of numerical errors
+           double ff=Se.norm();
+           if(ff==0)
+           {
+               std::cout<<"-----> Error: projection is zero error"<<"\n";
+               exit(0);
+           }
+           else
+           {
+               Se=Se*(1.0/ff);
+           }
         
-        double ff=Se.norm();
+           Tensor2 Q=P.makeTen(Se);
         
-        
-        if(ff==0)
-        {
-            std::cout<<"-----> Error: projection is zero error"<<"\n";
-            exit(0);
-        }
-        else
-        {
-            Se=Se*(1.0/ff);
-        }
-        
-        Tensor2 Q=P.makeTen(Se);
-        
-        SV=SV+(Q)*(we*he);
-	}
+           SV=SV+(Q)*(we*he);
+       }//if((*it)->GetMirrorFlag()==true)
     }
+    
+    
+    /*
+   // method in the paper
+    Tensor2 SV2;
+    for (std::vector<links *>::iterator it = NLinks.begin() ; it != NLinks.end(); ++it)
+    {
+       if((*it)->GetMirrorFlag()==true)
+       {
+           Vec3D ve=(*it)->GetNormal();
+           double we=ve.dot(Normal,ve);
+           Vec3D Be=(*it)->GetBe();
+           double he=(*it)->GetHe();
+           Tensor2 Se;
+           Se=(Se.makeTen(Be))*he;
+           SV2=SV2+(Pt*(Se*P))*we;
+       }//if((*it)->GetMirrorFlag()==true)
+    }
+    */
+    
+    // end paper
+    
+    
     ///=============
     //==== Find Curvature and local frame
     //=============
@@ -270,13 +287,89 @@ Curvature::Curvature(vertex * pvertex)
 
  
 }
-
-
-Curvature::~Curvature()
+void Curvature::EdgeVertexCurvature(vertex * pvertex)
 {
+    // first we obtain the vertex area and normal. Area is not important here as the vertex is an edge vertex
+    m_pVertex=pvertex;
+    std::vector<triangle *> Ntr=m_pVertex->GetVTraingleList();
+    
+    double Area=0.0;
+    Vec3D Normal;
+    for (std::vector<triangle *>::iterator it = Ntr.begin() ; it != Ntr.end(); ++it)
+    {
+        double a=(*it)->GetArea();
+        Vec3D v=(*it)->GetNormalVector();
+        v=v*a;
+        Normal=Normal+v;
+        Area+=a;
+    }
+    Area=Area/3.0;
+    // just in case; this should never happen unless the inputs are wrong
+    if(Area==0)
+    {
+        std::cout<<Ntr.size()<<"\n";
+        std::string sms=" error----> vertex has a zero area \n";
+        std::cout<<sms<<"\n";
+        exit(0);
+    }
+    else if(Area<0)
+    {
+        std::string sms=" error----> vertex has a negetive area \n";
+        std::cout<<sms<<"\n";
+        exit(0);
+    }
+    double no=Normal.norm();
+    no=1.0/no;
+    Normal=Normal*no;
+    m_pVertex->UpdateNormal_Area(Normal,Area);
+    
+    
+    ///====
+    ///== Lets obtain kg and k, tau torsion is not considered here
+    ///
+    ///
+    ///
+    
+    // the shape of the system                          //         v
+                                                        //     l1 / \ l2
+                                                 
 
+    
+    links* link1 = m_pVertex->m_pPrecedingEdgeLink;
+    links* link2 = m_pVertex->m_pEdgeLink;
+
+    double l1 = link1->m_EdgeSize;
+    double l2 = link2->m_EdgeSize;
+    Vec3D L1=link1->m_EdgeVector;
+    Vec3D L2=link2->m_EdgeVector;
+    L1 = L1*(1/l1);
+    L2 = L2*(1/l2);
+    
+    Vec3D T = L1+L2;
+    T=T*(1/T.norm());
+    
+    Vec3D N = (L2-L1)*(2.0/(l1+l2));
+    
+    double cur = N.norm();
+    N=N*(1/cur);
+    
+    double cosP = N.dot(Normal,N);
+    double cn = cur*cosP;
+    double cg = sqrt(cur*cur-cn*cn); // should be modefied; does not have sign in it
+    
+    // Vec3D P = T*Normal;
+    // Tensor2 TransferMatLG(Normal,T,P);
+    // Tensor2 TransferMatGL=TransferMatLG.Transpose(TransferMatLG);
+    //m_pVertex->UpdateL2GTransferMatrix(TransferMatLG);
+    //m_pVertex->UpdateG2LTransferMatrix(TransferMatGL);
+    
+    
+    m_pVertex->m_Geodesic_Curvature = cg;
+    m_pVertex->m_Normal_Curvature =cn;
+    
+    
+    
 }
-
 Tensor2 Curvature::Householder(Vec3D N)
 {
     

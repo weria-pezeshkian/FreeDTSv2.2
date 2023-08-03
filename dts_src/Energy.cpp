@@ -27,15 +27,17 @@ Energy::~Energy()
 double Energy::SingleVertexEnergy(vertex *pv)
 {
     double Energy=0.0;
-
     
+    
+if(pv->m_VertexType==0)
+{
     std::vector<double> Curve=pv->GetCurvature();
     double mean=(Curve.at(0)+Curve.at(1));
     double gussian=(Curve.at(0))*(Curve.at(1));
     double area=pv->GetArea();
 
-if(m_NO_Membrane_model_parameters==3)
-{
+    if(m_NO_Membrane_model_parameters==3)
+    {
     if(pv->VertexOwnInclusion()==true)
     {
         inclusion *inc=pv->GetInclusion();
@@ -70,16 +72,22 @@ if(m_NO_Membrane_model_parameters==3)
     {
         Energy=(m_Kappa*(mean-m_mem_c0)*(mean-m_mem_c0)-m_KappaG*gussian)*area;
     }
-}
-else if(m_NO_Membrane_model_parameters==5)
-{
+    }
+    else if(m_NO_Membrane_model_parameters==5)
+    {
     Energy=(m_Kappa*(mean-m_mem_c0)*(mean-m_mem_c0)-m_KappaG*gussian)*area;
     Energy+=(m_Membrane_model_parameters.at(3)*mean*mean*mean*mean+m_Membrane_model_parameters.at(4)*gussian*gussian)*area;
+    }
+    else
+    {
+    std::cout<<" error: we have not implememnted the large model paramters sim yet \n";
+    exit(0);
+    }
 }
 else
 {
-    std::cout<<" error: we have not implememnted the large model paramters sim yet \n";
-    exit(0);
+/// energy of the edge vertices
+    std::cout<<" we are not claculating enrgy of vertices at the edge yet \n";
 }
 
     pv->UpdateEnergy(Energy);
@@ -139,12 +147,10 @@ double Energy::Energy_OneVertexMove(vertex * pVeretx)
     double E=0.0;
     std::vector<vertex *> NpVer=pVeretx->GetVNeighbourVertex(); /// Get The vertexs on the ring
     E+=SingleVertexEnergy(pVeretx);
-
     for (std::vector<vertex *>::iterator it = NpVer.begin() ; it != NpVer.end(); ++it)
     {
         E+=SingleVertexEnergy(*it);
     }
-    
 
     return E;
 }

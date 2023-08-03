@@ -33,7 +33,7 @@ public:
         inline Tensor2  GetL2GTransferMatrix()              {return m_T_Local_2_Global;}
         inline Tensor2  GetG2LTransferMatrix()              {return m_T_Global_2_Local;}
         inline Vec3D GetNormalVector()                      {return m_Normal;}
-        inline std::vector <double> GetCurvature()          {return m_Curvature;}
+        inline std::vector <double> GetCurvature()          {return m_Curvature;}// surface curvature
         inline double GetEnergy()                           {return m_Energy;}
         inline std::vector <links *> GetVLinkList()             {return m_VLinkList;}
         inline std::vector <triangle *> GetVTraingleList()         {return m_VTraingleList;}
@@ -76,6 +76,7 @@ public:
 
     public:
     bool CheckCNT();
+    
 
 private:
 
@@ -102,6 +103,28 @@ private:
     Tensor2  m_T_Local_2_Global;         //  Local to global transformation matrix
     Tensor2  m_T_Global_2_Local;        //  global to local transformation matrix
     std::string m_GroupName;
+    
+    
+    
+    
+public:
+    // lets have them public for now
+    //================================================
+    // development of Aug 2023; for membranes with hole
+    //a*kg^2+b*k^2    note: any spontaneous one will come from inclusions
+    
+    // we might need to define n and t and b as well, for now lets ignore it
+    //================================================
+    double m_Geodesic_Curvature;          // Edge Vertex Curvature
+    double m_Normal_Curvature;          // Edge Vertex Curvature
+    double m_KGC;                          // model parameters for Geodesic Curvature
+    double m_KNC;                           // model parameters for normal Curvature
+    int m_VertexType;                   // 0 surface vertex; 1 edge vertex;
+    links * m_pEdgeLink;
+    links * m_pPrecedingEdgeLink;// preceding link at the edge
+    
+    
+    
 };
 
 

@@ -26,11 +26,14 @@
  Copyright (c) Weria Pezeshkian
  MC simulation class, runs mc simulation if it is defined in the input file.
  */
-MC_Simulation::MC_Simulation(State *pState)
+MC_Simulation::MC_Simulation(State *pState):m_pActiveT((pState->m_pMesh)->m_pActiveT), m_pActiveL((pState->m_pMesh)->m_pActiveL), m_pInclusions((pState->m_pMesh)->m_pInclusion),    m_pHalfLinks1((pState->m_pMesh)->m_pHL),m_pHalfLinks2((pState->m_pMesh)->m_pMHL), m_pActiveV((pState->m_pMesh)->m_pActiveV),m_pSurfV((pState->m_pMesh)->m_pSurfV),m_pEdgeV((pState->m_pMesh)->m_pEdgeV),m_pEdgeL((pState->m_pMesh)->m_pEdgeL)
+
 {
+    
+    
+    
     double simtime = clock();
-    
-    
+
 #if TEST_MODE == Enabled
     std::cout<<"----> Note: We have reached simulation class -- : "<<std::endl;
 #endif
@@ -58,6 +61,11 @@ bool Targeted_State = pState->m_Targeted_State;
 int enper=pState->m_OutPutEnergy_periodic;     // how aften write into the energy files
 bool FrameTensionCouplingFlag =(pState->m_FrameTension).State;
 
+#if DEBUG_MODE == Enabled
+    std::cout<<" simulation: reading varaible \n";
+#endif
+    
+    
 #ifdef _OPENMP
     if(Targeted_State==true)
     {
@@ -67,48 +75,74 @@ bool FrameTensionCouplingFlag =(pState->m_FrameTension).State;
     
 //== Reading from the mesh
     m_pBox     = (pState->m_pMesh)->m_pBox;
-    m_pAllV=(pState->m_pMesh)->m_pActiveV;
-    m_pAllT=(pState->m_pMesh)->m_pActiveT;
-    m_pAllLinks=(pState->m_pMesh)->m_pActiveL;
-    m_pHalfLinks1=(pState->m_pMesh)->m_pHL;
-    m_pHalfLinks2=(pState->m_pMesh)->m_pMHL;
-    m_pInclusions=(pState->m_pMesh)->m_pInclusion;
+    
+    
+   // std::cout<<" active trinagles sim class "<<m_pActiveT<<"\n";
+    
+    
+   
+
     
     //========= VTU files
         WritevtuFiles VTU(pState);
         std::string file="conf0.vtu";
-        VTU.Writevtu(m_pAllV,m_pAllT,m_pHalfLinks1,file);
+        VTU.Writevtu(m_pActiveV,m_pActiveT,m_pHalfLinks1,file);
     
     if(pState->m_IndexFile == true)
     ReadIndexFile(pState->m_IndexFileName);
 //=========================================================================================
 //======== We now create CNT object so that we can generate the cells anytime we want
 //============================================================================================
-GenerateCNTCells CNT(m_pAllV,pState->m_CNTCELL,m_pBox);
+GenerateCNTCells CNT(m_pActiveV,pState->m_CNTCELL,m_pBox);
 CNT.Generate();
- 
+#if DEBUG_MODE == Enabled
+    std::cout<<" simulation: creating cnt \n";
+#endif
 RNG Random1(pState->m_Seed);
 
 //========== Update the Mesh geometry variables ===============
 //======== Prepare the trinagles: calculate area and normal vector
-for (std::vector<triangle *>::iterator it = m_pAllT.begin() ; it != m_pAllT.end(); ++it)
+for (std::vector<triangle *>::iterator it = m_pActiveT.begin() ; it != m_pActiveT.end(); ++it)
 (*it)->UpdateNormal_Area(m_pBox);
+    
+    
+#if DEBUG_MODE == Enabled
+    std::cout<<" simulation: tri normal \n";
+#endif
 //===== Prepare links:  normal vector and shape operator
 for (std::vector<links *>::iterator it = m_pHalfLinks1.begin() ; it != m_pHalfLinks1.end(); ++it)
 {
         (*it)->UpdateNormal();
         (*it)->UpdateShapeOperator(m_pBox);
 }
-//======= Prepare vertex:  area and normal vector and curvature
-for (std::vector<vertex *>::iterator it = m_pAllV.begin() ; it != m_pAllV.end(); ++it)
-        Curvature P(*it);
     
+#if DEBUG_MODE == Enabled
+    std::cout<<" simulation: link normal \n";
+#endif
+//======= Prepare vertex:  area and normal vector and curvature of surface vertices not the edge one
+for (std::vector<vertex *>::iterator it = m_pSurfV.begin() ; it != m_pSurfV.end(); ++it)
+    (pState->CurvatureCalculator())->SurfVertexCurvature(*it);
+    
+//====== edge links should be updated
+for (std::vector<links *>::iterator it = m_pEdgeL.begin() ; it != m_pEdgeL.end(); ++it)
+        (*it)->UpdateEdgeVector(m_pBox);
+
+for (std::vector<vertex *>::iterator it = m_pEdgeV.begin() ; it != m_pEdgeV.end(); ++it)
+        (pState->CurvatureCalculator())->EdgeVertexCurvature(*it);
+    
+#if DEBUG_MODE == Enabled
+    std::cout<<" simulation: v curvature \n";
+#endif
 //=========================================================================================
 // =================   Calculate Energy at the start of the simulation
 //========================================================================================
 Energy En (pState->m_pinc_ForceField);
 double *tot_Energy = &(pState->m_TotEnergy);
-*tot_Energy=En.TotalEnergy(m_pAllV,m_pHalfLinks1);
+*tot_Energy=En.TotalEnergy(m_pSurfV,m_pHalfLinks1);
+    
+#if DEBUG_MODE == Enabled
+    std::cout<<" simulation: system energy \n";
+#endif
 #if TEST_MODE == Enabled
 #pragma omp critical
 std::cout<<"----> Note: Total energy of the starting configuration is: "<<*tot_Energy<<std::endl;
@@ -130,6 +164,9 @@ bool mc_inclusionmove = (pState->m_MCMove).InclusionMove;
 double mc_linkfliprate = (pState->m_MCMove).LinkFlipRate;
 double mc_vertexmoverate = (pState->m_MCMove).VertexMoveRate;
 double mc_inclusionmoverate = (pState->m_MCMove).InclusionMoveRate;
+#if DEBUG_MODE == Enabled
+    std::cout<<" simulation: getting move objects \n";
+#endif
 if(mc_linkflip == true || mc_vertexmove == true)
 {
     if (CheckMesh(pState->m_pMesh)==false)
@@ -145,40 +182,41 @@ if(mc_linkflip == true || mc_vertexmove == true)
         std::cout<<"----> note: The mesh looks good, link flip and vertex move can be performed  "<<std::endl;
     }
 }
-    
-int TotNoVertex=m_pAllV.size();
-int HalfLinkno = m_pHalfLinks1.size();
+int TotNoVertex=m_pSurfV.size();
 int SigmaPTau = (pState->m_FrameTension).updatePeriod;
     PositionRescaleFrameTensionCoupling * mc_box= pState->GetRescaleTension();
     CoupleToWallPotential * mc_rigidwall = pState->GetRigidWallCoupling();
     if(mc_rigidwall->GetState()==true)
-    mc_rigidwall->Initialize(m_pAllV);
+    mc_rigidwall->Initialize(m_pActiveV);
     CouplingtoFixedGlobalCurvature * gc_globalcurvature = pState->GetGlobalCurvature();
     if (gc_globalcurvature->GetState() == true)
-    gc_globalcurvature->CalculateGlobalVariables(m_pAllV);
+    gc_globalcurvature->CalculateGlobalVariables(m_pActiveV);
     SpringPotentialBetweenTwoGroups * harmonic2groups = pState->Get2GroupHarmonic();
     if(harmonic2groups->GetState()==true)
-    harmonic2groups->MakeGroups(m_pAllV, pState->m_IndexFileName);
+    harmonic2groups->MakeGroups(m_pActiveV, pState->m_IndexFileName);
     CmdVolumeCouplingSecondOrder *volumecoupling = pState->GetVolumeCoupling();
     if(volumecoupling->GetState()==true)
-    volumecoupling->Initialize(m_pAllT);
+    volumecoupling->Initialize(m_pActiveT);
     if((pState->GetOsmotic_Pressure())->GetState()==true)  
-    (pState->GetOsmotic_Pressure())->Initialize(m_pAllT);
+    (pState->GetOsmotic_Pressure())->Initialize(m_pActiveT);
     if((pState->GetApply_Constant_Area())->GetState()==true)
-    (pState->GetApply_Constant_Area())->Initialize(m_pAllT);
+    (pState->GetApply_Constant_Area())->Initialize(m_pActiveT);
     ActiveTwoStateInclusion *ActiveTwoState = pState->GetActiveTwoStateInclusion();
     if(ActiveTwoState->GetState()==true)
     ActiveTwoState->Initialize(m_pInclusions, ((pState->m_pMesh)->m_pInclusionType), pState->m_pinc_ForceField, &Random1);
     std::string FrameTensionCouplingType = (pState->m_FrameTension).Type;
     LinkFlipMC *mc_LFlip = pState->GetMCMoveLinkFlip();
     VertexMCMove *mc_VMove = pState->GetMCAVertexMove();
+    EdgeVertexMCMove *mc_EdgeVMove = pState->GetMCEdgeVertexMove();
+
     InclusionMCMove *mc_IncMove = pState->GetInclusionMCMove();
     OpenEdgeEvolutionWithConstantVertex * mc_edge_evo = pState->GetOpenEdgeEvolutionWithConstantVertex();
-    
-    
+    mc_edge_evo->Initialize();
+
     Restart *pRestart = pState->GetRestart();
     BTSFile btsFile ((pState->m_TRJBTS).btsFile_name, (pState->m_RESTART).restartState, "w");
     Traj_XXX TSIFile (m_pBox,(pState->m_TRJTSI).tsiFolder_name);
+    
 //=========== Some rate variables
     int totallmove = 0;
     int totalvmove = 0;
@@ -251,7 +289,7 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
                 #pragma omp critical
                 std::cout<<"LinkFlip starts" <<std::endl;
 #endif
-                int m=Random1.IntRNG(HalfLinkno);
+                int m=Random1.IntRNG(m_pHalfLinks1.size());
                 links *Tlinks = m_pHalfLinks1.at(m);  // chose a link randomly
                 if(Tlinks->GetMirrorFlag()==true)
                 {
@@ -271,8 +309,9 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
                 #pragma omp critical
                 std::cout<<"vertex move starts" <<std::endl;
 #endif
-                int n=Random1.IntRNG(TotNoVertex);
-                vertex *lpvertex = m_pAllV.at(n);   //
+                int n=Random1.IntRNG(m_pSurfV.size());
+                vertex *lpvertex = m_pSurfV.at(n);   //
+
                 if(lpvertex->GetGroupName()!=pState->m_FreezGroupName)
                 {
                     double dx=1-2*Random1.UniformRNG(1.0);            // Inside a cube with the side length of R
@@ -280,12 +319,15 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
                     double dz=1-2*Random1.UniformRNG(1.0);
                     double thermal=Random1.UniformRNG(1.0);
                     bool cwp = true;
+
                     if(mc_rigidwall->GetState()==true)
                     cwp=mc_rigidwall->CheckVertexMoveWithinWalls(mcstep,R*dx,R*dy,R*dz,lpvertex);
 
                     if(cwp==true )
                     {
+
                     mc_VMove->MC_MoveAVertex(mcstep,lpvertex,R*dx,R*dy,R*dz,thermal);
+
                     VRate+=mc_VMove->GetMoveValidity();
                     totalvmove++;
                     }
@@ -295,6 +337,41 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
 #endif
                }
             }// end of if(mc_vertexmove == true)
+           
+           
+    //===================================since 2023 =
+           // this should be made better; will be too much vertex moves that is not needed.
+          // if(edgevertexmove == true)
+           {
+           //mc_EdgeVMove
+           int n=Random1.IntRNG(m_pEdgeV.size());
+           vertex *lpvertex = m_pEdgeV.at(n);   //
+               if(lpvertex->GetGroupName()!=pState->m_FreezGroupName)
+               {
+                   double dx=1-2*Random1.UniformRNG(1.0);            // Inside a cube with the side length of R
+                   double dy=1-2*Random1.UniformRNG(1.0);
+                   double dz=1-2*Random1.UniformRNG(1.0);
+                   double thermal=Random1.UniformRNG(1.0);
+                   bool cwp = true;
+
+                   if(mc_rigidwall->GetState()==true)
+                   cwp=mc_rigidwall->CheckVertexMoveWithinWalls(mcstep,R*dx,R*dy,R*dz,lpvertex);
+
+                   if(cwp==true )
+                   {
+
+                       mc_EdgeVMove->MC_MoveAVertex(mcstep,lpvertex,R*dx,R*dy,R*dz,thermal);
+
+                   //=mc_VMove->GetMoveValidity();
+                   //totalvmove++;
+                   }
+#if DEBUG_MODE == Enabled
+                   #pragma omp critical
+                   std::cout<<"Vertex move Ends" <<std::endl;
+#endif
+              }
+           
+           }// end if(edgevertexmove == true)
             if(mc_inclusionmove == true && m_pInclusions.size()!=0)
             {
                     int n=Random1.IntRNG(m_pInclusions.size());
@@ -303,10 +380,7 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
                     InRate+=mc_IncMove->GetMoveValidity();
                     totalinmove++;
             }
-           // Edge evolotion
-           {
-                  mc_edge_evo->MC_Move();
-           }
+
            
         } // end of if(VerexORbox>QQ)
         else
@@ -316,7 +390,7 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
             bool move;
             if(FrameTensionCouplingType=="Position_Rescale")
              {
-                move=mc_box->MCMoveBoxChange(RB*dr, tot_Energy, thermal, mcstep, (&CNT),m_pAllV,m_pHalfLinks1,m_pAllT);
+                move=mc_box->MCMoveBoxChange(RB*dr, tot_Energy, thermal, mcstep, (&CNT),m_pActiveV,m_pHalfLinks1,m_pActiveT);
                 if(move==true)
                 {
                     boxrate=boxrate+1;
@@ -328,9 +402,23 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
             }
             else
                 std::cout<<"---> Error: No such frame tension coupling type "<<std::endl;
-
+            
         }
     }//for (int j=0;j<TotNoVertex;j++)
+    
+    // Edge evolotion
+#if DEBUG_MODE == Enabled
+                    #pragma omp critical
+                    std::cout<<"edge evolution starts" <<std::endl;
+#endif
+    if(mc_edge_evo->m_State==true)
+    {
+           mc_edge_evo->MC_Move(&Random1,m_Lmin2,m_Lmax2,m_minAngle);
+    }
+#if DEBUG_MODE == Enabled
+                    #pragma omp critical
+                    std::cout<<"edge evolution ends " <<std::endl;
+#endif
     
 //==== Active Inclsuion exchange two state; as these movie are indepenednt of the energy based move, the have no conditions
 //===================================
@@ -349,7 +437,7 @@ if(Targeted_State==true)
 if(mcstep%displaywrite==0 && displaywrite!=0)
 {
         std::string file="conf"+f.Int_to_String(int(mcstep/displaywrite))+".vtu";
-        VTU.Writevtu(m_pAllV,m_pAllT,m_pAllLinks,file);
+        VTU.Writevtu(m_pActiveV,m_pActiveT,m_pActiveL,file);
 }
 if(Targeted_State==true)
 if((pState->m_RESTART).restartPeriod!=0 && mcstep%((pState->m_RESTART).restartPeriod)==0)
@@ -365,7 +453,7 @@ if((pState->m_TRJBTS).btsPeriod!=0 && mcstep%((pState->m_TRJBTS).btsPeriod)==0 )
 if((pState->m_TRJTSI).tsiPeriod!=0 && mcstep%((pState->m_TRJTSI).tsiPeriod)==0 )
 {
     std::string file=gfilename+f.Int_to_String(int(mcstep/(pState->m_TRJTSI).tsiPeriod))+"."+TSIExt;
-   TSIFile.WriteTSI(mcstep,file, m_pAllV, m_pAllT, m_pInclusions);
+   TSIFile.WriteTSI(mcstep,file, m_pActiveV, m_pActiveT, m_pInclusions);
 }
 if( pState->m_OutPutEnergy_periodic!=0  && mcstep%(pState->m_OutPutEnergy_periodic)==0)
 {
@@ -488,7 +576,7 @@ double  MC_Simulation::SystemEnergy(State * pState)
 {
     double en = 0;
     
-    for (std::vector<vertex *>::iterator it1 = m_pAllV.begin() ; it1 != m_pAllV.end(); ++it1)
+    for (std::vector<vertex *>::iterator it1 = m_pActiveV.begin() ; it1 != m_pActiveV.end(); ++it1)
     {
         double x=(*it1)->GetVXPos();
         double y=(*it1)->GetVYPos();
@@ -497,7 +585,7 @@ double  MC_Simulation::SystemEnergy(State * pState)
         (*it1)->UpdateVYPos(y);
         (*it1)->UpdateVZPos(z);
     }
-    for (std::vector<triangle *>::iterator it = m_pAllT.begin() ; it != m_pAllT.end(); ++it)
+    for (std::vector<triangle *>::iterator it = m_pActiveT.begin() ; it != m_pActiveT.end(); ++it)
         (*it)->UpdateNormal_Area(m_pBox);
     
     
@@ -507,12 +595,13 @@ double  MC_Simulation::SystemEnergy(State * pState)
         (*it)->UpdateShapeOperator(m_pBox);
     }
     
-    for (std::vector<vertex *>::iterator it = m_pAllV.begin() ; it != m_pAllV.end(); ++it)
-        Curvature P(*it);
+    
+    for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it)
+        (pState->CurvatureCalculator())->SurfVertexCurvature(*it);
     
     
     Energy En (pState->m_pinc_ForceField);
-    en=En.TotalEnergy(m_pAllV,m_pHalfLinks1);
+    en=En.TotalEnergy(m_pActiveV,m_pHalfLinks1);
     
     return en;
 }
@@ -521,8 +610,9 @@ bool MC_Simulation::CheckMesh(MESH *pMesh)
     bool isok = true;
     Vec3D *pBox     = pMesh->m_pBox;
     std::vector<vertex*> pV= pMesh->m_pActiveV;
-    std::vector<links*> pL=pMesh->m_pActiveL;
+    std::vector<links*> pL=pMesh->m_pHL;
     // Check if there are any pair of vertices that are to close
+
     for (int i=0;i<pV.size();i++)
     for (int j=i+1;j<pV.size();j++)
     {
@@ -530,6 +620,7 @@ bool MC_Simulation::CheckMesh(MESH *pMesh)
         if(l2<m_Lmin2)
         isok =false;
     }
+
     // Check if there are any pair of connected vertices that are to far
     for (std::vector<vertex *>::iterator it = pV.begin() ; it != pV.end(); ++it)
     {
@@ -541,6 +632,7 @@ bool MC_Simulation::CheckMesh(MESH *pMesh)
             isok =false;
         }
     }
+
     // Check the angle of the faces and see if the are bent to much
     for (std::vector<links *>::iterator it = pL.begin() ; it != pL.end(); ++it)
     {
@@ -626,17 +718,17 @@ void  MC_Simulation::CenterIntheBox()
     double xcm=0;
     double ycm=0;
     double zcm=0;
-    for (std::vector<vertex *>::iterator it = m_pAllV.begin() ; it != m_pAllV.end(); ++it)
+    for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it)
     {
         xcm+=(*it)->GetVXPos();
         ycm+=(*it)->GetVYPos();
         zcm+=(*it)->GetVZPos();
     }
-    xcm=xcm/m_pAllV.size();
-    ycm=ycm/m_pAllV.size();
-    zcm=zcm/m_pAllV.size();
+    xcm=xcm/m_pActiveV.size();
+    ycm=ycm/m_pActiveV.size();
+    zcm=zcm/m_pActiveV.size();
     
-    for (std::vector<vertex *>::iterator it = m_pAllV.begin() ; it != m_pAllV.end(); ++it)
+    for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it)
     {
         double x=(*it)->GetVXPos();
         double y=(*it)->GetVYPos();
@@ -678,8 +770,8 @@ void MC_Simulation::ReadIndexFile(std::string indexfilename)
                         for (int i=0;i<NAtom;i++)
                         {
                             indexfile>>id;
-                            if(id<m_pAllV.size())
-                            (m_pAllV[id])->UpdateGroupName(name);
+                            if(id<m_pActiveT.size())
+                            (m_pActiveV[id])->UpdateGroupName(name);
                             else
                             std::cout<<"---> Error: some problems with the index file "<<std::endl;
                         }

@@ -169,10 +169,13 @@ bool condition=CheckFlipCondition();
 		m_L4->UpdateNormal();
         	m_L4->UpdateShapeOperator(m_pBox);
 
-		Curvature P1(m_V1);
-		Curvature P2(m_V2);
-		Curvature P3(m_V3);
-		Curvature P4(m_V4);
+		
+        
+        (m_pState->CurvatureCalculator())->SurfVertexCurvature(m_V1);
+        (m_pState->CurvatureCalculator())->SurfVertexCurvature(m_V2);
+        (m_pState->CurvatureCalculator())->SurfVertexCurvature(m_V3);
+        (m_pState->CurvatureCalculator())->SurfVertexCurvature(m_V4);
+
 	}
 
     }

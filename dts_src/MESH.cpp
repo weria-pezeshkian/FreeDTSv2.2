@@ -191,6 +191,7 @@ void MESH::GenerateMesh(MeshBluePrint meshblueprint, double kappa, double kappag
         if(foundM == false)
         {
             m_pEdgeL.push_back(&(*it));
+            it->m_LinkType = 1;
         }
         
     }
@@ -213,6 +214,9 @@ void MESH::GenerateMesh(MeshBluePrint meshblueprint, double kappa, double kappag
     for (std::vector<links*>::iterator it = m_pEdgeL.begin() ; it != m_pEdgeL.end(); ++it)
     {
         m_pEdgeV.push_back((*it)->GetV1());
+        ((*it)->GetV1())->m_pEdgeLink = *it;
+        ((*it)->GetV2())->m_pPrecedingEdgeLink = *it;
+        ((*it)->GetV1())->m_VertexType = 1;
     }
     for (std::vector<vertex*>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it)
     {

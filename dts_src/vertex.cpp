@@ -22,6 +22,15 @@ m_kappa=1.0;
     m_OwnInclusion = false;
     m_kappaG = 0;
     m_GroupName = "system";
+    
+    
+    m_Geodesic_Curvature = 0;
+    m_Normal_Curvature = 0;
+    m_KGC = 0;
+    m_KNC = 0;
+    m_VertexType = 0;
+    
+    
 }
 vertex::vertex(int id)
 {
@@ -36,6 +45,13 @@ m_kappa=1.0;
     m_OwnInclusion = false;
     m_kappaG = 0;
     m_GroupName = "system";
+    
+    
+    m_Geodesic_Curvature = 0;
+    m_Normal_Curvature = 0;
+    m_KGC = 0;
+    m_KNC = 0;
+    m_VertexType = 0;   
 
 }
 vertex::~vertex()

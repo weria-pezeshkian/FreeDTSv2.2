@@ -130,7 +130,8 @@ double nv=pAllVertex.size();
        					 (*it)->UpdateShapeOperator(m_pBox);
     				}
    			    for (std::vector<vertex *>::iterator it = m_pAllVertex.begin() ; it != m_pAllVertex.end(); ++it)
-        				Curvature P(*it);
+                    (m_pState->CurvatureCalculator())->SurfVertexCurvature(*it);
+
 
 
                 double DE_totA = 0;

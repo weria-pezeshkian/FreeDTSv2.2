@@ -1,12 +1,12 @@
 
 
 #include <stdio.h>
-#include "VertexMCMove.h"
+#include "EdgeVertexMCMove.h"
 #include "State.h"
-VertexMCMove::VertexMCMove()
+EdgeVertexMCMove::EdgeVertexMCMove()
 {
 }
-VertexMCMove::VertexMCMove(State *pState)
+EdgeVertexMCMove::EdgeVertexMCMove(State *pState)
 {
     m_pState = pState;
     m_pBox = (pState->m_pMesh)->m_pBox;
@@ -15,17 +15,38 @@ VertexMCMove::VertexMCMove(State *pState)
     m_pLmax2    = &(m_pState->m_MaxLinkLengthSquare);
     m_pInc     = m_pState->m_pinc_ForceField;
     m_pTotEnergy=&(m_pState->m_TotEnergy);
-    m_pCFGC = m_pState->GetGlobalCurvature();
     m_pSPBTG = m_pState->Get2GroupHarmonic();
     m_Beta =   m_pState->m_Beta;
     m_step = 0;
 }
-VertexMCMove::~VertexMCMove()
+EdgeVertexMCMove::~EdgeVertexMCMove()
 {
     
 }
-void VertexMCMove::MC_MoveAVertex(int step, vertex *pvertex, double dx, double dy, double dz,double temp)
+void EdgeVertexMCMove::MC_MoveAVertex(int step, vertex *pvertex, double dx, double dy, double dz,double temp)
 {
+    
+    std::cout<<" It get here edge v move \n";
+    // 1) first check the cnt and see after such a move what will happen
+    // 2) Constant volume is meaning less
+    // 3) constant global curvature ???
+    // 4) pull force can be
+    //
+    
+    
+    if((m_pState->GetVolumeCoupling())->GetState()==true || (m_pState->GetOsmotic_Pressure())->GetState()==true )
+    {
+        std::cout<<" error---> We are moving an edge vertex, therefore coupling the system to a volume-controlling algorithm is meaningless \n";
+        exit(0);
+    }
+    if ((m_pState->GetApply_Constant_Area())->GetState()==true)
+    {
+        std::cout<<" error---> We are moving an edge vertex, therefore coupling the system to a fix global curvature is not possible (perhaps meaningless) \n";
+        exit(0);
+
+    }
+    
+    
     m_LIntEChange.clear();
     m_AVer.clear();
     m_RingLinks.clear();
@@ -52,61 +73,33 @@ m_MoveValidity=0;
 	m_X=m_oldX+m_dx;
 	m_Y=m_oldY+m_dy;
 	m_Z=m_oldZ+m_dz;
-//=========== This can be more optimised maybe; why do I need this?
-    m_simplexarea = 0;
-    m_simplexvolume = 0;
-    if((m_pState->GetVolumeCoupling())->GetState()==true || (m_pState->GetOsmotic_Pressure())->GetState()==true || (m_pState->GetApply_Constant_Area())->GetState()==true)
-    {
-        std::vector <triangle *> pvT=m_pvertex->GetVTraingleList();
-        if((m_pState->GetVolumeCoupling())->GetState()==true )
-        for (std::vector<triangle *>::iterator it = pvT.begin() ; it != pvT.end(); ++it)
-        {
-            m_simplexvolume+=(m_pState->GetVolumeCoupling())->SingleTriangleVolume(*it);
-            m_simplexarea+=(*it)->GetArea();
-        }
-        else if((m_pState->GetOsmotic_Pressure())->GetState()==true )
-        for (std::vector<triangle *>::iterator it = pvT.begin() ; it != pvT.end(); ++it)
-        {
-        
-            m_simplexvolume+=(m_pState->GetOsmotic_Pressure())->SingleTriangleVolume(*it);
-            m_simplexarea+=(*it)->GetArea();
-        }
-        else
-        for (std::vector<triangle *>::iterator it = pvT.begin() ; it != pvT.end(); ++it)
-        {
-            m_simplexarea+=(*it)->GetArea();
-        }
-    }
+       
    EnergyDifference();
     m_face=true;
-    
+    std::cout<<" It end here edge v move \n";
+
 }
-
-
-
-void VertexMCMove::EnergyDifference()
+void EdgeVertexMCMove::EnergyDifference()
 {
+    
+    if(CheckDistnace()==false)
+        return;
+    
+    double DE=0.0;
 
+    Move();   // old energy get updated here
+    
 
-double DE=0.0;
-bool length =CheckDistnace();
+    //==== Update the ring triangle normal and making a copy in case the move got rejected
+    std::vector<triangle *> pT=m_pvertex->GetVTraingleList();
+        for (std::vector<triangle *>::iterator it = pT.begin() ; it != pT.end(); ++it)
+        {
+             m_Triangle.push_back(*(*it));
+             (*it)->UpdateNormal_Area(m_pBox);
 
-
-	if (length==true)
-	{
-
-		Move();
-		//==== Update the ring triangle normal and making a copy in case the move got rejected
-		std::vector<triangle *> pT=m_pvertex->GetVTraingleList();
-    		for (std::vector<triangle *>::iterator it = pT.begin() ; it != pT.end(); ++it)
-    		{
-                 m_Triangle.push_back(*(*it));
-        		 (*it)->UpdateNormal_Area(m_pBox);
-
-    		}
-        std::vector<links *> TpL=m_pvertex->GetVLinkList();
-
-        for (std::vector<links *>::iterator it = TpL.begin() ; it != TpL.end(); ++it)
+        }
+    std::vector<links *> TpL=m_pvertex->GetVLinkList();
+    for (std::vector<links *>::iterator it = TpL.begin() ; it != TpL.end(); ++it)
         {
             if(CheckFaceAngle(*it)==false)
             {
@@ -114,73 +107,49 @@ bool length =CheckDistnace();
                 break;
             }
         }
-		//==== Update the ring link normal and shape operator
-        if(m_face==true)
+    //==== Update the ring link normal and shape operator
+    if(m_face==true)
+    {
+
+        std::vector<links *> pL=m_pvertex->GetVLinkList();
+        for (std::vector<links *>::iterator it = pL.begin() ; it != pL.end(); ++it)
         {
+            links *nl=(*it)->GetNeighborLink1();
+           if((*it)->m_LinkType == 0)
+           {
+            (*it)->UpdateNormal();
+            (*it)->UpdateShapeOperator(m_pBox);
+           }
+           else
+            (*it)->UpdateEdgeVector(m_pBox);
 
-            std::vector<links *> pL=m_pvertex->GetVLinkList();
-    		for (std::vector<links *>::iterator it = pL.begin() ; it != pL.end(); ++it)
-    		{
-       			 (*it)->UpdateNormal();
-        		(*it)->UpdateShapeOperator(m_pBox);
-                links *nl=(*it)->GetNeighborLink1();
-                if(nl->m_LinkType == 0)
-                {
-                    nl->UpdateNormal();
-                    nl->UpdateShapeOperator(m_pBox);
-                }
-                else
-                    nl->UpdateEdgeVector(m_pBox);
-    		}
-		//==== Update vertexes
+           if(nl->m_LinkType == 0)
+           {
+            nl->UpdateNormal();
+            nl->UpdateShapeOperator(m_pBox);
+           }
+           else
+            nl->UpdateEdgeVector(m_pBox);
+        }
+    //==== Update vertexes
 
-            (m_pState->CurvatureCalculator())->SurfVertexCurvature(m_pvertex);
-    		for (std::vector<vertex *>::iterator it = m_pAVer.begin() ; it != m_pAVer.end(); ++it)
-    		{
-        
-                (m_pState->CurvatureCalculator())->SurfVertexCurvature(*it);
-        
-    		}
-            if(m_pCFGC->GetState()==true)
-            {
-                {std::vector<double> C=m_pvertex->GetCurvature();
-                    double area = m_pvertex->GetArea();
-                    m_DeltaA-=area;
-                    m_DetaR-=(C.at(0)+C.at(1))*area;}
-                
-                for (std::vector<vertex *>::iterator it = m_pAVer.begin() ; it != m_pAVer.end(); ++it)
-                {
-                    std::vector<double> C=(*it)->GetCurvature();
-                    double area = (*it)->GetArea();
-                    m_DeltaA-=area;
-                    m_DetaR-=(C.at(0)+C.at(1))*area;
-                }
-
-            }
+        (m_pState->CurvatureCalculator())->EdgeVertexCurvature(m_pvertex);
+        for (std::vector<vertex *>::iterator it = m_pAVer.begin() ; it != m_pAVer.end(); ++it)
+        {
+            if((*it)->m_VertexType == 0)
+            (m_pState->CurvatureCalculator())->SurfVertexCurvature(*it);
+            else
+            (m_pState->CurvatureCalculator())->EdgeVertexCurvature(*it);
 
         }
-	
-	}
-/*
-if(length==false)
-{
-    std::cout<<" rejected by length \n";
-
-}
-else if (m_face==false)
-{
-   std::cout<<" rejected by face \n";
-
-}*/
-
-if(m_face==true && length==true)
+    }
+if(m_face==true)
 {
 Energy EE (m_pInc);
+
 double NewEnergy = EE.Energy_OneVertexMove(m_pvertex);
-    
     for (std::vector<links *>::iterator it = m_pLIntEChange.begin() ; it != m_pLIntEChange.end(); ++it)
        NewEnergy+=EE.TwoInclusionsInteractionEnergy(*it);
-    
 // if there is spring force potential so we calculate the energy associated with this move
     double harmonicde=0;
     if(m_pSPBTG->GetState()==true)
@@ -197,83 +166,23 @@ double NewEnergy = EE.Energy_OneVertexMove(m_pvertex);
 DE=NewEnergy-m_oldEnergy;
 
 
-    double eG = 0;
-    if(m_pCFGC->GetState()==true)
-    {
-        eG = m_pCFGC->CalculateEnergyChange(-m_DeltaA,-m_DetaR);
-    }
-    //=========== This can be more optimised maybe
-    double DEPV = 0;
-    double DE_OP = 0;
-    double DE_totA = 0; // energy asscoaited with change in total area
-    double newsimplexarea = 0;
-    double newsimplexvolume = 0;
-    
-    
-    if((m_pState->GetVolumeCoupling())->GetState()==true || (m_pState->GetOsmotic_Pressure())->GetState()==true || (m_pState->GetApply_Constant_Area())->GetState()==true)
-    {
-        std::vector <triangle *> pvT=m_pvertex->GetVTraingleList();
-        
-        if((m_pState->GetVolumeCoupling())->GetState()==true )
-        for (std::vector<triangle *>::iterator it = pvT.begin() ; it != pvT.end(); ++it)
-        {
-            newsimplexvolume+=(m_pState->GetVolumeCoupling())->SingleTriangleVolume(*it);
-            newsimplexarea+=(*it)->GetArea();
-        }
-        else if((m_pState->GetOsmotic_Pressure())->GetState()==true)
-        for (std::vector<triangle *>::iterator it = pvT.begin() ; it != pvT.end(); ++it)
-        {
-                newsimplexvolume+=(m_pState->GetOsmotic_Pressure())->SingleTriangleVolume(*it);
-            	newsimplexarea+=(*it)->GetArea();
-        }
-        else
-        for (std::vector<triangle *>::iterator it = pvT.begin() ; it != pvT.end(); ++it)
-                newsimplexarea+=(*it)->GetArea();
-
-        if((m_pState->GetVolumeCoupling())->GetState()==true)
-        DEPV = (m_pState->GetVolumeCoupling())->GetEnergyChange(m_step,m_simplexarea,m_simplexvolume,newsimplexarea,newsimplexvolume);
-        
-        if((m_pState->GetOsmotic_Pressure())->GetState()==true)
-        DE_OP = (m_pState->GetOsmotic_Pressure())->GetEnergyChange(m_step,m_simplexvolume,newsimplexvolume);
-        
-        if((m_pState->GetApply_Constant_Area())->GetState()==true)
-        DE_totA =(m_pState->GetApply_Constant_Area())->GetEnergyChange(m_step,m_simplexarea,newsimplexarea);
-        
-      //  std::cout<<DE_OP<<"  "<<m_simplexvolume<<"  "<<newsimplexvolume<<"  "<<m_simplexvolume-newsimplexvolume<<"\n";
-    }
-    
-
-    //========
-    
-    
-                double diff_energy = m_Beta*(DE+eG+DEPV+harmonicde+DE_OP+DE_totA);
-            //    std::cout<<DE<<"  "<<eG<<"  "<<DEPV<<"  "<<harmonicde<<"  "<<DE_OP<<"  \n";
+                double diff_energy = m_Beta*(DE+harmonicde);
             	if(diff_energy<=0 )
             	{
-                	AccpetMove();
-                	(*m_pTotEnergy)=(*m_pTotEnergy)+DE;
+                     AccpetMove();
+                    (*m_pTotEnergy)=(*m_pTotEnergy)+DE;
                     m_MoveValidity=1;
-                 (m_pState->GetVolumeCoupling())->UpdateArea_Volume(m_simplexarea,m_simplexvolume,newsimplexarea,newsimplexvolume);
-                 (m_pState->GetOsmotic_Pressure())->UpdateArea_Volume(m_simplexarea,m_simplexvolume,newsimplexarea,newsimplexvolume);
-                 (m_pState->GetApply_Constant_Area())->UpdateArea(m_simplexarea,newsimplexarea);
 
             	}
             	else if(exp(-diff_energy)>m_Thermal )
              	{
-                    
                  	AccpetMove();
-  
                  	(*m_pTotEnergy)=(*m_pTotEnergy)+DE;
                     m_MoveValidity=1;
-                    (m_pState->GetVolumeCoupling())->UpdateArea_Volume(m_simplexarea,m_simplexvolume,newsimplexarea,newsimplexvolume);
-                    (m_pState->GetOsmotic_Pressure())->UpdateArea_Volume(m_simplexarea,m_simplexvolume,newsimplexarea,newsimplexvolume);
-                    (m_pState->GetApply_Constant_Area())->UpdateArea(m_simplexarea,newsimplexarea);
              	}
             	else 
             	{
-
                 	RejectMove();
-
                     // Reject the harmonic potential move
                     // we should reject this move here because it does not happen at thee beginning
                     if(m_pSPBTG->GetState()==true)
@@ -284,39 +193,17 @@ DE=NewEnergy-m_oldEnergy;
                     //
             	}
 
-m_EnergyDifference=DE;
+    m_EnergyDifference=DE;
+    }
+    else  /// meaning that face is false
+    {
+        RejectMove();
+    }
 }
-else if(length==true)  /// meaning that face is false
+
+void EdgeVertexMCMove::Move()
 {
-RejectMove();
-}
-}
 
-void VertexMCMove::Move()
-{
-
-    
-   if(m_pCFGC->GetState()==true)
-   {
-      
-       
-       {std::vector<double> C=m_pvertex->GetCurvature();
-       double area = m_pvertex->GetArea();
-       m_DeltaA+=area;
-       m_DetaR+=(C.at(0)+C.at(1))*area;}
-       
-       for (std::vector<vertex *>::iterator it = m_pAVer.begin() ; it != m_pAVer.end(); ++it)
-       {
-           std::vector<double> C=(*it)->GetCurvature();
-           double area = (*it)->GetArea();
-           m_DeltaA+=area;
-           m_DetaR+=(C.at(0)+C.at(1))*area;
-       }
-   }
-
-    
-    
-    
 	m_oldEnergy=m_pvertex->GetEnergy();
 	m_vertex=(*m_pvertex);
     // Making a copy of all orginal vertices: note, we cannot use this list to replace the orginal one, all pointing pointers will go wrong, just for later use to go back to what it was
@@ -325,26 +212,17 @@ void VertexMCMove::Move()
 		    m_AVer.push_back(*(*it));
         	m_oldEnergy+=(*it)->GetEnergy();
         }
-	
 
-
-
-    
     m_pvertex->UpdateVXPos(m_X);
 	m_pvertex->UpdateVYPos(m_Y);
 	m_pvertex->UpdateVZPos(m_Z);
-    
-    
 
-    
     std::vector<links *> pL=m_pvertex->GetVLinkList();
     for (std::vector<links *>::iterator it = pL.begin() ; it != pL.end(); ++it)
     {
         links *nl=(*it)->GetNeighborLink1();
         m_nLinks.push_back(*(*it));
         m_RingLinks.push_back(*nl);
-        
-        
     }
 //// this part of the code can become more efficient
 
@@ -370,8 +248,6 @@ void VertexMCMove::Move()
         }
         if(addit==true)
          m_pLIntEChange.push_back((*it));
-        
-
     }
 
     for (std::vector<links *>::iterator it = m_pLIntEChange.begin() ; it != m_pLIntEChange.end(); ++it)
@@ -379,12 +255,8 @@ void VertexMCMove::Move()
         m_oldEnergy+=2*((*it)->GetIntEnergy());
         m_LIntEChange.push_back(*(*it));
     }
-    
-
-    
-
 }
-void VertexMCMove::AccpetMove()
+void EdgeVertexMCMove::AccpetMove()
 {
 
     if(m_ChangeCNT==true)
@@ -392,16 +264,9 @@ void VertexMCMove::AccpetMove()
     
         UppdateVertexCNTCell();
     }
-    
-    if(m_pCFGC->GetState()==true)
-    {
-        m_pCFGC->UpdateEnergyChange(-m_DeltaA,-m_DetaR);
-    }
-
-    
 }
 
-void VertexMCMove::UppdateVertexCNTCell()
+void EdgeVertexMCMove::UppdateVertexCNTCell()
 {
 
 m_OldCNT->RemoveFromVertexList(m_pvertex);
@@ -415,71 +280,22 @@ m_pvertex->UpdateVCNTCell(m_NewCNT);
 
 //========
 //== Check Length
-bool VertexMCMove::CheckDistnace()
+bool EdgeVertexMCMove::CheckDistnace()
 {
-bool length=true;
-double x1=m_X;
-double y1=m_Y;
-double z1=m_Z;
-Vec3D Box=(*m_pBox);
+    
+    Vec3D Pos(m_X,m_Y,m_Z);
+    // check if the nighbouring vertices are good
+    std::vector<vertex *> nv= m_pvertex->GetVNeighbourVertex();
         for (std::vector<vertex *>::iterator it = m_pAVer.begin() ; it != m_pAVer.end(); ++it)
         {
-
- 		double x2=(*it)->GetVXPos();
-		double y2=(*it)->GetVYPos();
-		double z2=(*it)->GetVZPos();
-		double dx=x2-x1;
-		double dy=y2-y1;
-		double dz=z2-z1;
-            
-            
-            if(fabs(dx)>Box(0)/2.0)
-            {
-                
-                
-                if(dx<0)
-                dx=Box(0)+dx;
-                else if(dx>0)
-                dx=dx-Box(0);
-  
-                
-            }
-            if(fabs(dy)>Box(1)/2.0)
-            {
-                
-                
-                if(dy<0)
-                dy=Box(1)+dy;
-                else if(dy>0)
-                dy=dy-Box(1);
-                
-                
-            }
-            
-            if(fabs(dz)>Box(2)/2.0)
-            {
-                if(dz<0)
-                dz=Box(2)+dz;
-                else if(dz>0)
-                dz=dz-Box(2);
-            }
-
-            
-            
-            
-		double l2=dx*dx+dy*dy+dz*dz;
-
+            double l2 = Length2WithAVertex(Pos, *it);
             if(l2> (*m_pLmax2) || l2<(*m_pLmin2))
-		{
-
-			length=false;
-
-		}
-            
-          
-            
-	}
-
+                return false;
+        }
+    // check other vertices within cnt
+    m_OldCNT=m_pvertex->GetVCNTCell();
+    
+    bool length=true;
 	if(length==true)
 	{		
 		bool moveoutcnt=false;
@@ -627,7 +443,7 @@ Vec3D Box=(*m_pBox);
 return length;
 }
 
-void VertexMCMove::RejectMove()
+void EdgeVertexMCMove::RejectMove()
 {
 
 
@@ -650,10 +466,11 @@ int i=0;
         
         *(*it)=m_nLinks.at(i);
         
-
+        if ((*it)->m_LinkType == 0)
+        {
         (*it)->GetMirrorLink()->PutNormal((*it)->GetNormal());
         (*it)->GetMirrorLink()->PutShapeOperator((*it)->GetBe(),(*it)->GetHe());
-        
+        }
         
         *nl=m_RingLinks.at(i);
         if(nl->GetMirrorFlag()==true)
@@ -674,8 +491,9 @@ int i=0;
     std::vector<links>::iterator itr=m_LIntEChange.begin();
     for (std::vector<links *>::iterator it = m_pLIntEChange.begin() ; it != m_pLIntEChange.end(); ++it)
     {
-        double en=(*itr).GetIntEnergy();
-        (*it)->UpdateIntEnergy(en);
+            double en=(*itr).GetIntEnergy();
+            (*it)->UpdateIntEnergy(en);
+        if ((*it)->m_LinkType == 0)
         ((*it)->GetMirrorLink())->UpdateIntEnergy(en);
 #if TEST_MODE == Enabled
 
@@ -686,9 +504,27 @@ int i=0;
         ++itr;
     }
 }
-
-
-bool VertexMCMove::CheckLengthBetweenTwoVertex( vertex* v2)
+double EdgeVertexMCMove::Length2WithAVertex(Vec3D v1, vertex* ver)
+{
+    double x2=ver->GetVXPos();
+    double y2=ver->GetVYPos();
+    double z2=ver->GetVZPos();
+    Vec3D v2(x2,y2,z2);
+    Vec3D dx = v2-v1;
+    for (int i=0;i<3;i++)
+    {
+        if(fabs(dx(i))>(*m_pBox)(i)/2.0)
+        {
+            if(dx(i)<0)
+            dx(i)=(*m_pBox)(i)+dx(i);
+            else if(dx(i)>0)
+            dx(i)=dx(i)-(*m_pBox)(i);
+        }
+    }
+    double l2=dx.dot(dx,dx);
+    return l2;
+}
+bool EdgeVertexMCMove::CheckLengthBetweenTwoVertex( vertex* v2)
 {
 
 bool flag=true;
@@ -750,40 +586,26 @@ Vec3D Box=(*m_pBox);
 
 return flag;
 }
-bool   VertexMCMove::CheckFaceAngle(links * l)
+bool   EdgeVertexMCMove::CheckFaceAngle(links * l)
 {
-    bool is=true;
-    
-   
     double t=0;
-    
     Vec3D n=(l->GetTriangle())->GetNormalVector();
-    Vec3D n3=((l->GetMirrorLink())->GetTriangle())->GetNormalVector();
-    
-    
-    if(n.dot(n,n3)<(*m_pminAngle))
+    if(l->GetMirrorFlag()==true)
     {
-        is=false;
+        Vec3D n3=((l->GetMirrorLink())->GetTriangle())->GetNormalVector();
+        if(n.dot(n,n3)<(*m_pminAngle))
+            return false;
     }
-    else
+    if((l->GetNeighborLink1())->GetMirrorFlag()==true)
     {
-        if((l->GetNeighborLink1())->GetMirrorFlag()==true)
-        {
-            Vec3D n1=(((l->GetNeighborLink1())->GetMirrorLink())->GetTriangle())->GetNormalVector();
+        Vec3D n1=(((l->GetNeighborLink1())->GetMirrorLink())->GetTriangle())->GetNormalVector();
                 t=n.dot(n,n1);
             if (t<(*m_pminAngle))
-                is=false;
-        
-        }
+                return false;
+
     }
-    
-    
-    		/*if( n.dot(n,n3)<-0.5 || t<-0.5)
-		{
-			std::cout<<"vertex with index 62 face "<< n.dot(n,n3)<<"  "<<t<<"\n";
-		}*/
-    
-    return is;
+
+    return true;
 }
 
 

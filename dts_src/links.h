@@ -36,6 +36,8 @@ public:
         inline int GetSimTimeStep()                      {return m_SimTimeStep;}
         inline int GetLinkSide()                      {return m_LinkSide;}
         inline double GetIntEnergy()                      {return m_IntEnergy;}
+        inline double GetEdgeSize()                      {return m_EdgeSize;}
+        inline Vec3D GetEdgeVector()                      {return m_EdgeVector;}
 
     
 
@@ -56,9 +58,11 @@ void Flip();
 void UpdateMirrorFlag(bool v);
 void UpdateSimTimeStep(int v);
 void UpdateIntEnergy(double en);
-
 void ReadLinkFromFile(std::ifstream *inputfile,std::vector <vertex *> pv, std::vector <links *> pL, std::vector <triangle *> pT);
 void WriteLinkToFile(std::ofstream *inputfile);
+void UpdateEdgeVector(Vec3D *pbox);
+void PutEdgeVector(Vec3D , double);
+
 private:
 
 
@@ -80,12 +84,20 @@ links   *m_neighborlink2; /// the link is 1->2   this is 3->1
     int m_LinkSide;
 
     private:
-    Vec3D m_Normal;
-    
+    Vec3D m_Normal;    // average of the two trinagule normal for edge links, it is 
+
+
+
     Vec3D m_Be;
     double m_He;
     double m_IntEnergy;
     int m_SimTimeStep;
+    
+    
+public:
+    Vec3D m_EdgeVector;    // a vector along the edge
+    double m_EdgeSize;    // size of the edge
+    int m_LinkType;  // 0 surface link; 1 edge link;
 
 
 

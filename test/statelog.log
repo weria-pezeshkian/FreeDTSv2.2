@@ -2,17 +2,17 @@
 ;  ../DTS   -in   input_2.dts   -top   topol.tsi   
 ;------------------------------------------  
 Integrator = MC
-MC_Moves = 0  0  0
+MC_Moves = 1  0  0
 MC_MovesRate = 0.34  0.33  0.33
 Initial_Step = 1
-Final_Step = 0
+Final_Step = 50
 MinfaceAngle = -0.5
 OutPutEnergy_periodic = 100
 Restart_periodic = 10000
 TopologyFile = topol.tsi
 Seed = 36723
 Kappa = 20  0
-Display_periodic = 1000
+Display_periodic = 1
 CNTCELL = 2 2 2 
 GeneralOutputFilename = output
 Min_Max_LinkLenghtsSquare = 1  3

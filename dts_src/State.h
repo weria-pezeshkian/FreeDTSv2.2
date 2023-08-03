@@ -12,6 +12,7 @@
 #include "CoupleToWallPotential.h"
 #include "LinkFlipMC.h"
 #include "VertexMCMove.h"
+#include "EdgeVertexMCMove.h"
 #include "InclusionMCMove.h"
 #include "Restart.h"
 #include "Nfunction.h"
@@ -20,6 +21,7 @@
 #include "Apply_Constant_Area.h"
 #include "Apply_Constant_Vertex_Area.h"
 #include "OpenEdgeEvolutionWithConstantVertex.h"
+#include "Curvature.h"
 
 /*#include "inclusion.h"
 #include "triangle.h"
@@ -116,7 +118,7 @@ public:
     State();
 
 	 ~State();
-    
+inline Curvature *CurvatureCalculator()                    {return &m_CurvatureCalculations;}
 inline CouplingtoFixedGlobalCurvature *GetGlobalCurvature()                      {return &m_CoupleGCurvature;}
 inline SpringPotentialBetweenTwoGroups *Get2GroupHarmonic()                      {return &m_SpringPotentialBetweenTwoGroups;}
 inline PositionRescaleFrameTensionCoupling *GetRescaleTension()                  {return &m_RescaleTenCoupl;}
@@ -125,6 +127,7 @@ inline Apply_Osmotic_Pressure *GetOsmotic_Pressure()                         {re
 inline Apply_Constant_Area *GetApply_Constant_Area()                           {return &m_Apply_Constant_Area;}
 inline LinkFlipMC *GetMCMoveLinkFlip()                         {return &m_LinkFlipMC;}
 inline VertexMCMove *GetMCAVertexMove()                         {return &m_VertexMoveMC;}
+inline EdgeVertexMCMove *GetMCEdgeVertexMove()                         {return &m_EdgeVertexMoveMC;}
 inline InclusionMCMove *GetInclusionMCMove()                     {return &m_IncMove;}
 inline Restart *GetRestart()                                    {return &m_Restart;}
 inline CoupleToWallPotential *GetRigidWallCoupling()                                    {return &m_RigidWallCoupling;}
@@ -186,11 +189,12 @@ public:
     ActiveTwoStateInclusion m_ActiveTwoStateInclusion;
     LinkFlipMC m_LinkFlipMC;
     VertexMCMove m_VertexMoveMC;
+    EdgeVertexMCMove m_EdgeVertexMoveMC;
     InclusionMCMove m_IncMove;
     Restart m_Restart;
     CoupleToWallPotential m_RigidWallCoupling;
     OpenEdgeEvolutionWithConstantVertex m_OpenEdgeEvolutionWithConstantVertex;
-
+    Curvature m_CurvatureCalculations;
 private:
     MESH          m_Mesh;
     void ExploreArguments();         // updates variables based on the command line arguments
