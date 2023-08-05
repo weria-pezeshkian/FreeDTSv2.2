@@ -15,7 +15,7 @@
 class Energy
 {
 public:
-    
+    Energy();
 	Energy(Inclusion_Interaction_Map * );
 	 ~Energy();
 

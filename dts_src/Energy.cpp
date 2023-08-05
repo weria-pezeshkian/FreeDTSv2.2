@@ -10,6 +10,10 @@
  Energy of the whole system
  Energy change of a vertex move
  */
+Energy::Energy()
+{
+    
+}
 Energy::Energy(Inclusion_Interaction_Map * pint)
 {
 m_pInt=pint;
@@ -86,8 +90,17 @@ if(pv->m_VertexType==0)
 }
 else
 {
-/// energy of the edge vertices
-    std::cout<<" we are not claculating enrgy of vertices at the edge yet \n";
+    
+    double gc = pv->m_Geodesic_Curvature;
+    double nc = pv->m_Normal_Curvature;
+    double kg = pv->m_KGC;
+    double kn = pv->m_KNC;
+    double lambda = pv->m_Lambda;
+    double length = pv->m_VLength;
+
+    Energy = lambda*length+kg*gc*gc+kn*nc*nc;
+    
+
 }
 
     pv->UpdateEnergy(Energy);
@@ -124,19 +137,11 @@ double Energy::Energy_OneLinkFlip(links * plinks)
     vertex *v3=plinks->GetV3();
     vertex *v4=mirorl->GetV3();
 
-    
-    
     E+=SingleVertexEnergy(v1);
     E+=SingleVertexEnergy(v2);
     E+=SingleVertexEnergy(v3);
     E+=SingleVertexEnergy(v4);
-    
-    
-    
 
-    
-    
-    
   return E;
     
 
@@ -151,6 +156,8 @@ double Energy::Energy_OneVertexMove(vertex * pVeretx)
     {
         E+=SingleVertexEnergy(*it);
     }
+
+
 
     return E;
 }

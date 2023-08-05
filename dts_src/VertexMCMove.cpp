@@ -9,16 +9,17 @@ VertexMCMove::VertexMCMove()
 VertexMCMove::VertexMCMove(State *pState)
 {
     m_pState = pState;
+    m_pEnergyCalculator = pState->GetEnergyCalculator();
     m_pBox = (pState->m_pMesh)->m_pBox;
     m_pminAngle = &(m_pState->m_MinFaceAngle);
     m_pLmin2    = &(m_pState->m_MinVerticesDistanceSquare);
     m_pLmax2    = &(m_pState->m_MaxLinkLengthSquare);
-    m_pInc     = m_pState->m_pinc_ForceField;
     m_pTotEnergy=&(m_pState->m_TotEnergy);
     m_pCFGC = m_pState->GetGlobalCurvature();
     m_pSPBTG = m_pState->Get2GroupHarmonic();
     m_Beta =   m_pState->m_Beta;
     m_step = 0;
+
 }
 VertexMCMove::~VertexMCMove()
 {
@@ -91,33 +92,30 @@ void VertexMCMove::EnergyDifference()
 double DE=0.0;
 bool length =CheckDistnace();
 
-
-	if (length==true)
-	{
-
+    if (length==false)
+        return;
+    
+    // the move is now will be performed; meaning the vertex is fully updated
 		Move();
+    
 		//==== Update the ring triangle normal and making a copy in case the move got rejected
 		std::vector<triangle *> pT=m_pvertex->GetVTraingleList();
-    		for (std::vector<triangle *>::iterator it = pT.begin() ; it != pT.end(); ++it)
-    		{
-                 m_Triangle.push_back(*(*it));
-        		 (*it)->UpdateNormal_Area(m_pBox);
+        for (std::vector<triangle *>::iterator it = pT.begin() ; it != pT.end(); ++it)
+        {
+            m_Triangle.push_back(*(*it));
+            (*it)->UpdateNormal_Area(m_pBox);
 
-    		}
+        }
         std::vector<links *> TpL=m_pvertex->GetVLinkList();
-
         for (std::vector<links *>::iterator it = TpL.begin() ; it != TpL.end(); ++it)
         {
             if(CheckFaceAngle(*it)==false)
             {
-                m_face=false;
-                break;
+                RejectMove();
+                return;
             }
         }
 		//==== Update the ring link normal and shape operator
-        if(m_face==true)
-        {
-
             std::vector<links *> pL=m_pvertex->GetVLinkList();
     		for (std::vector<links *>::iterator it = pL.begin() ; it != pL.end(); ++it)
     		{
@@ -133,13 +131,15 @@ bool length =CheckDistnace();
                     nl->UpdateEdgeVector(m_pBox);
     		}
 		//==== Update vertexes
-
             (m_pState->CurvatureCalculator())->SurfVertexCurvature(m_pvertex);
     		for (std::vector<vertex *>::iterator it = m_pAVer.begin() ; it != m_pAVer.end(); ++it)
     		{
         
+                if((*it)->m_VertexType==0)
                 (m_pState->CurvatureCalculator())->SurfVertexCurvature(*it);
-        
+                if((*it)->m_VertexType==1)
+                (m_pState->CurvatureCalculator())->EdgeVertexCurvature(*it);
+
     		}
             if(m_pCFGC->GetState()==true)
             {
@@ -158,28 +158,13 @@ bool length =CheckDistnace();
 
             }
 
-        }
-	
-	}
-/*
-if(length==false)
-{
-    std::cout<<" rejected by length \n";
-
-}
-else if (m_face==false)
-{
-   std::cout<<" rejected by face \n";
-
-}*/
-
-if(m_face==true && length==true)
-{
-Energy EE (m_pInc);
-double NewEnergy = EE.Energy_OneVertexMove(m_pvertex);
+double NewEnergy = m_pEnergyCalculator->Energy_OneVertexMove(m_pvertex);
     
     for (std::vector<links *>::iterator it = m_pLIntEChange.begin() ; it != m_pLIntEChange.end(); ++it)
-       NewEnergy+=EE.TwoInclusionsInteractionEnergy(*it);
+       NewEnergy+=m_pEnergyCalculator->TwoInclusionsInteractionEnergy(*it);
+    
+    DE=NewEnergy-m_oldEnergy;
+ 
     
 // if there is spring force potential so we calculate the energy associated with this move
     double harmonicde=0;
@@ -193,10 +178,6 @@ double NewEnergy = EE.Energy_OneVertexMove(m_pvertex);
         double e2 = m_pSPBTG->GetEnergy();
         harmonicde = e2-e1;
     }
-
-DE=NewEnergy-m_oldEnergy;
-
-
     double eG = 0;
     if(m_pCFGC->GetState()==true)
     {
@@ -239,14 +220,11 @@ DE=NewEnergy-m_oldEnergy;
         if((m_pState->GetApply_Constant_Area())->GetState()==true)
         DE_totA =(m_pState->GetApply_Constant_Area())->GetEnergyChange(m_step,m_simplexarea,newsimplexarea);
         
-      //  std::cout<<DE_OP<<"  "<<m_simplexvolume<<"  "<<newsimplexvolume<<"  "<<m_simplexvolume-newsimplexvolume<<"\n";
-    }
+    }//if((m_pState->GetVolumeCoupling())->GetState()==true ..)
     
 
     //========
-    
-    
-                double diff_energy = m_Beta*(DE+eG+DEPV+harmonicde+DE_OP+DE_totA);
+                double diff_energy = (DE+eG+DEPV+harmonicde+DE_OP+DE_totA);
             //    std::cout<<DE<<"  "<<eG<<"  "<<DEPV<<"  "<<harmonicde<<"  "<<DE_OP<<"  \n";
             	if(diff_energy<=0 )
             	{
@@ -258,7 +236,7 @@ DE=NewEnergy-m_oldEnergy;
                  (m_pState->GetApply_Constant_Area())->UpdateArea(m_simplexarea,newsimplexarea);
 
             	}
-            	else if(exp(-diff_energy)>m_Thermal )
+            	else if(exp(-m_Beta*diff_energy)>m_Thermal )
              	{
                     
                  	AccpetMove();
@@ -282,24 +260,14 @@ DE=NewEnergy-m_oldEnergy;
                         m_pSPBTG->RejectMovingVertex(m_pvertex, dr);
                     }
                     //
-            	}
+            	}//if(diff_energy<=0 )
 
-m_EnergyDifference=DE;
+            m_EnergyDifference=DE;
 }
-else if(length==true)  /// meaning that face is false
-{
-RejectMove();
-}
-}
-
 void VertexMCMove::Move()
 {
-
-    
    if(m_pCFGC->GetState()==true)
    {
-      
-       
        {std::vector<double> C=m_pvertex->GetCurvature();
        double area = m_pvertex->GetArea();
        m_DeltaA+=area;
@@ -424,7 +392,6 @@ double z1=m_Z;
 Vec3D Box=(*m_pBox);
         for (std::vector<vertex *>::iterator it = m_pAVer.begin() ; it != m_pAVer.end(); ++it)
         {
-
  		double x2=(*it)->GetVXPos();
 		double y2=(*it)->GetVYPos();
 		double z2=(*it)->GetVZPos();
@@ -435,27 +402,18 @@ Vec3D Box=(*m_pBox);
             
             if(fabs(dx)>Box(0)/2.0)
             {
-                
-                
                 if(dx<0)
                 dx=Box(0)+dx;
                 else if(dx>0)
                 dx=dx-Box(0);
-  
-                
             }
             if(fabs(dy)>Box(1)/2.0)
             {
-                
-                
                 if(dy<0)
                 dy=Box(1)+dy;
                 else if(dy>0)
                 dy=dy-Box(1);
-                
-                
             }
-            
             if(fabs(dz)>Box(2)/2.0)
             {
                 if(dz<0)
@@ -463,23 +421,10 @@ Vec3D Box=(*m_pBox);
                 else if(dz>0)
                 dz=dz-Box(2);
             }
-
-            
-            
-            
 		double l2=dx*dx+dy*dy+dz*dz;
-
-            if(l2> (*m_pLmax2) || l2<(*m_pLmin2))
-		{
-
+        if(l2> (*m_pLmax2) || l2<(*m_pLmin2))
 			length=false;
-
-		}
-            
-          
-            
 	}
-
 	if(length==true)
 	{		
 		bool moveoutcnt=false;
@@ -623,38 +568,31 @@ Vec3D Box=(*m_pBox);
 //====== check if the faces are ok
 
 
-
 return length;
 }
 
 void VertexMCMove::RejectMove()
 {
-
-
+// this function returns all the changed vertices and links and ... to their previous state using a copy that has been made before
 (*m_pvertex)=m_vertex;
-
-int i=0;
+    int i=0;
         for (std::vector<vertex>::iterator it = m_AVer.begin() ; it != m_AVer.end(); ++it)
         {
-
-		*(m_pAVer.at(i))=(*it);
-		i++;
+            *(m_pAVer.at(i))=(*it);
+            i++;
         }
-
     i=0;
     std::vector<links *> pL=m_pvertex->GetVLinkList();
     for (std::vector<links *>::iterator it = pL.begin() ; it != pL.end(); ++it)
     {
         links *nl=(*it)->GetNeighborLink1();
-        
-        
-        *(*it)=m_nLinks.at(i);
-        
 
+        // copies the content of m_nLinks into *it
+        *(*it)=m_nLinks.at(i);
         (*it)->GetMirrorLink()->PutNormal((*it)->GetNormal());
         (*it)->GetMirrorLink()->PutShapeOperator((*it)->GetBe(),(*it)->GetHe());
         
-        
+        // copies the content of m_RingLinks into nl
         *nl=m_RingLinks.at(i);
         if(nl->GetMirrorFlag()==true)
         {
@@ -690,8 +628,6 @@ int i=0;
 
 bool VertexMCMove::CheckLengthBetweenTwoVertex( vertex* v2)
 {
-
-bool flag=true;
 Vec3D Box=(*m_pBox);
 
  		double x2=v2->GetVXPos();
@@ -707,27 +643,18 @@ Vec3D Box=(*m_pBox);
             
             if(fabs(dx)>Box(0)/2.0)
             {
-                
-                
                 if(dx<0)
                 dx=Box(0)+dx;
                 else if(dx>0)
                 dx=dx-Box(0);
-  
-                
             }
             if(fabs(dy)>Box(1)/2.0)
             {
-                
-                
                 if(dy<0)
                 dy=Box(1)+dy;
                 else if(dy>0)
                 dy=dy-Box(1);
-                
-                
             }
-            
             if(fabs(dz)>Box(2)/2.0)
             {
                 if(dz<0)
@@ -735,56 +662,69 @@ Vec3D Box=(*m_pBox);
                 else if(dz>0)
                 dz=dz-Box(2);
             }
-
-
 		double l2=dx*dx+dy*dy+dz*dz;
-        
            if(l2<(*m_pLmin2))
-		  {            
-            
-			flag=false;
-		  }
+               return false;
+		  
+return true;
 
-
-
-
-return flag;
 }
 bool   VertexMCMove::CheckFaceAngle(links * l)
 {
-    bool is=true;
-    
-   
     double t=0;
-    
     Vec3D n=(l->GetTriangle())->GetNormalVector();
     Vec3D n3=((l->GetMirrorLink())->GetTriangle())->GetNormalVector();
     
-    
     if(n.dot(n,n3)<(*m_pminAngle))
+        return false;
+    
+    if((l->GetNeighborLink1())->GetMirrorFlag()==true)
     {
-        is=false;
-    }
-    else
-    {
-        if((l->GetNeighborLink1())->GetMirrorFlag()==true)
-        {
-            Vec3D n1=(((l->GetNeighborLink1())->GetMirrorLink())->GetTriangle())->GetNormalVector();
-                t=n.dot(n,n1);
+        Vec3D n1=(((l->GetNeighborLink1())->GetMirrorLink())->GetTriangle())->GetNormalVector();
+            t=n.dot(n,n1);
             if (t<(*m_pminAngle))
-                is=false;
-        
-        }
+                return false;
+    }
+    return true;
+}
+// this function can be deleted any time; it is for test cases only
+double  VertexMCMove::SystemEnergy()
+{
+    MESH* m_pMESH = m_pState->m_pMesh;
+    std::vector<vertex *> ActiveV = m_pMESH->m_pActiveV;
+    std::vector<triangle *> pActiveT = m_pMESH->m_pActiveT;
+    std::vector<links *> mLink = m_pMESH->m_pHL;
+    std::vector<links *>  pEdgeL = m_pMESH->m_pEdgeL;
+    std::vector<vertex *> EdgeV  = m_pMESH->m_pEdgeV;
+    double en = 0;
+    
+
+    for (std::vector<triangle *>::iterator it = pActiveT.begin() ; it != pActiveT.end(); ++it)
+        (*it)->UpdateNormal_Area(m_pBox);
+    
+    
+    for (std::vector<links *>::iterator it = mLink.begin() ; it != mLink.end(); ++it)
+    {
+        (*it)->UpdateNormal();
+        (*it)->UpdateShapeOperator(m_pBox);
     }
     
     
-    		/*if( n.dot(n,n3)<-0.5 || t<-0.5)
-		{
-			std::cout<<"vertex with index 62 face "<< n.dot(n,n3)<<"  "<<t<<"\n";
-		}*/
-    
-    return is;
-}
+    for (std::vector<vertex *>::iterator it = ActiveV.begin() ; it != ActiveV.end(); ++it)
+        (m_pState->CurvatureCalculator())->SurfVertexCurvature(*it);
 
+    //====== edge links should be updated
+    for (std::vector<links *>::iterator it = pEdgeL.begin() ; it != pEdgeL.end(); ++it)
+            (*it)->UpdateEdgeVector(m_pBox);
+
+    for (std::vector<vertex *>::iterator it = EdgeV.begin() ; it != EdgeV.end(); ++it)
+            (m_pState->CurvatureCalculator())->EdgeVertexCurvature(*it);
+    
+    en=m_pEnergyCalculator->TotalEnergy(ActiveV,mLink);
+    //en=en+ m_pEnergyCalculator->TotalEnergy(EdgeV,pEdgeL);
+    
+    
+    return en;
+}
 
 

@@ -7,4 +7,8 @@ b) we will have a sperate class to update the edge vertex;
 
 2) effecency in moves
 3) energy class should not be lunched in each move 
+it should have accss to mesh and ...
 
+4) chnage the beta in previous code
+5) functions such as check distance and etc can be done in the vertex class and have just one of them
+6) mesh class could have random elements given to sim class

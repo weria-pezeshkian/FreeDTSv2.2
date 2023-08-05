@@ -23,6 +23,14 @@ State::State(std::vector <std::string> argument)
     std::cout<<"----> We have reached the State Class -- "<<std::endl;
 #endif
     //============ Initialization of all inputs and data structures for input
+    
+    m_data_membrane_param.lambda = 0;
+    m_data_membrane_param.kappa_geo = 0;
+    m_data_membrane_param.kappa_normal = 0;
+    m_data_membrane_param.kappa = 0; // this is read by another parameters for now; later may change
+    m_data_membrane_param.kappa_g = 0; // this is read by another parameters for now; later may change
+    
+    
     m_Argument = argument;
     m_Targeted_State = true;
     m_Healthy =true;
@@ -63,11 +71,13 @@ State::State(std::vector <std::string> argument)
     m_RESTART.restartState = false;
     m_RESTART.restartPeriod = 1000;
     m_MCMove.VertexMove = true;
+    m_MCMove.EdgeVertexMove = true;
     m_MCMove.LinkFlip = true;
     m_MCMove.InclusionMove = true;
-    m_MCMove.VertexMoveRate = 0.34;
-    m_MCMove.LinkFlipRate = 0.33;
-    m_MCMove.InclusionMoveRate = 0.33;
+    m_MCMove.VertexMoveRate = 1;
+    m_MCMove.LinkFlipRate = 1;
+    m_MCMove.InclusionMoveRate = 1;
+    m_MCMove.EdgeVertexMoveRate = 1;
     m_FrameTension.State = false;
     m_FrameTension.Type = "Position_Rescale";
     m_FrameTension.Tau = 0.0;
@@ -138,7 +148,11 @@ State::State(std::vector <std::string> argument)
         meshblueprint = BluePrint.MashBluePrintFromInput_Top(m_InputFileName,m_TopologyFile);
         std::cout<<"-----> Note: Mesh was taken from the topology  "<<std::endl;
     }
-        m_Mesh.GenerateMesh(meshblueprint,m_BendingRigidity,m_GaussianRigidity);
+        m_Mesh.GenerateMesh(meshblueprint,m_BendingRigidity,m_GaussianRigidity,m_data_membrane_param);
+    
+    
+    
+    
 #if TEST_MODE == Enabled
     std::cout<<"----> Note: created mesh contains "<<(m_pMesh->m_pAllV).size()<<" vertices"<<std::endl;
     std::cout<<"----> Note: created mesh contains "<<(m_pMesh->m_pAllT).size()<<" trinagles"<<std::endl;
@@ -146,10 +160,6 @@ State::State(std::vector <std::string> argument)
     std::cout<<"----> Note: created mesh contains "<<(m_pMesh->m_pInclusion).size()<<" inclusions"<<std::endl;
 #endif
     // Generating couplings
-    PositionRescaleFrameTensionCoupling TEM(m_FrameTension.Tau,this);
-    //Curvature CurvatureCalculations
-    //m_CurvatureCalculations = CurvatureCalculations;
-    m_RescaleTenCoupl = TEM;
     LinkFlipMC LPTEM (this);
     m_LinkFlipMC = LPTEM;
     VertexMCMove TVM (this);
@@ -158,6 +168,11 @@ State::State(std::vector <std::string> argument)
     m_EdgeVertexMoveMC = EVM;
     InclusionMCMove TIM(this);
     m_IncMove = TIM;
+    Energy Ten(m_pinc_ForceField);  // perhaps later could have a state pointer as well
+    m_EnergyCalculator = Ten;
+    // this should be called after energy and curvature is called 
+    PositionRescaleFrameTensionCoupling TEM(m_FrameTension.Tau,this);
+    m_RescaleTenCoupl = TEM;
     if(m_STRUC_ActiveTwoStateInclusion.state==true)
     {
          double ep1 = m_STRUC_ActiveTwoStateInclusion.ep1;
@@ -170,6 +185,9 @@ State::State(std::vector <std::string> argument)
          m_ActiveTwoStateInclusion = TA2I;
 
     }
+    
+
+
 
 //
 }
@@ -293,12 +311,12 @@ void State::ReadInputFile(std::string file)
         }
         else if(firstword == "MC_Moves")
         {
-            input>>str>>(m_MCMove.VertexMove)>>(m_MCMove.LinkFlip)>>(m_MCMove.InclusionMove);
+            input>>str>>(m_MCMove.VertexMove)>>(m_MCMove.LinkFlip)>>(m_MCMove.EdgeVertexMove)>>(m_MCMove.InclusionMove);
             getline(input,rest);
         }
         else if(firstword == "MC_MovesRate")
         {
-            input>>str>>(m_MCMove.VertexMoveRate)>>(m_MCMove.LinkFlipRate)>>(m_MCMove.InclusionMoveRate);
+            input>>str>>(m_MCMove.VertexMoveRate)>>(m_MCMove.LinkFlipRate)>>(m_MCMove.EdgeVertexMoveRate)>>(m_MCMove.InclusionMoveRate);
             getline(input,rest);
             
             if(m_MCMove.VertexMoveRate<0)
@@ -316,11 +334,11 @@ void State::ReadInputFile(std::string file)
                 std::cout<<"---> Error: move rate is negative "<<std::endl;
                 exit(0);
             }
-            double norm = m_MCMove.VertexMoveRate+m_MCMove.LinkFlipRate+m_MCMove.InclusionMoveRate;
-            m_MCMove.VertexMoveRate = m_MCMove.VertexMoveRate/norm;
-            m_MCMove.LinkFlipRate = m_MCMove.LinkFlipRate/norm;
-            m_MCMove.InclusionMoveRate =m_MCMove.InclusionMoveRate/norm;
-
+            if(m_MCMove.EdgeVertexMoveRate<0)
+            {
+                std::cout<<"---> Error: move rate is negative "<<std::endl;
+                exit(0);
+            }
         }
         else if(firstword == "FreezingAGroup")
         {
@@ -413,6 +431,16 @@ void State::ReadInputFile(std::string file)
         else if(firstword == "MinfaceAngle")
         {
             input>>str>>m_MinFaceAngle;
+            getline(input,rest);
+        }
+        else if(firstword == "Edge_Parameters")
+        {
+            double a,b,c;
+            input>>str>>a>>b>>c;
+            m_data_membrane_param.lambda = a;
+            m_data_membrane_param.kappa_geo = b;
+            m_data_membrane_param.kappa_normal = c;
+            
             getline(input,rest);
         }
         else if(firstword == "OutPutEnergy_periodic")
@@ -559,18 +587,17 @@ void State::ReadInputFile(std::string file)
         }
         else if(firstword == "OpenEdgeEvolutionWithConstantVertex")
         {
-            // OpenEdgeEvolutionWithConstantVertex  = on PT_steps  PT_minbeta    PT_maxbeta
+            // OpenEdgeEvolutionWithConstantVertex  = on PT_steps
             std::string state;
             int rate;
-            double lambda, k1,k2;
-            input>>str>>state>>rate>>lambda>>k1>>k2;
+            input>>str>>state>>rate;
             getline(input,rest);
             bool edgestate = false;
             if(state=="on"|| state=="yes"|| state=="On"|| state=="ON"|| state=="Yes"|| state=="YES")
                 edgestate = true;
             
             
-            OpenEdgeEvolutionWithConstantVertex  tem(edgestate,&m_Mesh,rate,lambda,k2,k2);
+            OpenEdgeEvolutionWithConstantVertex  tem(edgestate,rate,this);
             m_OpenEdgeEvolutionWithConstantVertex = tem;
         }
         else if(firstword == "OutPutTRJ_BTS")

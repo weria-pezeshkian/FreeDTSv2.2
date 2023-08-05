@@ -14,7 +14,7 @@ MESH::~MESH()
 {
     
 }
-void MESH::GenerateMesh(MeshBluePrint meshblueprint, double kappa, double kappag)
+void MESH::GenerateMesh(MeshBluePrint meshblueprint, double kappa, double kappag, STRUC_Membrane_Parameters smp)
 {
     m_Box = meshblueprint.simbox;
     m_pBox = &m_Box;
@@ -31,6 +31,9 @@ void MESH::GenerateMesh(MeshBluePrint meshblueprint, double kappa, double kappag
             v.UpdateBox(m_pBox);
             v.UpdateGroup(it->domain);
             v.UpdateKappa(kappa/2.0,kappag);
+            v.m_Lambda = smp.lambda;
+            v.m_KGC = smp.kappa_geo;
+            v.m_KNC = smp.kappa_normal;
             m_Vertex.push_back(v);
     }
 //===== Make exclution [since June, 2023]
@@ -216,6 +219,7 @@ void MESH::GenerateMesh(MeshBluePrint meshblueprint, double kappa, double kappag
         m_pEdgeV.push_back((*it)->GetV1());
         ((*it)->GetV1())->m_pEdgeLink = *it;
         ((*it)->GetV2())->m_pPrecedingEdgeLink = *it;
+        ((*it)->GetV2())->AddtoNeighbourVertex((*it)->GetV1());
         ((*it)->GetV1())->m_VertexType = 1;
     }
     for (std::vector<vertex*>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it)
@@ -250,7 +254,7 @@ void MESH::GenerateMesh(MeshBluePrint meshblueprint, double kappa, double kappag
     std::cout<<"---> active vertex "<<m_pActiveV.size()<<" surf vertex "<<m_pSurfV.size()<<"  edge vertex "<<m_pEdgeV.size()<<" -- \n";
 
 
-    
+
 
     
     //WritevtuFiles VTU(pState);

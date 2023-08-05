@@ -38,6 +38,6 @@
 #define NoLib Enabled
 
 #define TEST_MODE  Disabled
-#define DEBUG_MODE  Enabled
+#define DEBUG_MODE Disabled
 #define RNGTYPE  UNIFROMTYPE0
 #define BACKMAP  Enabled

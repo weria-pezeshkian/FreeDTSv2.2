@@ -119,6 +119,8 @@ public:
     double m_Normal_Curvature;          // Edge Vertex Curvature
     double m_KGC;                          // model parameters for Geodesic Curvature
     double m_KNC;                           // model parameters for normal Curvature
+    double m_VLength;                       // length of the vertex
+    double m_Lambda;                   // line tension
     int m_VertexType;                   // 0 surface vertex; 1 edge vertex;
     links * m_pEdgeLink;
     links * m_pPrecedingEdgeLink;// preceding link at the edge

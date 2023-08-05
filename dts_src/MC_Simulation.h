@@ -33,7 +33,7 @@ private:
     
 private:
     void  CenterIntheBox();
-    double  SystemEnergy(State *pState);
+    double  SystemEnergy();
     
     
     // A set of functions to check if a mesh is good for mc with vertices move
@@ -42,6 +42,9 @@ private:
     double  CheckFaceAngle(links * l, Vec3D *);
     Vec3D   CalculateNormal(vertex* v1 ,vertex* v2 ,vertex* v3,Vec3D *pBox);
     void ReadIndexFile(std::string indexfilename);
+    MESH* m_pMESH;
+    State *m_pState;
+
 
 
 

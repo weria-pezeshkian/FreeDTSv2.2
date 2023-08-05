@@ -34,12 +34,17 @@ public:
 //  void AddtoVertexList(vertex * z);
 
 private:
-Inclusion_Interaction_Map * m_pInc;
+Energy *m_pEnergyCalculator;
 bool CheckLengthBetweenTwoVertex( vertex*);
 void   UppdateVertexCNTCell();
 bool   CheckFaceAngle(links *);
+double  SystemEnergy();  // it is for bug finding only; slow function
 
+    
+    
+    
 private:
+    
 double m_dx;
 double m_dy;
 double m_dz;

@@ -6,6 +6,13 @@
 #include "links.h"
 #include "SimDef.h"
 #include "CreateMashBluePrint.h"
+struct STRUC_Membrane_Parameters {
+    double lambda;
+    double kappa_geo;
+    double kappa_normal;
+    double kappa; // this is read by another parameters for now; later may change
+    double kappa_g; // this is read by another parameters for now; later may change
+};
 class MESH
 {
 public:
@@ -43,7 +50,7 @@ public:
     std::vector<inclusion*>     m_pInclusion;
     Vec3D                       *m_pBox;
     
-    void GenerateMesh(MeshBluePrint meshblueprint, double kappa, double kappag);
+    void GenerateMesh(MeshBluePrint meshblueprint, double kappa, double kappag, STRUC_Membrane_Parameters smp);
     MeshBluePrint Convert_Mesh_2_BluePrint(MESH *mesh);
     
     // MoveTrinagleFromAGroup2Another

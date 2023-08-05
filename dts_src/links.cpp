@@ -93,6 +93,7 @@ void links::UpdateNormal()
     else
     {
         // this is an edge link
+        std::cout<<" link type "<<m_LinkType<<" \n";
         std::cout<<"error ----> normal vector for edge links has not been defined   \n";
         exit(0);
     }

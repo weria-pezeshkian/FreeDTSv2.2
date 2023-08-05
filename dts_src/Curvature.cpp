@@ -366,7 +366,7 @@ void Curvature::EdgeVertexCurvature(vertex * pvertex)
     
     m_pVertex->m_Geodesic_Curvature = cg;
     m_pVertex->m_Normal_Curvature =cn;
-    
+    m_pVertex->m_VLength = (l1+l2)/2.0;
     
     
 }

@@ -29,6 +29,8 @@ m_kappa=1.0;
     m_KGC = 0;
     m_KNC = 0;
     m_VertexType = 0;
+    m_VLength = 0;                       // length of the vertex
+    m_Lambda = 0;                   // line tension
     
     
 }
@@ -51,7 +53,9 @@ m_kappa=1.0;
     m_Normal_Curvature = 0;
     m_KGC = 0;
     m_KNC = 0;
-    m_VertexType = 0;   
+    m_VertexType = 0;
+    m_VLength = 0;                       // length of the vertex
+    m_Lambda = 0;                   // line tension
 
 }
 vertex::~vertex()

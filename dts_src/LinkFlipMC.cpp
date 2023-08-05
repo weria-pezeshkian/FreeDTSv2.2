@@ -28,6 +28,15 @@ LinkFlipMC::~LinkFlipMC()
 void LinkFlipMC::MC_FlipALink(int step, links *plinks,  double temp)
 {
     
+    if(plinks->m_LinkType==1)
+    {
+        std::cout<<" error---> an edge link cannot be flipped "<<plinks->GetMirrorFlag()<<" \n";
+        if(plinks->GetMirrorFlag()==true)
+        std::cout<<" error---> source code error: mirror flag and edge type are not consistent \n";
+        exit(0);
+    }
+    
+    
     m_AVer.clear();
     m_AT.clear();
     m_AL.clear();
@@ -50,7 +59,6 @@ m_L1=m_pLinks->GetNeighborLink1();
 m_L2=m_pLinks->GetNeighborLink2();
 m_L3=m_Mirror->GetNeighborLink1();
 m_L4=m_Mirror->GetNeighborLink2();
-
 m_T1=m_pLinks->GetTriangle();
 m_T2=m_Mirror->GetTriangle();
     
@@ -141,47 +149,99 @@ m_V4=m_Mirror->GetV3();
             m_simplexarea+=(m_T1)->GetArea();
             m_simplexarea+=(m_T2)->GetArea();
     }
+
     EnergyDifference();
+
 }
 void LinkFlipMC::EnergyDifference()
 {
-double DE=0.0;
-bool condition=CheckFlipCondition();   
+    double DE=0.0;
+    if(CheckFlipCondition()==false)
+        return;
 
-    if(condition==true)
-    {	
-	PerformMove();    
-    	m_T1->UpdateNormal_Area(m_pBox);
-    	m_T2->UpdateNormal_Area(m_pBox);
+        PerformMove();
+        m_T1->UpdateNormal_Area(m_pBox);
+        m_T2->UpdateNormal_Area(m_pBox);
+    
+        m_face=CheckFaceAngle();
+
+        if(m_face==false)
+        {
+            RejectMove();
+            return;
+        }
 
 
-	m_face=CheckFaceAngle();
-	if(m_face==true)
-	{
-		m_pLinks->UpdateNormal();
+    
+    // we should check if they have a mirror
+        if(m_pLinks->m_LinkType==0)
+        {
+            m_pLinks->UpdateNormal();
         	m_pLinks->UpdateShapeOperator(m_pBox);
-		m_L1->UpdateNormal();
+        }
+        else
+        {
+            m_pLinks->UpdateEdgeVector(m_pBox);
+        }
+        if(m_L1->m_LinkType==0)
+        {
+            m_L1->UpdateNormal();
         	m_L1->UpdateShapeOperator(m_pBox);
-		m_L2->UpdateNormal();
-        	m_L2->UpdateShapeOperator(m_pBox);
-		m_L3->UpdateNormal();
-        	m_L3->UpdateShapeOperator(m_pBox);
-		m_L4->UpdateNormal();
-        	m_L4->UpdateShapeOperator(m_pBox);
+        }
+        else
+        {
+            m_L1->UpdateEdgeVector(m_pBox);
+        }
+        if(m_L2->m_LinkType==0)
+        {
+            m_L2->UpdateNormal();
+            m_L2->UpdateShapeOperator(m_pBox);
+        }
+        else
+        {
+            m_L2->UpdateEdgeVector(m_pBox);
+        }
+        if(m_L3->m_LinkType==0)
+        {
+            m_L3->UpdateNormal();
+            m_L3->UpdateShapeOperator(m_pBox);
+        }
+        else
+        {
+            m_L3->UpdateEdgeVector(m_pBox);
+        }
+        if(m_L4->m_LinkType==0)
+        {
+            m_L4->UpdateNormal();
+            m_L4->UpdateShapeOperator(m_pBox);
+        }
+        else
+        {
+            m_L4->UpdateEdgeVector(m_pBox);
+        }
 
-		
+
+
+        if(m_V1->m_VertexType==0)
+            (m_pState->CurvatureCalculator())->SurfVertexCurvature(m_V1);
+        else
+            (m_pState->CurvatureCalculator())->EdgeVertexCurvature(m_V1);
         
-        (m_pState->CurvatureCalculator())->SurfVertexCurvature(m_V1);
-        (m_pState->CurvatureCalculator())->SurfVertexCurvature(m_V2);
-        (m_pState->CurvatureCalculator())->SurfVertexCurvature(m_V3);
-        (m_pState->CurvatureCalculator())->SurfVertexCurvature(m_V4);
-
-	}
-
-    }
-
-if(m_face==true && condition==true)
-{ 
+        if(m_V2->m_VertexType==0)
+            (m_pState->CurvatureCalculator())->SurfVertexCurvature(m_V2);
+        else
+            (m_pState->CurvatureCalculator())->EdgeVertexCurvature(m_V2);
+    
+        if(m_V3->m_VertexType==0)
+            (m_pState->CurvatureCalculator())->SurfVertexCurvature(m_V3);
+        else
+            (m_pState->CurvatureCalculator())->EdgeVertexCurvature(m_V3);
+    
+        if(m_V4->m_VertexType==0)
+            (m_pState->CurvatureCalculator())->SurfVertexCurvature(m_V4);
+        else
+            (m_pState->CurvatureCalculator())->EdgeVertexCurvature(m_V4);
+    
 	Energy EE(m_pInc);
 	double NewEnergy=EE.Energy_OneLinkFlip(m_pLinks);
     
@@ -279,13 +339,6 @@ if(m_face==true && condition==true)
 
             	}
 }
-else if(condition==true)
-{
-RejectMove();
-}
-
-
-}
 void LinkFlipMC::AccpetMove()
 {
     if(m_pCFGC->GetState()==true)
@@ -300,9 +353,14 @@ void LinkFlipMC::PerformMove()
     m_NeighborLinks.push_back(*m_L2);
     m_NeighborLinks.push_back(*m_L3);
     m_NeighborLinks.push_back(*m_L4);
+    
+    if(m_L1->m_LinkType==0)
     m_NeighborLinks.push_back(*(m_L1->GetMirrorLink()));
+    if(m_L2->m_LinkType==0)
     m_NeighborLinks.push_back(*(m_L2->GetMirrorLink()));
+    if(m_L3->m_LinkType==0)
     m_NeighborLinks.push_back(*(m_L3->GetMirrorLink()));
+    if(m_L4->m_LinkType==0)
     m_NeighborLinks.push_back(*(m_L4->GetMirrorLink()));
 
     m_AVer.push_back(*m_V1);
@@ -375,44 +433,27 @@ m_pLinks->Flip();
 bool LinkFlipMC::CheckFlipCondition()
 {
 Vec3D Box=(*m_pBox);
-      bool condition=true;   
-
-
-
 //==================== check if the vertex has more then three link
 	std::vector <vertex *> list1=m_V1->GetVNeighbourVertex();
     std::vector <vertex *> list2=m_V2->GetVNeighbourVertex();
-    std::vector <vertex *> list3=m_V3->GetVNeighbourVertex();
-    std::vector <vertex *> list4=m_V4->GetVNeighbourVertex();
+    //std::vector <vertex *> list3=m_V3->GetVNeighbourVertex();
+    //std::vector <vertex *> list4=m_V4->GetVNeighbourVertex();
 
 	if(list1.size()<4 || list2.size()<4 )
-	condition=false;
+	 return false;
 
 //	if(list3.size()>9 || list4.size()>9 )
 //	condition=false;
 
 //==================== check if this link already exist
-   if(condition==true)
-   {
-       
     std::vector <vertex *> mvn=m_V3->GetVNeighbourVertex();
     for (std::vector<vertex *>::iterator it = mvn.begin() ; it != mvn.end(); ++it)
     {
-        
         if((*it)->GetVID()==m_V4->GetVID())
-        {
-            condition=false;
-          //  std::cout<<"wiered \n";
-            break;
-        }
+            return false;
     }
-       
-   }
-    
-    
 //==================== check the length of the new link
-    if(condition==true)
-    {
+
  		double x1=m_V3->GetVXPos();
 		double y1=m_V3->GetVYPos();
 		double z1=m_V3->GetVZPos();
@@ -422,55 +463,34 @@ Vec3D Box=(*m_pBox);
 		double dx=x2-x1;
         if(fabs(dx)>Box(0)/2.0)
         {
-            
-            
             if(dx<0)
                 dx=Box(0)+dx;
             else if(dx>0)
                 dx=dx-Box(0);
-            
-
-            
         }
 		double dy=y2-y1;
         if(fabs(dy)>Box(1)/2.0)
         {
-            
-            
             if(dy<0)
                 dy=Box(1)+dy;
             else if(dy>0)
                 dy=dy-Box(1);
-            
-
-
-            
         }
 		double dz=z2-z1;
         if(fabs(dz)>Box(2)/2.0)
         {
-            
-            
             if(dz<0)
                 dz=Box(2)+dz;
             else if(dz>0)
                 dz=dz-Box(2);
-            
-          
-
-            
         }
 		double l2=dx*dx+dy*dy+dz*dz;
 
        if(l2>(*m_pLmax2) || l2<(*m_pLmin2))
-	condition=false;
-        
-        
-        if(l2<(*m_pLmin2))
-            std::cout<<"l= "<<l2<<"This should not happen error 20120 \n";
-    }
+	      return false;
+    
 //==================== check if the v3 of the links is same
-return condition;
+return true;
 }
 void LinkFlipMC::RejectMove()
 {
@@ -490,12 +510,28 @@ void LinkFlipMC::RejectMove()
      *(m_L2)=m_NeighborLinks.at(1);
      *(m_L3)=m_NeighborLinks.at(2);
      *(m_L4)=m_NeighborLinks.at(3);
-     *(m_L1->GetMirrorLink())=m_NeighborLinks.at(4);
-     *(m_L2->GetMirrorLink())=m_NeighborLinks.at(5);
-     *(m_L3->GetMirrorLink())=m_NeighborLinks.at(6);
-     *(m_L4->GetMirrorLink())=m_NeighborLinks.at(7);   
-
     
+    int i=4;
+    if(m_L1->m_LinkType==0)
+    {
+     *(m_L1->GetMirrorLink())=m_NeighborLinks.at(i);
+        i++;
+    }
+    if(m_L2->m_LinkType==0)
+    {
+     *(m_L2->GetMirrorLink())=m_NeighborLinks.at(i);
+        i++;
+    }
+    if(m_L3->m_LinkType==0)
+    {
+     *(m_L3->GetMirrorLink())=m_NeighborLinks.at(i);
+        i++;
+    }
+    if(m_L4->m_LinkType==0)
+    {
+     *(m_L4->GetMirrorLink())=m_NeighborLinks.at(i);
+        i++;
+    }
     
     std::vector<links>::iterator itr=m_LIntEChange.begin();
     for (std::vector<links *>::iterator it = m_pLIntEChange.begin() ; it != m_pLIntEChange.end(); ++it)
@@ -517,60 +553,43 @@ void LinkFlipMC::RejectMove()
 //====
 bool   LinkFlipMC::CheckFaceAngle()
 {
-    bool is=true;
     Vec3D n1=(m_pLinks->GetTriangle())->GetNormalVector();
     Vec3D n2=((m_pLinks->GetMirrorLink())->GetTriangle())->GetNormalVector();
-
     
-    if(m_T1->GetNormalVector()(0)!=(m_pLinks->GetTriangle())->GetNormalVector()(0))
-        std::cout<<"they are different \n";
-    
-    
-    if(m_T2->GetNormalVector()(0)!=((m_pLinks->GetMirrorLink())->GetTriangle())->GetNormalVector()(0))
-        std::cout<<"they are different!!! \n";
-
     if(n1.dot(n1,n2)<(*m_pminAngle))
+        return false;
+
+    if((m_pLinks->GetNeighborLink1())->m_LinkType==0)
     {
-        is=false;
-    }
-    else
-    {
-        
         Vec3D n11=(((m_pLinks->GetNeighborLink1())->GetMirrorLink())->GetTriangle())->GetNormalVector();
-        
         if (n1.dot(n1,n11)<(*m_pminAngle))
-        {
-            is=false;
-        }
-        else
-        {
-            Vec3D n12=(((m_pLinks->GetNeighborLink2())->GetMirrorLink())->GetTriangle())->GetNormalVector();
-
-            if (n1.dot(n1,n12)<(*m_pminAngle))
-            {
-                is=false;
-            }
-            else
-            {
-                Vec3D n21=((((m_pLinks->GetMirrorLink())->GetNeighborLink1())->GetMirrorLink())->GetTriangle())->GetNormalVector();
-                if (n2.dot(n2,n21)<(*m_pminAngle))
-                {
-                    is=false;
-                }
-                else
-                {
-                    Vec3D n22=((((m_pLinks->GetMirrorLink())->GetNeighborLink2())->GetMirrorLink())->GetTriangle())->GetNormalVector();
-                    if (n2.dot(n2,n22)<(*m_pminAngle))
-                    {
-                        is=false;
-                    }
-                }
-
-            }
-
-        }
-
+            return false;
     }
     
-    return is;
+
+    if((m_pLinks->GetNeighborLink2())->m_LinkType==0)
+    {
+        Vec3D n12=(((m_pLinks->GetNeighborLink2())->GetMirrorLink())->GetTriangle())->GetNormalVector();
+        if (n1.dot(n1,n12)<(*m_pminAngle))
+            return false;
+    }
+
+    
+    links *mlink = m_pLinks->GetMirrorLink();
+    
+    if((mlink->GetNeighborLink1())->m_LinkType==0)
+    {
+        Vec3D n21=(((mlink->GetNeighborLink1())->GetMirrorLink())->GetTriangle())->GetNormalVector();
+        if (n2.dot(n2,n21)<(*m_pminAngle))
+            return false;
+    }
+    
+    if((mlink->GetNeighborLink2())->m_LinkType==0)
+    {
+        Vec3D n22=(((mlink->GetNeighborLink2())->GetMirrorLink())->GetTriangle())->GetNormalVector();
+        if (n2.dot(n2,n22)<(*m_pminAngle))
+            return false;
+    }
+
+    return true;
 }

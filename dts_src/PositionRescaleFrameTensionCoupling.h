@@ -11,6 +11,8 @@
 #include "SpringPotentialBetweenTwoGroups.h"
 #include "CNTCell.h"
 #include "triangle.h"
+#include "MESH.h"
+
 //#include "State.h"
 class State;
 class PositionRescaleFrameTensionCoupling
@@ -25,39 +27,24 @@ public:
 
 
 public:
-
-    bool MCMoveBoxChange(double dr, double * TotalEnergy, double temp, int step, GenerateCNTCells *pGenCNT, std::vector<vertex *>, std::vector<links *>,std::vector<triangle* > );
+    void initialize();
+    bool MCMoveBoxChange(double dr, double * TotalEnergy, double temp, int step, GenerateCNTCells *pGenCNT );
 
 private:
+
+
+    
+    //=== old functions
     void CheckCNTSize();
-    void CheckMinDistance();
     double DistanceSquardBetweenTwoVertices(vertex *,vertex *,Vec3D );
-    void CheckLinkLength();
-    void CheckFaceAngle();
+    bool CheckFaceAngle();
     void PerformMove();
     void RejectMove();
     void AcceptMove();
     bool CheckFaceAngle(links * l);
 private:
-Inclusion_Interaction_Map * m_pInc;
 
-std::vector<CNTCell *> m_pAllCNT;  
-std::vector<vertex* > m_pAllVertex;
-std::vector<links* > m_pAllLinks;
-std::vector<triangle* > m_pAllTriangle;
-GenerateCNTCells *m_pGenCNT;
-
-    
-std::vector<triangle> m_AllTriangle;   
-std::vector<vertex > m_AllVertex;
-std::vector<links > m_AllLinks;
-std::vector<links > m_AllProjectedLinks;   
-
-
-    State *m_pState;
-
-    Vec3D *m_pBox;
-double m_SigmaP;
+    double m_SigmaP;
     double m_dr;
     double m_drx;
     double m_dry;
@@ -65,28 +52,41 @@ double m_SigmaP;
     bool m_UpdateCNT;
     bool m_Move;
     double m_Beta; // 1/k_BT
-    
-    
     double m_oldLx;
     double m_oldLy;
     double m_newLx;
     double m_newLy;
     int m_step;
-
     double m_Lnox;
     double m_Lnoy;
-    
-
-     double *m_pLmin2;
+    double *m_pLmin2;
     double *m_pLmax2;
     double *m_pminAngle;
     CouplingtoFixedGlobalCurvature *m_pCFGC;
     SpringPotentialBetweenTwoGroups *m_pSPBTG;
-    
     double m_DetaR;
     double m_DeltaA;
 
 
+private:
+    //=== update since 2023
+    bool CheckMinDistance();
+    
+    //=== updates aug 2023
+    private:
+    Energy *m_pEnergyCalculator;
+    std::vector<CNTCell *> m_pAllCNT;
+    GenerateCNTCells *m_pGenCNT;
+    State *m_pState;
+    Vec3D *m_pBox;
+    
+    //=== copy containeir
+    std::vector<triangle> m_ActiveT;
+    std::vector<vertex > m_ActiveV;
+    std::vector<links > m_SurfL;
+    std::vector<links > m_MSurfL;
+    std::vector<links > m_EdgeL;
+    MESH* m_pMESH;
 
 };
 

@@ -22,6 +22,7 @@
 #include "Apply_Constant_Vertex_Area.h"
 #include "OpenEdgeEvolutionWithConstantVertex.h"
 #include "Curvature.h"
+#include "Energy.h"
 
 /*#include "inclusion.h"
 #include "triangle.h"
@@ -91,9 +92,12 @@ struct STRUC_MCMOVES {  // data structure for turning on and off certain moves
     bool VertexMove;
     bool LinkFlip;
     bool InclusionMove;
+    bool EdgeVertexMove;
     double VertexMoveRate;
     double LinkFlipRate;
     double InclusionMoveRate;
+    double EdgeVertexMoveRate;
+
 };
 struct Parallel_Tempering {  // data structure for turning on and off certain moves
     bool State;
@@ -110,6 +114,7 @@ struct STRUC_ActiveTwoStateInclusion {
     double persentage;
     double gama;
 };
+
 class State
 {
 public:
@@ -132,6 +137,7 @@ inline InclusionMCMove *GetInclusionMCMove()                     {return &m_IncM
 inline Restart *GetRestart()                                    {return &m_Restart;}
 inline CoupleToWallPotential *GetRigidWallCoupling()                                    {return &m_RigidWallCoupling;}
 inline ActiveTwoStateInclusion *GetActiveTwoStateInclusion()                                    {return &m_ActiveTwoStateInclusion;}
+inline Energy *GetEnergyCalculator()                                    {return &m_EnergyCalculator;}
 inline OpenEdgeEvolutionWithConstantVertex *GetOpenEdgeEvolutionWithConstantVertex()                                    {return &m_OpenEdgeEvolutionWithConstantVertex;}
     
 public:
@@ -195,6 +201,9 @@ public:
     CoupleToWallPotential m_RigidWallCoupling;
     OpenEdgeEvolutionWithConstantVertex m_OpenEdgeEvolutionWithConstantVertex;
     Curvature m_CurvatureCalculations;
+    STRUC_Membrane_Parameters m_data_membrane_param;
+    Energy m_EnergyCalculator;
+    
 private:
     MESH          m_Mesh;
     void ExploreArguments();         // updates variables based on the command line arguments

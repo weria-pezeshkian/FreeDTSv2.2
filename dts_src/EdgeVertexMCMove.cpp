@@ -26,7 +26,6 @@ EdgeVertexMCMove::~EdgeVertexMCMove()
 void EdgeVertexMCMove::MC_MoveAVertex(int step, vertex *pvertex, double dx, double dy, double dz,double temp)
 {
     
-    std::cout<<" It get here edge v move \n";
     // 1) first check the cnt and see after such a move what will happen
     // 2) Constant volume is meaning less
     // 3) constant global curvature ???
@@ -64,6 +63,7 @@ m_dy=dy;
 m_dz=dz;
 m_oldEnergy=0.0;
 m_pAVer=m_pvertex->GetVNeighbourVertex();
+    
 m_ChangeCNT=false;
 m_Thermal=temp;
 m_MoveValidity=0;
@@ -76,7 +76,6 @@ m_MoveValidity=0;
        
    EnergyDifference();
     m_face=true;
-    std::cout<<" It end here edge v move \n";
 
 }
 void EdgeVertexMCMove::EnergyDifference()
@@ -131,6 +130,9 @@ void EdgeVertexMCMove::EnergyDifference()
            else
             nl->UpdateEdgeVector(m_pBox);
         }
+        // the PrecedingEdge should be updated directly, it is not a part of vertex link and does not have a mirror
+        (m_pvertex->m_pPrecedingEdgeLink)->UpdateEdgeVector(m_pBox);
+
     //==== Update vertexes
 
         (m_pState->CurvatureCalculator())->EdgeVertexCurvature(m_pvertex);
@@ -205,6 +207,7 @@ void EdgeVertexMCMove::Move()
 {
 
 	m_oldEnergy=m_pvertex->GetEnergy();
+
 	m_vertex=(*m_pvertex);
     // Making a copy of all orginal vertices: note, we cannot use this list to replace the orginal one, all pointing pointers will go wrong, just for later use to go back to what it was
         for (std::vector<vertex *>::iterator it = m_pAVer.begin() ; it != m_pAVer.end(); ++it)
@@ -212,6 +215,7 @@ void EdgeVertexMCMove::Move()
 		    m_AVer.push_back(*(*it));
         	m_oldEnergy+=(*it)->GetEnergy();
         }
+
 
     m_pvertex->UpdateVXPos(m_X);
 	m_pvertex->UpdateVYPos(m_Y);
@@ -503,6 +507,9 @@ int i=0;
 #endif
         ++itr;
     }
+    // we need this because it is not a part of vertex links and does not have a mirror
+    (m_pvertex->m_pPrecedingEdgeLink)->UpdateEdgeVector(m_pBox);
+
 }
 double EdgeVertexMCMove::Length2WithAVertex(Vec3D v1, vertex* ver)
 {

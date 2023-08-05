@@ -26,14 +26,14 @@
  Copyright (c) Weria Pezeshkian
  MC simulation class, runs mc simulation if it is defined in the input file.
  */
-MC_Simulation::MC_Simulation(State *pState):m_pActiveT((pState->m_pMesh)->m_pActiveT), m_pActiveL((pState->m_pMesh)->m_pActiveL), m_pInclusions((pState->m_pMesh)->m_pInclusion),    m_pHalfLinks1((pState->m_pMesh)->m_pHL),m_pHalfLinks2((pState->m_pMesh)->m_pMHL), m_pActiveV((pState->m_pMesh)->m_pActiveV),m_pSurfV((pState->m_pMesh)->m_pSurfV),m_pEdgeV((pState->m_pMesh)->m_pEdgeV),m_pEdgeL((pState->m_pMesh)->m_pEdgeL)
+MC_Simulation::MC_Simulation(State *pState): m_pMESH(pState->m_pMesh), m_pActiveT((pState->m_pMesh)->m_pActiveT), m_pActiveL((pState->m_pMesh)->m_pActiveL), m_pInclusions((pState->m_pMesh)->m_pInclusion),    m_pHalfLinks1((pState->m_pMesh)->m_pHL),m_pHalfLinks2((pState->m_pMesh)->m_pMHL), m_pActiveV((pState->m_pMesh)->m_pActiveV),m_pSurfV((pState->m_pMesh)->m_pSurfV),m_pEdgeV((pState->m_pMesh)->m_pEdgeV),m_pEdgeL((pState->m_pMesh)->m_pEdgeL)
 
 {
     
     
     
     double simtime = clock();
-
+    m_pState =  pState,
 #if TEST_MODE == Enabled
     std::cout<<"----> Note: We have reached simulation class -- : "<<std::endl;
 #endif
@@ -86,14 +86,14 @@ bool FrameTensionCouplingFlag =(pState->m_FrameTension).State;
     //========= VTU files
         WritevtuFiles VTU(pState);
         std::string file="conf0.vtu";
-        VTU.Writevtu(m_pActiveV,m_pActiveT,m_pHalfLinks1,file);
+        VTU.Writevtu((m_pMESH->m_pActiveV),(m_pMESH->m_pActiveT),(m_pMESH->m_pHL),file);
     
     if(pState->m_IndexFile == true)
     ReadIndexFile(pState->m_IndexFileName);
 //=========================================================================================
 //======== We now create CNT object so that we can generate the cells anytime we want
 //============================================================================================
-GenerateCNTCells CNT(m_pActiveV,pState->m_CNTCELL,m_pBox);
+GenerateCNTCells CNT((m_pMESH->m_pActiveV),pState->m_CNTCELL,m_pBox);
 CNT.Generate();
 #if DEBUG_MODE == Enabled
     std::cout<<" simulation: creating cnt \n";
@@ -102,7 +102,7 @@ RNG Random1(pState->m_Seed);
 
 //========== Update the Mesh geometry variables ===============
 //======== Prepare the trinagles: calculate area and normal vector
-for (std::vector<triangle *>::iterator it = m_pActiveT.begin() ; it != m_pActiveT.end(); ++it)
+for (std::vector<triangle *>::iterator it = (m_pMESH->m_pActiveT).begin() ; it != (m_pMESH->m_pActiveT).end(); ++it)
 (*it)->UpdateNormal_Area(m_pBox);
     
     
@@ -110,7 +110,7 @@ for (std::vector<triangle *>::iterator it = m_pActiveT.begin() ; it != m_pActive
     std::cout<<" simulation: tri normal \n";
 #endif
 //===== Prepare links:  normal vector and shape operator
-for (std::vector<links *>::iterator it = m_pHalfLinks1.begin() ; it != m_pHalfLinks1.end(); ++it)
+for (std::vector<links *>::iterator it = (m_pMESH->m_pHL).begin() ; it != (m_pMESH->m_pHL).end(); ++it)
 {
         (*it)->UpdateNormal();
         (*it)->UpdateShapeOperator(m_pBox);
@@ -120,14 +120,14 @@ for (std::vector<links *>::iterator it = m_pHalfLinks1.begin() ; it != m_pHalfLi
     std::cout<<" simulation: link normal \n";
 #endif
 //======= Prepare vertex:  area and normal vector and curvature of surface vertices not the edge one
-for (std::vector<vertex *>::iterator it = m_pSurfV.begin() ; it != m_pSurfV.end(); ++it)
+for (std::vector<vertex *>::iterator it = (m_pMESH->m_pSurfV).begin() ; it != (m_pMESH->m_pSurfV).end(); ++it)
     (pState->CurvatureCalculator())->SurfVertexCurvature(*it);
     
 //====== edge links should be updated
-for (std::vector<links *>::iterator it = m_pEdgeL.begin() ; it != m_pEdgeL.end(); ++it)
+for (std::vector<links *>::iterator it = (m_pMESH->m_pEdgeL).begin() ; it != (m_pMESH->m_pEdgeL).end(); ++it)
         (*it)->UpdateEdgeVector(m_pBox);
 
-for (std::vector<vertex *>::iterator it = m_pEdgeV.begin() ; it != m_pEdgeV.end(); ++it)
+for (std::vector<vertex *>::iterator it = (m_pMESH->m_pEdgeV).begin() ; it != (m_pMESH->m_pEdgeV).end(); ++it)
         (pState->CurvatureCalculator())->EdgeVertexCurvature(*it);
     
 #if DEBUG_MODE == Enabled
@@ -136,10 +136,11 @@ for (std::vector<vertex *>::iterator it = m_pEdgeV.begin() ; it != m_pEdgeV.end(
 //=========================================================================================
 // =================   Calculate Energy at the start of the simulation
 //========================================================================================
-Energy En (pState->m_pinc_ForceField);
+Energy*   pEnergyCalculator = pState->GetEnergyCalculator();
 double *tot_Energy = &(pState->m_TotEnergy);
-*tot_Energy=En.TotalEnergy(m_pSurfV,m_pHalfLinks1);
-    
+*tot_Energy=pEnergyCalculator->TotalEnergy(m_pMESH->m_pSurfV,m_pMESH->m_pHL);
+*tot_Energy=*tot_Energy+ pEnergyCalculator->TotalEnergy(m_pMESH->m_pEdgeV,m_pMESH->m_pEdgeL);
+
 #if DEBUG_MODE == Enabled
     std::cout<<" simulation: system energy \n";
 #endif
@@ -185,6 +186,7 @@ if(mc_linkflip == true || mc_vertexmove == true)
 int TotNoVertex=m_pSurfV.size();
 int SigmaPTau = (pState->m_FrameTension).updatePeriod;
     PositionRescaleFrameTensionCoupling * mc_box= pState->GetRescaleTension();
+    mc_box->initialize();
     CoupleToWallPotential * mc_rigidwall = pState->GetRigidWallCoupling();
     if(mc_rigidwall->GetState()==true)
     mc_rigidwall->Initialize(m_pActiveV);
@@ -282,15 +284,15 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
        if(VerexORbox>QQ)
        {
            double movechance=Random1.UniformRNG(1.0); // to check which move we should do
-           
             if(mc_linkflip == true )//&& movechance<mc_linkfliprate) // do link flip if it is allowed
             {
 #if DEBUG_MODE == Enabled
                 #pragma omp critical
                 std::cout<<"LinkFlip starts" <<std::endl;
 #endif
-                int m=Random1.IntRNG(m_pHalfLinks1.size());
-                links *Tlinks = m_pHalfLinks1.at(m);  // chose a link randomly
+                
+                int m=Random1.IntRNG((m_pMESH->m_pHL).size());
+                links *Tlinks = (m_pMESH->m_pHL)[m];  // chose a link randomly
                 if(Tlinks->GetMirrorFlag()==true)
                 {
                     double thermal=Random1.UniformRNG(1.0);
@@ -309,9 +311,8 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
                 #pragma omp critical
                 std::cout<<"vertex move starts" <<std::endl;
 #endif
-                int n=Random1.IntRNG(m_pSurfV.size());
-                vertex *lpvertex = m_pSurfV.at(n);   //
-
+                int n=Random1.IntRNG((m_pMESH->m_pSurfV).size());
+                vertex *lpvertex = (m_pMESH->m_pSurfV)[n];   //
                 if(lpvertex->GetGroupName()!=pState->m_FreezGroupName)
                 {
                     double dx=1-2*Random1.UniformRNG(1.0);            // Inside a cube with the side length of R
@@ -319,15 +320,12 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
                     double dz=1-2*Random1.UniformRNG(1.0);
                     double thermal=Random1.UniformRNG(1.0);
                     bool cwp = true;
-
                     if(mc_rigidwall->GetState()==true)
                     cwp=mc_rigidwall->CheckVertexMoveWithinWalls(mcstep,R*dx,R*dy,R*dz,lpvertex);
 
                     if(cwp==true )
                     {
-
                     mc_VMove->MC_MoveAVertex(mcstep,lpvertex,R*dx,R*dy,R*dz,thermal);
-
                     VRate+=mc_VMove->GetMoveValidity();
                     totalvmove++;
                     }
@@ -339,13 +337,15 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
             }// end of if(mc_vertexmove == true)
            
            
-    //===================================since 2023 =
-           // this should be made better; will be too much vertex moves that is not needed.
-          // if(edgevertexmove == true)
+    //===================================since Aug 2023 ====================
+           if ((pState->m_MCMove).EdgeVertexMove == true && m_pEdgeV.size()!=0 )
            {
-           //mc_EdgeVMove
-           int n=Random1.IntRNG(m_pEdgeV.size());
-           vertex *lpvertex = m_pEdgeV.at(n);   //
+#if DEBUG_MODE == Enabled
+                   #pragma omp critical
+                   std::cout<<"EdgeVertex move starts" <<std::endl;
+#endif
+               int n=Random1.IntRNG((m_pMESH->m_pEdgeV).size());
+               vertex *lpvertex = (m_pMESH->m_pEdgeV)[n];   //
                if(lpvertex->GetGroupName()!=pState->m_FreezGroupName)
                {
                    double dx=1-2*Random1.UniformRNG(1.0);            // Inside a cube with the side length of R
@@ -353,21 +353,17 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
                    double dz=1-2*Random1.UniformRNG(1.0);
                    double thermal=Random1.UniformRNG(1.0);
                    bool cwp = true;
-
-                   if(mc_rigidwall->GetState()==true)
+                   if(mc_rigidwall->GetState()==true) // check if the move is valid within the defined wall type
                    cwp=mc_rigidwall->CheckVertexMoveWithinWalls(mcstep,R*dx,R*dy,R*dz,lpvertex);
-
                    if(cwp==true )
                    {
-
                        mc_EdgeVMove->MC_MoveAVertex(mcstep,lpvertex,R*dx,R*dy,R*dz,thermal);
-
-                   //=mc_VMove->GetMoveValidity();
-                   //totalvmove++;
+                      // VRate =mc_EdgeVMove->GetMoveValidity();
+                       //totalvmove++;
                    }
 #if DEBUG_MODE == Enabled
                    #pragma omp critical
-                   std::cout<<"Vertex move Ends" <<std::endl;
+                   std::cout<<"EdgeVertex move Ends" <<std::endl;
 #endif
               }
            
@@ -390,7 +386,7 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
             bool move;
             if(FrameTensionCouplingType=="Position_Rescale")
              {
-                move=mc_box->MCMoveBoxChange(RB*dr, tot_Energy, thermal, mcstep, (&CNT),m_pActiveV,m_pHalfLinks1,m_pActiveT);
+                move=mc_box->MCMoveBoxChange(RB*dr, tot_Energy, thermal, mcstep, (&CNT));
                 if(move==true)
                 {
                     boxrate=boxrate+1;
@@ -406,19 +402,23 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
         }
     }//for (int j=0;j<TotNoVertex;j++)
     
-    // Edge evolotion
-#if DEBUG_MODE == Enabled
-                    #pragma omp critical
-                    std::cout<<"edge evolution starts" <<std::endl;
-#endif
-    if(mc_edge_evo->m_State==true)
+
+    
+
+    if(mc_edge_evo->m_F==true && mcstep%(mc_edge_evo->m_Rate)==0)
     {
-           mc_edge_evo->MC_Move(&Random1,m_Lmin2,m_Lmax2,m_minAngle);
-    }
+        // Edge evolotion
+#if DEBUG_MODE == Enabled
+                        #pragma omp critical
+                        std::cout<<"edge evolution starts" <<std::endl;
+#endif
+        mc_edge_evo->MC_Move(&Random1,m_Lmin2,m_Lmax2,m_minAngle);
 #if DEBUG_MODE == Enabled
                     #pragma omp critical
                     std::cout<<"edge evolution ends " <<std::endl;
 #endif
+    }
+
     
 //==== Active Inclsuion exchange two state; as these movie are indepenednt of the energy based move, the have no conditions
 //===================================
@@ -437,7 +437,7 @@ if(Targeted_State==true)
 if(mcstep%displaywrite==0 && displaywrite!=0)
 {
         std::string file="conf"+f.Int_to_String(int(mcstep/displaywrite))+".vtu";
-        VTU.Writevtu(m_pActiveV,m_pActiveT,m_pActiveL,file);
+        VTU.Writevtu((m_pMESH->m_pActiveV),(m_pMESH->m_pActiveT),(m_pMESH->m_pHL),file);
 }
 if(Targeted_State==true)
 if((pState->m_RESTART).restartPeriod!=0 && mcstep%((pState->m_RESTART).restartPeriod)==0)
@@ -555,7 +555,7 @@ if(mcstep%500==0) // Optimize R and RB
     {
         energyfile.close();
     }
-    std::cout<<SystemEnergy(pState)<<"  "<<*tot_Energy<<std::endl;
+    std::cout<<SystemEnergy()<<"  "<<*tot_Energy<<std::endl;
     simtime=clock()-simtime;
     #pragma omp critical
     std::cout<<" total time "<<((float)simtime)/CLOCKS_PER_SEC<<" second \n";
@@ -572,11 +572,10 @@ MC_Simulation::~MC_Simulation()
 {
 }
 //================A function to calculate energy of the mesh from scratch  ==================================
-double  MC_Simulation::SystemEnergy(State * pState)
+double  MC_Simulation::SystemEnergy()
 {
     double en = 0;
-    
-    for (std::vector<vertex *>::iterator it1 = m_pActiveV.begin() ; it1 != m_pActiveV.end(); ++it1)
+    for (std::vector<vertex *>::iterator it1 = (m_pMESH->m_pEdgeV).begin() ; it1 != (m_pMESH->m_pEdgeV).end(); ++it1)
     {
         double x=(*it1)->GetVXPos();
         double y=(*it1)->GetVYPos();
@@ -585,23 +584,31 @@ double  MC_Simulation::SystemEnergy(State * pState)
         (*it1)->UpdateVYPos(y);
         (*it1)->UpdateVZPos(z);
     }
-    for (std::vector<triangle *>::iterator it = m_pActiveT.begin() ; it != m_pActiveT.end(); ++it)
-        (*it)->UpdateNormal_Area(m_pBox);
     
-    
-    for (std::vector<links *>::iterator it = m_pHalfLinks1.begin() ; it != m_pHalfLinks1.end(); ++it)
+    for (std::vector<triangle *>::iterator it = (m_pMESH->m_pActiveT).begin() ; it != (m_pMESH->m_pActiveT).end(); ++it)
+    (*it)->UpdateNormal_Area(m_pBox);
+
+    //===== Prepare links:  normal vector and shape operator
+    for (std::vector<links *>::iterator it = (m_pMESH->m_pHL).begin() ; it != (m_pMESH->m_pHL).end(); ++it)
     {
-        (*it)->UpdateNormal();
-        (*it)->UpdateShapeOperator(m_pBox);
+            (*it)->UpdateNormal();
+            (*it)->UpdateShapeOperator(m_pBox);
     }
-    
-    
-    for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it)
-        (pState->CurvatureCalculator())->SurfVertexCurvature(*it);
-    
-    
-    Energy En (pState->m_pinc_ForceField);
-    en=En.TotalEnergy(m_pActiveV,m_pHalfLinks1);
+
+    //======= Prepare vertex:  area and normal vector and curvature of surface vertices not the edge one
+    for (std::vector<vertex *>::iterator it = (m_pMESH->m_pSurfV).begin() ; it != (m_pMESH->m_pSurfV).end(); ++it)
+        (m_pState->CurvatureCalculator())->SurfVertexCurvature(*it);
+        
+    //====== edge links should be updated
+    for (std::vector<links *>::iterator it = (m_pMESH->m_pEdgeL).begin() ; it != (m_pMESH->m_pEdgeL).end(); ++it)
+            (*it)->UpdateEdgeVector(m_pBox);
+
+    for (std::vector<vertex *>::iterator it = (m_pMESH->m_pEdgeV).begin() ; it != (m_pMESH->m_pEdgeV).end(); ++it)
+            (m_pState->CurvatureCalculator())->EdgeVertexCurvature(*it);
+
+    Energy*   pEnergyCalculator = m_pState->GetEnergyCalculator();
+    en=pEnergyCalculator->TotalEnergy(m_pMESH->m_pSurfV,m_pMESH->m_pHL);
+    en+=pEnergyCalculator->TotalEnergy(m_pMESH->m_pEdgeV,m_pMESH->m_pEdgeL);
     
     return en;
 }
