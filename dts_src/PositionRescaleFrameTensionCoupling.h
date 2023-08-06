@@ -38,6 +38,7 @@ private:
     void CheckCNTSize();
     double DistanceSquardBetweenTwoVertices(vertex *,vertex *,Vec3D );
     bool CheckFaceAngle();
+    bool CheckMaxLinkLength();
     void PerformMove();
     void RejectMove();
     void AcceptMove();
@@ -87,6 +88,10 @@ private:
     std::vector<links > m_MSurfL;
     std::vector<links > m_EdgeL;
     MESH* m_pMESH;
+
+    
+    //double m_tmlarger;
+    //double m_tmsmaller;
 
 };
 

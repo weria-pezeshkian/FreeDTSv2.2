@@ -1,12 +1,13 @@
 Integrator                      = MC
-MC_Moves                        = 1 1 0
+MC_Moves                        = 1 1 1 0
 Initial_Step                    = 1
 Final_Step                      = 30000
 Display_periodic                = 100
 OutPutEnergy_periodic           = 100
 Restart_periodic                = 10000
-Kappa                           = 10 0
+Kappa                           = 20 0
+Edge_Parameters			= 0  0   0 
 OutPutTRJ_TSI                   = 100  10  TrjTSI
 GeneralOutputFilename           = output
-Frame_Tension                   = on  Position_Rescale 0 5
-
+Frame_Tension                   = on  Position_Rescale -7 5
+OpenEdgeEvolutionWithConstantVertex = on 5  

@@ -50,7 +50,8 @@ void PositionRescaleFrameTensionCoupling::initialize()
     // we do not need this, since it does not matter
     //m_pSPBTG = pstate->Get2GroupHarmonic();
     
-
+   //m_tmlarger = 0;
+   //m_tmsmaller = 0;
 
 }
 bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * tot_Energy, double temp, int step, GenerateCNTCells *pGenCNT)
@@ -76,8 +77,26 @@ bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * to
     m_Lnoy = m_newLy/m_oldLy;
     double AreaRatio=(m_Lnox*m_Lnoy);
 
+   /* if(m_Lnox>1)
+    {
+        m_tmlarger++;
+        std::cout<<m_tmlarger/m_tmsmaller<<" accepted smaller\n";
+    }
+    else if(m_Lnox<1)
+    {
+        std::cout<<m_tmlarger/m_tmsmaller<<" accepted smaller\n";
+        m_tmsmaller++;
+
+    }*/
+
+    
     if(CheckMinDistance()==false)
         return false;
+    
+    if(CheckMaxLinkLength()==false)
+        return false;
+    
+
     
     // === when is coupled to Fixed global curvature; before performing the move we need to calculate the area and total curvature
     // === before any move should be done
@@ -202,19 +221,26 @@ bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * to
 
 
     double diff_energy = (DE+DEArea+eG);
-    int nv = m_ActiveV.size();
-    if(pow((AreaRatio),nv)*exp(-m_Beta*diff_energy)>temp )
-     {
+    int nv = (m_pMESH->m_pActiveV).size();
+   // std::cout<<diff_energy<<"  "<<temp<<"  "<<m_SigmaP<<"  "<<DEArea<<"  "<<(m_newLx*m_newLy-m_oldLx*m_oldLy)<<"\n";
+    //std::cout<<AreaRatio<<"  "<<nv<<"  "<<pow((AreaRatio),nv)<<"  "<<m_Lnox<<"  \n";
+
+   //
+        //if(nv*log(AreaRatio)-m_Beta*diff_energy>log(temp) )
+        if(pow((AreaRatio),nv)*exp(-m_Beta*diff_energy)>temp )
+       {
         if(m_pCFGC->GetState()==true)
         m_pCFGC->UpdateEnergyChange(-m_DeltaA,-m_DetaR);
          
-         (*tot_Energy)=(*tot_Energy)+DE;
+         (*tot_Energy)=(*tot_Energy)+DE;  // we only add DE because this is only elastic energy
          
          // Update area for the constant area system
          if((m_pState->GetApply_Constant_Area())->GetState()==true)
          (m_pState->GetApply_Constant_Area())->UpdateArea(oldarea_FixedTotArea,newarea_FixedTotArea);
 
          m_Move=true;
+           
+
 
       }
       else
@@ -501,7 +527,36 @@ bool PositionRescaleFrameTensionCoupling::CheckMinDistance()
 
 return true;
 }
+/*======================================================================
+ This function goes through all links  checks the distance between vertices after the box change.
+ ======================================================================*/
+bool PositionRescaleFrameTensionCoupling::CheckMaxLinkLength()
+{
+    Vec3D Box;
+    Box(0)=m_newLx;
+    Box(1)=m_newLy;
+    Box(2)=(*m_pBox)(2);
 
+    for (std::vector<links *>::iterator it = (m_pMESH->m_pHL).begin() ; it != (m_pMESH->m_pHL).end(); ++it)
+    {
+        vertex *v1= (*it)->GetV1();
+        vertex *v2= (*it)->GetV2();
+                    double l2=DistanceSquardBetweenTwoVertices(v1,v2,Box);
+                    if(l2>(*m_pLmax2))
+                    return false;
+    }
+    for (std::vector<links *>::iterator it = (m_pMESH->m_pEdgeL).begin() ; it != (m_pMESH->m_pEdgeL).end(); ++it)
+    {
+
+        vertex *v1= (*it)->GetV1();
+        vertex *v2= (*it)->GetV2();
+
+                    double l2=DistanceSquardBetweenTwoVertices(v1,v2,Box);
+                    if(l2>(*m_pLmax2))
+                    return false;
+    }
+    return true;
+}
 
 
 
