@@ -77,8 +77,9 @@ void OpenEdgeEvolutionWithConstantVertex::MC_Move(RNG* rng, double lmin, double 
 #if DEBUG_MODE == Enabled
     std::cout<<" mess_d: MC_Move Function  for the open edge: Starts \n";
 #endif
-    
-if(createorkill<1)
+    int NL = (m_pMESH->m_pEdgeV).size();
+    int NS = (m_pMESH->m_pSurfV).size();
+if(createorkill<0.5)
 {
         // an atempt to create a link                       //       v3
                                                             //      /   \
@@ -109,11 +110,10 @@ if(createorkill<1)
         double *glo_energy=&(m_pState->m_TotEnergy);
 
         double DE = (enew-eold);
-        if(DE<=0 )
-        {
-            (*glo_energy)=(*glo_energy)+DE;
-        }
-        else if(exp(-m_Beta*DE)>thermal )
+
+        
+        
+        if(double(NS)/double(NL+1)*exp(-m_Beta*DE)>thermal )
         {
              (*glo_energy)=(*glo_energy)+DE;
         }
@@ -201,11 +201,8 @@ if(createorkill<1)
         enew+=m_pEnergyCalculator->SingleVertexEnergy(v4);
         double DE = (enew-eold);
 
-        if(DE<=0 )
-        {
-            (*glo_energy)=(*glo_energy)+DE;
-        }
-        else if(exp(-m_Beta*DE)>thermal )
+
+        if(double(NS)/double(NL+1)*exp(-m_Beta*DE)>thermal )
         {
              (*glo_energy)=(*glo_energy)+DE;
         }
@@ -262,11 +259,7 @@ else
 
         double DE = (enew-eold);
                
-        if(DE<=0 )
-        {
-            (*glo_energy)=(*glo_energy)+DE;
-        }
-        else if(exp(-m_Beta*DE)>thermal )
+        if(double(NL)/double(NS+1)*(exp(-m_Beta*DE)>thermal ))
         {
              (*glo_energy)=(*glo_energy)+DE;
         }

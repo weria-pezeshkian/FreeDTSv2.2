@@ -18,7 +18,7 @@ GeneralOutputFilename = output
 Min_Max_LinkLenghtsSquare = 1  3
 OutPutTRJ_TSI = 100  10  TrjTSI  
 OutPutTRJ_BTS = 0  1  dts.bts  
-Frame_Tension = on  Position_Rescale -7  5
+Frame_Tension = on  Position_Rescale 0  5
 Volume_Constraint = off  1000 0  0  1
 INCLUSION
 Define 1 Inclusions 
