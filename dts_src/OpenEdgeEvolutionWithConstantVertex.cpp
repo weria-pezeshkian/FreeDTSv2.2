@@ -442,10 +442,15 @@ void OpenEdgeEvolutionWithConstantVertex::KillALinkOnSurf(links *plink)
     links *ml4 = l4->GetMirrorLink();
     
     // make the plink and mplink a ghost
-    RemoveFromLinkList(plink,m_pMESH->m_pEdgeL);
-    AddtoLinkList(plink,m_pGhostL);
-    RemoveFromLinkList(mplink,m_pMESH->m_pEdgeL);
+    RemoveFromLinkList(plink,m_pMESH->m_pHL);           // too expensive
+    RemoveFromLinkList(mplink,m_pMESH->m_pHL);          // too expensive
+    RemoveFromLinkList(plink,m_pMESH->m_pMHL);          // too expensive
+    RemoveFromLinkList(mplink,m_pMESH->m_pMHL);      // too expensive
+    RemoveFromLinkList(plink,m_pMESH->m_pActiveL);   // too expensive
+    RemoveFromLinkList(mplink,m_pMESH->m_pActiveL);  // too expensive
     AddtoLinkList(mplink,m_pGhostL);
+    AddtoLinkList(plink,m_pGhostL);
+
     
     // adding the 4 mirrors into the edge
     AddtoLinkList(ml1,m_pMESH->m_pEdgeL);
@@ -480,10 +485,10 @@ void OpenEdgeEvolutionWithConstantVertex::KillALinkOnSurf(links *plink)
     AddtoVertexList(v2,m_pMESH->m_pEdgeV);
     AddtoVertexList(v3,m_pMESH->m_pEdgeV);
     AddtoVertexList(v4,m_pMESH->m_pEdgeV);
-    v1->m_VertexType = 1; // v1 is not an edge vertex; it used to be surf vertex
-    v2->m_VertexType = 1; // v2 is not an edge vertex; it used to be surf vertex
-    v3->m_VertexType = 1; // v3 is not an edge vertex; it used to be surf vertex
-    v4->m_VertexType = 1; // v4 is not an edge vertex; it used to be surf vertex
+    v1->m_VertexType = 1; // v1 is now an edge vertex; it used to be surf vertex
+    v2->m_VertexType = 1; // v2 is now an edge vertex; it used to be surf vertex
+    v3->m_VertexType = 1; // v3 is now an edge vertex; it used to be surf vertex
+    v4->m_VertexType = 1; // v4 is now an edge vertex; it used to be surf vertex
 
     v1->m_pEdgeLink = ml2;
     v2->m_pEdgeLink = ml4;
