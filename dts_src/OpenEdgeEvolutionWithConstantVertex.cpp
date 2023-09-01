@@ -138,6 +138,12 @@ if(createorkill<0.5)
             vertex *v1 =m_pMESH->m_pEdgeV.at(n);
         if(Linkisvalid(v1,lmin, lmax, minangle)==false)
             return;
+        
+        if(Anglevalid4Vhole(v1, minangle)==false)        // we should check if the two new trinagules has valid angle
+            return;
+
+        
+        
 
         links* l2 = v1->m_pEdgeLink;
         vertex *v3 = l2->GetV2();
@@ -424,7 +430,7 @@ links* OpenEdgeEvolutionWithConstantVertex::CreateALink(vertex *v1)
 }
 void OpenEdgeEvolutionWithConstantVertex::KillALinkOnSurf(links *plink)
 {
-    std::cout<<" this function has not been impliminted yet \n";
+   // std::cout<<" this function has not been impliminted yet \n";
     links *mplink = plink->GetMirrorLink();
     triangle *t1 = plink->GetTriangle();
     triangle *t2 = mplink->GetTriangle();
@@ -712,4 +718,35 @@ double  OpenEdgeEvolutionWithConstantVertex::SystemEnergy()
     
     
     return en;
+}
+bool OpenEdgeEvolutionWithConstantVertex::Anglevalid4Vhole(vertex *v1, double minangle)
+{
+    
+
+    // Only to check when only 4 vertices in the hole to see the angle is valid
+    bool isvalid = true;
+    
+    links* l2 = v1->m_pEdgeLink;
+    vertex *v3 = l2->GetV2();
+    links* l1 = v3->m_pEdgeLink;
+    vertex *v2 = l1->GetV2();
+    links* l3 = v2->m_pEdgeLink;
+    vertex *v4 = l3->GetV2();;
+
+    triangle t1(0,v1,v2,v3);
+    triangle t2(0,v1,v4,v2);
+
+    Vec3D *Box = v1->GetBox();
+    t1.UpdateNormal_Area(Box);
+    Vec3D n1 = t1.GetNormalVector();
+    t2.UpdateNormal_Area(Box);
+    Vec3D n2 = t2.GetNormalVector();
+    
+
+    if( n1.dot(n1,n2)<minangle)
+        return false;
+
+    
+    return isvalid;
+    
 }

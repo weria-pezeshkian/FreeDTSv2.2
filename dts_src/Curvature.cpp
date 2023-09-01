@@ -333,8 +333,6 @@ void Curvature::EdgeVertexCurvature(vertex * pvertex)
     // the shape of the system                          //         v
                                                         //     l1 / \ l2
                                                  
-
-    
     links* link1 = m_pVertex->m_pPrecedingEdgeLink;
     links* link2 = m_pVertex->m_pEdgeLink;
 
@@ -357,16 +355,44 @@ void Curvature::EdgeVertexCurvature(vertex * pvertex)
     double cn = cur*cosP;
     double cg = sqrt(cur*cur-cn*cn); // should be modefied; does not have sign in it
     
-    // Vec3D P = T*Normal;
-    // Tensor2 TransferMatLG(Normal,T,P);
-    // Tensor2 TransferMatGL=TransferMatLG.Transpose(TransferMatLG);
-    //m_pVertex->UpdateL2GTransferMatrix(TransferMatLG);
-    //m_pVertex->UpdateG2LTransferMatrix(TransferMatGL);
-    
-    
+    std::cout<<Normal.dot(N,T)<<"  "<<Normal.dot(Normal,T)<<"  N*T \n";
+     Vec3D P = Normal*T;
+     Tensor2 TransferMatGL(T,P,Normal);     // P1,P2,N is for other surfaces
+     Tensor2 TransferMatLG=TransferMatGL.Transpose(TransferMatGL);
+     m_pVertex->UpdateL2GTransferMatrix(TransferMatLG);
+     m_pVertex->UpdateG2LTransferMatrix(TransferMatGL);
     m_pVertex->m_Geodesic_Curvature = cg;
     m_pVertex->m_Normal_Curvature =cn;
     m_pVertex->m_VLength = (l1+l2)/2.0;
+    
+    
+   //======== test ======
+    
+       Vec3D p1(1,0,0);
+       Vec3D p2(0,1,0);
+        Vec3D n2(0,0,1);
+    
+       p1=TransferMatLG*p1;
+       p2=TransferMatLG*p2;
+        n2=TransferMatLG*n2;
+    std::cout<<"=========== \n ";
+    std::cout<<p1(0)<<"  "<<p1(1)<<"  "<<p1(2)<<" \n ";
+    std::cout<<T(0)<<"  "<<T(1)<<"  "<<T(2)<<" \n ";
+    std::cout<<p2(0)<<"  "<<p2(1)<<"  "<<p2(2)<<" \n ";
+    std::cout<<P(0)<<"  "<<P(1)<<"  "<<P(2)<<" \n ";
+    std::cout<<n2(0)<<"  "<<n2(1)<<"  "<<n2(2)<<" \n ";
+    std::cout<<Normal(0)<<"  "<<Normal(1)<<"  "<<Normal(2)<<" \n ";
+
+    std::cout<<"=======11 ==== \n ";
+    std::cout<<(TransferMatGL*T)(0)<<"  "<<(TransferMatGL*T)(1)<<"  "<<(TransferMatGL*T)(2)<<" \n ";
+    std::cout<<(TransferMatGL*Normal)(0)<<"  "<<(TransferMatGL*Normal)(1)<<"  "<<(TransferMatGL*Normal)(2)<<" \n ";
+    std::cout<<(TransferMatGL*P)(0)<<"  "<<(TransferMatGL*P)(1)<<"  "<<(TransferMatGL*P)(2)<<" \n ";
+
+#if TEST_MODE == Enabled
+
+#endif
+    
+    
     
     
 }

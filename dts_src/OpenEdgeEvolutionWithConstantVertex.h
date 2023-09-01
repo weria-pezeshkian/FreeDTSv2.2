@@ -36,6 +36,8 @@ private:
     void AddtoVertexList(vertex* z, std::vector<vertex*> &vect);
     void AddtoTriangleList(triangle* z, std::vector<triangle*> &vect);
     double m_Beta;
+    bool Anglevalid4Vhole(vertex *v1, double minangle);
+
 
 public:
     int m_Rate;
