@@ -47,7 +47,7 @@ std::cout<<std::setprecision( Precision );
 Nfunction f;
 double R=pState->m_R_Vertex;   /// Move Vertex  size
 double RB=pState->m_R_Box;   /// box move size
-    m_Beta = (pState->m_Beta);
+    m_Beta = (pState->m_Beta);  // temprature
 int ini=pState->m_Initial_Step;  	// initial step for the Simulation; usually zero
 int final=pState->m_Final_Step;  	// final step for the Simulation
 int box_centering_f = pState->m_Centering; // box centering
@@ -614,7 +614,6 @@ double  MC_Simulation::SystemEnergy()
 }
 bool MC_Simulation::CheckMesh(MESH *pMesh)
 {
-    bool isok = true;
     Vec3D *pBox     = pMesh->m_pBox;
     std::vector<vertex*> pV= pMesh->m_pActiveV;
     std::vector<links*> pL=pMesh->m_pHL;
@@ -625,9 +624,8 @@ bool MC_Simulation::CheckMesh(MESH *pMesh)
     {
         double l2 = CheckLengthBetweenTwoVertex(pV[i],pV[j], pBox);
         if(l2<m_Lmin2)
-        isok =false;
+        return false;
     }
-
     // Check if there are any pair of connected vertices that are to far
     for (std::vector<vertex *>::iterator it = pV.begin() ; it != pV.end(); ++it)
     {
@@ -636,7 +634,7 @@ bool MC_Simulation::CheckMesh(MESH *pMesh)
         {
             double l2 = CheckLengthBetweenTwoVertex(*it, *it2, pBox);
             if(l2>m_Lmax2)
-            isok =false;
+            return false;
         }
     }
 
@@ -645,9 +643,9 @@ bool MC_Simulation::CheckMesh(MESH *pMesh)
     {
         double face  = CheckFaceAngle(*it, pBox);
         if(face<m_minAngle)
-            isok = false;
+            return false;
     }
-    return isok;
+    return true;
 }
 double MC_Simulation::CheckLengthBetweenTwoVertex(vertex* v1, vertex* v2, Vec3D *pBox)
 {

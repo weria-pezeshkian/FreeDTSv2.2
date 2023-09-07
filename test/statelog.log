@@ -21,7 +21,8 @@ OutPutTRJ_BTS = 0  1  dts.bts
 Frame_Tension = off  Position_Rescale 5  5
 Volume_Constraint = off  1000 0  0  1
 INCLUSION
-Define 2 Inclusions 
+Define 3 Inclusions 
  SRotation Type   K  KG KP KL C0 C0P C0L 
 0  noinc  0    0    0    0    0    0    0  
 1  Pro1  20    0    0    0    0    0    0  
+2  Pro1  20    0    0    0    0    0    0  

@@ -22,6 +22,10 @@ struct InclusionType {
     double ITc0;  // curvature
     double ITc1;    // direction curvature 1
     double ITc2;    // direction curvature 2
+    double ITelambda;  // line tension
+    double ITekg;       // geodesic rigidity
+    double ITekn;       // normal curvature line rigidiy
+    double ITecn;       // spontaneous normal  curvature
 };
 class vertex;
 class inclusion

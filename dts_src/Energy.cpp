@@ -95,7 +95,7 @@ else
 
 #if TEST_MODE == Enabled
     if(isnan(Energy)==1)
-    std::cout<<Energy<<" energy not got \n";
+    std::cout<<Energy<<" energy is a problem \n";
 #endif
     return Energy;
 }
@@ -115,18 +115,15 @@ double Energy::SingleEdgeVertexEnergy(vertex *pv)
     {
         inclusion *inc=pv->GetInclusion();
         InclusionType *inctype = inc->GetInclusionType();
-        double k0 = inctype->ITk;
-        double kg = inctype->ITkg;
-        double k1 = inctype->ITk1;
-        double k2 = inctype->ITk2;
-        double c0 = inctype->ITc0;
-        double c1 = inctype->ITc1;
-        double c2 = inctype->ITc2;
+        
+        lambda = inctype->ITelambda;
+        kg = inctype->ITekg;
+        kn = inctype->ITekn;
+        double cn0 = inctype->ITecn;
 
-            double H=(nc-c0);
-            k0=k0/2.0;
-            Energy+=(k0*H*H-kg*gc*gc)*length;         /// this means that inclsuion overwrite the vertex bending rigidity
-        if(k1!=0 || k2!=0)
+            double H=(nc-cn0);
+            Energy+=(kn*H*H+kg*gc*gc)*length;         /// this means that inclsuion overwrite the vertex bending rigidity
+       /* if(k1!=0 || k2!=0)
         {
             Vec3D LD=inc->GetLDirection();
             double Cos=LD(0);
@@ -136,8 +133,7 @@ double Energy::SingleEdgeVertexEnergy(vertex *pv)
             double H1=(C1-c1);
             double H2=(C2-c2);
             Energy+=(k1*H1*H1+k2*H2*H2)*length;
-
-        }
+        }*/
         
         Energy+=lambda*length;
         

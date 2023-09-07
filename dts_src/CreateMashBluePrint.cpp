@@ -356,6 +356,10 @@ void CreateMashBluePrint::ReadInclusionType(std::string file)
         EmptyIncType.ITc0 =0;  // curvature
         EmptyIncType.ITc1 =0;    // direction curvature 1
         EmptyIncType.ITc2 =0;    // direction curvature 2
+        EmptyIncType.ITelambda = 0;  // line tension
+        EmptyIncType.ITekg = 0 ;       // geodesic rigidity
+        EmptyIncType.ITekn = 0;       // normal curvature line rigidiy
+        EmptyIncType.ITecn =0 ;       // spontaneous normal  curvature
     }
     m_AllInclusionType.push_back(EmptyIncType); // we will make a default inclusion type
     while (true)
@@ -378,6 +382,9 @@ void CreateMashBluePrint::ReadInclusionType(std::string file)
         for(int i=0;i<NoType;i++)
         {
         input>>N>>TypeNames>>Kappa>>KappaG>>KappaP>>KappaL>>C0>>C0P>>C0N;
+        std::string edgedata;
+        getline(input,edgedata);
+        std::vector<std::string> ed = f.split(edgedata);
         InclusionType IncType;
             {
                 IncType.ITName = TypeNames;   // type name
@@ -390,6 +397,19 @@ void CreateMashBluePrint::ReadInclusionType(std::string file)
                 IncType.ITc0 = C0;  // curvature
                 IncType.ITc1 = C0P;    // direction curvature 1
                 IncType.ITc2 = C0N;    // direction curvature 2
+                if(ed.size()>=4)
+                {
+                IncType.ITelambda=f.String_to_Double(ed[0]);  // line tension
+                    IncType.ITekg=f.String_to_Double(ed[1]);       // geodesic rigidity
+                    IncType.ITekn=f.String_to_Double(ed[2]);       // normal curvature line rigidiy
+                    IncType.ITecn=f.String_to_Double(ed[3]);       // spontaneous normal  curvature
+                }
+                else
+                {
+                    std::cout<<" warning---> the inclusion type does not have date of edge: all set to zero \n";
+                    std::cout<<" if there is no open edge, this is fine \n";
+
+                }
             }
         m_AllInclusionType.push_back(IncType);
         }

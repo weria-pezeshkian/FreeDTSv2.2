@@ -170,7 +170,7 @@ bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * to
     
     // energy old and new
     double DE=0;        // total energy change
-    double DEArea=0;    // energy contribuion from area change
+    double DEArea=0;    // energy contribuion from projected area change
     
     double oldEnergy = (*tot_Energy);
     double newEnergy = m_pEnergyCalculator->TotalEnergy((m_pMESH->m_pSurfV), (m_pMESH->m_pHL));
@@ -179,7 +179,7 @@ bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * to
     DE= newEnergy-oldEnergy+DE_totA;
 
     //=== energy change of constant projected area
-    DEArea = m_SigmaP*(m_newLx*m_newLy-m_oldLx*m_oldLy);
+    DEArea = -m_SigmaP*(m_newLx*m_newLy-m_oldLx*m_oldLy);
     
     //=== energy of changes in gloabal curvature due to CouplingtoFixedGlobalCurvature
     //=== the value of DeltaA and DetaR were computed before now we subtract new area
