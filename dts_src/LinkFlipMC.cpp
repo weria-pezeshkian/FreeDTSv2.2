@@ -383,26 +383,33 @@ void LinkFlipMC::PerformMove()
     //// this part of the code can become more efficient
     
     std::vector <links*> temlinklist;
-
         if(m_V1->VertexOwnInclusion()==true)
         {
             std::vector<links *> ltem=m_V1->GetVLinkList();
             temlinklist.insert(temlinklist.end(), ltem.begin(), ltem.end());
+            if(m_V1->m_VertexType==1)
+            temlinklist.push_back(m_V1->m_pPrecedingEdgeLink);
         }
         if(m_V2->VertexOwnInclusion()==true)
         {
             std::vector<links *> ltem=m_V2->GetVLinkList();
             temlinklist.insert(temlinklist.end(), ltem.begin(), ltem.end());
+            if(m_V2->m_VertexType==1)
+            temlinklist.push_back(m_V2->m_pPrecedingEdgeLink);
         }
         if(m_V3->VertexOwnInclusion()==true)
         {
             std::vector<links *> ltem=m_V3->GetVLinkList();
             temlinklist.insert(temlinklist.end(), ltem.begin(), ltem.end());
+            if(m_V3->m_VertexType==1)
+            temlinklist.push_back(m_V3->m_pPrecedingEdgeLink);
         }
         if(m_V4->VertexOwnInclusion()==true)
         {
             std::vector<links *> ltem=m_V4->GetVLinkList();
             temlinklist.insert(temlinklist.end(), ltem.begin(), ltem.end());
+            if(m_V4->m_VertexType==1)
+            temlinklist.push_back(m_V4->m_pPrecedingEdgeLink);
         }
 
     
@@ -411,8 +418,12 @@ void LinkFlipMC::PerformMove()
         bool addit=true;
         for (std::vector<links *>::iterator it2 = m_pLIntEChange.begin() ; it2 != m_pLIntEChange.end(); ++it2)
         {
-            if((*it2)->GetID()==(*it)->GetID() || ((*it2)->GetMirrorLink())->GetID()==(*it)->GetID())
+            if((*it2)->GetID()==(*it)->GetID())
                 addit=false;
+            else if((*it2)->GetMirrorFlag()==true)
+            if(((*it2)->GetMirrorLink())->GetID()==(*it)->GetID())
+                addit=false;
+
 
         }
         if(addit==true)
@@ -538,8 +549,8 @@ void LinkFlipMC::RejectMove()
     {
         double en=(*itr).GetIntEnergy();
         (*it)->UpdateIntEnergy(en);
+        if((*it)->GetMirrorFlag()==true)
         ((*it)->GetMirrorLink())->UpdateIntEnergy(en);
-        
 #if TEST_MODE == Enabled
         
         if((*itr).GetID()!=(*it)->GetID())

@@ -231,12 +231,16 @@ void EdgeVertexMCMove::Move()
 //// this part of the code can become more efficient
 
     std::vector <links*> temlinklist;
+    if(m_pvertex->m_VertexType==1)
+        temlinklist.push_back(m_pvertex->m_pPrecedingEdgeLink);
     for (std::vector<vertex *>::iterator it = m_pAVer.begin() ; it != m_pAVer.end(); ++it)
     {
             if((*it)->VertexOwnInclusion()==true)
             {
                 std::vector<links *> ltem=(*it)->GetVLinkList();
                 temlinklist.insert(temlinklist.end(), ltem.begin(), ltem.end());
+                if((*it)->m_VertexType==1)
+                    temlinklist.push_back((*it)->m_pPrecedingEdgeLink);
             }
     }
 
@@ -245,8 +249,13 @@ void EdgeVertexMCMove::Move()
         bool addit=true;
         for (std::vector<links *>::iterator it2 = m_pLIntEChange.begin() ; it2 != m_pLIntEChange.end(); ++it2)
         {
-            if((*it2)->GetID()==(*it)->GetID() || ((*it2)->GetMirrorLink())->GetID()==(*it)->GetID())
+            if((*it2)->GetID()==(*it)->GetID())
                 addit=false;
+            
+            else if((*it2)->GetMirrorFlag()==true)
+            if(((*it2)->GetMirrorLink())->GetID()==(*it)->GetID())
+                addit=false;
+
             
 
         }

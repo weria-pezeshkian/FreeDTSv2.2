@@ -27,6 +27,7 @@ private:
     vertex * m_pVertex;
 private:
     Tensor2 Householder(Vec3D N);
+    Vec3D Calculate_Vertex_Normal(vertex *p);
 };
 
 

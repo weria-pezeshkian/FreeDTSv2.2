@@ -34,6 +34,7 @@ public:
     double SingleVertexEnergy(vertex *p);
     double TwoInclusionsInteractionEnergy(links *);
     double InteractionFunction(double N2, double A, double B, double theta);
+    double SingleEdgeVertexEnergy(vertex *p);
 private:
 
     Inclusion_Interaction_Map * m_pInt;

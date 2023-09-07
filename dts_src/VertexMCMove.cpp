@@ -95,9 +95,10 @@ bool length =CheckDistnace();
     if (length==false)
         return;
     
+
     // the move is now will be performed; meaning the vertex is fully updated
 		Move();
-    
+
 		//==== Update the ring triangle normal and making a copy in case the move got rejected
 		std::vector<triangle *> pT=m_pvertex->GetVTraingleList();
         for (std::vector<triangle *>::iterator it = pT.begin() ; it != pT.end(); ++it)
@@ -115,6 +116,7 @@ bool length =CheckDistnace();
                 return;
             }
         }
+
 		//==== Update the ring link normal and shape operator
             std::vector<links *> pL=m_pvertex->GetVLinkList();
     		for (std::vector<links *>::iterator it = pL.begin() ; it != pL.end(); ++it)
@@ -165,7 +167,7 @@ double NewEnergy = m_pEnergyCalculator->Energy_OneVertexMove(m_pvertex);
     
     DE=NewEnergy-m_oldEnergy;
  
-    
+
 // if there is spring force potential so we calculate the energy associated with this move
     double harmonicde=0;
     if(m_pSPBTG->GetState()==true)
@@ -190,7 +192,7 @@ double NewEnergy = m_pEnergyCalculator->Energy_OneVertexMove(m_pvertex);
     double newsimplexarea = 0;
     double newsimplexvolume = 0;
     
-    
+
     if((m_pState->GetVolumeCoupling())->GetState()==true || (m_pState->GetOsmotic_Pressure())->GetState()==true || (m_pState->GetApply_Constant_Area())->GetState()==true)
     {
         std::vector <triangle *> pvT=m_pvertex->GetVTraingleList();
@@ -238,9 +240,8 @@ double NewEnergy = m_pEnergyCalculator->Energy_OneVertexMove(m_pvertex);
             	}
             	else if(exp(-m_Beta*diff_energy)>m_Thermal )
              	{
-                    
                  	AccpetMove();
-  
+
                  	(*m_pTotEnergy)=(*m_pTotEnergy)+DE;
                     m_MoveValidity=1;
                     (m_pState->GetVolumeCoupling())->UpdateArea_Volume(m_simplexarea,m_simplexvolume,newsimplexarea,newsimplexvolume);
@@ -249,9 +250,7 @@ double NewEnergy = m_pEnergyCalculator->Energy_OneVertexMove(m_pvertex);
              	}
             	else 
             	{
-
                 	RejectMove();
-
                     // Reject the harmonic potential move
                     // we should reject this move here because it does not happen at thee beginning
                     if(m_pSPBTG->GetState()==true)
@@ -306,6 +305,7 @@ void VertexMCMove::Move()
 
     
     std::vector<links *> pL=m_pvertex->GetVLinkList();
+
     for (std::vector<links *>::iterator it = pL.begin() ; it != pL.end(); ++it)
     {
         links *nl=(*it)->GetNeighborLink1();
@@ -315,30 +315,36 @@ void VertexMCMove::Move()
         
     }
 //// this part of the code can become more efficient
-
     std::vector <links*> temlinklist;
+    if(m_pvertex->m_VertexType==1)
+        temlinklist.push_back(m_pvertex->m_pPrecedingEdgeLink);
+    
+    
     for (std::vector<vertex *>::iterator it = m_pAVer.begin() ; it != m_pAVer.end(); ++it)
     {
             if((*it)->VertexOwnInclusion()==true)
             {
                 std::vector<links *> ltem=(*it)->GetVLinkList();
                 temlinklist.insert(temlinklist.end(), ltem.begin(), ltem.end());
+                if((*it)->m_VertexType==1)
+                    temlinklist.push_back((*it)->m_pPrecedingEdgeLink);
             }
     }
-
     for (std::vector<links *>::iterator it = temlinklist.begin() ; it != temlinklist.end(); ++it)
     {
         bool addit=true;
         for (std::vector<links *>::iterator it2 = m_pLIntEChange.begin() ; it2 != m_pLIntEChange.end(); ++it2)
         {
-            if((*it2)->GetID()==(*it)->GetID() || ((*it2)->GetMirrorLink())->GetID()==(*it)->GetID())
+            if((*it2)->GetID()==(*it)->GetID())
+                addit=false;
+            else if((*it2)->GetMirrorFlag()==true)
+            if(((*it2)->GetMirrorLink())->GetID()==(*it)->GetID())
                 addit=false;
             
 
         }
         if(addit==true)
          m_pLIntEChange.push_back((*it));
-        
 
     }
 
@@ -347,9 +353,6 @@ void VertexMCMove::Move()
         m_oldEnergy+=2*((*it)->GetIntEnergy());
         m_LIntEChange.push_back(*(*it));
     }
-    
-
-    
 
 }
 void VertexMCMove::AccpetMove()
@@ -614,6 +617,7 @@ void VertexMCMove::RejectMove()
     {
         double en=(*itr).GetIntEnergy();
         (*it)->UpdateIntEnergy(en);
+        if((*it)->GetMirrorFlag()==true)
         ((*it)->GetMirrorLink())->UpdateIntEnergy(en);
 #if TEST_MODE == Enabled
 

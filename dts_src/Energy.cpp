@@ -32,7 +32,6 @@ double Energy::SingleVertexEnergy(vertex *pv)
 {
     double Energy=0.0;
     
-    
 if(pv->m_VertexType==0)
 {
     std::vector<double> Curve=pv->GetCurvature();
@@ -60,8 +59,6 @@ if(pv->m_VertexType==0)
         if(k1!=0 || k2!=0)
         {
             Vec3D LD=inc->GetLDirection();
-            k1=k1;
-            k2=k2;
             double Cos=LD(0);
             double Sin=LD(1);
             double C1=Curve.at(0)*Cos*Cos+Curve.at(1)*Sin*Sin;
@@ -90,17 +87,7 @@ if(pv->m_VertexType==0)
 }
 else
 {
-    
-    double gc = pv->m_Geodesic_Curvature;
-    double nc = pv->m_Normal_Curvature;
-    double kg = pv->m_KGC;
-    double kn = pv->m_KNC;
-    double lambda = pv->m_Lambda;
-    double length = pv->m_VLength;
-
-    Energy = lambda*length+kg*gc*gc+kn*nc*nc;
-    
-
+    Energy = SingleEdgeVertexEnergy(pv);
 }
 
     pv->UpdateEnergy(Energy);
@@ -112,6 +99,59 @@ else
 #endif
     return Energy;
 }
+double Energy::SingleEdgeVertexEnergy(vertex *pv)
+{
+    
+    double Energy = 0;
+    
+    double gc = pv->m_Geodesic_Curvature;
+    double nc = pv->m_Normal_Curvature;
+    double kg = pv->m_KGC;
+    double kn = pv->m_KNC;
+    double lambda = pv->m_Lambda;
+    double length = pv->m_VLength;
+
+    if(pv->VertexOwnInclusion()==true)
+    {
+        inclusion *inc=pv->GetInclusion();
+        InclusionType *inctype = inc->GetInclusionType();
+        double k0 = inctype->ITk;
+        double kg = inctype->ITkg;
+        double k1 = inctype->ITk1;
+        double k2 = inctype->ITk2;
+        double c0 = inctype->ITc0;
+        double c1 = inctype->ITc1;
+        double c2 = inctype->ITc2;
+
+            double H=(nc-c0);
+            k0=k0/2.0;
+            Energy+=(k0*H*H-kg*gc*gc)*length;         /// this means that inclsuion overwrite the vertex bending rigidity
+        if(k1!=0 || k2!=0)
+        {
+            Vec3D LD=inc->GetLDirection();
+            double Cos=LD(0);
+            double Sin=LD(1);
+            double C1=nc*Cos*Cos;
+            double C2=nc*Sin*Sin;
+            double H1=(C1-c1);
+            double H2=(C2-c2);
+            Energy+=(k1*H1*H1+k2*H2*H2)*length;
+
+        }
+        
+        Energy+=lambda*length;
+        
+    }
+    else
+    {
+        Energy = lambda+kg*gc*gc+kn*nc*nc;
+        Energy=Energy*length;
+
+    }
+
+    return Energy;
+}
+
 double Energy::TotalEnergy(std::vector<vertex *> pVeretx, std::vector<links *> pLinks)
 {
     double E=0.0;
@@ -216,10 +256,16 @@ double Energy::TwoInclusionsInteractionEnergy(links * lp)
 
     }
     
-    
-    lp->UpdateIntEnergy(e/2.0);
-    if(lp->GetMirrorFlag()==true)      //// this check is not needed for now, for later developments 
-    (lp->GetMirrorLink())->UpdateIntEnergy(e/2.0);
+    if(lp->GetMirrorFlag()==true)      //// this check is not needed for now, for later developments
+    {
+        lp->UpdateIntEnergy(e/2.0);
+        (lp->GetMirrorLink())->UpdateIntEnergy(e/2.0);
+    }
+    else
+    {
+        // divided by 2 here is also fine as everywhere will be muliplied by two again
+        lp->UpdateIntEnergy(e/2.0);
+    }
     
 
     

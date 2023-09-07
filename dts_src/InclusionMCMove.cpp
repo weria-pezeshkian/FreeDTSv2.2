@@ -68,13 +68,21 @@ void InclusionMCMove::KawasakiMove(double temp, links * d_links)
 
         // We should clear this container
         m_pLIntEChange.insert(m_pLIntEChange.end(), l1list.begin(), l1list.end());   // a copy of the links
-        
-        // a copy of the links and avoiding to repeat the link between v1 and v2
-                for (std::vector<links *>::iterator it = l2list.begin() ; it != l2list.end(); ++it)
-                {
-                    if((*it)->GetID()!=d_links->GetID() && ((*it)->GetMirrorLink())->GetID()!=d_links->GetID())
-                        m_pLIntEChange.push_back(*it);
-                }
+        m_pLIntEChange.insert(m_pLIntEChange.end(), l2list.begin(), l2list.end());   // a copy of the links
+
+        // adding Preceding edges but make sure they are not repeated
+        if(hver->m_VertexType==1)
+            m_pLIntEChange.push_back(hver->m_pPrecedingEdgeLink);
+        if(tver->m_VertexType==1)
+            m_pLIntEChange.push_back(tver->m_pPrecedingEdgeLink);
+    
+        m_pLIntEChange.erase(std::remove(m_pLIntEChange.begin(), m_pLIntEChange.end(), d_links), m_pLIntEChange.end());
+        if(d_links->GetMirrorFlag()==true)
+            m_pLIntEChange.erase(std::remove(m_pLIntEChange.begin(), m_pLIntEChange.end(), d_links->GetMirrorLink()), m_pLIntEChange.end());
+
+        // now added back the link (not sure)
+        m_pLIntEChange.push_back(d_links);
+
 
 #if TEST_MODE == Enabled
         int sizeL=m_pLIntEChange.size();
@@ -168,6 +176,7 @@ void InclusionMCMove::KawasakiMove(double temp, links * d_links)
             {
                 double en=(*itr).GetIntEnergy();
                 (*it)->UpdateIntEnergy(en);
+                if((*it)->GetMirrorFlag()==true)
                 ((*it)->GetMirrorLink())->UpdateIntEnergy(en);
                 
 #if TEST_MODE == Enabled
@@ -184,13 +193,12 @@ void InclusionMCMove::KawasakiMove(double temp, links * d_links)
 }
 void InclusionMCMove::RotationMove(double temp, double dx, double dy)
 {
-    
-{
+
         double m_oldEnergy = 0;
         vertex * ver = m_pInc->Getvertex();
-        std::vector<links *> l_list=ver->GetVLinkList();
-        m_pLIntEChange.insert(m_pLIntEChange.end(), l_list.begin(), l_list.end());
-
+        m_pLIntEChange = ver->GetVLinkList();
+        if(ver->m_VertexType==1)
+        m_pLIntEChange.push_back(ver->m_pPrecedingEdgeLink);
         for (std::vector<links *>::iterator it = m_pLIntEChange.begin() ; it != m_pLIntEChange.end(); ++it)
         {
             m_oldEnergy+=2*((*it)->GetIntEnergy());
@@ -218,8 +226,6 @@ void InclusionMCMove::RotationMove(double temp, double dx, double dy)
         NewEnergy+=EE.SingleVertexEnergy(ver);
     
     m_EnergyDifference=NewEnergy-m_oldEnergy;
-
-    
     
     if(m_EnergyDifference<=0 )
     {
@@ -242,6 +248,7 @@ void InclusionMCMove::RotationMove(double temp, double dx, double dy)
             {
                     double en=(*itr).GetIntEnergy();
                     (*it)->UpdateIntEnergy(en);
+                    if((*it)->GetMirrorFlag()==true)
                     ((*it)->GetMirrorLink())->UpdateIntEnergy(en);
             
 #if TEST_MODE == Enabled
@@ -256,7 +263,6 @@ void InclusionMCMove::RotationMove(double temp, double dx, double dy)
         
     }
     
-}
 }
 
 
