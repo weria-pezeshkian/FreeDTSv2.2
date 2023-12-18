@@ -1,7 +1,7 @@
 Integrator                      = MC
-MC_Moves                        = 1 1 1 1
+MC_Moves                        = 1 1 0 1
 Initial_Step                    = 1
-Final_Step                      = 10000
+Final_Step                      = 500
 Display_periodic                = 100
 OutPutEnergy_periodic           = 100
 Restart_periodic                = 10000
@@ -9,17 +9,17 @@ Kappa                           = 10 0
 Edge_Parameters			= 100  1   1 
 OutPutTRJ_TSI                   = 100  10  TrjTSI
 GeneralOutputFilename           = output
-Frame_Tension                   = off  Position_Rescale 5  5
-OpenEdgeEvolutionWithConstantVertex = on 1 
+Frame_Tension                   = off  Position_Rescale 1  5
+OpenEdgeEvolutionWithConstantVertex = off 1 
 INCLUSION
 Define 2 Inclusions
 SRotation   Type   K   KG  KP  KL  C0     C0P  C0L
 1 	    Pro1   20  0   0   0   0.0	 0   0    10   2  2  0.4
-2           Pro1   20  0   0   0   0.0   0   0    20   2  2  0.4
+2           Pro2   20  0   0   0   0.0   0   0    20   2  2  0.4
 GenerateInclusions
 Selection_Type Random
 TypeID     1  2    
-Density    0.1  0.1  
+Density    1.0  0.0  
 Inclusion-Inclusion-Int
 1    1    1   2  1   -1
 

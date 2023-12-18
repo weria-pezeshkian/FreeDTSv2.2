@@ -398,11 +398,28 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
             }
             else
                 std::cout<<"---> Error: No such frame tension coupling type "<<std::endl;
-            
-        }
-    }//for (int j=0;j<TotNoVertex;j++)
-    
 
+        }
+        
+        
+    }//for (int j=0;j<TotNoVertex;j++)
+    /*
+    double KG = 0;
+    for (std::vector<vertex *>::iterator it = (m_pMESH->m_pSurfV).begin() ; it != (m_pMESH->m_pSurfV).end(); ++it)
+        {
+            std::vector <double> c = (*it)->GetCurvature();
+            KG+=c[1]*c[0]*((*it)->GetArea());
+        }
+        
+
+    double kg=0;
+    for (std::vector<vertex *>::iterator it = (m_pMESH->m_pEdgeV).begin() ; it != (m_pMESH->m_pEdgeV).end(); ++it)
+    {
+        kg+=((*it)->m_Geodesic_Curvature)*((*it)->m_VLength);
+        //std::cout<<((*it)->m_Geodesic_Curvature)<<"  "<<((*it)->m_VLength)<<"\n";
+
+    }
+    std::cout<<KG<<"  "<<kg/(2*3.14)<<"  "<<(KG+kg)/(2*3.14)<<"\n";*/
     
 
     if(mc_edge_evo->m_F==true && mcstep%(mc_edge_evo->m_Rate)==0)

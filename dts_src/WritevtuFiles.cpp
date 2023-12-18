@@ -619,6 +619,7 @@ void WritevtuFiles::WriteInclusion(std::string id, std::vector<vertex* > ver, st
             D=((*itr)->GetL2GTransferMatrix())*D;
 
             *Output<<"  "<<D(0)<<"      "<<D(1)<<"      "<<D(2)<<"\n";
+
         }
         else
         *Output<<"  "<<cc<<"    "<<cc<<"    "<<cc<<"\n";

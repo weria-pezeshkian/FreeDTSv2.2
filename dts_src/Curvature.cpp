@@ -182,7 +182,7 @@ void Curvature::SurfVertexCurvature(vertex * pvertex)
         m_pVertex->UpdateG2LTransferMatrix(TransferMatGL);
         
         
-        
+        //==== should be deleted do not know what it does
         if(pvertex->VertexOwnInclusion()==true)
         {
             inclusion * in=pvertex->GetInclusion();
