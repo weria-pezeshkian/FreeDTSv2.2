@@ -24,8 +24,21 @@ private:
     double m_Kappa;
     double m_KappaG;
     double m_mem_c0;
+    
+    //== vertex area
+    double m_Kva;
+    double m_av0;
+    double m_KvaEdge;
+    double m_av0Edge;
+
     std::vector<double> m_Membrane_model_parameters;
     int m_NO_Membrane_model_parameters;
+    
+    //=== edge
+    double m_Lambda;
+    double m_KnEdge;
+    double m_KgEdge;
+    
 
 public:
     double TotalEnergy(std::vector<vertex *> pVeretx, std::vector<links *> plink);   ///

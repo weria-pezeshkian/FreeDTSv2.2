@@ -25,14 +25,7 @@ State::State(std::vector <std::string> argument)
     std::cout<<"----> We have reached the State Class -- "<<std::endl;
 #endif
     //============ Initialization of all inputs and data structures for input
-    
-    m_data_membrane_param.lambda = 0;
-    m_data_membrane_param.kappa_geo = 0;
-    m_data_membrane_param.kappa_normal = 0;
-    m_data_membrane_param.kappa = 0; // this is read by another parameters for now; later may change
-    m_data_membrane_param.kappa_g = 0; // this is read by another parameters for now; later may change
-    
-    
+    m_pinc_ForceField = &m_inc_ForceField;
     m_Argument = argument;
     m_Targeted_State = true;
     m_Healthy =true;
@@ -51,8 +44,6 @@ State::State(std::vector <std::string> argument)
     m_IndexFile = false;
     m_GeneralOutputFilename = "dts";
     m_FreezGroupName = "";
-    m_BendingRigidity  = 1;
-    m_GaussianRigidity = 0;
     m_Beta = 1;
     m_MinFaceAngle = -0.5;
     m_MinVerticesDistanceSquare = 1.0;
@@ -106,16 +97,9 @@ State::State(std::vector <std::string> argument)
     ReadInputFile(m_InputFileName);  // Reading from input file
     ExploreArguments();     // Update last state
     WriteStateLog();        // writing a log file
+    
 
-    if(m_Membrane_model_parameters.size()==0)
-    {
-        m_Membrane_model_parameters.push_back(m_BendingRigidity);
-        m_Membrane_model_parameters.push_back(m_Mem_Spontaneous_Curvature );
-        m_Membrane_model_parameters.push_back(m_GaussianRigidity);
-    }
-    Inclusion_Interaction_Map inc_ForceField(m_InputFileName,m_Membrane_model_parameters);
-    m_inc_ForceField = inc_ForceField;
-    m_pinc_ForceField = &m_inc_ForceField;
+
 #if TEST_MODE == Enabled
     std::cout<<"----> In the State Class: inputs are taken from the input file and command line arguments  -- "<<std::endl;
 #endif
@@ -150,7 +134,7 @@ State::State(std::vector <std::string> argument)
         meshblueprint = BluePrint.MashBluePrintFromInput_Top(m_InputFileName,m_TopologyFile);
         std::cout<<"-----> Note: Mesh was taken from the topology  "<<std::endl;
     }
-        m_Mesh.GenerateMesh(meshblueprint,m_BendingRigidity,m_GaussianRigidity,m_data_membrane_param);
+        m_Mesh.GenerateMesh(meshblueprint);
     
     
     
@@ -170,7 +154,7 @@ State::State(std::vector <std::string> argument)
     m_EdgeVertexMoveMC = EVM;
     InclusionMCMove TIM(this);
     m_IncMove = TIM;
-    Energy Ten(m_pinc_ForceField);  // perhaps later could have a state pointer as well
+    Energy Ten(&m_inc_ForceField);  // perhaps later could have a state pointer as well
     m_EnergyCalculator = Ten;
     // this should be called after energy and curvature is called 
     PositionRescaleFrameTensionCoupling TEM(m_FrameTension.Tau,this);
@@ -409,17 +393,6 @@ void State::ReadInputFile(std::string file)
             m_Apply_Constant_Area = C;
             
         }
-        else if(firstword == "Apply_Constant_VertexArea")
-        {
-            std::string state;
-            m_STRUC_ConstantVertexArea.State = false;
-            input>>str>>state>>(m_STRUC_ConstantVertexArea.EQSteps)>>(m_STRUC_ConstantVertexArea.Gamma)>>(m_STRUC_ConstantVertexArea.K0);
-            if(state=="on" || state=="ON" || state=="On" || state=="yes" || state=="Yes" )
-                m_STRUC_ConstantVertexArea.State = true;
-            Apply_Constant_Vertex_Area C(m_STRUC_ConstantVertexArea.State,m_STRUC_ConstantVertexArea.EQSteps,m_STRUC_ConstantVertexArea.Gamma,m_STRUC_ConstantVertexArea.K0);
-            m_Apply_Constant_VertexArea = C;
-            
-        }
         else if(firstword == "Final_Step")
         {
             input>>str>>m_Final_Step;
@@ -433,16 +406,6 @@ void State::ReadInputFile(std::string file)
         else if(firstword == "MinfaceAngle")
         {
             input>>str>>m_MinFaceAngle;
-            getline(input,rest);
-        }
-        else if(firstword == "Edge_Parameters")
-        {
-            double a,b,c;
-            input>>str>>a>>b>>c;
-            m_data_membrane_param.lambda = a;
-            m_data_membrane_param.kappa_geo = b;
-            m_data_membrane_param.kappa_normal = c;
-            
             getline(input,rest);
         }
         else if(firstword == "OutPutEnergy_periodic")
@@ -502,39 +465,67 @@ void State::ReadInputFile(std::string file)
         }
         else if(firstword == "Kappa")
         {
-            input>>str>>m_BendingRigidity>>m_GaussianRigidity;
+            double a,b;
+            input>>str>>a>>b;
+            m_inc_ForceField.m_BendingRigidity = a/2;
+            m_inc_ForceField.m_GaussianRigidity = b;
             getline(input,rest);
         }
         else if(firstword == "Spont_C")
         {
+            double a;
             input>>str>>m_Mem_Spontaneous_Curvature;
+            m_inc_ForceField.m_Spontaneous_Curvature = a;
             getline(input,rest);
+        }
+        else if(firstword == "Edge_Parameters")
+        {
+            double a,b,c;
+            input>>str>>a>>b>>c;
+            
+            //=== send it to force field class
+            m_inc_ForceField.m_Lambda = a;
+            m_inc_ForceField.m_KgEdge = a;
+            m_inc_ForceField.m_KnEdge = c;
+
+            getline(input,rest);
+        }
+        else if(firstword == "VertexArea")
+        {
+            double a,b,c,d;
+            input>>str>>a>>b>>c>>d;
+            
+            double A01 = (1+2*b)*sqrt(3)/2.0;   // selecting b between 0-1
+            double A02 = (1+2*d)*sqrt(3)/2.0;   // selecting d between 0-1
+
+            if(b<0 || b>1 || d<0 || d>1)
+            {
+            std::cout<<"---> error in constant vertex area; gamma is bad; it should be a double number between 0-1 \n";
+            exit(0);
+            }
+            m_inc_ForceField.m_Kva = a/2;
+            m_inc_ForceField.m_KvaEdge = c/2;
+
+            m_inc_ForceField.m_av0 = A01;
+            m_inc_ForceField.m_av0Edge = A02;
+
         }
         else if(firstword == "Mem_model_para") ///
         {
             input>>str;
             getline(input,rest);
             std::vector<std::string> memdata = f.split(rest);
+            std::vector <double> modelparam;
             for (std::vector<std::string>::iterator it = memdata.begin() ; it != memdata.end(); ++it)
             {
                 if((*it)!=";")
                 {
                     double value = f.String_to_Double(*it);
-                    m_Membrane_model_parameters.push_back(value);
+                    modelparam.push_back(value);
                 }
             }
-            if(m_Membrane_model_parameters.size()<3)
-            {
-                std::cout<<"error----> for Mem_model_para you need atleast three values \n";
-                exit(0);
-            }
-            else
-            {
-                m_BendingRigidity = m_Membrane_model_parameters.at(0);
-                m_Mem_Spontaneous_Curvature = m_Membrane_model_parameters.at(1);
-                m_GaussianRigidity = m_Membrane_model_parameters.at(2);
 
-            }
+            m_inc_ForceField.m_Membrane_model_parameters = modelparam;
         }
         else if(firstword == "Display_periodic")
         {
@@ -683,7 +674,7 @@ void State::WriteStateLog()
     statelog<<"Restart_periodic = "<<m_RESTART.restartPeriod<<std::endl;
     statelog<<"TopologyFile = "<<m_TopologyFile<<std::endl;
     statelog<<"Seed = "<<m_Seed<<std::endl;
-    statelog<<"Kappa = "<<m_BendingRigidity<<"  "<<m_GaussianRigidity<<std::endl;
+    statelog<<"Kappa = "<<m_inc_ForceField.m_BendingRigidity<<"  "<<m_inc_ForceField.m_GaussianRigidity<<std::endl;
     statelog<<"Display_periodic = "<<m_Display_periodic<<std::endl;
     statelog<<"CNTCELL = "<<m_CNTCELL(0)<<" "<<m_CNTCELL(1)<<" "<<m_CNTCELL(2)<<" "<<std::endl;
     statelog<<"GeneralOutputFilename = "<<m_GeneralOutputFilename<<std::endl;

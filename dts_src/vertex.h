@@ -27,8 +27,6 @@ public:
         inline double GetVXPos()                            {return m_X;}
         inline double GetVYPos()                            {return m_Y;}
         inline double GetVZPos()                            {return m_Z;}
-        inline double GetKappa()                            {return m_kappa;}
-        inline double GetKappaG()                           {return m_kappaG;}
         inline double GetArea()                             {return m_Area;}
         inline Tensor2  GetL2GTransferMatrix()              {return m_T_Local_2_Global;}
         inline Tensor2  GetG2LTransferMatrix()              {return m_T_Global_2_Local;}
@@ -53,7 +51,6 @@ public:
   void UpdateVZPos(double z);   // a function for updates the z position of a vertex
   void NOPBCUpdatePos(Vec3D z);
   void UpdateGroupName(std::string z); // A vertex can only have one group name, is different from group id
-  void UpdateKappa(double z1,double z2);
   void UpdateVCNTCell(CNTCell * z);
   void UpdateBox(Vec3D *z);
   void UpdateCurvature(double,double); // vis
@@ -84,8 +81,6 @@ private:
     double m_X;       // X coordinate
     double m_Y;       // Y coordinate
     double m_Z;       // Z coordinate
-    double m_kappa;   // bending rigidity
-    double m_kappaG;  // gaussian  rigidity
     std::vector <triangle *> m_VTraingleList;  // A list holding all the nighbouring triangles
     std::vector <links *> m_VLinkList;      // A list holding all the nighbouring edges (linkss)
     std::vector <vertex *> m_VNeighbourVertex; // A list holding all the nighbouring vertexes
@@ -117,8 +112,6 @@ public:
     //================================================
     double m_Geodesic_Curvature;          // Edge Vertex Curvature
     double m_Normal_Curvature;          // Edge Vertex Curvature
-    double m_KGC;                          // model parameters for Geodesic Curvature
-    double m_KNC;                           // model parameters for normal Curvature
     double m_VLength;                       // length of the vertex
     double m_Lambda;                   // line tension
     int m_VertexType;                   // 0 surface vertex; 1 edge vertex;

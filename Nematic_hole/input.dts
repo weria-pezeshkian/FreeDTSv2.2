@@ -6,6 +6,7 @@ Display_periodic                = 100
 OutPutEnergy_periodic           = 100
 Restart_periodic                = 10000
 Kappa                           = 10 0
+VertexArea		       	= 10 0.8 10 0.8
 Edge_Parameters			=  1  1   1 
 OutPutTRJ_TSI                   = 10000  10  TrjTSI
 GeneralOutputFilename           = output
@@ -18,7 +19,7 @@ SRotation   Type   K   KG  KP  KL  C0     C0P  C0L
 GenerateInclusions
 Selection_Type Random
 TypeID     1  2    
-Density    1  0.0  
+Density    0  0.0  
 Inclusion-Inclusion-Int
 1    1    1   2     2     -2
 

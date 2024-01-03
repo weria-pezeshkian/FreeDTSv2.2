@@ -19,7 +19,6 @@
 #include "ActiveTwoStateInclusion.h"
 #include "Apply_Osmotic_Pressure.h"
 #include "Apply_Constant_Area.h"
-#include "Apply_Constant_Vertex_Area.h"
 #include "OpenEdgeEvolutionWithConstantVertex.h"
 #include "Curvature.h"
 #include "Energy.h"
@@ -35,6 +34,13 @@
  This class reads the inputs and distrubutes the tasks based on inputs provided and makes all the initials variables
  It is called by Job class: 
  */
+struct STRUC_Membrane_Parameters {
+    double lambda;
+    double kappa_geo;
+    double kappa_normal;
+    double kappa; // this is read by another parameters for now; later may change
+    double kappa_g; // this is read by another parameters for now; later may change
+};
 struct STRUC_TRJTSI {    // data structure for tsi trajectory file
     int tsiPeriod;
     int tsiPrecision;
@@ -152,8 +158,6 @@ public:
     int m_Total_no_Threads;       // Total no of Threads
     std::string   m_TopologyFile; // name of the topology file, *.top, *.dat *.tsi *.bts
     std::string   m_InputFileName; // name of the topology file, *.top, *.dat *.tsi *.bts
-    double m_GaussianRigidity;   //  membrane regidity (Gaussian)
-    double m_BendingRigidity;    //  membrane regidity
     double m_Beta ;        // system temperature only applicable if Parallel Tempering Methods is on
     double m_Mem_Spontaneous_Curvature ; //Spontaneous Curvature of the membrane, same effect if the membrane is covered fully by proteins but faster
     double m_MinFaceAngle;          //  minimum angle between the face (smaller will results in error), this is the value of the cos
@@ -181,17 +185,15 @@ public:
     STRUC_ActiveTwoStateInclusion m_STRUC_ActiveTwoStateInclusion;  // input data to start active two state membrane
     Parallel_Tempering m_Parallel_Tempering; // an object that includes info about Parallel Tempering method that we are applying
     MESH          *m_pMesh;
-    Inclusion_Interaction_Map m_inc_ForceField;
     Inclusion_Interaction_Map *m_pinc_ForceField;
+
     double m_TotEnergy;
-    std::vector<double> m_Membrane_model_parameters;
     CouplingtoFixedGlobalCurvature  m_CoupleGCurvature;
     SpringPotentialBetweenTwoGroups m_SpringPotentialBetweenTwoGroups;
     PositionRescaleFrameTensionCoupling m_RescaleTenCoupl;
     CmdVolumeCouplingSecondOrder m_VolumeCouplingSecondOrder;
     Apply_Osmotic_Pressure m_Apply_Osmotic_Pressure;
     Apply_Constant_Area m_Apply_Constant_Area;
-    Apply_Constant_Vertex_Area m_Apply_Constant_VertexArea;
     ActiveTwoStateInclusion m_ActiveTwoStateInclusion;
     LinkFlipMC m_LinkFlipMC;
     VertexMCMove m_VertexMoveMC;
@@ -201,9 +203,10 @@ public:
     CoupleToWallPotential m_RigidWallCoupling;
     OpenEdgeEvolutionWithConstantVertex m_OpenEdgeEvolutionWithConstantVertex;
     Curvature m_CurvatureCalculations;
-    STRUC_Membrane_Parameters m_data_membrane_param;
     Energy m_EnergyCalculator;
-    
+
+private:
+    Inclusion_Interaction_Map m_inc_ForceField;
 private:
     MESH          m_Mesh;
     void ExploreArguments();         // updates variables based on the command line arguments

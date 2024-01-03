@@ -12,3 +12,8 @@ it should have accss to mesh and ...
 4) chnage the beta in previous code
 5) functions such as check distance and etc can be done in the vertex class and have just one of them
 6) mesh class could have random elements given to sim class
+
+
+some minor bugs 
+1) file name for vtu was defined two times but strangly no error
+2) conf-1 and conf0 is defined now. conf0 is for after update of the curvature ..

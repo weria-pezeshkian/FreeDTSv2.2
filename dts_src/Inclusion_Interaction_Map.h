@@ -27,7 +27,23 @@ public:
     double m_GaussianRigidity;   //  membrane regidity (Gaussian)
     double m_BendingRigidity;    //  membrane regidity
     double  m_Spontaneous_Curvature;
+    
+    //== edge
+    double m_Lambda;
+    double m_KnEdge;
+    double m_KgEdge;
+    double m_KvaEdge;
+    double m_av0Edge;
+    
+    //=== area
+    double m_Kva;
+    double m_av0;
+    
+    
     std::vector<double> m_Membrane_model_parameters;
+
+
+    
 public:
     PairInt GetPairInt (int,int);
 

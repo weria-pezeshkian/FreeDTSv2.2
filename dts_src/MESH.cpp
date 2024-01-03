@@ -14,7 +14,7 @@ MESH::~MESH()
 {
     
 }
-void MESH::GenerateMesh(MeshBluePrint meshblueprint, double kappa, double kappag, STRUC_Membrane_Parameters smp)
+void MESH::GenerateMesh(MeshBluePrint meshblueprint)
 {
     m_Box = meshblueprint.simbox;
     m_pBox = &m_Box;
@@ -30,10 +30,6 @@ void MESH::GenerateMesh(MeshBluePrint meshblueprint, double kappa, double kappag
             vertex v(it->id,it->x,it->y,it->z);
             v.UpdateBox(m_pBox);
             v.UpdateGroup(it->domain);
-            v.UpdateKappa(kappa/2.0,kappag);
-            v.m_Lambda = smp.lambda;
-            v.m_KGC = smp.kappa_geo;
-            v.m_KNC = smp.kappa_normal;
             m_Vertex.push_back(v);
     }
 //===== Make exclution [since June, 2023]

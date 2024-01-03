@@ -16,18 +16,14 @@ m_X = x;
 m_Y = y;
 m_Z = z;
 m_ID = id;
-m_kappa=1.0;
     m_SimTimeStep=-1;
     m_Group = 0;
     m_OwnInclusion = false;
-    m_kappaG = 0;
     m_GroupName = "system";
     
     
     m_Geodesic_Curvature = 0;
     m_Normal_Curvature = 0;
-    m_KGC = 0;
-    m_KNC = 0;
     m_VertexType = 0;
     m_VLength = 0;                       // length of the vertex
     m_Lambda = 0;                   // line tension
@@ -41,18 +37,14 @@ m_ID=id;
 m_X=0;
 m_Y=0;
 m_Z=0;
-m_kappa=1.0;
     m_SimTimeStep=-1;
     m_Group = 0;
     m_OwnInclusion = false;
-    m_kappaG = 0;
     m_GroupName = "system";
     
     
     m_Geodesic_Curvature = 0;
     m_Normal_Curvature = 0;
-    m_KGC = 0;
-    m_KNC = 0;
     m_VertexType = 0;
     m_VLength = 0;                       // length of the vertex
     m_Lambda = 0;                   // line tension
@@ -123,12 +115,6 @@ void vertex::UpdateVZPos(double x)
 void vertex::AddtoLinkList(links* z)
 {
 m_VLinkList.push_back(z);
-}
-void vertex::UpdateKappa(double z1, double z2)
-{
-    m_kappa=z1;
-    m_kappaG=z2;
-
 }
 void vertex::RemoveFromLinkList(links* z)
 {

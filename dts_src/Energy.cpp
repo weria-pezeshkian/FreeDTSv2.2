@@ -16,13 +16,22 @@ Energy::Energy()
 }
 Energy::Energy(Inclusion_Interaction_Map * pint)
 {
-m_pInt=pint;
+   m_pInt=pint;
    m_Kappa = pint->m_BendingRigidity;
-   m_Kappa = m_Kappa/2.0;
    m_KappaG = pint->m_GaussianRigidity;
    m_mem_c0 = pint->m_Spontaneous_Curvature;
    m_Membrane_model_parameters = pint->m_Membrane_model_parameters;
-    m_NO_Membrane_model_parameters = m_Membrane_model_parameters.size();
+   m_NO_Membrane_model_parameters = m_Membrane_model_parameters.size();
+    
+   //== edge parameter;
+   m_Lambda = pint->m_Lambda;
+   m_KnEdge = pint->m_KnEdge;
+   m_KgEdge = pint->m_KgEdge;
+   m_KvaEdge = pint->m_KvaEdge;
+   m_av0Edge = pint->m_av0Edge;
+  //== vertex area energy
+   m_Kva = pint->m_Kva;
+   m_av0 = pint->m_av0;
 }
 Energy::~Energy()
 {
@@ -39,6 +48,9 @@ if(pv->m_VertexType==0)
     double gussian=(Curve.at(0))*(Curve.at(1));
     double area=pv->GetArea();
 
+
+    
+    
     if(m_NO_Membrane_model_parameters==3)
     {
     if(pv->VertexOwnInclusion()==true)
@@ -84,10 +96,15 @@ if(pv->m_VertexType==0)
     std::cout<<" error: we have not implememnted the large model paramters sim yet \n";
     exit(0);
     }
+    
+    // energy for area
+    if(m_Kva!=0)
+    Energy+=m_Kva*(area-m_av0)*(area-m_av0);
 }
 else
 {
     Energy = SingleEdgeVertexEnergy(pv);
+
 }
 
     pv->UpdateEnergy(Energy);
@@ -106,10 +123,15 @@ double Energy::SingleEdgeVertexEnergy(vertex *pv)
     
     double gc = pv->m_Geodesic_Curvature;
     double nc = pv->m_Normal_Curvature;
-    double kg = pv->m_KGC;
-    double kn = pv->m_KNC;
-    double lambda = pv->m_Lambda;
     double length = pv->m_VLength;
+    double area=pv->GetArea();
+
+    
+    //== this should be changed
+    double kg = m_KgEdge;
+    double kn = m_KnEdge;
+    double lambda = m_Lambda;
+    //====
 
     if(pv->VertexOwnInclusion()==true)
     {
@@ -144,6 +166,10 @@ double Energy::SingleEdgeVertexEnergy(vertex *pv)
         Energy=Energy*length;
 
     }
+    
+    // energy for area
+    if(m_KvaEdge!=0)
+    Energy+=m_KvaEdge*(area-m_av0Edge)*(area-m_av0Edge);
 
     return Energy;
 }

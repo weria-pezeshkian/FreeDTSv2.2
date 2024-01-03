@@ -83,9 +83,9 @@ bool FrameTensionCouplingFlag =(pState->m_FrameTension).State;
    
 
     
-    //========= VTU files
+    //========= VTU files at the begining. In case there will be some error later, so we can see how the file looklike.
         WritevtuFiles VTU(pState);
-        std::string file="conf0.vtu";
+        std::string file="conf-1.vtu";
         VTU.Writevtu((m_pMESH->m_pActiveV),(m_pMESH->m_pActiveT),(m_pMESH->m_pHL),file);
     
     if(pState->m_IndexFile == true)
@@ -154,6 +154,11 @@ std::cout<<"----> Note: Total energy of the starting configuration is: "<<*tot_E
 #pragma omp critical
 std::cout<<"----> We printed our first configuration into a vtu file "<<std::endl;
 #endif
+    
+    //========= write a vtu file after the update of the curvature and etc...
+    // ===== this becames important for when the inclusion has local orinatation and it will differ from conf-1
+    std::string file0="conf0.vtu";
+    VTU.Writevtu((m_pMESH->m_pActiveV),(m_pMESH->m_pActiveT),(m_pMESH->m_pHL),file0);
 //=====================================================================================
 //=====================================================================================
 //================================ MC_Simulation Starts ================================
@@ -453,7 +458,7 @@ if(mcstep%box_centering_f==0)
 if(Targeted_State==true)
 if(mcstep%displaywrite==0 && displaywrite!=0)
 {
-        std::string file="conf"+f.Int_to_String(int(mcstep/displaywrite))+".vtu";
+        file="conf"+f.Int_to_String(int(mcstep/displaywrite))+".vtu";
         VTU.Writevtu((m_pMESH->m_pActiveV),(m_pMESH->m_pActiveT),(m_pMESH->m_pHL),file);
 }
 if(Targeted_State==true)
