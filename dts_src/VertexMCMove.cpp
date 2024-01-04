@@ -224,9 +224,15 @@ double NewEnergy = m_pEnergyCalculator->Energy_OneVertexMove(m_pvertex);
         
     }//if((m_pState->GetVolumeCoupling())->GetState()==true ..)
     
+    double dE_nematic_force = 0;
+    if((m_pState->m_pConstant_NematicForce)->m_F0!=0)
+    {
+        Vec3D dx(m_dx,m_dy,m_dz);
+        dE_nematic_force = (m_pState->m_pConstant_NematicForce)->Energy_of_Force(m_pvertex, dx);
+    }
 
     //========
-                double diff_energy = (DE+eG+DEPV+harmonicde+DE_OP+DE_totA);
+                double diff_energy = (DE+eG+DEPV+harmonicde+DE_OP+DE_totA+dE_nematic_force);
             //    std::cout<<DE<<"  "<<eG<<"  "<<DEPV<<"  "<<harmonicde<<"  "<<DE_OP<<"  \n";
             	if(diff_energy<=0 )
             	{

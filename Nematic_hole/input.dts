@@ -10,6 +10,7 @@ VertexArea		       	= 10 0.8 10 0.8
 Edge_Parameters			=  1  1   1 
 OutPutTRJ_TSI                   = 10000  10  TrjTSI
 GeneralOutputFilename           = output
+Constant_NematicForce           = 1 1 0
 OpenEdgeEvolutionWithConstantVertex = on 100
 INCLUSION
 Define 2 Inclusions

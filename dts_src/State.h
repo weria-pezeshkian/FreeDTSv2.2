@@ -22,6 +22,7 @@
 #include "OpenEdgeEvolutionWithConstantVertex.h"
 #include "Curvature.h"
 #include "Energy.h"
+#include "Constant_NematicForce.h"
 
 /*#include "inclusion.h"
 #include "triangle.h"
@@ -204,9 +205,12 @@ public:
     OpenEdgeEvolutionWithConstantVertex m_OpenEdgeEvolutionWithConstantVertex;
     Curvature m_CurvatureCalculations;
     Energy m_EnergyCalculator;
+    Constant_NematicForce *m_pConstant_NematicForce;
+
 
 private:
     Inclusion_Interaction_Map m_inc_ForceField;
+    Constant_NematicForce m_Constant_NematicForce;
 private:
     MESH          m_Mesh;
     void ExploreArguments();         // updates variables based on the command line arguments

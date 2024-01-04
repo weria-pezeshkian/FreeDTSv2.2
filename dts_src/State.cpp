@@ -26,6 +26,7 @@ State::State(std::vector <std::string> argument)
 #endif
     //============ Initialization of all inputs and data structures for input
     m_pinc_ForceField = &m_inc_ForceField;
+    m_pConstant_NematicForce = &m_Constant_NematicForce;
     m_Argument = argument;
     m_Targeted_State = true;
     m_Healthy =true;
@@ -329,6 +330,15 @@ void State::ReadInputFile(std::string file)
         else if(firstword == "FreezingAGroup")
         {
             input>>str>>m_FreezGroupName;
+            getline(input,rest);
+        }
+        else if(firstword == "Constant_NematicForce")
+        {
+            double f0,fd,fn; //(d,p,n)
+            input>>str>>f0>>fd>>fn;
+            m_Constant_NematicForce.m_F0 = f0;
+            m_Constant_NematicForce.m_Fd = fd;
+            m_Constant_NematicForce.m_Fn = fn;
             getline(input,rest);
         }
         else if(firstword=="ActiveTwoStateInclusion")

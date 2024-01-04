@@ -206,6 +206,8 @@ int SigmaPTau = (pState->m_FrameTension).updatePeriod;
     volumecoupling->Initialize(m_pActiveT);
     if((pState->GetOsmotic_Pressure())->GetState()==true)  
     (pState->GetOsmotic_Pressure())->Initialize(m_pActiveT);
+    if((pState->m_pConstant_NematicForce)->m_F0!=0)
+    (pState->m_pConstant_NematicForce)->Initialize();
     if((pState->GetApply_Constant_Area())->GetState()==true)
     (pState->GetApply_Constant_Area())->Initialize(m_pActiveT);
     ActiveTwoStateInclusion *ActiveTwoState = pState->GetActiveTwoStateInclusion();

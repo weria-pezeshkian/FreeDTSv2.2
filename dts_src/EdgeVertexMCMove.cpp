@@ -164,11 +164,15 @@ double NewEnergy = EE.Energy_OneVertexMove(m_pvertex);
         double e2 = m_pSPBTG->GetEnergy();
         harmonicde = e2-e1;
     }
-
-DE=NewEnergy-m_oldEnergy;
-
-
-                double diff_energy = m_Beta*(DE+harmonicde);
+    double dE_nematic_force = 0;
+    if((m_pState->m_pConstant_NematicForce)->m_F0!=0)
+    {
+        Vec3D dx(m_dx,m_dy,m_dz);
+        dE_nematic_force = (m_pState->m_pConstant_NematicForce)->Energy_of_Force(m_pvertex, dx);
+    }
+    
+                DE=NewEnergy-m_oldEnergy;
+                double diff_energy = m_Beta*(DE+harmonicde+dE_nematic_force);
             	if(diff_energy<=0 )
             	{
                      AccpetMove();
