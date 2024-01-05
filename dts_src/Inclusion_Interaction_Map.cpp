@@ -19,10 +19,9 @@ Inclusion_Interaction_Map::Inclusion_Interaction_Map()
     m_Kva =0;
     m_av0 =0;
 }
-Inclusion_Interaction_Map::Inclusion_Interaction_Map(std::string inputfilename,std::vector<double> memmodel)
+Inclusion_Interaction_Map::Inclusion_Interaction_Map(std::string inputfilename)
 {
 //============================================================
-    m_Membrane_model_parameters = memmodel;
     
     m_Lambda =0 ;
     m_KnEdge = 0;

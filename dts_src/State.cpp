@@ -25,6 +25,8 @@ State::State(std::vector <std::string> argument)
     std::cout<<"----> We have reached the State Class -- "<<std::endl;
 #endif
     //============ Initialization of all inputs and data structures for input
+    Inclusion_Interaction_Map inc_ForceField(m_InputFileName);
+    m_inc_ForceField = inc_ForceField;
     m_pinc_ForceField = &m_inc_ForceField;
     m_pConstant_NematicForce = &m_Constant_NematicForce;
     m_Argument = argument;
@@ -137,15 +139,6 @@ State::State(std::vector <std::string> argument)
     }
         m_Mesh.GenerateMesh(meshblueprint);
     
-    
-    
-    
-#if TEST_MODE == Enabled
-    std::cout<<"----> Note: created mesh contains "<<(m_pMesh->m_pAllV).size()<<" vertices"<<std::endl;
-    std::cout<<"----> Note: created mesh contains "<<(m_pMesh->m_pAllT).size()<<" trinagles"<<std::endl;
-    std::cout<<"----> Note: created mesh contains "<<(m_pMesh->m_pLinks).size()<<" links"<<std::endl;
-    std::cout<<"----> Note: created mesh contains "<<(m_pMesh->m_pInclusion).size()<<" inclusions"<<std::endl;
-#endif
     // Generating couplings
     LinkFlipMC LPTEM (this);
     m_LinkFlipMC = LPTEM;

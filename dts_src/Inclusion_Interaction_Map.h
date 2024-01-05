@@ -20,7 +20,7 @@ class Inclusion_Interaction_Map
 {
 public:
 
-	Inclusion_Interaction_Map(std::string inputfilename,std::vector<double>);
+	Inclusion_Interaction_Map(std::string inputfilename);
     Inclusion_Interaction_Map();
     ~Inclusion_Interaction_Map();
     

@@ -20,7 +20,7 @@ Energy::Energy(Inclusion_Interaction_Map * pint)
    m_Kappa = pint->m_BendingRigidity;
    m_KappaG = pint->m_GaussianRigidity;
    m_mem_c0 = pint->m_Spontaneous_Curvature;
-   m_Membrane_model_parameters = pint->m_Membrane_model_parameters;
+   m_Membrane_model_parameters = pint->m_Membrane_model_parameters;   // this is useless for now
    m_NO_Membrane_model_parameters = m_Membrane_model_parameters.size();
     
    //== edge parameter;
@@ -49,12 +49,8 @@ if(pv->m_VertexType==0)
     double area=pv->GetArea();
 
 
-    
-    
-    if(m_NO_Membrane_model_parameters==3)
-    {
-    if(pv->VertexOwnInclusion()==true)
-    {
+        if(pv->VertexOwnInclusion()==true)
+        {
         inclusion *inc=pv->GetInclusion();
         InclusionType *inctype = inc->GetInclusionType();
         double k0 = inctype->ITk;
@@ -68,8 +64,8 @@ if(pv->m_VertexType==0)
             double H=(mean-c0);
             k0=k0/2.0;
             Energy+=(k0*H*H-kg*gussian)*area;         /// this means that inclsuion overwrite the vertex bending rigidity
-        if(k1!=0 || k2!=0)
-        {
+            if(k1!=0 || k2!=0)
+            {
             Vec3D LD=inc->GetLDirection();
             double Cos=LD(0);
             double Sin=LD(1);
@@ -79,23 +75,13 @@ if(pv->m_VertexType==0)
             double H2=(C2-c2);
             Energy+=(k1*H1*H1+k2*H2*H2)*area/2;
 
+            }
         }
-    }
-    else
-    {
-        Energy=(m_Kappa*(mean-m_mem_c0)*(mean-m_mem_c0)-m_KappaG*gussian)*area;
-    }
-    }
-    else if(m_NO_Membrane_model_parameters==5)
-    {
-    Energy=(m_Kappa*(mean-m_mem_c0)*(mean-m_mem_c0)-m_KappaG*gussian)*area;
-    Energy+=(m_Membrane_model_parameters.at(3)*mean*mean*mean*mean+m_Membrane_model_parameters.at(4)*gussian*gussian)*area;
-    }
-    else
-    {
-    std::cout<<" error: we have not implememnted the large model paramters sim yet \n";
-    exit(0);
-    }
+        else
+        {
+            Energy=(m_Kappa*(mean-m_mem_c0)*(mean-m_mem_c0)-m_KappaG*gussian)*area;
+        }
+
     
     // energy for area
     if(m_Kva!=0)
