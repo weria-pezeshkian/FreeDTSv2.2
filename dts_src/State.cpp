@@ -25,9 +25,7 @@ State::State(std::vector <std::string> argument)
     std::cout<<"----> We have reached the State Class -- "<<std::endl;
 #endif
     //============ Initialization of all inputs and data structures for input
-    Inclusion_Interaction_Map inc_ForceField(m_InputFileName);
-    m_inc_ForceField = inc_ForceField;
-    m_pinc_ForceField = &m_inc_ForceField;
+
     m_pConstant_NematicForce = &m_Constant_NematicForce;
     m_Argument = argument;
     m_Targeted_State = true;
@@ -97,6 +95,13 @@ State::State(std::vector <std::string> argument)
 
     //====== Updating the input data from provided inputs
     ExploreArguments();     // Find input file name
+    
+    // this should be changed at some point. Now it needed to be exactly in this place because need the name of the input file but it also needs updates the bending rigidity and etc. so the copy becomes a problem if it is not here.
+    Inclusion_Interaction_Map inc_ForceField(m_InputFileName);
+    m_inc_ForceField = inc_ForceField;
+    m_pinc_ForceField = &m_inc_ForceField;
+    
+    
     ReadInputFile(m_InputFileName);  // Reading from input file
     ExploreArguments();     // Update last state
     WriteStateLog();        // writing a log file

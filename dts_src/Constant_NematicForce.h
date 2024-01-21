@@ -7,6 +7,7 @@
 */
 #include "SimDef.h"
 #include "vertex.h"
+#include "links.h"
 
 class Constant_NematicForce
 {
@@ -26,6 +27,8 @@ public:
     double m_En;
 public:
     double Energy_of_Force(vertex *p, Vec3D dx);
+    Vec3D ActiveNematicForce_1(vertex *pv2, vertex *pv1);
+
     void  Initialize();
     //=====
     
