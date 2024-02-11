@@ -284,7 +284,8 @@ if(createorkill<0.5)
         double DE = (enew-eold);
 
 
-        if(double(NL)/double(NS+1)*exp(-m_Beta*DE)>thermal )
+        //if(double(NL)/double(NS+1)*exp(-m_Beta*DE)>thermal )
+        if(exp(-m_Beta*DE)>thermal )
         {
              (*glo_energy)=(*glo_energy)+DE;
         }
@@ -389,7 +390,8 @@ else  // if(createorkill<0.5)
 
         double DE = (enew-eold);
                
-        if(double(NS)/double(NL+1)*(exp(-m_Beta*DE)>thermal ))
+        //if(double(NS)/double(NL+1)*(exp(-m_Beta*DE)>thermal ))
+        if((exp(-m_Beta*DE)>thermal ))
         {
              (*glo_energy)=(*glo_energy)+DE;
         }
