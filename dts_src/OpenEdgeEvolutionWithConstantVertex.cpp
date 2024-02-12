@@ -142,7 +142,8 @@ if(createorkill<0.5)
         double *glo_energy=&(m_pState->m_TotEnergy);
         double DE = (enew-eold);
 
-        if(double(NL)/double(NS+1)*exp(-m_Beta*DE)>thermal )
+        //if(double(NL)/double(NS+1)*exp(-m_Beta*DE)>thermal )
+        if(exp(-m_Beta*DE)>thermal )
         {
              (*glo_energy)=(*glo_energy)+DE;
         }

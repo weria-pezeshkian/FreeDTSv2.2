@@ -183,9 +183,9 @@ std::cout<<"thread id "<<Thread_ID<<" total no threead "<<omp_get_num_threads()<
                 {
                     MC_Simulation SIM(&S);
                 }
-                else if(S.m_Integrator == "MC_b")
+                else if(S.m_Integrator == "MC_B")
                 {
-                    std::cout<<" error989-->we have removed this for the moment; contact the developer \n";
+                    MC_Simulation_B SIM(&S);
                 }
                 
             }
