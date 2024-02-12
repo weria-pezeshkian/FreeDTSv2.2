@@ -12,6 +12,7 @@
 #include "State.h"
 #include "Nfunction.h"
 #include "MC_Simulation.h"
+#include "MC_Simulation_B.h"
 #include "RNG.h"
 
 
@@ -46,6 +47,10 @@ if (Parallel_Tempering==0)
     if(tem_S.m_Integrator == "MC")
     {
         MC_Simulation SIM(&tem_S);
+    }
+    else if(tem_S.m_Integrator == "MC_B")
+    {
+        MC_Simulation_B SIM(&tem_S);
     }
 }
 else
