@@ -493,7 +493,7 @@ void State::ReadInputFile(std::string file)
             
             //=== send it to force field class
             m_inc_ForceField.m_Lambda = a;
-            m_inc_ForceField.m_KgEdge = a;
+            m_inc_ForceField.m_KgEdge = b;
             m_inc_ForceField.m_KnEdge = c;
 
             getline(input,rest);

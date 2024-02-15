@@ -150,13 +150,11 @@ double Energy::SingleEdgeVertexEnergy(vertex *pv)
     {
         Energy = lambda+kg*gc*gc+kn*nc*nc;
         Energy=Energy*length;
-
     }
-    
+
     // energy for area
     if(m_KvaEdge!=0)
     Energy+=m_KvaEdge*(area-m_av0Edge)*(area-m_av0Edge);
-
     return Energy;
 }
 

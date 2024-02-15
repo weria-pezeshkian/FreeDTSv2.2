@@ -98,24 +98,32 @@ if(createorkill<0.5)
         links* l1 = v3->m_pEdgeLink;
         vertex *v2 = l1->GetV2();
         // calculate the old energy
+       // std::cout<<" edge size "<<(m_pMESH->m_pEdgeV).size()<<" \n ";
+
         double eold = v1->GetEnergy();
+      //  std::cout<<" old "<<eold<<"  ";
         eold+= v2->GetEnergy();
+      //  std::cout<<"  "<<v2->GetEnergy()<<"  "<<" length  "<<v2->m_VLength<<" ";;
         eold+= v3->GetEnergy();
-        
+      //  std::cout<<"  "<<v3->GetEnergy()<<"  "<<" length  "<<v3->m_VLength<<" ";
+
         //=== inclusion interaction energy;
         
         std::vector <links *> nvl1 = v1->GetVLinkList();
         for (std::vector<links *>::iterator it = nvl1.begin() ; it != nvl1.end(); ++it)
             eold+=2*(*it)->GetIntEnergy();
-        
+       // std::cout<<"  "<<eold<<"  ";
+
         std::vector <links *> nvl2 = v2->GetVLinkList();
         for (std::vector<links *>::iterator it = nvl2.begin() ; it != nvl2.end(); ++it)
             eold+=2*(*it)->GetIntEnergy();
-        
+       // std::cout<<"  "<<eold<<"  ";
+
         std::vector <links *> nvl3 = v3->GetVLinkList();
         for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it)
             eold+=2*(*it)->GetIntEnergy();
         
+       // std::cout<<"  "<<eold<<"  ";
 
 
         // create a link (this also updates the gemotry)
@@ -123,24 +131,37 @@ if(createorkill<0.5)
 
         // new energy
         double enew = m_pEnergyCalculator->SingleVertexEnergy(v1);
+      //  std::cout<<"\n new "<<enew<<"  ";
+
         enew+= m_pEnergyCalculator->SingleVertexEnergy(v2);
+      //  std::cout<<" "<<m_pEnergyCalculator->SingleVertexEnergy(v2)<<"  ";
+
         enew+=m_pEnergyCalculator->SingleVertexEnergy(v3);
-       
+      //  std::cout<<" "<<m_pEnergyCalculator->SingleVertexEnergy(v3)<<" length  "<<v3->m_VLength<<" ";
+
         //=== inclusion interaction energy
         
         for (std::vector<links *>::iterator it = nvl1.begin() ; it != nvl1.end(); ++it)
             enew+=m_pEnergyCalculator->TwoInclusionsInteractionEnergy(*it);
+      //  std::cout<<" "<<enew<<"  ";
+
         for (std::vector<links *>::iterator it = nvl2.begin() ; it != nvl2.end(); ++it)
             enew+=m_pEnergyCalculator->TwoInclusionsInteractionEnergy(*it);
+      //  std::cout<<" "<<enew<<"  ";
+
         for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it)
             enew+=m_pEnergyCalculator->TwoInclusionsInteractionEnergy(*it);
-    
+      //  std::cout<<" "<<enew<<"  ";
+
             // the new created link
            enew+=m_pEnergyCalculator->TwoInclusionsInteractionEnergy(newlink);
 
-        
+      //  std::cout<<" "<<enew<<" \n ";
+
         double *glo_energy=&(m_pState->m_TotEnergy);
         double DE = (enew-eold);
+       // std::cout<<" DE "<<DE<<" \n ";
+      //  std::cout<<" edge "<<(m_pMESH->m_pEdgeV).size()<<" \n ";
 
         //if(double(NL)/double(NS+1)*exp(-m_Beta*DE)>thermal )
         if(exp(-m_Beta*DE)>thermal )
@@ -323,7 +344,7 @@ if(createorkill<0.5)
         std::cout<<"error---> it should not happen, this is not expected \n";
     }
 }
-else  // if(createorkill<0.5)
+else  if(2>3)// if(createorkill<0.5)
 {
         // an atempt to kill a link
     if(m_pMESH->m_pEdgeL.size()!=0 )

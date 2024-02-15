@@ -381,12 +381,10 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
         else
             std::cout<<"---> Error: No such frame tension coupling type "<<std::endl;
     }
-   
+//==============  Edge evolotion
     if(mc_edge_evo->m_F==true && mcstep%(mc_edge_evo->m_Rate)==0)
-    {
-        // Edge evolotion
         mc_edge_evo->MC_Move(&Random1,m_Lmin2,m_Lmax2,m_minAngle);
-    }
+    
 //==== Active Inclsuion exchange two state; as these movie are indepenednt of the energy based move, the have no conditions
 //===================================
     if(ActiveTwoState->GetState() == true)
