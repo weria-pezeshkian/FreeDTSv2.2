@@ -504,7 +504,7 @@ void State::ReadInputFile(std::string file)
             input>>str>>a>>b>>c>>d;
             
             double A01 = (1+2*b)*sqrt(3)/2.0;   // selecting b between 0-1
-            double A02 = (1+2*d)*sqrt(3)/2.0;   // selecting d between 0-1
+            double A02 = sqrt(1+2*d);   // selecting d between 0-1
 
             if(b<0 || b>1 || d<0 || d>1)
             {

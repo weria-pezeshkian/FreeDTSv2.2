@@ -114,9 +114,7 @@ double Energy::SingleEdgeVertexEnergy(vertex *pv)
 
     
     //== this should be changed
-    double kg = m_KgEdge;
-    double kn = m_KnEdge;
-    double lambda = m_Lambda;
+    //m_KnEdge; m_KgEdge;
     //====
 
     if(pv->VertexOwnInclusion()==true)
@@ -124,37 +122,30 @@ double Energy::SingleEdgeVertexEnergy(vertex *pv)
         inclusion *inc=pv->GetInclusion();
         InclusionType *inctype = inc->GetInclusionType();
         
-        lambda = inctype->ITelambda;
-        kg = inctype->ITekg;
-        kn = inctype->ITekn;
+        double lambda = inctype->ITelambda;
+        double kg = inctype->ITekg;
+        double kn = inctype->ITekn;
         double cn0 = inctype->ITecn;
-
-            double H=(nc-cn0);
-            Energy+=(kn*H*H+kg*gc*gc)*length;         /// this means that inclsuion overwrite the vertex bending rigidity
-       /* if(k1!=0 || k2!=0)
+            Energy=(lambda+ +m_KgEdge*gc*gc+m_KnEdge*nc*nc)*length;         /// this means that inclsuion overwrite the vertex bending rigidity
+        if(kn!=0)  // this is not a general model, we need to modify it later
         {
             Vec3D LD=inc->GetLDirection();
             double Cos=LD(0);
-            double Sin=LD(1);
-            double C1=nc*Cos*Cos;
-            double C2=nc*Sin*Sin;
-            double H1=(C1-c1);
-            double H2=(C2-c2);
-            Energy+=(k1*H1*H1+k2*H2*H2)*length;
-        }*/
-        
-        Energy+=lambda*length;
-        
+            kn=kn*Cos*Cos;
+            double H1=(nc-cn0);
+            Energy+=(kn*H1*H1)*length;
+        }
+                
     }
     else
     {
-        Energy = lambda+kg*gc*gc+kn*nc*nc;
+        Energy = m_Lambda+m_KgEdge*gc*gc+m_KnEdge*nc*nc;
         Energy=Energy*length;
     }
 
     // energy for area
     if(m_KvaEdge!=0)
-    Energy+=m_KvaEdge*(area-m_av0Edge)*(area-m_av0Edge);
+    Energy+=m_KvaEdge*(length-m_av0Edge)*(length-m_av0Edge);
     return Energy;
 }
 
