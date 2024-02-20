@@ -344,7 +344,7 @@ if(createorkill<0.5)
         std::cout<<"error---> it should not happen, this is not expected \n";
     }
 }
-else  if(2>3)// if(createorkill<0.5)
+else  // if(createorkill<0.5)
 {
         // an atempt to kill a link
     if(m_pMESH->m_pEdgeL.size()!=0 )

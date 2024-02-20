@@ -115,6 +115,23 @@ bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * to
     }
 
     
+    
+     // we do this before performing the move so that the force is correct
+     double dE_nematic_force = 0;
+     if((m_pState->m_pConstant_NematicForce)->m_F0!=0)
+     {
+        for (std::vector<vertex *>::iterator it = (m_pMESH->m_pActiveV).begin() ; it != (m_pMESH->m_pActiveV).end(); ++it)
+        {
+            double x_o = (*it)->GetVXPos();
+            double y_o = (*it)->GetVYPos();
+            double x_n = m_Lnox*x_o;
+            double y_n = m_Lnoy*y_o;
+            Vec3D dx(x_n-x_o,y_n-y_o,0);
+            dE_nematic_force+= (m_pState->m_pConstant_NematicForce)->Energy_of_Force(*it, dx);
+        }
+     }
+
+    
     // by calling "PerformMove" now the move is performed:
     // box changed; vertices, triangles and links are coppied and the vertices positions are updated (rescaled in x and y)
     PerformMove();
@@ -220,12 +237,12 @@ bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * to
     }*/
 
 
-    double diff_energy = (DE+DEArea+eG);
-    int nv = (m_pMESH->m_pActiveV).size();
-   // std::cout<<diff_energy<<"  "<<temp<<"  "<<m_SigmaP<<"  "<<DEArea<<"  "<<(m_newLx*m_newLy-m_oldLx*m_oldLy)<<"\n";
-    //std::cout<<AreaRatio<<"  "<<nv<<"  "<<pow((AreaRatio),nv)<<"  "<<m_Lnox<<"  \n";
 
-   //
+
+
+    double diff_energy = (DE+DEArea+eG+dE_nematic_force);
+    int nv = (m_pMESH->m_pActiveV).size();
+    
         //if(nv*log(AreaRatio)-m_Beta*diff_energy>log(temp) )
         if(pow((AreaRatio),nv)*exp(-m_Beta*diff_energy)>temp )
        {
@@ -399,6 +416,7 @@ void PositionRescaleFrameTensionCoupling::PerformMove()
             (*it)->UpdateVXPos(m_Lnox*x);
             double y = (*it)->GetVYPos();
             (*it)->UpdateVYPos(m_Lnoy*y);
+            
         }
 }
 
