@@ -27,6 +27,9 @@ private:
     
     void WriteGro(std::vector<vertex*> pV,std::string filename, Vec3D Box);
     void  UpdateGeometry(MESH *pmesh, Vec3D *pBox);
+    void  GreatePro(std::vector<vertex*> &pV);
+    
+    std::vector<vertex> m_MoreV;
 
 
 };

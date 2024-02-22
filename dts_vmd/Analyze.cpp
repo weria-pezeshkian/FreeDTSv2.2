@@ -48,6 +48,9 @@ Analyze::Analyze(State *pState)
         Vec3D Box = *(pBox);
         
         UpdateGeometry((pState->m_pMesh), pBox);
+        
+        
+        
         std::vector <Surface_Mosaicing> Vmos;
         
         MESH          *ptmesh = (pState->m_pMesh);
@@ -68,7 +71,10 @@ Analyze::Analyze(State *pState)
         
         std::vector<vertex*> pV = ptmesh->m_pActiveV;
 
-        
+        std::cout<<pV.size()<<"\n";
+        GreatePro(pV);
+        std::cout<<pV.size()<<"\n";
+
         if(i==ini)
         {
             // write gro file
@@ -176,4 +182,45 @@ void  Analyze::UpdateGeometry(MESH *pmesh, Vec3D *pBox)
             (*it)->UpdateEdgeVector(pBox);
     for (std::vector<vertex *>::iterator it = (pmesh->m_pEdgeV).begin() ; it != (pmesh->m_pEdgeV).end(); ++it)
         CurvatureCalculations.EdgeVertexCurvature(*it);
+}
+void  Analyze::GreatePro(std::vector<vertex*> &pV)
+{
+    m_MoreV.clear();
+    int N=5;
+    double R=0.1;
+    double T=2*acos(-1)/double(N);
+    int j=pV.size();
+    for (std::vector<vertex *>::iterator it = pV.begin() ; it != pV.end(); ++it)
+    {
+        if((*it)->VertexOwnInclusion()==true)
+        {
+            (*it)->UpdateOwnInclusion(false);
+            double x=(*it)->GetVXPos();
+            double y=(*it)->GetVYPos();
+            double z=(*it)->GetVZPos();
+            Vec3D Pos(x,y,z);
+            Vec3D Norm = (*it)->GetNormalVector();
+            Norm=Norm*R;
+            Tensor2  M = (*it)->GetL2GTransferMatrix();
+            Vec3D L(R,0,0);
+            Vec3D newL(0,0,0);
+
+            for (int i=0;i<N;i++)
+            {
+                L(0)=R*cos(i*T);
+                L(1)=R*sin(i*T);
+                
+                newL =Pos+Norm+M*L;
+                vertex v(j,newL(0),newL(1),newL(2));
+                v.UpdateOwnInclusion(true);
+                m_MoreV.push_back(v);
+                j++;
+            }
+        }
+    }
+    
+    for (std::vector<vertex>::iterator it = m_MoreV.begin() ; it != m_MoreV.end(); ++it)
+        pV.push_back(&(*it));
+    
+    return;
 }
