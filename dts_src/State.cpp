@@ -498,6 +498,17 @@ void State::ReadInputFile(std::string file)
 
             getline(input,rest);
         }
+        else if(firstword == "ConstantField")
+        {
+            double k,x,y,z;
+            //input>>str>>k>>x>>y>>z;
+            //getline(input,rest);
+            double norm = sqrt(x*x+y*y+z*z);
+            Vec3D tem(x,y,z);
+            tem = tem*(1.0/norm);
+            m_inc_ForceField.m_FieldDirection = tem;
+            m_inc_ForceField.m_FieldStrength = k;
+        }
         else if(firstword == "VertexArea")
         {
             double a,b,c,d;

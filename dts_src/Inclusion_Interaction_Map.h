@@ -38,7 +38,9 @@ public:
     //=== area
     double m_Kva;
     double m_av0;
-    
+    Vec3D m_FieldDirection;
+    double m_FieldStrength;
+
     
     std::vector<double> m_Membrane_model_parameters;
 

@@ -32,6 +32,9 @@ Energy::Energy(Inclusion_Interaction_Map * pint)
   //== vertex area energy
    m_Kva = pint->m_Kva;
    m_av0 = pint->m_av0;
+    
+    m_FieldDirection = pint->m_FieldDirection;
+    m_FieldStrength = pint->m_FieldStrength;
 }
 Energy::~Energy()
 {
@@ -75,6 +78,13 @@ if(pv->m_VertexType==0)
             double H2=(C2-c2);
             Energy+=(k1*H1*H1+k2*H2*H2)*area/2;
 
+            }
+            if(m_FieldStrength!=0)
+            {
+                Vec3D LD=inc->GetLDirection();
+                Vec3D GD = (pv->GetL2GTransferMatrix())*LD;
+                double Cangle = GD.dot(GD,m_FieldDirection);
+                Energy+=m_FieldStrength*Cangle*Cangle;
             }
         }
         else

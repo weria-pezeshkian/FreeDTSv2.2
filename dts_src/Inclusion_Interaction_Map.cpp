@@ -18,6 +18,9 @@ Inclusion_Interaction_Map::Inclusion_Interaction_Map()
     //=== area
     m_Kva =0;
     m_av0 =0;
+    
+    //Vec3D m_FieldDirection;
+     m_FieldStrength = 0;
 }
 Inclusion_Interaction_Map::Inclusion_Interaction_Map(std::string inputfilename)
 {
@@ -30,7 +33,7 @@ Inclusion_Interaction_Map::Inclusion_Interaction_Map(std::string inputfilename)
     //=== area
     m_Kva =0;
     m_av0 =0;
-    
+    m_FieldStrength = 0;
     
 //============================================================
 for (int i=0;i<Inclusion_Type_Number;i++)

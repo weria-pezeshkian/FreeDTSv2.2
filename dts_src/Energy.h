@@ -39,6 +39,9 @@ private:
     double m_KnEdge;
     double m_KgEdge;
     
+    // field info
+     Vec3D m_FieldDirection;
+     double m_FieldStrength;
 
 public:
     double TotalEnergy(std::vector<vertex *> pVeretx, std::vector<links *> plink);   ///
