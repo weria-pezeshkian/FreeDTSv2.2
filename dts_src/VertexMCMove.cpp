@@ -232,11 +232,12 @@ double NewEnergy = m_pEnergyCalculator->Energy_OneVertexMove(m_pvertex);
     }
 
     //========
-                double diff_energy = (DE+eG+DEPV+harmonicde+DE_OP+DE_totA+dE_nematic_force);
+                double diff_energy = (DE+eG+DEPV+harmonicde+DE_OP+DE_totA);
             //    std::cout<<DE<<"  "<<eG<<"  "<<DEPV<<"  "<<harmonicde<<"  "<<DE_OP<<"  \n";
-            	if(diff_energy<=0 )
+            	if(diff_energy+dE_nematic_force<=0 )
             	{
                 	AccpetMove();
+                    (m_pState->m_pConstant_NematicForce)->m_ActiveEnergy+=dE_nematic_force;
                 	(*m_pTotEnergy)=(*m_pTotEnergy)+DE;
                     m_MoveValidity=1;
                  (m_pState->GetVolumeCoupling())->UpdateArea_Volume(m_simplexarea,m_simplexvolume,newsimplexarea,newsimplexvolume);
@@ -244,10 +245,10 @@ double NewEnergy = m_pEnergyCalculator->Energy_OneVertexMove(m_pvertex);
                  (m_pState->GetApply_Constant_Area())->UpdateArea(m_simplexarea,newsimplexarea);
 
             	}
-            	else if(exp(-m_Beta*diff_energy)>m_Thermal )
+            	else if(exp(-m_Beta*(diff_energy+dE_nematic_force))>m_Thermal )
              	{
                  	AccpetMove();
-
+                    (m_pState->m_pConstant_NematicForce)->m_ActiveEnergy+=dE_nematic_force;
                  	(*m_pTotEnergy)=(*m_pTotEnergy)+DE;
                     m_MoveValidity=1;
                     (m_pState->GetVolumeCoupling())->UpdateArea_Volume(m_simplexarea,m_simplexvolume,newsimplexarea,newsimplexvolume);

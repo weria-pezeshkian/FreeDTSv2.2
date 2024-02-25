@@ -18,9 +18,7 @@
 #include "CoupleToWallPotential.h"
 #include "ActiveTwoStateInclusion.h"
 
-/*
-#include "ActiveTwoStateInclusion.h"
-*/
+
 /*
  Weria Pezeshkian (weria.pezeshkian@gmail.com)
  Copyright (c) Weria Pezeshkian
@@ -253,6 +251,9 @@ int SigmaPTau = (pState->m_FrameTension).updatePeriod;
     if((pState->m_RESTART).restartState==false)
     {
     energyfile<<" ## mcstep  energy ";
+        std::cout<<"here 1 "<<(m_pState->m_pConstant_NematicForce)->m_F0<<"\n";
+    if((m_pState->m_pConstant_NematicForce)->m_F0!=0)
+        energyfile<<"  active_nematic_energy ";
     if(FrameTensionCouplingFlag==true)
         energyfile<<" Lx  Ly  Lz ";
     if (gc_globalcurvature->GetState() == true)
@@ -423,6 +424,8 @@ if((pState->m_TRJTSI).tsiPeriod!=0 && mcstep%((pState->m_TRJTSI).tsiPeriod)==0 )
 if( pState->m_OutPutEnergy_periodic!=0  && mcstep%(pState->m_OutPutEnergy_periodic)==0)
 {
     energyfile<<mcstep<<"   "<<*tot_Energy<<"   ";
+    if((m_pState->m_pConstant_NematicForce)->m_F0!=0)
+    energyfile<<(m_pState->m_pConstant_NematicForce)->m_ActiveEnergy<<"  ";
     if(FrameTensionCouplingFlag==true)
     energyfile<<(*m_pBox)(0)<<"  "<<(*m_pBox)(1)<<"  "<<(*m_pBox)(2)<<"  ";
     if (gc_globalcurvature->GetState() == true)
@@ -447,7 +450,7 @@ if( pState->m_OutPutEnergy_periodic!=0  && mcstep%(pState->m_OutPutEnergy_period
     
     energyfile<<std::endl;
     
-    //======= write rate info with energy
+    //======= write acceptance rate
 if(Targeted_State==true)
     {
     if(mc_vertexmove == true)

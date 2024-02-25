@@ -6,7 +6,7 @@ Constant_NematicForce::Constant_NematicForce()
     m_F0 =0;
     m_Fd= 1;   // in the direction of the protein
     m_Fn= 0;    // in the direction of surface normal
-    m_En= 0;
+    m_ActiveEnergy = 0;
 
 }
 Constant_NematicForce::~Constant_NematicForce()
@@ -21,7 +21,7 @@ void Constant_NematicForce::Initialize()
 }
 double Constant_NematicForce::Energy_of_Force(vertex *pv, Vec3D dx)
 {
-    m_En = 0;
+    double En = 0;
     if(pv->VertexOwnInclusion()==true && m_F0!=0)
     {
         std::vector <links *> nl = pv->GetVLinkList();
@@ -33,9 +33,9 @@ double Constant_NematicForce::Energy_of_Force(vertex *pv, Vec3D dx)
         }
         Tensor2  G2L = pv->GetG2LTransferMatrix();
         Vec3D ldx = G2L*dx;
-        m_En = m_Fd*m_F0*(ldx.dot(ldx,Force));  // in the local space F = -zeta*div(Q); E=zeta*div(Q)*dX
+        En = m_Fd*m_F0*(ldx.dot(ldx,Force));  // in the local space F = -zeta*div(Q); E=zeta*div(Q)*dX
     }
-    return m_En;
+    return En;
 }
 Vec3D Constant_NematicForce::ActiveNematicForce_1(vertex *v2, vertex *v1) // gives force in the local coordinate
 {

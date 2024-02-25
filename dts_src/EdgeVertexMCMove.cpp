@@ -172,17 +172,19 @@ double NewEnergy = EE.Energy_OneVertexMove(m_pvertex);
     }
     
                 DE=NewEnergy-m_oldEnergy;
-                double diff_energy = m_Beta*(DE+harmonicde+dE_nematic_force);
-            	if(diff_energy<=0 )
+                double diff_energy = (DE+harmonicde);
+            	if(diff_energy+dE_nematic_force<=0 )
             	{
                      AccpetMove();
+                    (m_pState->m_pConstant_NematicForce)->m_ActiveEnergy+=dE_nematic_force;
                     (*m_pTotEnergy)=(*m_pTotEnergy)+DE;
                     m_MoveValidity=1;
 
             	}
-            	else if(exp(-diff_energy)>m_Thermal )
+            	else if(exp(-m_Beta*(diff_energy+dE_nematic_force))>m_Thermal )
              	{
                  	AccpetMove();
+                    (m_pState->m_pConstant_NematicForce)->m_ActiveEnergy+=dE_nematic_force;
                  	(*m_pTotEnergy)=(*m_pTotEnergy)+DE;
                     m_MoveValidity=1;
              	}

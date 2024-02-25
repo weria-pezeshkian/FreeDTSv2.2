@@ -24,7 +24,7 @@ public:
     double m_F0;
     double m_Fd;   // in the direction of the protein
     double m_Fn;    // in the direction of surface normal
-    double m_En;
+    double m_ActiveEnergy;
 public:
     double Energy_of_Force(vertex *p, Vec3D dx);
     Vec3D ActiveNematicForce_1(vertex *pv2, vertex *pv1);

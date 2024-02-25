@@ -240,17 +240,17 @@ bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * to
 
 
 
-    double diff_energy = (DE+DEArea+eG+dE_nematic_force);
+    double diff_energy = (DE+DEArea+eG);
     int nv = (m_pMESH->m_pActiveV).size();
     
         //if(nv*log(AreaRatio)-m_Beta*diff_energy>log(temp) )
-        if(pow((AreaRatio),nv)*exp(-m_Beta*diff_energy)>temp )
+        if(pow((AreaRatio),nv)*exp(-m_Beta*(diff_energy+dE_nematic_force))>temp )
        {
         if(m_pCFGC->GetState()==true)
         m_pCFGC->UpdateEnergyChange(-m_DeltaA,-m_DetaR);
          
          (*tot_Energy)=(*tot_Energy)+DE;  // we only add DE because this is only elastic energy
-         
+         (m_pState->m_pConstant_NematicForce)->m_ActiveEnergy+=dE_nematic_force;
          // Update area for the constant area system
          if((m_pState->GetApply_Constant_Area())->GetState()==true)
          (m_pState->GetApply_Constant_Area())->UpdateArea(oldarea_FixedTotArea,newarea_FixedTotArea);
