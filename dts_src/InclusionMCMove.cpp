@@ -19,7 +19,7 @@ InclusionMCMove::~InclusionMCMove()
 {
     
 }
-void InclusionMCMove::MC_Move_AnInclusion(inclusion *pinc, RNG* Random)
+void InclusionMCMove::MC_Move_AnInclusion(inclusion *pinc, RNG* Random, int movetype )
 {
     m_LIntEChange.clear();
     m_pLIntEChange.clear();
@@ -29,16 +29,15 @@ void InclusionMCMove::MC_Move_AnInclusion(inclusion *pinc, RNG* Random)
     m_MoveValidity=0;
 
     double temp = Random->UniformRNG(1);
-    double movetype = Random->UniformRNG(1);
     std::vector <links*> linklist=(m_pInc->Getvertex())->GetVLinkList();
     int m = Random->IntRNG(linklist.size());
     double dx = (1-2*(Random->UniformRNG(1)));
     double dy = (1-2*(Random->UniformRNG(1)));
     links *d_link = linklist.at(m);
 
-    if(movetype>0.5)
+    if(movetype==1)
         KawasakiMove(temp, d_link);
-    else
+    else if (movetype==2)
        RotationMove(temp,R*dx,R*dy);
 }
 void InclusionMCMove::KawasakiMove(double temp, links * d_links)

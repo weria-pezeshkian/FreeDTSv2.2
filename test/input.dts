@@ -1,8 +1,8 @@
 Integrator                      = MC_B
-MC_Moves                        = 1 1 1 1
+MC_Moves                        = 1 0 0 0 0
 Initial_Step                    = 1
-Final_Step                      = 500
-Display_periodic                = 100
+Final_Step                      = 5000
+Display_periodic                = 10
 OutPutEnergy_periodic           = 100
 Restart_periodic                = 10000
 Kappa                           = 10 0
@@ -10,8 +10,8 @@ Edge_Parameters			= 10000  1   1
 OutPutTRJ_TSI                   = 100  10  TrjTSI
 GeneralOutputFilename           = output
 Constant_NematicForce           =  1 1 1
-Frame_Tension                   = on  Position_Rescale 1  5
-OpenEdgeEvolutionWithConstantVertex = on 1 
+Frame_Tension                   = off  Position_Rescale 1  5
+OpenEdgeEvolutionWithConstantVertex = off 1 
 INCLUSION
 Define 2 Inclusions
 SRotation   Type   K   KG  KP  KL  C0     C0P  C0L
@@ -20,7 +20,7 @@ SRotation   Type   K   KG  KP  KL  C0     C0P  C0L
 GenerateInclusions
 Selection_Type Random
 TypeID     1  2    
-Density    1.0  0.0  
+Density    0.0  0.0  
 Inclusion-Inclusion-Int
 1    1    1   2  1   -1
 

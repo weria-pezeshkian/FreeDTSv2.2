@@ -95,15 +95,13 @@ struct STRUC_FRAMETENSION { // data structure for inputs apply pressure and volu
     double Tau;
     int updatePeriod;
 };
-struct STRUC_MCMOVES {  // data structure for turning on and off certain moves
-    bool VertexMove;
-    bool LinkFlip;
-    bool InclusionMove;
-    bool EdgeVertexMove;
-    double VertexMoveRate;
-    double LinkFlipRate;
-    double InclusionMoveRate;
-    double EdgeVertexMoveRate;
+struct STRUC_MCMOVES {  // data structure for turning on and off certain moves and specify the rate
+    double VertexMove;
+    double LinkFlip;
+    double InclusionMove_Angle;
+    double InclusionMove_Kawasaki;
+    double EdgeVertexMove;
+
 
 };
 struct Parallel_Tempering {  // data structure for turning on and off certain moves

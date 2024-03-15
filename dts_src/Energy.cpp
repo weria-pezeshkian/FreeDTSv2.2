@@ -84,7 +84,7 @@ if(pv->m_VertexType==0)
                 Vec3D LD=inc->GetLDirection();
                 Vec3D GD = (pv->GetL2GTransferMatrix())*LD;
                 double Cangle = GD.dot(GD,m_FieldDirection);
-                Energy+=m_FieldStrength*Cangle*Cangle;
+                Energy+=-m_FieldStrength*Cangle*Cangle;
             }
         }
         else
@@ -144,6 +144,13 @@ double Energy::SingleEdgeVertexEnergy(vertex *pv)
             kn=kn*Cos*Cos;
             double H1=(nc-cn0);
             Energy+=(kn*H1*H1)*length;
+        }
+        if(m_FieldStrength!=0)
+        {
+            Vec3D LD=inc->GetLDirection();
+            Vec3D GD = (pv->GetL2GTransferMatrix())*LD;
+            double Cangle = GD.dot(GD,m_FieldDirection);
+            Energy+=-m_FieldStrength*Cangle*Cangle;
         }
                 
     }

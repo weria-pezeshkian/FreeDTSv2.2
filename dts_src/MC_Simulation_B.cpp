@@ -162,12 +162,11 @@ std::cout<<"----> We printed our first configuration into a vtu file "<<std::end
 //================================ MC_Simulation_B Starts ================================
 //=====================================================================================
 //=====================================================================================
-bool mc_linkflip = (pState->m_MCMove).LinkFlip;
-bool mc_vertexmove = (pState->m_MCMove).VertexMove;
-bool mc_inclusionmove = (pState->m_MCMove).InclusionMove;
-double mc_linkfliprate = (pState->m_MCMove).LinkFlipRate;
-double mc_vertexmoverate = (pState->m_MCMove).VertexMoveRate;
-double mc_inclusionmoverate = (pState->m_MCMove).InclusionMoveRate;
+double mc_linkflip = (pState->m_MCMove).LinkFlip;
+double mc_vertexmove = (pState->m_MCMove).VertexMove;
+double mc_inclusionmove_kawa = (pState->m_MCMove).InclusionMove_Kawasaki;
+double mc_inclusionmove_angle = (pState->m_MCMove).InclusionMove_Angle;
+
 #if DEBUG_MODE == Enabled
     std::cout<<" simulation: getting move objects \n";
 #endif
@@ -289,28 +288,34 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
     }
     if(VerexORbox<1)
     {
-        if(mc_linkflip == true )//&& movechance<mc_linkfliprate) // do link flip if it is allowed
-        for(int t=0;t<(m_pMESH->m_pHL).size();t++)
-        {
-            int m=Random1.IntRNG((m_pMESH->m_pHL).size());
-            links *Tlinks = (m_pMESH->m_pHL)[m];  // chose a link randomly
-            if(Tlinks->GetMirrorFlag()==true)
-            {
-                double thermal=Random1.UniformRNG(1.0);
-                mc_LFlip->MC_FlipALink(mcstep,Tlinks,thermal);
-                LRate+=mc_LFlip->GetMoveValidity();
-                totallmove++;
-            }
-        }
-        
-        if(mc_vertexmove == true )//&& movechance<mc_vertexmoverate+mc_linkfliprate)
-        for(int t=0;t<(m_pMESH->m_pSurfV).size();t++)
-        {
 
-            int n=Random1.IntRNG((m_pMESH->m_pSurfV).size());
-            vertex *lpvertex = (m_pMESH->m_pSurfV)[n];   //
-            if(lpvertex->GetGroupName()!=pState->m_FreezGroupName)
+            //== do link flip if it is allowed
+            int no_link = m_pMESH->m_pHL.size();
+            int no_link_iter = static_cast<int>(mc_linkflip * m_pMESH->m_pHL.size());
+        //std::cout<<mc_linkflip<<"  "<<no_link_iter<<"\n";
+            if(no_link_iter!=0)
+            for(int t=0;t<no_link;++t){
+                int m=Random1.IntRNG(no_link);
+                links *Tlinks = (m_pMESH->m_pHL)[m];  // chose a link randomly
+                if(Tlinks->GetMirrorFlag()){
+                    double thermal=Random1.UniformRNG(1.0);
+                    mc_LFlip->MC_FlipALink(mcstep,Tlinks,thermal);
+                    LRate+=mc_LFlip->GetMoveValidity();
+                    ++totallmove;
+                }
+            }
+        
+        //== do vertex move
+            int no_surfV = (m_pMESH->m_pSurfV).size();
+            int no_surfV_iter = int(mc_vertexmove*(m_pMESH->m_pSurfV).size());
+
+            for(int t=0;t<no_surfV_iter;++t)
             {
+                int n=Random1.IntRNG(no_surfV);
+                n=50;
+                vertex *lpvertex = (m_pMESH->m_pSurfV)[n];   //
+                if(lpvertex->GetGroupName()!=pState->m_FreezGroupName)
+                {
                 double dx=1-2*Random1.UniformRNG(1.0);            // Inside a cube with the side length of R
                 double dy=1-2*Random1.UniformRNG(1.0);
                 double dz=1-2*Random1.UniformRNG(1.0);
@@ -322,14 +327,17 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
                 if(cwp==true )
                 {
                 mc_VMove->MC_MoveAVertex(mcstep,lpvertex,R*dx,R*dy,R*dz,thermal);
+                    
+                    std::cout<<(lpvertex->GetNormalVector())(0)<<"  "<<(lpvertex->GetNormalVector())(1)<<"  "<<lpvertex->GetArea()<<"  \n";
                 VRate+=mc_VMove->GetMoveValidity();
                 totalvmove++;
                 }
-           }
+            }
         }// end of if(mc_vertexmove == true)
         
-        if ((pState->m_MCMove).EdgeVertexMove == true && m_pEdgeV.size()!=0 )
-        for(int t=0;t<(m_pMESH->m_pEdgeV).size();t++)
+        //== do edge v move
+            int no_edgeV = int(((pState->m_MCMove).EdgeVertexMove)*((m_pMESH->m_pEdgeV).size()));
+        for(int t=0;t<no_edgeV;t++)
         {
             int n=Random1.IntRNG((m_pMESH->m_pEdgeV).size());
             vertex *lpvertex = (m_pMESH->m_pEdgeV)[n];   //
@@ -352,15 +360,25 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
         
         }// end if(edgevertexmove == true)
         
-        if(mc_inclusionmove == true && m_pInclusions.size()!=0)
-            for(int t=0;t<m_pInclusions.size();t++)
+        int no_kawa = int(mc_inclusionmove_kawa*m_pInclusions.size());
+        for(int t=0;t<no_kawa;t++)
         {
-                int n=Random1.IntRNG(m_pInclusions.size());
-                inclusion *linclusion = m_pInclusions.at(n);   //
-                mc_IncMove->MC_Move_AnInclusion(linclusion,&Random1);
-                InRate+=mc_IncMove->GetMoveValidity();
-                totalinmove++;
+            int n=Random1.IntRNG(m_pInclusions.size());
+            inclusion *linclusion = m_pInclusions.at(n);   //
+            mc_IncMove->MC_Move_AnInclusion(linclusion,&Random1, 1);
+            InRate+=mc_IncMove->GetMoveValidity();
+            totalinmove++;
         }
+        int no_angle = int(mc_inclusionmove_angle*m_pInclusions.size());
+        for(int t=0;t<no_angle;t++)
+        {
+            int n=Random1.IntRNG(m_pInclusions.size());
+            inclusion *linclusion = m_pInclusions.at(n);   //
+            mc_IncMove->MC_Move_AnInclusion(linclusion,&Random1, 2);
+            InRate+=mc_IncMove->GetMoveValidity();
+            totalinmove++;
+        }
+
     }
     else
     { // box move
@@ -453,11 +471,11 @@ if( pState->m_OutPutEnergy_periodic!=0  && mcstep%(pState->m_OutPutEnergy_period
     //======= write acceptance rate
 if(Targeted_State==true)
     {
-    if(mc_vertexmove == true)
+    if(mc_vertexmove >1)
     std::cout<<" Vertex move accpetance rate "<<double(VRate)/double(totalvmove)*100.0<<" % ";
-    if(mc_linkflip == true)
+    if(mc_linkflip >1)
     std::cout<<" Link flip accpetance rate  "<<LRate/double(totallmove)*100.0<<" % ";
-    if(mc_inclusionmove == true && m_pInclusions.size()!=0)
+    if(m_pInclusions.size()!=0)
     std::cout<<"incluions move accpetance rate  "<<InRate/double(totalinmove)*100.0<<" %. ";
     if(FrameTensionCouplingFlag==true)
     std::cout<<"box move accpetance rate  "<<boxrate/double(totalboxmove)*100.0<<" % ";

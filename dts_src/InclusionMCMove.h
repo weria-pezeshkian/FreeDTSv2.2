@@ -17,7 +17,7 @@ public:
 	 ~InclusionMCMove();
 
 
-   void MC_Move_AnInclusion(inclusion *pinc, RNG *);
+   void MC_Move_AnInclusion(inclusion *pinc, RNG *, int);
 
          inline double   GetEnergyDifference()    const    {return m_EnergyDifference;}
          inline int   GetMoveValidity()        {return m_MoveValidity;}

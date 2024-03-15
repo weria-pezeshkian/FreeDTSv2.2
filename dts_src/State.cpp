@@ -64,14 +64,11 @@ State::State(std::vector <std::string> argument)
     m_TRJBTS.btsState = false;
     m_RESTART.restartState = false;
     m_RESTART.restartPeriod = 1000;
-    m_MCMove.VertexMove = true;
-    m_MCMove.EdgeVertexMove = true;
-    m_MCMove.LinkFlip = true;
-    m_MCMove.InclusionMove = true;
-    m_MCMove.VertexMoveRate = 1;
-    m_MCMove.LinkFlipRate = 1;
-    m_MCMove.InclusionMoveRate = 1;
-    m_MCMove.EdgeVertexMoveRate = 1;
+    m_MCMove.VertexMove = 1;
+    m_MCMove.EdgeVertexMove = 1;
+    m_MCMove.LinkFlip = 1;
+    m_MCMove.InclusionMove_Angle = 1;
+    m_MCMove.InclusionMove_Kawasaki = 1;
     m_FrameTension.State = false;
     m_FrameTension.Type = "Position_Rescale";
     m_FrameTension.Tau = 0.0;
@@ -296,32 +293,34 @@ void State::ReadInputFile(std::string file)
         }
         else if(firstword == "MC_Moves")
         {
-            input>>str>>(m_MCMove.VertexMove)>>(m_MCMove.LinkFlip)>>(m_MCMove.EdgeVertexMove)>>(m_MCMove.InclusionMove);
-            getline(input,rest);
-        }
-        else if(firstword == "MC_MovesRate")
-        {
-            input>>str>>(m_MCMove.VertexMoveRate)>>(m_MCMove.LinkFlipRate)>>(m_MCMove.EdgeVertexMoveRate)>>(m_MCMove.InclusionMoveRate);
-            getline(input,rest);
+            getline(input, str);
+            std::vector<std::string> data = f.split(str);
+
+            // Check if the correct number of moves is provided
+            const int expectedMoves = 5;
+            if (data.size() != expectedMoves + 1) { // +1 to account for the first element is just = sign
+                std::cout << "---> error: the defined MC moves does not cover all the moves. It should be " << expectedMoves << " numbers" << std::endl;
+                exit(0);
+            }
+
+            // Calculate normalization factor
+            double norm = 0;
+            for (int i = 1; i < data.size(); ++i)
+                norm += f.String_to_Double(data[i]);
+
+            if(norm==0)
+            norm=1;  // 
             
-            if(m_MCMove.VertexMoveRate<0)
-            {
-                std::cout<<"---> Error: move rate is negative "<<std::endl;
-                exit(0);
-            }
-            if(m_MCMove.LinkFlipRate<0)
-            {
-                std::cout<<"---> Error: move rate is negative "<<std::endl;
-                exit(0);
-            }
-            if(m_MCMove.InclusionMoveRate<0)
-            {
-                std::cout<<"---> Error: move rate is negative "<<std::endl;
-                exit(0);
-            }
-            if(m_MCMove.EdgeVertexMoveRate<0)
-            {
-                std::cout<<"---> Error: move rate is negative "<<std::endl;
+            // Assign normalized move rates
+            m_MCMove.VertexMove = f.String_to_Double(data[1]) / norm;
+            m_MCMove.LinkFlip = f.String_to_Double(data[2]) / norm;
+            m_MCMove.EdgeVertexMove = f.String_to_Double(data[3]) / norm;
+            m_MCMove.InclusionMove_Kawasaki = f.String_to_Double(data[4]) / norm;
+            m_MCMove.InclusionMove_Angle = f.String_to_Double(data[5]) / norm;
+
+            // Check if move rates are non-negative
+            if (m_MCMove.VertexMove < 0 || m_MCMove.LinkFlip < 0 || m_MCMove.InclusionMove_Angle < 0 || m_MCMove.InclusionMove_Kawasaki < 0 || m_MCMove.EdgeVertexMove < 0 ) {
+                std::cout << "---> error: move rates cannot be negative" << std::endl;
                 exit(0);
             }
         }
@@ -684,8 +683,7 @@ void State::WriteStateLog()
     statelog<<std::endl;
     statelog<<";------------------------------------------  "<<std::endl;
     statelog<<"Integrator = "<<m_Integrator<<std::endl;
-    statelog<<"MC_Moves = "<<(m_MCMove.VertexMove)<<"  "<<(m_MCMove.LinkFlip)<<"  "<<(m_MCMove.InclusionMove)<<std::endl;
-    statelog<<"MC_MovesRate = "<<(m_MCMove.VertexMoveRate)<<"  "<<(m_MCMove.LinkFlipRate)<<"  "<<(m_MCMove.InclusionMoveRate)<<std::endl;
+    statelog<<"MC_Moves = "<<(m_MCMove.VertexMove)<<"  "<<(m_MCMove.LinkFlip)<<"  "<<m_MCMove.EdgeVertexMove<<"  "<<(m_MCMove.InclusionMove_Angle)<<"  "<<(m_MCMove.InclusionMove_Kawasaki)<<std::endl;
     statelog<<"Initial_Step = "<<m_Initial_Step<<std::endl;
     statelog<<"Final_Step = "<<m_Final_Step<<std::endl;
     statelog<<"MinfaceAngle = "<<m_MinFaceAngle<<std::endl;
