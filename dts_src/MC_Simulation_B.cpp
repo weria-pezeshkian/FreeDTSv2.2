@@ -312,7 +312,7 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
             for(int t=0;t<no_surfV_iter;++t)
             {
                 int n=Random1.IntRNG(no_surfV);
-                n=50;
+                //n=50;
                 vertex *lpvertex = (m_pMESH->m_pSurfV)[n];   //
                 if(lpvertex->GetGroupName()!=pState->m_FreezGroupName)
                 {
@@ -328,7 +328,7 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
                 {
                 mc_VMove->MC_MoveAVertex(mcstep,lpvertex,R*dx,R*dy,R*dz,thermal);
                     
-                    std::cout<<(lpvertex->GetNormalVector())(0)<<"  "<<(lpvertex->GetNormalVector())(1)<<"  "<<lpvertex->GetArea()<<"  \n";
+                 //   std::cout<<(lpvertex->GetNormalVector())(0)<<"  "<<(lpvertex->GetNormalVector())(1)<<"  "<<lpvertex->GetArea()<<"  \n";
                 VRate+=mc_VMove->GetMoveValidity();
                 totalvmove++;
                 }
