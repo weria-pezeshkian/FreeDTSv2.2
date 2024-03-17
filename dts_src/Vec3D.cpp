@@ -1,7 +1,51 @@
 #include <iostream>
-#include "Vec3D.h" 
 #include <math.h>
 #include <limits.h>
+#include "Vec3D.h" 
+
+
+Vec3D::Vec3D(double x, double y, double z) : m_X(x), m_Y(y), m_Z(z) {}
+
+double& Vec3D::operator()(const int n) {
+    if (n == 0) return m_X;
+    else if (n == 1) return m_Y;
+    else return m_Z;
+}
+
+Vec3D Vec3D::operator+(const Vec3D& other) const {
+    return Vec3D(m_X + other.m_X, m_Y + other.m_Y, m_Z + other.m_Z);
+}
+
+Vec3D Vec3D::operator-(const Vec3D& other) const {
+    return Vec3D(m_X - other.m_X, m_Y - other.m_Y, m_Z - other.m_Z);
+}
+
+Vec3D Vec3D::operator*(const Vec3D& other) const {
+    return Vec3D(m_Y * other.m_Z - m_Z * other.m_Y,
+                 m_Z * other.m_X - m_X * other.m_Z,
+                 m_X * other.m_Y - m_Y * other.m_X);
+}
+
+Vec3D Vec3D::operator*(double scalar) const {
+    return Vec3D(m_X * scalar, m_Y * scalar, m_Z * scalar);
+}
+
+void Vec3D::operator=(const Vec3D& other) {
+    m_X = other.m_X;
+    m_Y = other.m_Y;
+    m_Z = other.m_Z;
+}
+
+double Vec3D::norm() const {
+    return std::sqrt(m_X * m_X + m_Y * m_Y + m_Z * m_Z);
+}
+
+double Vec3D::dot(const Vec3D& v1, const Vec3D& v2) {
+    return v1.m_X * v2.m_X + v1.m_Y * v2.m_Y + v1.m_Z * v2.m_Z;
+}
+/*
+
+
 Vec3D::Vec3D(double x,double y,double z)
 {
     m_X=x;
@@ -135,3 +179,4 @@ double Vec3D::dot(Vec3D v1,Vec3D v2)
     double No=v1(0)*v2(0)+v1(1)*v2(1)+v1(2)*v2(2);
     return No;
 }
+*/

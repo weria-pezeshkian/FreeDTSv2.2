@@ -20,9 +20,10 @@ void Curvature::SurfVertexCurvature(vertex * pvertex)
     Vec3D Normal;
     for (std::vector<triangle *>::iterator it = Ntr.begin() ; it != Ntr.end(); ++it)
     {
-        Vec3D v=(*it)->GetNormalVector();
         double a=(*it)->GetArea();
-        v=v*a;
+        Vec3D v=(*it)->GetAreaVector();
+        //Vec3D v=(*it)->GetNormalVector();
+        //v=v*a;
         Normal=Normal+v;
         Area+=a;
     }
@@ -30,13 +31,13 @@ void Curvature::SurfVertexCurvature(vertex * pvertex)
     if(Area==0)
     {
         std::cout<<Ntr.size()<<"\n";
-        std::string sms=" error----> vertex has a zero area \n";
+        std::string sms=" ---> error: vertex has a zero area \n";
         std::cout<<sms<<"\n";
         exit(0);
     }
     else if(Area<0)
     {
-        std::string sms=" error----> vertex has a negetive area \n";
+        std::string sms=" ---> error: vertex has a negetive area \n";
         std::cout<<sms<<"\n";
         exit(0);
     }
@@ -83,29 +84,7 @@ void Curvature::SurfVertexCurvature(vertex * pvertex)
            SV=SV+(Q)*(we*he);
        }//if((*it)->GetMirrorFlag()==true)
     }
-    
-    
-    /*
-   // method in the paper
-    Tensor2 SV2;
-    for (std::vector<links *>::iterator it = NLinks.begin() ; it != NLinks.end(); ++it)
-    {
-       if((*it)->GetMirrorFlag()==true)
-       {
-           Vec3D ve=(*it)->GetNormal();
-           double we=ve.dot(Normal,ve);
-           Vec3D Be=(*it)->GetBe();
-           double he=(*it)->GetHe();
-           Tensor2 Se;
-           Se=(Se.makeTen(Be))*he;
-           SV2=SV2+(Pt*(Se*P))*we;
-       }//if((*it)->GetMirrorFlag()==true)
-    }
-    */
-    
-    // end paper
-    
-    
+
     ///=============
     //==== Find Curvature and local frame
     //=============

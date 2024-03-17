@@ -1,7 +1,7 @@
 
 
 #include <stdio.h>
-#include "PositionRescaleFrameTensionCoupling.h"
+#include "DynamicBoxSide.h"
 #include "Nfunction.h"
 #include "vertex.h"
 #include "Curvature.h"
@@ -9,85 +9,56 @@
 
 /*
 ===============================================================================================================
- Last update Aug 2023 by Weria
+ developed 2024 by Weria
  Weria Pezeshkian (weria.pezeshkian@gmail.com)
  Copyright (c) Weria Pezeshkian
-This class changes the box in x and y direction to minimize the energy. It is called in input file by Frame_Tension  = on 0 2, where the first flag should be on to start this command and the second argument is frame tension and the third argument is the priodic of the operating.
-
-The way it works is based on the changing the box in x and y direction by a small size of dr by calling "MCMoveBoxChange" function.
+This class changes the box in x direction to minimize the energy. It is called in input file.
 =================================================================================================================
 */
-PositionRescaleFrameTensionCoupling::PositionRescaleFrameTensionCoupling()
+DynamicBoxSide::DynamicBoxSide()
 {
     
     
 }
-PositionRescaleFrameTensionCoupling::PositionRescaleFrameTensionCoupling(int tau, double f, State *pstate)
+DynamicBoxSide::DynamicBoxSide(int tau, double f,State *pstate)
 {
-    m_SigmaP=f;
+    m_F0 = f;
     m_pState = pstate;
     m_Tau = tau;
 }
-PositionRescaleFrameTensionCoupling::~PositionRescaleFrameTensionCoupling()
+DynamicBoxSide::~DynamicBoxSide()
 {
     
 }
-int PositionRescaleFrameTensionCoupling::GetTau() {
-    return m_Tau;
-}
-bool PositionRescaleFrameTensionCoupling::GetCNTCondition() {
-    return m_UpdateCNT;
-}
-void PositionRescaleFrameTensionCoupling::initialize()
-{
-    std::cout<<"---> the algorithm for box change involves applying PositionRescaleFrameTensionCoupling. \n";
+void DynamicBoxSide::initialize(){
+    std::cout<<"---> the algorithm for box change involves applying a constant force on one side. \n";
     m_pEnergyCalculator = m_pState->GetEnergyCalculator();
     m_pBox=(m_pState->m_pMesh)->m_pBox;
-    
     m_pMESH = m_pState->m_pMesh;
-    m_dr=0.0;
-    m_Lyx=(*m_pBox)(1)/(*m_pBox)(0);
+    m_Beta = m_pState->m_Beta;
     m_pLmin2 = &(m_pState->m_MinVerticesDistanceSquare);
     m_pLmax2 = &(m_pState->m_MaxLinkLengthSquare);
     m_pminAngle = &(m_pState->m_MinFaceAngle);
-    m_step = 0;
     m_pCFGC = m_pState->GetGlobalCurvature();
-    m_Beta = m_pState->m_Beta;
-}
-bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * tot_Energy, double temp, int step, GenerateCNTCells *pGenCNT)
-{
-//==== some updates Aug. 2023
-//==========================
-    
+    m_step = 0;
 
-    
+}
+bool DynamicBoxSide::GetCNTCondition(){
+    return m_UpdateCNT;
+}
+int DynamicBoxSide::GetTau() {
+    return m_Tau;
+}
+bool DynamicBoxSide::MCMoveBoxChange(double dx, double * tot_Energy, double temp, int step, GenerateCNTCells *pGenCNT) {
+
     m_UpdateCNT=true;   // should be set to true. true means do not update it.
     m_pGenCNT = pGenCNT;
-    CheckCNTSize();      // CNT cell should not be smaller then 1.8 after the move; we use 1.8 so no need for frequent changes
+    m_oldLx=(*m_pBox)(0);
+    m_newLx=(*m_pBox)(0)+dx;
+    m_Lxon = m_newLx/m_oldLx;
 
     m_step = step;
-    m_dr=dr;
-    m_drx=dr;
-    m_dry=m_Lyx*dr;
-    m_oldLx=(*m_pBox)(0);
-    m_oldLy=(*m_pBox)(1);
-    m_newLx=(*m_pBox)(0)+m_drx;
-    m_newLy=(*m_pBox)(1)+m_dry;
-    m_Lnox = m_newLx/m_oldLx;
-    m_Lnoy = m_newLy/m_oldLy;
-    double AreaRatio=(m_Lnox*m_Lnoy);
-
-   /* if(m_Lnox>1)
-    {
-        m_tmlarger++;
-        std::cout<<m_tmlarger/m_tmsmaller<<" accepted smaller\n";
-    }
-    else if(m_Lnox<1)
-    {
-        std::cout<<m_tmlarger/m_tmsmaller<<" accepted smaller\n";
-        m_tmsmaller++;
-
-    }*/
+    CheckCNTSize();      // CNT cell should not be smaller then 1.8 after the move; we use 1.8 so no need for frequent changes
 
     
     if(CheckMinDistance()==false)
@@ -123,10 +94,8 @@ bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * to
         for (std::vector<vertex *>::iterator it = (m_pMESH->m_pActiveV).begin() ; it != (m_pMESH->m_pActiveV).end(); ++it)
         {
             double x_o = (*it)->GetVXPos();
-            double y_o = (*it)->GetVYPos();
-            double x_n = m_Lnox*x_o;
-            double y_n = m_Lnoy*y_o;
-            Vec3D dx(x_n-x_o,y_n-y_o,0);
+            double x_n = (m_Lxon-1)*x_o;
+            Vec3D dx(x_n,0,0);
             dE_nematic_force+= (m_pState->m_pConstant_NematicForce)->Energy_of_Force(*it, dx);
         }
      }
@@ -187,7 +156,7 @@ bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * to
     
     // energy old and new
     double DE=0;        // total energy change
-    double DEArea=0;    // energy contribuion from projected area change
+    double DE_DeltaLX=0;    // nergy change of  side x
     
     double oldEnergy = (*tot_Energy);
     double newEnergy = m_pEnergyCalculator->TotalEnergy((m_pMESH->m_pSurfV), (m_pMESH->m_pHL));
@@ -195,8 +164,9 @@ bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * to
     
     DE= newEnergy-oldEnergy+DE_totA;
 
-    //=== energy change of constant projected area
-    DEArea = -m_SigmaP*(m_newLx*m_newLy-m_oldLx*m_oldLy);
+    //=== energy change of  side x
+    DE_DeltaLX = -m_F0*(m_newLx-m_oldLx);
+    
     //=== energy of changes in gloabal curvature due to CouplingtoFixedGlobalCurvature
     //=== the value of DeltaA and DetaR were computed before now we subtract new area
     double eG = 0;
@@ -212,38 +182,13 @@ bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * to
 
         eG = m_pCFGC->CalculateEnergyChange(-DeltaA,-DetaR);
     }
-    
-    /*
-     ///=== maybe in future
-     // harmonic ponettailas should not be done in x and y direction many problems appear so we assume this
-     //==============
-    if(m_pSPBTG->GetState()==true)
-    {
-     double harmonicde=0;
-
-        m_pSPBTG->CalculateEnergy(m_step);
-        double e1 = m_pSPBTG->GetEnergy();
-        for (std::vector<vertex *>::iterator it = m_ActiveV.begin() ; it != m_ActiveV.end(); ++it)
-        {
-            double x = (*it)->GetVXPos();
-            double y = (*it)->GetVYPos();
-            Vec3D dr(m_Lnox*x-x,m_Lnoy*y-y,0);
-            m_pSPBTG->MovingVertex((*it), dr);
-        }
-        m_pSPBTG->CalculateEnergy(m_step);
-        double e2 = m_pSPBTG->GetEnergy();
-        harmonicde = e2-e1;
-    }*/
 
 
-
-
-
-    double diff_energy = (DE+DEArea+eG);
+    double diff_energy = (DE+DE_DeltaLX+eG);
     int nv = (m_pMESH->m_pActiveV).size();
     
         //if(nv*log(AreaRatio)-m_Beta*diff_energy>log(temp) )
-        if(pow((AreaRatio),nv)*exp(-m_Beta*(diff_energy+dE_nematic_force))>temp )
+        if(pow((m_newLx/m_oldLx),nv)*exp(-m_Beta*(diff_energy+dE_nematic_force))>temp )
        {
         if(m_pCFGC->GetState()==true)
         m_pCFGC->UpdateEnergyChange(-DeltaA,-DetaR);
@@ -263,20 +208,8 @@ bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * to
       {
           RejectMove();
           m_Move=false;
-          // our ssumetion is the force is only in z
-          /* if(m_pSPBTG->GetState()==true)
-           {
-               for (std::vector<vertex *>::iterator it = m_ActiveV.begin() ; it != m_ActiveV.end(); ++it)
-               {
-                   double X = (*it)->GetVXPos();
-                   double Y = (*it)->GetVYPos();
-                   Vec3D dr(X-X/m_Lnox,Y-Y/m_Lnoy,0);
-                   m_pSPBTG->RejectMovingVertex((*it), dr);
-               }
-               m_pSPBTG->CalculateEnergy(m_step);
-           }*/
 
-      }//    if(pow((AreaRatio),nv)*exp(-m_Beta*diff_energy)>temp )
+      }//    if(pow((m_newLx/m_oldLx),nv)*exp(-m_Beta*diff_energy)>temp )
     return m_Move;
 }
     
@@ -286,7 +219,7 @@ bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * to
  Checking for validity of the CNT Cells
  =========================================================
  */
-void PositionRescaleFrameTensionCoupling::CheckCNTSize()
+void DynamicBoxSide::CheckCNTSize()
 {
 
     m_pAllCNT = m_pGenCNT->GetAllCNTCells();
@@ -294,7 +227,7 @@ void PositionRescaleFrameTensionCoupling::CheckCNTSize()
     CNTCell*  TemCNT=m_pAllCNT.at(0);
     Vec3D cntlength=TemCNT->GetCNTSidemax()-TemCNT->GetCNTSidemin();
 
-    if(cntlength(1)<1.8 || cntlength(0)<1.8)
+    if(cntlength(0)<1.8)
     {
         m_UpdateCNT=false;
         m_Move=false;
@@ -308,24 +241,12 @@ void PositionRescaleFrameTensionCoupling::CheckCNTSize()
     }
 
 }
-double PositionRescaleFrameTensionCoupling::DistanceSquardBetweenTwoVertices(vertex * v1,vertex * v2,Vec3D Box)
+double DynamicBoxSide::DistanceSquardBetweenTwoVertices(vertex * v1,vertex * v2,Vec3D &Box)
 {
-    double x2=v2->GetVXPos();
-    double y2=v2->GetVYPos();
-    double z2=v2->GetVZPos();
-    double x1=v1->GetVXPos();
-    double y1=v1->GetVYPos();
-    double z1=v1->GetVZPos();
-	x2=m_Lnox*x2;
-	x1=m_Lnox*x1;
-	y2=m_Lnoy*y2;
-	y1=m_Lnoy*y1;
-
-
-    double dx=x2-x1;
-    double dy=y2-y1;
-    double dz=z2-z1;
-    
+    double dx=v2->GetVXPos()-v1->GetVXPos();
+    double dy=v2->GetVYPos()-v1->GetVYPos();
+    double dz=v2->GetVZPos()-v1->GetVZPos();
+    dx = dx*m_Lxon;
     
     if(fabs(dx)>Box(0)/2.0)
     {
@@ -354,7 +275,7 @@ double PositionRescaleFrameTensionCoupling::DistanceSquardBetweenTwoVertices(ver
 /*======================================================================
 function to check the angle between two faces of a link
  ======================================================================*/
-bool PositionRescaleFrameTensionCoupling::CheckFaceAngle()
+bool DynamicBoxSide::CheckFaceAngle()
 {
    for (std::vector<links *>::iterator it = (m_pMESH->m_pHL).begin() ; it != (m_pMESH->m_pHL).end(); ++it)
     {
@@ -371,7 +292,7 @@ bool PositionRescaleFrameTensionCoupling::CheckFaceAngle()
 /*======================================================================
  This function makes a copy of vertices, links and trinagles incase of rejection. 
  ======================================================================*/
-void PositionRescaleFrameTensionCoupling::PerformMove()
+void DynamicBoxSide::PerformMove()
 {
 //=== copy the objects to use them in case the move got rejected
     m_ActiveV.clear();
@@ -406,16 +327,12 @@ void PositionRescaleFrameTensionCoupling::PerformMove()
 
     //=== perform the move: first update the box and then update the positions; geometric varialbes are updated elsewhere
         (*m_pBox)(0)=m_newLx;
-        (*m_pBox)(1)=m_newLy;
 
         //=== update the position of all vertices now: the move has been performed
         for (std::vector<vertex *>::iterator it = (m_pMESH->m_pActiveV).begin() ; it != (m_pMESH->m_pActiveV).end(); ++it)
         {
             double x = (*it)->GetVXPos();
-            (*it)->UpdateVXPos(m_Lnox*x);
-            double y = (*it)->GetVYPos();
-            (*it)->UpdateVYPos(m_Lnoy*y);
-            
+            (*it)->UpdateVXPos(m_Lxon*x);
         }
 }
 
@@ -426,17 +343,15 @@ void PositionRescaleFrameTensionCoupling::PerformMove()
 Function to accept the move and update everything
  =========================================================
  */
-void PositionRescaleFrameTensionCoupling::AcceptMove()
+void DynamicBoxSide::AcceptMove()
 {
     // we need to resize the cnt cells;
     for (std::vector<CNTCell *>::iterator it = m_pAllCNT.begin() ; it != m_pAllCNT.end(); ++it)
     {
         Vec3D side1=(*it)->GetCNTSidemax();
         Vec3D side2=(*it)->GetCNTSidemin();
-        side1(0)=side1(0)*m_Lnox;
-        side1(1)=side1(1)*m_Lnoy;
-        side2(0)=side2(0)*m_Lnox;
-        side2(1)=side2(1)*m_Lnoy;
+        side1(0)=side1(0)*m_Lxon;
+        side2(0)=side2(0)*m_Lxon;
         (*it)->UpdateCNTSidemax(side1);
         (*it)->UpdateCNTSidemin(side2);
         
@@ -444,11 +359,10 @@ void PositionRescaleFrameTensionCoupling::AcceptMove()
 
 }
 
-void PositionRescaleFrameTensionCoupling::RejectMove()
+void DynamicBoxSide::RejectMove()
 {
     //=== return the box to its orginal position
-    (*m_pBox)(0)=(*m_pBox)(0)-m_drx;
-    (*m_pBox)(1)=(*m_pBox)(1)-m_dry;
+    (*m_pBox)(0)=m_oldLx;
 	
     //=== all the vertices also get updated to what they were
         int i=0;
@@ -487,7 +401,7 @@ void PositionRescaleFrameTensionCoupling::RejectMove()
         }
 }
 
-bool   PositionRescaleFrameTensionCoupling::CheckFaceAngle(links * l)
+bool   DynamicBoxSide::CheckFaceAngle(links * l)
 {
 
     Vec3D n=(l->GetTriangle())->GetNormalVector();
@@ -504,14 +418,12 @@ bool   PositionRescaleFrameTensionCoupling::CheckFaceAngle(links * l)
  This function goes through CNT cells  checks the distance between vertices after the box change.
  It is very ineffiecnt, should be changed as soon as possible
  ======================================================================*/
-bool PositionRescaleFrameTensionCoupling::CheckMinDistance()
+bool DynamicBoxSide::CheckMinDistance()
 {
     // Note: Function "DistanceSquardBetweenTwoVertices" uses rescaled distance so this somehow reperasent after move; yet the move has not been done
     // This could also be more optimised, we are using CNT cells maybe just direct commparation works
-    Vec3D Box;
-    Box(0)=m_newLx;
-    Box(1)=m_newLy;
-    Box(2)=(*m_pBox)(2);
+    Vec3D Box(m_newLx,(*m_pBox)(1),(*m_pBox)(2));
+
 
     
     for (std::vector<CNTCell *>::iterator it = m_pAllCNT.begin() ; it != m_pAllCNT.end(); ++it)
@@ -547,12 +459,10 @@ return true;
 /*======================================================================
  This function goes through all links  checks the distance between vertices after the box change.
  ======================================================================*/
-bool PositionRescaleFrameTensionCoupling::CheckMaxLinkLength()
+bool DynamicBoxSide::CheckMaxLinkLength()
 {
-    Vec3D Box;
-    Box(0)=m_newLx;
-    Box(1)=m_newLy;
-    Box(2)=(*m_pBox)(2);
+    
+    Vec3D Box(m_newLx,(*m_pBox)(1),(*m_pBox)(2));
 
     for (std::vector<links *>::iterator it = (m_pMESH->m_pHL).begin() ; it != (m_pMESH->m_pHL).end(); ++it)
     {

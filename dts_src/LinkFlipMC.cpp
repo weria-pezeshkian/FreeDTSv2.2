@@ -96,9 +96,9 @@ m_V4=m_Mirror->GetV3();
     Vec3D DR=(R4-R3);
     if(R3.dot(DR,DR)>3)
     {
-        double dx=DR.at(0);
-        double dy=DR.at(1);
-        double dz=DR.at(2);
+        double dx=DR(0);
+        double dy=DR(1);
+        double dz=DR(2);
         if(fabs(dx)>(*Box)(0)/2.0)
         {
             if(dx<0)
@@ -111,7 +111,7 @@ m_V4=m_Mirror->GetV3();
  
             if(dy<0)
                 dy=(*Box)(1)+dy;
-            else if(DR.at(1)>0)
+            else if(dy>0)
                 dy=dy-(*Box)(1);
  
         }
@@ -123,9 +123,9 @@ m_V4=m_Mirror->GetV3();
                 dz=dz-(*Box)(2);
         }
         
-         DR.put(0,dx);
-         DR.put(1,dy);
-         DR.put(2,dz);
+         DR(0) = dx;
+         DR(1) = dy;
+         DR(2) = dz;
     }
 
        // m_DV=R3.dot(DR,m_T1->GetAreaVector())/6;

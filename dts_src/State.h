@@ -8,6 +8,7 @@
 #include "CouplingtoFixedGlobalCurvature.h"
 #include "SpringPotentialBetweenTwoGroups.h"
 #include "PositionRescaleFrameTensionCoupling.h"
+#include "DynamicBoxSide.h"
 #include "CmdVolumeCouplingSecondOrder.h"
 #include "CoupleToWallPotential.h"
 #include "LinkFlipMC.h"
@@ -23,6 +24,7 @@
 #include "Curvature.h"
 #include "Energy.h"
 #include "Constant_NematicForce.h"
+#include "DynamicBox.h"
 
 /*#include "inclusion.h"
 #include "triangle.h"
@@ -89,12 +91,6 @@ struct STRUC_ConstanVertextArea {  // data structure for inputs of constant area
     double K0;
     
 };
-struct STRUC_FRAMETENSION { // data structure for inputs apply pressure and volume constrint to the system
-    bool State;
-    std::string Type;
-    double Tau;
-    int updatePeriod;
-};
 struct STRUC_MCMOVES {  // data structure for turning on and off certain moves and specify the rate
     double VertexMove;
     double LinkFlip;
@@ -143,6 +139,7 @@ inline Restart *GetRestart()                                    {return &m_Resta
 inline CoupleToWallPotential *GetRigidWallCoupling()                                    {return &m_RigidWallCoupling;}
 inline ActiveTwoStateInclusion *GetActiveTwoStateInclusion()                                    {return &m_ActiveTwoStateInclusion;}
 inline Energy *GetEnergyCalculator()                                    {return &m_EnergyCalculator;}
+inline DynamicBox *GetDynamicBox()                                    {return m_pDynamicBox;}
 inline OpenEdgeEvolutionWithConstantVertex *GetOpenEdgeEvolutionWithConstantVertex()                                    {return &m_OpenEdgeEvolutionWithConstantVertex;}
     
 public:
@@ -175,7 +172,6 @@ public:
     Vec3D m_CNTCELL;                    // for domain decomposition
     std::string m_Integrator;               //  Type of integrator (for now only mc exist)
     STRUC_RESTART m_RESTART;                // To check if this is a restart simulation of fresh start
-    STRUC_FRAMETENSION m_FrameTension;      // data structure for inputs apply pressure and volume constrint to the system
     STRUC_VOLUME       m_VolumeConstraint ;  // data structure for inputs apply constant area
     STRUC_OSMOTIC      m_STRUC_OSMOTIC;	//
     STRUC_ConstantArea m_STRUC_ConstantArea;
@@ -204,7 +200,7 @@ public:
     Curvature m_CurvatureCalculations;
     Energy m_EnergyCalculator;
     Constant_NematicForce *m_pConstant_NematicForce;
-
+    DynamicBox            *m_pDynamicBox;
 
 private:
     Inclusion_Interaction_Map m_inc_ForceField;

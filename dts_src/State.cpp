@@ -24,13 +24,14 @@ State::State(std::vector <std::string> argument)
 #if TEST_MODE == Enabled
     std::cout<<"----> We have reached the State Class -- "<<std::endl;
 #endif
-    //============ Initialization of all inputs and data structures for input
 
+    //============ Initialization of all inputs and data structures for input
+    m_pDynamicBox = new NoBoxChange;
     m_pConstant_NematicForce = &m_Constant_NematicForce;
     m_Argument = argument;
     m_Targeted_State = true;
     m_Healthy =true;
-    m_Integrator = "MC";
+    m_Integrator = "MC_B";
     m_Total_no_Threads = 1;
     m_Initial_Step = 0;
     m_Final_Step = 0;
@@ -69,10 +70,6 @@ State::State(std::vector <std::string> argument)
     m_MCMove.LinkFlip = 1;
     m_MCMove.InclusionMove_Angle = 1;
     m_MCMove.InclusionMove_Kawasaki = 1;
-    m_FrameTension.State = false;
-    m_FrameTension.Type = "Position_Rescale";
-    m_FrameTension.Tau = 0.0;
-    m_FrameTension.updatePeriod = 5;
     m_VolumeConstraint.State = false;
     m_VolumeConstraint.EQSteps = 1000;
     m_VolumeConstraint.DeltaP = 0;
@@ -153,8 +150,7 @@ State::State(std::vector <std::string> argument)
     Energy Ten(&m_inc_ForceField);  // perhaps later could have a state pointer as well
     m_EnergyCalculator = Ten;
     // this should be called after energy and curvature is called 
-    PositionRescaleFrameTensionCoupling TEM(m_FrameTension.Tau,this);
-    m_RescaleTenCoupl = TEM;
+
     if(m_STRUC_ActiveTwoStateInclusion.state==true)
     {
          double ep1 = m_STRUC_ActiveTwoStateInclusion.ep1;
@@ -355,16 +351,24 @@ void State::ReadInputFile(std::string file)
             m_STRUC_ActiveTwoStateInclusion.gama = gama;
             getline(input,rest);
         }
-        else if(firstword == "Frame_Tension")
+        else if(firstword == "Dynamic_Box")
         {
-            std::string state;
-            (m_FrameTension.State)= false;
-            input>>str>>state>>(m_FrameTension.Type)>>(m_FrameTension.Tau)>>(m_FrameTension.updatePeriod);
-            if(state == "on" || state == "ON" || state == "On" )
-                (m_FrameTension.State) = true;
-            getline(input,rest);
             
-            
+            std::string type;
+            int period = 0;
+            double force = 0;
+
+            input >> str >> type >> period >> force;
+
+            if (type == "SingleSideConstantForce") {
+                m_pDynamicBox = new DynamicBoxSide(period, force, this);
+            }
+            else if (type == "PositionRescale_FrameTension") {
+                m_pDynamicBox = new PositionRescaleFrameTensionCoupling(period, force,this);
+            }
+
+            // Consume remaining input line
+            getline(input, rest);
         }
         else if(firstword == "Volume_Constraint")
         {
@@ -699,10 +703,6 @@ void State::WriteStateLog()
     statelog<<"OutPutTRJ_TSI = "<<(m_TRJTSI.tsiPeriod)<<"  "<<(m_TRJTSI.tsiPrecision)<<"  "<<(m_TRJTSI.tsiFolder_name)<<"  "<<std::endl;
     statelog<<"OutPutTRJ_BTS = "<<(m_TRJBTS.btsPeriod)<<"  "<<(m_TRJBTS.btsPrecision)<<"  "<<(m_TRJBTS.btsFile_name)<<"  "<<std::endl;
     std::string state = "off";
-    if (m_FrameTension.State == true)
-    state = "on";
-    statelog<<"Frame_Tension = "<<state<<"  "<<m_FrameTension.Type<<" "<<m_FrameTension.Tau<<"  "<<m_FrameTension.updatePeriod<<std::endl;
-    state = "off";
     if (m_VolumeConstraint.State == true)
     state = "on";
     statelog<<"Volume_Constraint = "<<state<<"  "<<(m_VolumeConstraint.EQSteps)<<" "<<(m_VolumeConstraint.DeltaP)<<"  "<<(m_VolumeConstraint.K)<<"  "<<(m_VolumeConstraint.targetV)<<std::endl;

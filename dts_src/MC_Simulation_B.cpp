@@ -57,8 +57,6 @@ std::string gfilename=pState->m_GeneralOutputFilename;
 bool Targeted_State = pState->m_Targeted_State;
     std::cout<<gfilename<<" file name and temp "<<m_Beta<<"\n";
 int enper=pState->m_OutPutEnergy_periodic;     // how aften write into the energy files
-bool FrameTensionCouplingFlag =(pState->m_FrameTension).State;
-
 #if DEBUG_MODE == Enabled
     std::cout<<" simulation: reading varaible \n";
 #endif
@@ -186,9 +184,14 @@ if(mc_linkflip == true || mc_vertexmove == true)
     }
 }
 int TotNoVertex=m_pSurfV.size();
-int SigmaPTau = (pState->m_FrameTension).updatePeriod;
-    PositionRescaleFrameTensionCoupling * mc_box= pState->GetRescaleTension();
+    
+//------ dynamic box algorithm
+    DynamicBox *mc_box = pState->GetDynamicBox();
     mc_box->initialize();
+    int BoxChangePeriodTau = mc_box->GetTau();
+//-----------------------
+
+    
     CoupleToWallPotential * mc_rigidwall = pState->GetRigidWallCoupling();
     if(mc_rigidwall->GetState()==true)
     mc_rigidwall->Initialize(m_pActiveV);
@@ -210,7 +213,6 @@ int SigmaPTau = (pState->m_FrameTension).updatePeriod;
     ActiveTwoStateInclusion *ActiveTwoState = pState->GetActiveTwoStateInclusion();
     if(ActiveTwoState->GetState()==true)
     ActiveTwoState->Initialize(m_pInclusions, ((pState->m_pMesh)->m_pInclusionType), pState->m_pinc_ForceField, &Random1);
-    std::string FrameTensionCouplingType = (pState->m_FrameTension).Type;
     LinkFlipMC *mc_LFlip = pState->GetMCMoveLinkFlip();
     VertexMCMove *mc_VMove = pState->GetMCAVertexMove();
     EdgeVertexMCMove *mc_EdgeVMove = pState->GetMCEdgeVertexMove();
@@ -250,10 +252,10 @@ int SigmaPTau = (pState->m_FrameTension).updatePeriod;
     if((pState->m_RESTART).restartState==false)
     {
     energyfile<<" ## mcstep  energy ";
-        std::cout<<"here 1 "<<(m_pState->m_pConstant_NematicForce)->m_F0<<"\n";
+        std::cout<<" do not think is needed "<<(m_pState->m_pConstant_NematicForce)->m_F0<<"\n";
     if((m_pState->m_pConstant_NematicForce)->m_F0!=0)
         energyfile<<"  active_nematic_energy ";
-    if(FrameTensionCouplingFlag==true)
+    if(BoxChangePeriodTau!=0)
         energyfile<<" Lx  Ly  Lz ";
     if (gc_globalcurvature->GetState() == true)
         energyfile<<" global_curvature_energy  ";
@@ -281,9 +283,9 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
     //=========Beginning of one MC move
     
     double VerexORbox=0;
-    if( FrameTensionCouplingFlag==true)
+    if( BoxChangePeriodTau!=0)
     {
-        VerexORbox=Random1.UniformRNG(1.0)*double(SigmaPTau);
+        VerexORbox=Random1.UniformRNG(1.0)*double(BoxChangePeriodTau);
         VerexORbox=1.0/VerexORbox;
     }
     if(VerexORbox<1)
@@ -312,7 +314,6 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
             for(int t=0;t<no_surfV_iter;++t)
             {
                 int n=Random1.IntRNG(no_surfV);
-                //n=50;
                 vertex *lpvertex = (m_pMESH->m_pSurfV)[n];   //
                 if(lpvertex->GetGroupName()!=pState->m_FreezGroupName)
                 {
@@ -327,8 +328,6 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
                 if(cwp==true )
                 {
                 mc_VMove->MC_MoveAVertex(mcstep,lpvertex,R*dx,R*dy,R*dz,thermal);
-                    
-                 //   std::cout<<(lpvertex->GetNormalVector())(0)<<"  "<<(lpvertex->GetNormalVector())(1)<<"  "<<lpvertex->GetArea()<<"  \n";
                 VRate+=mc_VMove->GetMoveValidity();
                 totalvmove++;
                 }
@@ -382,23 +381,16 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
     }
     else
     { // box move
+        
         double dr=1-2*Random1.UniformRNG(1.0);
         double thermal=Random1.UniformRNG(1.0);
-        bool move;
-        if(FrameTensionCouplingType=="Position_Rescale")
-         {
-            move=mc_box->MCMoveBoxChange(RB*dr, tot_Energy, thermal, mcstep, (&CNT));
-            if(move==true)
-            {
-                boxrate=boxrate+1;
-            }
-            if(mc_box->GetCNTCondition()==false)
-                CNT.Generate();
-             
-               totalboxmove++;
-        }
-        else
-            std::cout<<"---> Error: No such frame tension coupling type "<<std::endl;
+        bool move = mc_box->MCMoveBoxChange(RB*dr, tot_Energy, thermal, mcstep, (&CNT));
+        if(move==true)
+            boxrate=boxrate+1;
+        if(mc_box->GetCNTCondition()==false)
+            CNT.Generate();
+           totalboxmove++;
+
     }
 //==============  Edge evolotion
     if(mc_edge_evo->m_F==true && mcstep%(mc_edge_evo->m_Rate)==0)
@@ -444,7 +436,7 @@ if( pState->m_OutPutEnergy_periodic!=0  && mcstep%(pState->m_OutPutEnergy_period
     energyfile<<mcstep<<"   "<<*tot_Energy<<"   ";
     if((m_pState->m_pConstant_NematicForce)->m_F0!=0)
     energyfile<<(m_pState->m_pConstant_NematicForce)->m_ActiveEnergy<<"  ";
-    if(FrameTensionCouplingFlag==true)
+    if(BoxChangePeriodTau!=0)
     energyfile<<(*m_pBox)(0)<<"  "<<(*m_pBox)(1)<<"  "<<(*m_pBox)(2)<<"  ";
     if (gc_globalcurvature->GetState() == true)
     energyfile<<gc_globalcurvature->GetEnergy()<<"  ";
@@ -471,13 +463,13 @@ if( pState->m_OutPutEnergy_periodic!=0  && mcstep%(pState->m_OutPutEnergy_period
     //======= write acceptance rate
 if(Targeted_State==true)
     {
-    if(mc_vertexmove >1)
+    if(mc_vertexmove >0)
     std::cout<<" Vertex move accpetance rate "<<double(VRate)/double(totalvmove)*100.0<<" % ";
-    if(mc_linkflip >1)
+    if(mc_linkflip >0)
     std::cout<<" Link flip accpetance rate  "<<LRate/double(totallmove)*100.0<<" % ";
     if(m_pInclusions.size()!=0)
     std::cout<<"incluions move accpetance rate  "<<InRate/double(totalinmove)*100.0<<" %. ";
-    if(FrameTensionCouplingFlag==true)
+    if(BoxChangePeriodTau!=0)
     std::cout<<"box move accpetance rate  "<<boxrate/double(totalboxmove)*100.0<<" % ";
     std::cout<<std::endl;
     }
@@ -506,7 +498,7 @@ if(mcstep%500==0) // Optimize R and RB
                 std::cout<<" Dx for vertex  is : "<<R<<std::endl;
 #endif
             }
-        if(FrameTensionCouplingFlag == true)
+        if(BoxChangePeriodTau !=0)
         {
             if(Boxrate<0.4)
             {
