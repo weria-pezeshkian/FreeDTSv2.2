@@ -449,8 +449,6 @@ Vec3D Box=(*m_pBox);
 		else
 		{
             moveoutcnt=true;m_ChangeCNT=true;
-            
-           // std::cout<<"goes out of cnt \n";
 		}
 		if(moveoutcnt==false)
 		{

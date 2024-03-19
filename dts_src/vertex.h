@@ -49,7 +49,6 @@ public:
   void UpdateVXPos(double x);    // a function for update the x position of a vertex
   void UpdateVYPos(double y);   // a function for update the y position of a vertex
   void UpdateVZPos(double z);   // a function for updates the z position of a vertex
-  void NOPBCUpdatePos(Vec3D z);
   void UpdateGroupName(std::string z); // A vertex can only have one group name, is different from group id
   void UpdateVCNTCell(CNTCell * z);
   void UpdateBox(Vec3D *z);

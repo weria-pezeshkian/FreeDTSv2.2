@@ -25,42 +25,4 @@ private:
     double m_Z;
 };
 
-
-/*
-#include <vector>
-
-class Vec3D
-{
-public:
-	Vec3D(double x,double y,double z);
-    Vec3D();
-    ~Vec3D();
-    
-public:
-    // some access functions (not needed ....)
-    double at( int n);
-    void put( int n,  double);
-private:
-    double m_X;
-    double m_Y;
-    double m_Z;
-    double m_Value;
-
-// vector operators
-public:
-double& operator()(const int n);
-Vec3D operator + (Vec3D);
-Vec3D operator - (Vec3D);
-Vec3D operator * (Vec3D);
-Vec3D operator * (double );
-void operator = (Vec3D);
-    
-// extra functions
-double dot(Vec3D,Vec3D);  // dot product
-double norm();             // size of the vector
-
-
-};
-
- */
 #endif

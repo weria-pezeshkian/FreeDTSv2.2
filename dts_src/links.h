@@ -58,8 +58,6 @@ void Flip();
 void UpdateMirrorFlag(bool v);
 void UpdateSimTimeStep(int v);
 void UpdateIntEnergy(double en);
-void ReadLinkFromFile(std::ifstream *inputfile,std::vector <vertex *> pv, std::vector <links *> pL, std::vector <triangle *> pT);
-void WriteLinkToFile(std::ofstream *inputfile);
 void UpdateEdgeVector(Vec3D *pbox);
 void PutEdgeVector(Vec3D , double);
 

@@ -299,20 +299,12 @@ void State::ReadInputFile(std::string file)
                 exit(0);
             }
 
-            // Calculate normalization factor
-            double norm = 0;
-            for (int i = 1; i < data.size(); ++i)
-                norm += f.String_to_Double(data[i]);
-
-            if(norm==0)
-            norm=1;  // 
-            
             // Assign normalized move rates
-            m_MCMove.VertexMove = f.String_to_Double(data[1]) / norm;
-            m_MCMove.LinkFlip = f.String_to_Double(data[2]) / norm;
-            m_MCMove.EdgeVertexMove = f.String_to_Double(data[3]) / norm;
-            m_MCMove.InclusionMove_Kawasaki = f.String_to_Double(data[4]) / norm;
-            m_MCMove.InclusionMove_Angle = f.String_to_Double(data[5]) / norm;
+            m_MCMove.VertexMove = f.String_to_Double(data[1]);
+            m_MCMove.LinkFlip = f.String_to_Double(data[2]);
+            m_MCMove.EdgeVertexMove = f.String_to_Double(data[3]);
+            m_MCMove.InclusionMove_Kawasaki = f.String_to_Double(data[4]);
+            m_MCMove.InclusionMove_Angle = f.String_to_Double(data[5]);
 
             // Check if move rates are non-negative
             if (m_MCMove.VertexMove < 0 || m_MCMove.LinkFlip < 0 || m_MCMove.InclusionMove_Angle < 0 || m_MCMove.InclusionMove_Kawasaki < 0 || m_MCMove.EdgeVertexMove < 0 ) {

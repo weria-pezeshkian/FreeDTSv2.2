@@ -66,51 +66,41 @@ void vertex::UpdateVID(int i)
 {
     m_ID=i;
 }
-void vertex::UpdateVXPos(double x)
-{
-	if(x>=(*m_pBox)(0))
-	{
-		m_X=x-(*m_pBox)(0);
-	}
-	else if(x<0)
-	{
-		m_X=x+(*m_pBox)(0);
-	}
-	else
-	{
-		m_X=x;
-	}
-    
+void vertex::UpdateVXPos(double x) {
+    double boxX = (*m_pBox)(0);
+
+    // Adjust X position if it's outside the box bounds
+    if (x >= boxX) {
+        m_X = x - boxX;
+    } else if (x < 0) {
+        m_X = x + boxX;
+    } else {
+        m_X = x;
+    }
 }
-void vertex::UpdateVYPos(double x)
-{
-	if(x>=(*m_pBox)(1))
-	{
-		m_Y=x-(*m_pBox)(1);
-	}
-	else if(x<0)
-	{
-		m_Y=x+(*m_pBox)(1);
-	}
-	else
-	{
-		m_Y=x;
-	}
+void vertex::UpdateVYPos(double y) {
+    double boxY = (*m_pBox)(1);
+
+    // Adjust Y position if it's outside the box bounds
+    if (y >= boxY) {
+        m_Y = y - boxY;
+    } else if (y < 0) {
+        m_Y = y + boxY;
+    } else {
+        m_Y = y;
+    }
 }
-void vertex::UpdateVZPos(double x)
-{
-	if(x>=(*m_pBox)(2))
-	{
-		m_Z=x-(*m_pBox)(2);
-	}
-	else if(x<0)
-	{
-		m_Z=x+(*m_pBox)(2);
-	}
-	else
-	{
-		m_Z=x;
-	}
+void vertex::UpdateVZPos(double z) {
+    double boxZ = (*m_pBox)(2);
+
+    // Adjust Z position if it's outside the box bounds
+    if (z >= boxZ) {
+        m_Z = z - boxZ;
+    } else if (z < 0) {
+        m_Z = z + boxZ;
+    } else {
+        m_Z = z;
+    }
 }
 void vertex::AddtoLinkList(links* z)
 {
@@ -181,38 +171,30 @@ void vertex::UpdateSimTimeStep(int v)
 {
     m_SimTimeStep=v;
 }
-bool vertex::CheckCNT()
-{
+bool vertex::CheckCNT() {
     Vec3D min = m_CNTCell->GetCNTSidemin();
     Vec3D max = m_CNTCell->GetCNTSidemax();
-    bool flag=true;
-    if(m_X<min(0) || m_X>=max(0))
-    {
-        flag=false;
+
+    // Check X coordinate
+    if (m_X < min(0) || m_X >= max(0)) {
+        std::cout << m_X << "  x " << min(0) << "  " << max(0) << "\n";
+        return false;
     }
-    else if(m_Y<min(1) || m_Y>=max(1))
-    {
-        flag=false;
+
+    // Check Y coordinate
+    if (m_Y < min(1) || m_Y >= max(1)) {
+        std::cout << m_Y << "  y " << min(1) << "  " << max(1) << "\n";
+        return false;
     }
-    else if(m_Z<min(2) || m_Z>=max(2))
-    {
-        flag=false;
+
+    // Check Z coordinate
+    if (m_Z < min(2) || m_Z >= max(2)) {
+        std::cout << m_Z << "  z " << min(2) << "  " << max(2) << "\n";
+        return false;
     }
-    
-    if (flag==false)
-    {
-        std::cout<<m_X <<"  x "<<min(0)<<"  "<<max(0)<<"\n";
-        std::cout<<m_Y <<"  y "<<min(1)<<"  "<<max(1)<<"\n";
-        std::cout<<m_Z <<"  z "<<min(2)<<"  "<<max(2)<<"\n";
-        std::cout<<m_ID<<" warning (error) particle id.  Box "<<(*m_pBox)(0)<<"  "<<(*m_pBox)(1)<<"\n";
-    }
-    return flag;
-}
-void vertex::NOPBCUpdatePos(Vec3D X)
-{
-    m_X= X(0);
-    m_Y= X(1);
-    m_Z= X(2);
+
+    // All coordinates are within bounds
+    return true;
 }
 #endif
 

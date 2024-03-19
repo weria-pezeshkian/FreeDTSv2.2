@@ -20,31 +20,20 @@ void Curvature::SurfVertexCurvature(vertex * pvertex)
     Vec3D Normal;
     for (std::vector<triangle *>::iterator it = Ntr.begin() ; it != Ntr.end(); ++it)
     {
-        double a=(*it)->GetArea();
-        Vec3D v=(*it)->GetAreaVector();
-        //Vec3D v=(*it)->GetNormalVector();
-        //v=v*a;
-        Normal=Normal+v;
-        Area+=a;
+        const Vec3D& Nv = (*it)->GetAreaVector();
+        Normal=Normal+Nv;
+        Area+=(*it)->GetArea();
     }
     Area=Area/3.0;
-    if(Area==0)
+    if(Area<=0)
     {
-        std::cout<<Ntr.size()<<"\n";
-        std::string sms=" ---> error: vertex has a zero area \n";
+        std::string sms=" ---> error: vertex has a negetive or zero area \n";
         std::cout<<sms<<"\n";
         exit(0);
     }
-    else if(Area<0)
-    {
-        std::string sms=" ---> error: vertex has a negetive area \n";
-        std::cout<<sms<<"\n";
-        exit(0);
-    }
-    double no=Normal.norm();
-    no=1.0/no;
-    Normal=Normal*no;
-    m_pVertex->UpdateNormal_Area(Normal,Area);
+    double normalsize=Normal.norm();
+    Normal=Normal*(1.0/normalsize);
+    pvertex->UpdateNormal_Area(Normal,Area);
         ///=======
     //=== Shape Operator
     //========
@@ -59,7 +48,7 @@ void Curvature::SurfVertexCurvature(vertex * pvertex)
     // what if the edge vertex has one trinagle?
     for (std::vector<links *>::iterator it = NLinks.begin() ; it != NLinks.end(); ++it)
     {
-       if((*it)->GetMirrorFlag()==true)
+       if((*it)->GetMirrorFlag())
        {
            Vec3D ve=(*it)->GetNormal();
            double we=ve.dot(Normal,ve);
@@ -82,7 +71,7 @@ void Curvature::SurfVertexCurvature(vertex * pvertex)
            Tensor2 Q=P.makeTen(Se);
         
            SV=SV+(Q)*(we*he);
-       }//if((*it)->GetMirrorFlag()==true)
+       }//if((*it)->GetMirrorFlag())
     }
 
     ///=============
@@ -276,11 +265,9 @@ void Curvature::EdgeVertexCurvature(vertex * pvertex)
     Vec3D Normal;
     for (std::vector<triangle *>::iterator it = Ntr.begin() ; it != Ntr.end(); ++it)
     {
-        double a=(*it)->GetArea();
-        Vec3D v=(*it)->GetNormalVector();
-        v=v*a;
-        Normal=Normal+v;
-        Area+=a;
+        const Vec3D& Nv = (*it)->GetAreaVector();
+        Normal=Normal+Nv;
+        Area+=(*it)->GetArea();
     }
     Area=Area/3.0;
     // just in case; this should never happen unless the inputs are wrong
@@ -291,10 +278,9 @@ void Curvature::EdgeVertexCurvature(vertex * pvertex)
         std::cout<<sms<<"\n";
         exit(0);
     }
-    double no=Normal.norm();
-    no=1.0/no;
-    Normal=Normal*no;
-    m_pVertex->UpdateNormal_Area(Normal,Area);
+    double normalsize=Normal.norm();
+    Normal=Normal*(1.0/normalsize);
+    pvertex->UpdateNormal_Area(Normal,Area);
     
 
     
@@ -366,32 +352,6 @@ Tensor2 Curvature::Householder(Vec3D N)
     Hous=(I-W*2)*(-1);
     
     return Hous;
-
-    
-
-   
-    /*
-    Zk(0) = 0;Zk(1) = 0;
-    Zk(2)=1.0;
-    double SignT=1;
-    if((1+N(2))>(1-N(2)))   // 1+/-Normal(2) is always larger then 1
-    {
-     Zk=Zk+N;
-    SignT=-1;
-     }
-    else if((1+N(2))<=(1-N(2)))
-     Zk=Zk-N;
-    Zk=Zk*(1.0/Zk.norm());
-    W=Hous.makeTen(Zk);
-    Hous=(I-W*2)*(SignT);
-    
-    
-    std::cout<<"====== old ===========\n";
-    std::cout<<Hous(0,0)<<"   "<<Hous(0,1)<<"   "<<Hous(0,2)<<"\n";
-    std::cout<<Hous(1,0)<<"   "<<Hous(1,1)<<"   "<<Hous(1,2)<<"\n";
-    std::cout<<Hous(2,0)<<"   "<<Hous(2,1)<<"   "<<Hous(2,2)<<"\n";*/
-   // double SignT=1;
-   
 }
 /// normal vector update
 Vec3D Curvature::Calculate_Vertex_Normal(vertex *pvertex)
@@ -403,37 +363,25 @@ Vec3D Curvature::Calculate_Vertex_Normal(vertex *pvertex)
     Vec3D Normal;
     for (std::vector<triangle *>::iterator it = Ntr.begin() ; it != Ntr.end(); ++it)
     {
-        double a=(*it)->GetArea();
-        Vec3D v=(*it)->GetNormalVector();
-        v=v*a;
-        Normal=Normal+v;
-        Area+=a;
+        const Vec3D& Nv = (*it)->GetAreaVector();
+        Normal=Normal+Nv;
+        Area+=(*it)->GetArea();
     }
     Area=Area/3.0;
     // just in case; this should never happen unless the inputs are wrong
-    if(Area==0)
+    if(Area<=0)
     {
-        std::cout<<Ntr.size()<<"\n";
-        std::string sms=" error----> vertex has a zero area \n";
+        std::string sms=" error----> vertex has a zero or negetive area \n";
         std::cout<<sms<<"\n";
         exit(0);
     }
-    else if(Area<0)
-    {
-        std::string sms=" error----> vertex has a negetive area \n";
-        std::cout<<sms<<"\n";
-        exit(0);
-    }
-    double no=Normal.norm();
-    no=1.0/no;
-    Normal=Normal*no;
+    double normalsize=Normal.norm();
+    Normal=Normal*(1.0/normalsize);
     pvertex->UpdateNormal_Area(Normal,Area);
     
 
     return Normal;
 }
-
-
 
 
 
