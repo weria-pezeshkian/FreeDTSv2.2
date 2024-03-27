@@ -57,6 +57,10 @@ void inclusion::UpdateLocalDirection(Vec3D v)
 {
     m_LDirection = v;
 }
+void inclusion::UpdateGlobalDirection(Vec3D v)
+{
+    m_GDirection = v;
+}
 #endif
 
 

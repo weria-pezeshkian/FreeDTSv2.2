@@ -38,6 +38,7 @@ public:
 	    inline const int GetID()                               const  {return m_ID;}
         inline vertex* Getvertex()                                    {return m_pvertex;}
         inline Vec3D GetLDirection()                                  {return m_LDirection;}
+        inline Vec3D GetGDirection()                                  {return m_GDirection;}
         inline InclusionType* GetInclusionType()                       {return m_InclusionType;}
         inline int GetInclusionTypeID()                                {return m_TypeID;}
 
@@ -47,6 +48,7 @@ public:
   void UpdateInclusionTypeID(int Typeid);
   void Updatevertex(vertex * );
   void UpdateLocalDirection(Vec3D );
+  void UpdateGlobalDirection(Vec3D );
 
 public:
     void ReadInclusionFromFile(std::ifstream *inputfile,std::vector <vertex *> pv);

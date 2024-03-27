@@ -97,8 +97,28 @@ if(createorkill<0.5)
         vertex *v3 = l2->GetV2();
         links* l1 = v3->m_pEdgeLink;
         vertex *v2 = l1->GetV2();
-        // calculate the old energy
-       // std::cout<<" edge size "<<(m_pMESH->m_pEdgeV).size()<<" \n ";
+
+        //== this is a new piece to use global inclusion direction as a constant variable during the move: note global direction should be projected on the new local plane
+        {
+            if(v1->VertexOwnInclusion())
+            {
+                Tensor2  L2G = v1->GetL2GTransferMatrix();
+                Vec3D GD = L2G*((v1->GetInclusion())->GetLDirection());
+                (v1->GetInclusion())->UpdateGlobalDirection(GD);
+            }
+            if(v2->VertexOwnInclusion())
+            {
+                Tensor2  L2G = v2->GetL2GTransferMatrix();
+                Vec3D GD = L2G*((v2->GetInclusion())->GetLDirection());
+                (v2->GetInclusion())->UpdateGlobalDirection(GD);
+            }
+            if(v3->VertexOwnInclusion())
+            {
+                Tensor2  L2G = v3->GetL2GTransferMatrix();
+                Vec3D GD = L2G*((v3->GetInclusion())->GetLDirection());
+                (v3->GetInclusion())->UpdateGlobalDirection(GD);
+            }
+        }
 
         double eold = v1->GetEnergy();
       //  std::cout<<" old "<<eold<<"  ";
@@ -129,6 +149,34 @@ if(createorkill<0.5)
         // create a link (this also updates the gemotry)
          links *newlink = CreateALink(v1);
 
+        
+        {
+            if(v1->VertexOwnInclusion())
+            {
+                Tensor2  G2L = v1->GetG2LTransferMatrix();
+                Vec3D LD = G2L*((v1->GetInclusion())->GetGDirection());
+                LD(2) = 0;
+                LD = LD*(1/LD.norm());
+                (v1->GetInclusion())->UpdateLocalDirection(LD);
+            }
+            if(v2->VertexOwnInclusion())
+            {
+                Tensor2  G2L = v2->GetG2LTransferMatrix();
+                Vec3D LD = G2L*((v2->GetInclusion())->GetGDirection());
+                LD(2) = 0;
+                LD = LD*(1/LD.norm());
+                (v2->GetInclusion())->UpdateLocalDirection(LD);
+            }
+            if(v3->VertexOwnInclusion())
+            {
+                Tensor2  G2L = v3->GetG2LTransferMatrix();
+                Vec3D LD = G2L*((v3->GetInclusion())->GetGDirection());
+                LD(2) = 0;
+                LD = LD*(1/LD.norm());
+                (v3->GetInclusion())->UpdateLocalDirection(LD);
+            }
+        }
+        
         // new energy
         double enew = m_pEnergyCalculator->SingleVertexEnergy(v1);
       //  std::cout<<"\n new "<<enew<<"  ";
@@ -171,6 +219,42 @@ if(createorkill<0.5)
         else
         {
             KillALink(newlink);
+            
+            
+            {
+                if(v1->VertexOwnInclusion())
+                {
+                    Tensor2  G2L = v1->GetG2LTransferMatrix();
+                    Vec3D LD = G2L*((v1->GetInclusion())->GetGDirection());
+                    if(fabs(LD(2))>0.00001)
+                    {
+                        std::cout<<" something is wrong here, this should not happen. vector should be on the plane \n";
+                    }
+                    (v1->GetInclusion())->UpdateLocalDirection(LD);
+                }
+                if(v2->VertexOwnInclusion())
+                {
+                    Tensor2  G2L = v2->GetG2LTransferMatrix();
+                    Vec3D LD = G2L*((v2->GetInclusion())->GetGDirection());
+                    if(fabs(LD(2))>0.00001)
+                    {
+                        std::cout<<" something is wrong here, this should not happen. vector should be on the plane \n";
+                    }
+                    (v2->GetInclusion())->UpdateLocalDirection(LD);
+                }
+                if(v3->VertexOwnInclusion())
+                {
+                    Tensor2  G2L = v3->GetG2LTransferMatrix();
+                    Vec3D LD = G2L*((v3->GetInclusion())->GetGDirection());
+                    if(fabs(LD(2))>0.00001)
+                    {
+                        std::cout<<" something is wrong here, this should not happen. vector should be on the plane \n";
+                    }
+                    (v3->GetInclusion())->UpdateLocalDirection(LD);
+                }
+            }
+            
+            
             double e = m_pEnergyCalculator->SingleVertexEnergy(v1);
             e = m_pEnergyCalculator->SingleVertexEnergy(v2);
             e = m_pEnergyCalculator->SingleVertexEnergy(v3);
@@ -385,8 +469,61 @@ else  // if(createorkill<0.5)
 
         }
         
+        //== this is a new piece to use global inclusion direction as a constant variable during the move: note global direction should be projected on the new local plane
+        {
+            if(v1->VertexOwnInclusion())
+            {
+                Tensor2  L2G = v1->GetL2GTransferMatrix();
+                Vec3D GD = L2G*((v1->GetInclusion())->GetLDirection());
+                (v1->GetInclusion())->UpdateGlobalDirection(GD);
+            }
+            if(v2->VertexOwnInclusion())
+            {
+                Tensor2  L2G = v2->GetL2GTransferMatrix();
+                Vec3D GD = L2G*((v2->GetInclusion())->GetLDirection());
+                (v2->GetInclusion())->UpdateGlobalDirection(GD);
+            }
+            if(v3->VertexOwnInclusion())
+            {
+                Tensor2  L2G = v3->GetL2GTransferMatrix();
+                Vec3D GD = L2G*((v3->GetInclusion())->GetLDirection());
+                (v3->GetInclusion())->UpdateGlobalDirection(GD);
+            }
+        }
+        
+        
+        
         // we kill a link and update the geomotry
         KillALink(plink);
+        
+        {
+            if(v1->VertexOwnInclusion())
+            {
+                Tensor2  G2L = v1->GetG2LTransferMatrix();
+                Vec3D LD = G2L*((v1->GetInclusion())->GetGDirection());
+                LD(2) = 0;
+                LD = LD*(1/LD.norm());
+                (v1->GetInclusion())->UpdateLocalDirection(LD);
+            }
+            if(v2->VertexOwnInclusion())
+            {
+                Tensor2  G2L = v2->GetG2LTransferMatrix();
+                Vec3D LD = G2L*((v2->GetInclusion())->GetGDirection());
+                LD(2) = 0;
+                LD = LD*(1/LD.norm());
+                (v2->GetInclusion())->UpdateLocalDirection(LD);
+            }
+            if(v3->VertexOwnInclusion())
+            {
+                Tensor2  G2L = v3->GetG2LTransferMatrix();
+                Vec3D LD = G2L*((v3->GetInclusion())->GetGDirection());
+                LD(2) = 0;
+                LD = LD*(1/LD.norm());
+                (v3->GetInclusion())->UpdateLocalDirection(LD);
+            }
+        }
+        
+        
         
         // new energy
         double enew = m_pEnergyCalculator->SingleVertexEnergy(v1);
@@ -420,6 +557,41 @@ else  // if(createorkill<0.5)
         else
         {
             CreateALink(v1);
+            
+            {
+                if(v1->VertexOwnInclusion())
+                {
+                    Tensor2  G2L = v1->GetG2LTransferMatrix();
+                    Vec3D LD = G2L*((v1->GetInclusion())->GetGDirection());
+                    if(fabs(LD(2))>0.00001)
+                    {
+                        std::cout<<" something is wrong here, this should not happen. vector should be on the plane \n";
+                    }
+                    (v1->GetInclusion())->UpdateLocalDirection(LD);
+                }
+                if(v2->VertexOwnInclusion())
+                {
+                    Tensor2  G2L = v2->GetG2LTransferMatrix();
+                    Vec3D LD = G2L*((v2->GetInclusion())->GetGDirection());
+                    if(fabs(LD(2))>0.00001)
+                    {
+                        std::cout<<" something is wrong here, this should not happen. vector should be on the plane \n";
+                    }
+                    (v2->GetInclusion())->UpdateLocalDirection(LD);
+                }
+                if(v3->VertexOwnInclusion())
+                {
+                    Tensor2  G2L = v3->GetG2LTransferMatrix();
+                    Vec3D LD = G2L*((v3->GetInclusion())->GetGDirection());
+                    if(fabs(LD(2))>0.00001)
+                    {
+                        std::cout<<" something is wrong here, this should not happen. vector should be on the plane \n";
+                    }
+                    (v3->GetInclusion())->UpdateLocalDirection(LD);
+                }
+            }
+            
+            
             {
             double e = m_pEnergyCalculator->SingleVertexEnergy(v1);
             e = m_pEnergyCalculator->SingleVertexEnergy(v2);

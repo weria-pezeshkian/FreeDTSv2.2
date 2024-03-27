@@ -47,8 +47,7 @@ public:
     void GenerateMesh(MeshBluePrint meshblueprint);
     MeshBluePrint Convert_Mesh_2_BluePrint(MESH *mesh);
     
-    // MoveTrinagleFromAGroup2Another
-    // MoveLinkFromAGroup2Another
+
 
     
     

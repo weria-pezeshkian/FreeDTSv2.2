@@ -294,7 +294,6 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
             //== do link flip if it is allowed
             int no_link = m_pMESH->m_pHL.size();
             int no_link_iter = static_cast<int>(mc_linkflip * m_pMESH->m_pHL.size());
-        //std::cout<<mc_linkflip<<"  "<<no_link_iter<<"\n";
             if(no_link_iter!=0)
             for(int t=0;t<no_link;++t){
                 int m=Random1.IntRNG(no_link);

@@ -496,8 +496,8 @@ void State::ReadInputFile(std::string file)
         else if(firstword == "ConstantField")
         {
             double k,x,y,z;
-            //input>>str>>k>>x>>y>>z;
-            //getline(input,rest);
+            input>>str>>k>>x>>y>>z;
+            getline(input,rest);
             double norm = sqrt(x*x+y*y+z*z);
             Vec3D tem(x,y,z);
             tem = tem*(1.0/norm);
