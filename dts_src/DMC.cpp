@@ -12,7 +12,7 @@
 int main(int argc, char* argv[])
 {
 
-    std::cout << "----------------- "<<S_Name<<" ---------------- "<<std::endl;
+    std::cout << "████████████████████████████████    FreeDTS    ██████████████████████████████ "<<std::endl;
     std::cout << "------ Simulation of Biomembranes Using Dynamically Triangulated Surfaces ------------ "<<std::endl;
     std::cout << "---------------------------- Weria Pezeshkian -------------------------------------- "<<std::endl;
 

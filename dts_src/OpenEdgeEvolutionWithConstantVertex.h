@@ -1,5 +1,6 @@
 #if !defined(AFX_OpenEdgeEvolutionWithConstantVertex_H_INCLUDED_)
 #define AFX_OpenEdgeEvolutionWithConstantVertex_H_INCLUDED_
+#include "OpenEdgeEvolution.h"
 #include "inclusion.h"
 #include "triangle.h"
 #include "vertex.h"
@@ -10,17 +11,23 @@
 #include "Energy.h"
 
 class State;
-class OpenEdgeEvolutionWithConstantVertex
-{
+class OpenEdgeEvolutionWithConstantVertex: public OpenEdgeEvolution { // to use for
 public:
     OpenEdgeEvolutionWithConstantVertex();
-    OpenEdgeEvolutionWithConstantVertex(bool state, int rate, State *pState);
+    OpenEdgeEvolutionWithConstantVertex(int rate, State *pState);
     ~OpenEdgeEvolutionWithConstantVertex();
 
     
 public:
-    bool m_F;
     double m_WholeSize;
+    
+public:
+    int m_Rate;
+    std::vector<triangle*>      m_pGhostT; // Some trinagles ....
+    std::vector<links*>         m_pGhostL;  // some edges for  ...
+    void Initialize();
+    void MC_Move(RNG* rng, double lmin, double lmax, double maxangle);
+    
 private:
     std::vector<triangle>       m_GhostT; // Some trinagles for initial storing
     std::vector<links>          m_GhostL;
@@ -39,12 +46,7 @@ private:
     bool Anglevalid4Vhole(vertex *v1, double minangle);
 
 
-public:
-    int m_Rate;
-    std::vector<triangle*>      m_pGhostT; // Some trinagles ....
-    std::vector<links*>         m_pGhostL;  // some edges for  ...
-    void Initialize();
-    void MC_Move(RNG* rng, double lmin, double lmax, double maxangle);
+
     
 private:
     links* CreateALink(vertex *);

@@ -33,7 +33,7 @@ void EdgeVertexMCMove::MC_MoveAVertex(int step, vertex *pvertex, double dx, doub
     //
     
     
-    if((m_pState->GetVolumeCoupling())->GetState()==true || (m_pState->GetOsmotic_Pressure())->GetState()==true )
+    if((m_pState->GetVolumeCoupling())->GetState()==true)
     {
         std::cout<<" error---> We are moving an edge vertex, therefore coupling the system to a volume-controlling algorithm is meaningless \n";
         exit(0);

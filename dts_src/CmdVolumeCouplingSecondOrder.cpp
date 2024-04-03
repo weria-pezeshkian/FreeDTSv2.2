@@ -3,23 +3,17 @@
 
 #include "CmdVolumeCouplingSecondOrder.h"
 #include "Nfunction.h"
-CmdVolumeCouplingSecondOrder::CmdVolumeCouplingSecondOrder()
-{
-    m_State = false;
+CmdVolumeCouplingSecondOrder::CmdVolumeCouplingSecondOrder(){
 
 }
-CmdVolumeCouplingSecondOrder::CmdVolumeCouplingSecondOrder(bool State, int eqsteps, double DeltaP,  double K, double targetV)
+CmdVolumeCouplingSecondOrder::CmdVolumeCouplingSecondOrder(int eqsteps, double DeltaP,  double K, double targetV)
 {
     double pi = acos(-1);
      m_6SQPI = 1.0/(6.0*sqrt(pi));   /// 1/6pi^1/2
-
-    
-    
     m_TotalVolume = 0;
     m_TotalArea = 0;
     m_NoEQStep = eqsteps;
     m_KV = K/2;
-    m_State = State;
     m_TargetV = targetV;
     m_DeltaP  = DeltaP;
     

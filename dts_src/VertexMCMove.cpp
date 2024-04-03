@@ -56,20 +56,13 @@ m_MoveValidity=0;
 //=========== This can be more optimised maybe; why do I need this?
     m_simplexarea = 0;
     m_simplexvolume = 0;
-    if((m_pState->GetVolumeCoupling())->GetState()==true || (m_pState->GetOsmotic_Pressure())->GetState()==true || (m_pState->GetApply_Constant_Area())->GetState()==true)
+    if((m_pState->GetVolumeCoupling())->GetState()==true  || (m_pState->GetApply_Constant_Area())->GetState()==true)
     {
         std::vector <triangle *> pvT=m_pvertex->GetVTraingleList();
         if((m_pState->GetVolumeCoupling())->GetState()==true )
         for (std::vector<triangle *>::iterator it = pvT.begin() ; it != pvT.end(); ++it)
         {
             m_simplexvolume+=(m_pState->GetVolumeCoupling())->SingleTriangleVolume(*it);
-            m_simplexarea+=(*it)->GetArea();
-        }
-        else if((m_pState->GetOsmotic_Pressure())->GetState()==true )
-        for (std::vector<triangle *>::iterator it = pvT.begin() ; it != pvT.end(); ++it)
-        {
-        
-            m_simplexvolume+=(m_pState->GetOsmotic_Pressure())->SingleTriangleVolume(*it);
             m_simplexarea+=(*it)->GetArea();
         }
         else
@@ -187,13 +180,13 @@ double NewEnergy = m_pEnergyCalculator->Energy_OneVertexMove(m_pvertex);
     }
     //=========== This can be more optimised maybe
     double DEPV = 0;
-    double DE_OP = 0;
     double DE_totA = 0; // energy asscoaited with change in total area
     double newsimplexarea = 0;
     double newsimplexvolume = 0;
     
 
-    if((m_pState->GetVolumeCoupling())->GetState()==true || (m_pState->GetOsmotic_Pressure())->GetState()==true || (m_pState->GetApply_Constant_Area())->GetState()==true)
+    //==== volume area
+    if((m_pState->GetVolumeCoupling())->GetState()==true  || (m_pState->GetApply_Constant_Area())->GetState()==true)
     {
         std::vector <triangle *> pvT=m_pvertex->GetVTraingleList();
         
@@ -203,12 +196,6 @@ double NewEnergy = m_pEnergyCalculator->Energy_OneVertexMove(m_pvertex);
             newsimplexvolume+=(m_pState->GetVolumeCoupling())->SingleTriangleVolume(*it);
             newsimplexarea+=(*it)->GetArea();
         }
-        else if((m_pState->GetOsmotic_Pressure())->GetState()==true)
-        for (std::vector<triangle *>::iterator it = pvT.begin() ; it != pvT.end(); ++it)
-        {
-                newsimplexvolume+=(m_pState->GetOsmotic_Pressure())->SingleTriangleVolume(*it);
-            	newsimplexarea+=(*it)->GetArea();
-        }
         else
         for (std::vector<triangle *>::iterator it = pvT.begin() ; it != pvT.end(); ++it)
                 newsimplexarea+=(*it)->GetArea();
@@ -216,8 +203,6 @@ double NewEnergy = m_pEnergyCalculator->Energy_OneVertexMove(m_pvertex);
         if((m_pState->GetVolumeCoupling())->GetState()==true)
         DEPV = (m_pState->GetVolumeCoupling())->GetEnergyChange(m_step,m_simplexarea,m_simplexvolume,newsimplexarea,newsimplexvolume);
         
-        if((m_pState->GetOsmotic_Pressure())->GetState()==true)
-        DE_OP = (m_pState->GetOsmotic_Pressure())->GetEnergyChange(m_step,m_simplexvolume,newsimplexvolume);
         
         if((m_pState->GetApply_Constant_Area())->GetState()==true)
         DE_totA =(m_pState->GetApply_Constant_Area())->GetEnergyChange(m_step,m_simplexarea,newsimplexarea);
@@ -232,7 +217,7 @@ double NewEnergy = m_pEnergyCalculator->Energy_OneVertexMove(m_pvertex);
     }
 
     //========
-                double diff_energy = (DE+eG+DEPV+harmonicde+DE_OP+DE_totA);
+                double diff_energy = (DE+eG+DEPV+harmonicde+DE_totA);
             //    std::cout<<DE<<"  "<<eG<<"  "<<DEPV<<"  "<<harmonicde<<"  "<<DE_OP<<"  \n";
             	if(diff_energy+dE_nematic_force<=0 )
             	{
@@ -241,7 +226,6 @@ double NewEnergy = m_pEnergyCalculator->Energy_OneVertexMove(m_pvertex);
                 	(*m_pTotEnergy)=(*m_pTotEnergy)+DE;
                     m_MoveValidity=1;
                  (m_pState->GetVolumeCoupling())->UpdateArea_Volume(m_simplexarea,m_simplexvolume,newsimplexarea,newsimplexvolume);
-                 (m_pState->GetOsmotic_Pressure())->UpdateArea_Volume(m_simplexarea,m_simplexvolume,newsimplexarea,newsimplexvolume);
                  (m_pState->GetApply_Constant_Area())->UpdateArea(m_simplexarea,newsimplexarea);
 
             	}
@@ -252,7 +236,6 @@ double NewEnergy = m_pEnergyCalculator->Energy_OneVertexMove(m_pvertex);
                  	(*m_pTotEnergy)=(*m_pTotEnergy)+DE;
                     m_MoveValidity=1;
                     (m_pState->GetVolumeCoupling())->UpdateArea_Volume(m_simplexarea,m_simplexvolume,newsimplexarea,newsimplexvolume);
-                    (m_pState->GetOsmotic_Pressure())->UpdateArea_Volume(m_simplexarea,m_simplexvolume,newsimplexarea,newsimplexvolume);
                     (m_pState->GetApply_Constant_Area())->UpdateArea(m_simplexarea,newsimplexarea);
              	}
             	else 

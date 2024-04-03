@@ -32,6 +32,7 @@ void UpdateRepresentation(bool); 	/// this is for visulaization output and does 
 void UpdateNormal_Area(Vec3D *Box);     // A function to recalcualte the area and normal when the one of its vertices moves
 void UpdateVertex(vertex *v1,vertex *v2,vertex *v3); // If a link flips the triangle changes its vertices, this function do the job
 
+void UpdateID(int id); // this should be used for none active trinagles 
 
 private:
     vertex *m_V1;

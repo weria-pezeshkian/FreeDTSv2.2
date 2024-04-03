@@ -15,9 +15,8 @@ OpenEdgeEvolutionWithConstantVertex::OpenEdgeEvolutionWithConstantVertex()
 {
 
 }
-OpenEdgeEvolutionWithConstantVertex::OpenEdgeEvolutionWithConstantVertex(bool f, int rate, State *pState)
+OpenEdgeEvolutionWithConstantVertex::OpenEdgeEvolutionWithConstantVertex(int rate, State *pState)
 {
-    m_F = f;
     m_Rate = rate;
     m_WholeSize = 0;
     m_pState = pState;
@@ -31,9 +30,19 @@ OpenEdgeEvolutionWithConstantVertex::~OpenEdgeEvolutionWithConstantVertex()
 void OpenEdgeEvolutionWithConstantVertex::Initialize()
 {
   // creating some trinagle and links to later create from them
+    std::cout<<" here 1\n";
+
     m_pMESH = m_pState->m_pMesh;
+    
+    std::cout<<" here 2\n";
+
     int Nt = m_pMESH->m_pEdgeV.size();
+    
+    std::cout<<Nt<<" here 3\n";
+
     m_pBox = m_pMESH->m_pBox;
+    std::cout<<" here 4\n";
+
     // due to mirro links 2*(Nt-3)+Nt
     int lid = 2*((m_pMESH->m_pMHL).size())+(m_pMESH->m_pEdgeL).size();
     for (int i=0;i<3*Nt-6;i++)
@@ -49,9 +58,13 @@ void OpenEdgeEvolutionWithConstantVertex::Initialize()
         m_GhostT.push_back(temt);
         tid++;
     }
+    std::cout<<" here 5\n";
+
     for (std::vector<links>::iterator it = m_GhostL.begin() ; it != m_GhostL.end(); ++it)
         m_pGhostL.push_back(&(*it));
     
+    std::cout<<" here 6\n";
+
     for (std::vector<triangle>::iterator it = m_GhostT.begin() ; it != m_GhostT.end(); ++it)
         m_pGhostT.push_back(&(*it));
     

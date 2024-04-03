@@ -10,17 +10,18 @@ for taraget Apply_Osmotic_Pressure.
 #include "vertex.h"
 #include "triangle.h"
 #include "links.h"
-class Apply_Osmotic_Pressure
-{
+#include "VolumeCoupling.h"
+
+class Apply_Osmotic_Pressure : public VolumeCoupling {
 public:
     Apply_Osmotic_Pressure();
-    Apply_Osmotic_Pressure(bool State, std::string type, int eqsteps, double gamma,  double P0);
+    Apply_Osmotic_Pressure(int eqsteps, double gamma,  double P0);
     ~Apply_Osmotic_Pressure();
 
 
        inline double GetTotalVolume()                  {return m_TotalVolume;}
        inline double GetTotalArea()                  {return m_TotalArea;}
-       inline bool GetState()                   {return m_State;}
+       inline bool GetState()                   {return true;}
     
 
 
@@ -33,7 +34,7 @@ public:
     double VolumeofTrianglesAroundVertex(vertex * pVeretx);   ///
     double SingleTriangleVolume(triangle * ptriangle);   ///
     void Initialize(std::vector<triangle *> pTriangle);   ///
-    double GetEnergyChange(int step, double oldvolume,  double newvolume);
+    double GetEnergyChange(int step, double oa, double oldvolume,  double  na, double newvolume);
     void UpdateArea_Volume(double oldarea, double oldvolume, double newarea, double newvolume);
 
     //=====

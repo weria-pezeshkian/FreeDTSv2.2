@@ -134,17 +134,12 @@ m_V4=m_Mirror->GetV3();
     m_simplexarea = 0;
     m_simplexvolume = 0;
     
-    if((m_pState->GetVolumeCoupling())->GetState()==true || (m_pState->GetOsmotic_Pressure())->GetState()==true || (m_pState->GetApply_Constant_Area())->GetState()==true)
+    if((m_pState->GetVolumeCoupling())->GetState()==true || (m_pState->GetApply_Constant_Area())->GetState()==true)
     {
             if((m_pState->GetVolumeCoupling())->GetState()==true)
             {
             m_simplexvolume+=(m_pState->GetVolumeCoupling())->SingleTriangleVolume(m_T1);
             m_simplexvolume+=(m_pState->GetVolumeCoupling())->SingleTriangleVolume(m_T2);
-            }
-            else if((m_pState->GetOsmotic_Pressure())->GetState()==true)
-            {
-            m_simplexvolume+=(m_pState->GetOsmotic_Pressure())->SingleTriangleVolume(m_T1);
-            m_simplexvolume+=(m_pState->GetOsmotic_Pressure())->SingleTriangleVolume(m_T2);
             }
             m_simplexarea+=(m_T1)->GetArea();
             m_simplexarea+=(m_T2)->GetArea();
@@ -279,23 +274,18 @@ void LinkFlipMC::EnergyDifference()
     
     //=========== This can be more optimised maybe
     double DEPV = 0;    //
-    double DE_OP = 0; // osmotic pressure
     double DE_totA = 0; // energy asscoaited with change in total area
     double newsimplexarea = 0;
     double newsimplexvolume = 0;
     
-    if((m_pState->GetVolumeCoupling())->GetState()==true || (m_pState->GetOsmotic_Pressure())->GetState()==true || (m_pState->GetApply_Constant_Area())->GetState()==true)
+    if((m_pState->GetVolumeCoupling())->GetState()==true || (m_pState->GetApply_Constant_Area())->GetState()==true)
     {
         if((m_pState->GetVolumeCoupling())->GetState()==true)
         {
             newsimplexvolume+=(m_pState->GetVolumeCoupling())->SingleTriangleVolume(m_T1);
             newsimplexvolume+=(m_pState->GetVolumeCoupling())->SingleTriangleVolume(m_T2);
         }
-        else if((m_pState->GetOsmotic_Pressure())->GetState()==true)
-        {
-            newsimplexvolume+=(m_pState->GetOsmotic_Pressure())->SingleTriangleVolume(m_T1);
-            newsimplexvolume+=(m_pState->GetOsmotic_Pressure())->SingleTriangleVolume(m_T2);
-        }
+
 
             newsimplexarea+=m_T1->GetArea();
             newsimplexarea+=m_T2->GetArea();
@@ -303,14 +293,11 @@ void LinkFlipMC::EnergyDifference()
             
 	        if((m_pState->GetVolumeCoupling())->GetState()==true)
             DEPV = (m_pState->GetVolumeCoupling())->GetEnergyChange(m_step,m_simplexarea,m_simplexvolume,newsimplexarea,newsimplexvolume);
-            
-            if((m_pState->GetOsmotic_Pressure())->GetState()==true)
-            DE_OP = (m_pState->GetOsmotic_Pressure())->GetEnergyChange(m_step,m_simplexvolume,newsimplexvolume);
         
            if((m_pState->GetApply_Constant_Area())->GetState()==true)
             DE_totA = (m_pState->GetApply_Constant_Area())->GetEnergyChange(m_step,m_simplexarea,newsimplexarea);
     }
-                double diff_energy = m_Beta*(DE+eG+DEPV+DE_OP+DE_totA);
+                double diff_energy = m_Beta*(DE+eG+DEPV+DE_totA);
                 
                 //std::cout<<DE<<"  "<<eG<<"  "<<DEPV<<"   "<<DE_OP<<"  \n";
                                 
@@ -320,7 +307,6 @@ void LinkFlipMC::EnergyDifference()
                 	(*m_pTotEnergy)=(*m_pTotEnergy)+DE;
                     m_MoveValidity=1;
                     (m_pState->GetVolumeCoupling())->UpdateArea_Volume(m_simplexarea,m_simplexvolume,newsimplexarea,newsimplexvolume);
-                    (m_pState->GetOsmotic_Pressure())->UpdateArea_Volume(m_simplexarea,m_simplexvolume,newsimplexarea,newsimplexvolume);
                     (m_pState->GetApply_Constant_Area())->UpdateArea(m_simplexarea,newsimplexarea);
             	}
             	else if(exp(-diff_energy)>m_Thermal )
@@ -329,7 +315,6 @@ void LinkFlipMC::EnergyDifference()
                  	(*m_pTotEnergy)=(*m_pTotEnergy)+DE;
                     m_MoveValidity=1;
                     (m_pState->GetVolumeCoupling())->UpdateArea_Volume(m_simplexarea,m_simplexvolume,newsimplexarea,newsimplexvolume);
-                    (m_pState->GetOsmotic_Pressure())->UpdateArea_Volume(m_simplexarea,m_simplexvolume,newsimplexarea,newsimplexvolume);
                     (m_pState->GetApply_Constant_Area())->UpdateArea(m_simplexarea,newsimplexarea);
              	}
             	else 

@@ -13,6 +13,7 @@ GeneralOutputFilename           = output
 ConstantField			=  5  1 0 0 
 Constant_NematicForce           =  2 1 1
 OpenEdgeEvolutionWithConstantVertex = on 1
+Dynamic_Topology			  = Scission_By3Edges 5
 INCLUSION
 Define 2 Inclusions
 SRotation   Type   K   KG  KP  KL   C0     C0P   C0L  lambda   lkg   lkn    cn0

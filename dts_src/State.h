@@ -7,8 +7,6 @@
 #include "Inclusion_Interaction_Map.h"
 #include "CouplingtoFixedGlobalCurvature.h"
 #include "SpringPotentialBetweenTwoGroups.h"
-#include "PositionRescaleFrameTensionCoupling.h"
-#include "DynamicBoxSide.h"
 #include "CmdVolumeCouplingSecondOrder.h"
 #include "CoupleToWallPotential.h"
 #include "LinkFlipMC.h"
@@ -20,11 +18,17 @@
 #include "ActiveTwoStateInclusion.h"
 #include "Apply_Osmotic_Pressure.h"
 #include "Apply_Constant_Area.h"
-#include "OpenEdgeEvolutionWithConstantVertex.h"
 #include "Curvature.h"
 #include "Energy.h"
 #include "Constant_NematicForce.h"
 #include "DynamicBox.h"
+#include "PositionRescaleFrameTensionCoupling.h"
+#include "DynamicBoxSide.h"
+#include "DynamicTopology.h"
+#include "Three_Edge_Scission.h"
+#include "OpenEdgeEvolution.h"
+#include "OpenEdgeEvolutionWithConstantVertex.h"
+#include "VolumeCoupling.h"
 
 /*#include "inclusion.h"
 #include "triangle.h"
@@ -61,21 +65,6 @@ struct STRUC_TRJBTS { //data structure for bts trajectory file (binary file form
     int btsPrecision;
     std::string btsFile_name;
     bool btsState;
-};
-struct STRUC_VOLUME {  // data structure for inputs apply pressure and volume constrint to the system
-    bool State;
-    int EQSteps;
-    double DeltaP;
-    double K;
-    double targetV;
-};
-struct STRUC_OSMOTIC {  // data structure for inputs of osmotic pressure algorithm
-    bool State;
-    std::string Type;
-    int EQSteps;
-    double Gamma;   // TargetV = GammaV_0;  V_0 = 1/6*(A0^1.5)/pi^0.5 ; A_0 = N_T*3sqrt(3)/4
-    double P0;
-
 };
 struct STRUC_ConstantArea {  // data structure for inputs of constant area algorithm
     bool State;
@@ -128,8 +117,6 @@ inline Curvature *CurvatureCalculator()                    {return &m_CurvatureC
 inline CouplingtoFixedGlobalCurvature *GetGlobalCurvature()                      {return &m_CoupleGCurvature;}
 inline SpringPotentialBetweenTwoGroups *Get2GroupHarmonic()                      {return &m_SpringPotentialBetweenTwoGroups;}
 inline PositionRescaleFrameTensionCoupling *GetRescaleTension()                  {return &m_RescaleTenCoupl;}
-inline CmdVolumeCouplingSecondOrder *GetVolumeCoupling()                         {return &m_VolumeCouplingSecondOrder;}
-inline Apply_Osmotic_Pressure *GetOsmotic_Pressure()                         {return &m_Apply_Osmotic_Pressure;}
 inline Apply_Constant_Area *GetApply_Constant_Area()                           {return &m_Apply_Constant_Area;}
 inline LinkFlipMC *GetMCMoveLinkFlip()                         {return &m_LinkFlipMC;}
 inline VertexMCMove *GetMCAVertexMove()                         {return &m_VertexMoveMC;}
@@ -140,8 +127,10 @@ inline CoupleToWallPotential *GetRigidWallCoupling()                            
 inline ActiveTwoStateInclusion *GetActiveTwoStateInclusion()                                    {return &m_ActiveTwoStateInclusion;}
 inline Energy *GetEnergyCalculator()                                    {return &m_EnergyCalculator;}
 inline DynamicBox *GetDynamicBox()                                    {return m_pDynamicBox;}
-inline OpenEdgeEvolutionWithConstantVertex *GetOpenEdgeEvolutionWithConstantVertex()                                    {return &m_OpenEdgeEvolutionWithConstantVertex;}
-    
+inline DynamicTopology *GetDynamicTopology()                    {return m_pDynamicTopology;}
+inline OpenEdgeEvolution     *GetOpenEdgeEvolution()            {return m_pOpenEdgeEvolution;}
+inline VolumeCoupling *GetVolumeCoupling()                         {return m_pVolumeCoupling;}
+
 public:
     
     bool m_Healthy;   // To check if the input data are read correctly
@@ -172,8 +161,6 @@ public:
     Vec3D m_CNTCELL;                    // for domain decomposition
     std::string m_Integrator;               //  Type of integrator (for now only mc exist)
     STRUC_RESTART m_RESTART;                // To check if this is a restart simulation of fresh start
-    STRUC_VOLUME       m_VolumeConstraint ;  // data structure for inputs apply constant area
-    STRUC_OSMOTIC      m_STRUC_OSMOTIC;	//
     STRUC_ConstantArea m_STRUC_ConstantArea;
     STRUC_ConstanVertextArea m_STRUC_ConstantVertexArea;
     STRUC_MCMOVES m_MCMove;                 // data structure for turning on and off certain moves
@@ -186,8 +173,6 @@ public:
     CouplingtoFixedGlobalCurvature  m_CoupleGCurvature;
     SpringPotentialBetweenTwoGroups m_SpringPotentialBetweenTwoGroups;
     PositionRescaleFrameTensionCoupling m_RescaleTenCoupl;
-    CmdVolumeCouplingSecondOrder m_VolumeCouplingSecondOrder;
-    Apply_Osmotic_Pressure m_Apply_Osmotic_Pressure;
     Apply_Constant_Area m_Apply_Constant_Area;
     ActiveTwoStateInclusion m_ActiveTwoStateInclusion;
     LinkFlipMC m_LinkFlipMC;
@@ -196,12 +181,13 @@ public:
     InclusionMCMove m_IncMove;
     Restart m_Restart;
     CoupleToWallPotential m_RigidWallCoupling;
-    OpenEdgeEvolutionWithConstantVertex m_OpenEdgeEvolutionWithConstantVertex;
     Curvature m_CurvatureCalculations;
     Energy m_EnergyCalculator;
     Constant_NematicForce *m_pConstant_NematicForce;
     DynamicBox            *m_pDynamicBox;
-
+    DynamicTopology       *m_pDynamicTopology; 
+    OpenEdgeEvolution     *m_pOpenEdgeEvolution;
+    VolumeCoupling        *m_pVolumeCoupling;
 private:
     Inclusion_Interaction_Map m_inc_ForceField;
     Constant_NematicForce m_Constant_NematicForce;

@@ -7,8 +7,7 @@ MESH class for quick access
  */
 MESH::MESH()
 {
-    
-    
+    m_pEdgeV.clear();
 }
 MESH::~MESH()
 {

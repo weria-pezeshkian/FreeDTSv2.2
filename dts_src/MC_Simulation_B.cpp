@@ -3,6 +3,7 @@
 #ifdef _OPENMP
 # include <omp.h>
 #endif
+#include <thread>
 #include "MC_Simulation_B.h"
 #include "Nfunction.h"
 #include "Vec3D.h"
@@ -55,7 +56,6 @@ m_Lmax2    = pState->m_MaxLinkLengthSquare;
 int displaywrite=pState->m_Display_periodic;
 std::string gfilename=pState->m_GeneralOutputFilename;
 bool Targeted_State = pState->m_Targeted_State;
-    std::cout<<gfilename<<" file name and temp "<<m_Beta<<"\n";
 int enper=pState->m_OutPutEnergy_periodic;     // how aften write into the energy files
 #if DEBUG_MODE == Enabled
     std::cout<<" simulation: reading varaible \n";
@@ -189,8 +189,15 @@ int TotNoVertex=m_pSurfV.size();
     DynamicBox *mc_box = pState->GetDynamicBox();
     mc_box->initialize();
     int BoxChangePeriodTau = mc_box->GetTau();
-//-----------------------
-
+//------------dynamic topology algorithm -----------
+    DynamicTopology *mc_topology = pState->GetDynamicTopology();
+    mc_topology->initialize();
+//------edge treatment -----
+    OpenEdgeEvolution * mc_edge_evo = pState->GetOpenEdgeEvolution();
+    mc_edge_evo->Initialize();
+//---- voulme coupling
+    VolumeCoupling *volumecoupling = pState->GetVolumeCoupling();
+    volumecoupling->Initialize(m_pActiveT);
     
     CoupleToWallPotential * mc_rigidwall = pState->GetRigidWallCoupling();
     if(mc_rigidwall->GetState()==true)
@@ -201,11 +208,6 @@ int TotNoVertex=m_pSurfV.size();
     SpringPotentialBetweenTwoGroups * harmonic2groups = pState->Get2GroupHarmonic();
     if(harmonic2groups->GetState()==true)
     harmonic2groups->MakeGroups(m_pActiveV, pState->m_IndexFileName);
-    CmdVolumeCouplingSecondOrder *volumecoupling = pState->GetVolumeCoupling();
-    if(volumecoupling->GetState()==true)
-    volumecoupling->Initialize(m_pActiveT);
-    if((pState->GetOsmotic_Pressure())->GetState()==true)  
-    (pState->GetOsmotic_Pressure())->Initialize(m_pActiveT);
     if((pState->m_pConstant_NematicForce)->m_F0!=0)
     (pState->m_pConstant_NematicForce)->Initialize();
     if((pState->GetApply_Constant_Area())->GetState()==true)
@@ -215,16 +217,13 @@ int TotNoVertex=m_pSurfV.size();
     ActiveTwoState->Initialize(m_pInclusions, ((pState->m_pMesh)->m_pInclusionType), pState->m_pinc_ForceField, &Random1);
     LinkFlipMC *mc_LFlip = pState->GetMCMoveLinkFlip();
     VertexMCMove *mc_VMove = pState->GetMCAVertexMove();
+
     EdgeVertexMCMove *mc_EdgeVMove = pState->GetMCEdgeVertexMove();
-
     InclusionMCMove *mc_IncMove = pState->GetInclusionMCMove();
-    OpenEdgeEvolutionWithConstantVertex * mc_edge_evo = pState->GetOpenEdgeEvolutionWithConstantVertex();
-    mc_edge_evo->Initialize();
-
     Restart *pRestart = pState->GetRestart();
     BTSFile btsFile ((pState->m_TRJBTS).btsFile_name, (pState->m_RESTART).restartState, "w");
     Traj_XXX TSIFile (m_pBox,(pState->m_TRJTSI).tsiFolder_name);
-    
+
 //=========== Some rate variables
     int totallmove = 0;
     int totalvmove = 0;
@@ -252,7 +251,6 @@ int TotNoVertex=m_pSurfV.size();
     if((pState->m_RESTART).restartState==false)
     {
     energyfile<<" ## mcstep  energy ";
-        std::cout<<" do not think is needed "<<(m_pState->m_pConstant_NematicForce)->m_F0<<"\n";
     if((m_pState->m_pConstant_NematicForce)->m_F0!=0)
         energyfile<<"  active_nematic_energy ";
     if(BoxChangePeriodTau!=0)
@@ -263,25 +261,25 @@ int TotNoVertex=m_pSurfV.size();
         energyfile<<" harmonic_energy harmonic_force distance ";
     if(volumecoupling->GetState()==true)
         energyfile<<" volume area ";
-   if((pState->GetOsmotic_Pressure())->GetState()==true)
-        energyfile<<" volume area ";
     if((pState->GetApply_Constant_Area())->GetState()==true)
         energyfile<<" area_constantArea ";
     if(ActiveTwoState->GetState() == true)
     energyfile<<" ActiveEnergy DeltaN ";
     energyfile<<std::endl;
     }
+
 //======================
 #if TEST_MODE == Enabled
     #pragma omp critical
-    std::cout<<"---->Note: next is the first step in the sim loop "<<std::endl;
+    std::cout<<"----> note: next is the first step in the sim loop "<<std::endl;
 #endif
     #pragma omp critical
+    std::cout<<"==============================================================  \n";
     std::cout<<"---> Running simulation from  "<<ini<<" to "<<final<<std::endl;
 for (int mcstep=ini;mcstep<final+1;mcstep++)
 {
     //=========Beginning of one MC move
-    
+
     double VerexORbox=0;
     if( BoxChangePeriodTau!=0)
     {
@@ -326,9 +324,9 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
 
                 if(cwp==true )
                 {
-                mc_VMove->MC_MoveAVertex(mcstep,lpvertex,R*dx,R*dy,R*dz,thermal);
-                VRate+=mc_VMove->GetMoveValidity();
-                totalvmove++;
+                    mc_VMove->MC_MoveAVertex(mcstep,lpvertex,R*dx,R*dy,R*dz,thermal);
+                    VRate+=mc_VMove->GetMoveValidity();
+                    totalvmove++;
                 }
             }
         }// end of if(mc_vertexmove == true)
@@ -389,12 +387,21 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
         if(mc_box->GetCNTCondition()==false)
             CNT.Generate();
            totalboxmove++;
+        
+        
+        //=== attempt to change topology
 
     }
 //==============  Edge evolotion
-    if(mc_edge_evo->m_F==true && mcstep%(mc_edge_evo->m_Rate)==0)
+    if(mcstep%(mc_edge_evo->m_Rate)==0)
         mc_edge_evo->MC_Move(&Random1,m_Lmin2,m_Lmax2,m_minAngle);
     
+    //== change topology
+    {
+    double thermal=Random1.UniformRNG(1.0);
+    bool top_move = mc_topology->MCMove(tot_Energy, thermal, (&CNT));
+    }
+
 //==== Active Inclsuion exchange two state; as these movie are indepenednt of the energy based move, the have no conditions
 //===================================
     if(ActiveTwoState->GetState() == true)
@@ -443,9 +450,7 @@ if( pState->m_OutPutEnergy_periodic!=0  && mcstep%(pState->m_OutPutEnergy_period
       energyfile<<harmonic2groups->GetEnergy()<<"  "<<harmonic2groups->GetForce()<<"  "<<harmonic2groups->GetDistance()<<"  ";
     if(volumecoupling->GetState()==true )  
     energyfile<<volumecoupling->GetTotalVolume()<<"   "<<volumecoupling->GetTotalArea()<<"  ";
-    
-    if((pState->GetOsmotic_Pressure())->GetState()==true)
-    energyfile<<(pState->GetOsmotic_Pressure())->GetTotalVolume()<<"   "<<(pState->GetOsmotic_Pressure())->GetTotalArea()<<"  ";
+
     
     
     if((pState->GetApply_Constant_Area())->GetState()==true)
@@ -460,19 +465,25 @@ if( pState->m_OutPutEnergy_periodic!=0  && mcstep%(pState->m_OutPutEnergy_period
     energyfile<<std::endl;
     
     //======= write acceptance rate
-if(Targeted_State==true)
-    {
-    if(mc_vertexmove >0)
-    std::cout<<" Vertex move accpetance rate "<<double(VRate)/double(totalvmove)*100.0<<" % ";
-    if(mc_linkflip >0)
-    std::cout<<" Link flip accpetance rate  "<<LRate/double(totallmove)*100.0<<" % ";
-    if(m_pInclusions.size()!=0)
-    std::cout<<"incluions move accpetance rate  "<<InRate/double(totalinmove)*100.0<<" %. ";
-    if(BoxChangePeriodTau!=0)
-    std::cout<<"box move accpetance rate  "<<boxrate/double(totalboxmove)*100.0<<" % ";
-    std::cout<<std::endl;
-    }
+    if(Targeted_State==true)
+        {
+            std::cout<<"Step = "<<mcstep<<"/"<<final<<std::flush;
+            std::cout << std::fixed << std::setprecision(2);
+            std::cout<<"; Accpetance rates="<<std::flush;
+        if(mc_vertexmove >0)
+            std::cout<<" Postion update: "<<double(VRate)/double(totalvmove)*100.0<<" % "<<std::flush;
+        if(mc_linkflip >0)
+            std::cout<<"; Alexander move: "<<LRate/double(totallmove)*100.0<<" % "<<std::flush;
+        if(m_pInclusions.size()!=0)
+            std::cout<<"Incluions move: "<<InRate/double(totalinmove)*100.0<<" %. ";
+        if(BoxChangePeriodTau!=0)
+            std::cout<<"; Box size update:  "<<boxrate/double(totalboxmove)*100.0<<" % ";
+            std::cout << '\r';
+            std::cout << "\033[K";
+
+        }
 }
+
 //========== Optimiszing R and RB
 if(mcstep%500==0) // Optimize R and RB
 {

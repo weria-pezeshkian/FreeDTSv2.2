@@ -10,17 +10,18 @@ for taraget CmdVolumeCouplingSecondOrder.
 #include "vertex.h"
 #include "triangle.h"
 #include "links.h"
-class CmdVolumeCouplingSecondOrder
-{
+#include "VolumeCoupling.h"
+
+class CmdVolumeCouplingSecondOrder : public VolumeCoupling {
 public:
     CmdVolumeCouplingSecondOrder();
-    CmdVolumeCouplingSecondOrder(bool State, int eqsteps, double DeltaP,  double K, double targetV);
+    CmdVolumeCouplingSecondOrder(int eqsteps, double DeltaP,  double K, double targetV);
     ~CmdVolumeCouplingSecondOrder();
 
 
        inline double GetTotalVolume()                  {return m_TotalVolume;}
        inline double GetTotalArea()                  {return m_TotalArea;}
-       inline bool GetState()                   {return m_State;}
+       inline bool GetState()                   {return true;}
     
 
 
@@ -29,10 +30,9 @@ public:
 
     
     
-    
+    void Initialize(std::vector<triangle *> pTriangle);   ///
     double VolumeofTrianglesAroundVertex(vertex * pVeretx);   /// this does not mean anything outside of this code
     double SingleTriangleVolume(triangle * ptriangle);   /// and this one
-    void Initialize(std::vector<triangle *> pTriangle);   ///
     double GetEnergyChange(int step, double oldarea, double oldvolume, double newarea, double newvolume);
     double Energy(double volume, double area, double alpha);
     void UpdateArea_Volume(double oldarea, double oldvolume, double newarea, double newvolume);
@@ -46,7 +46,6 @@ private:
     double m_TotalArea;
     int m_NoEQStep;
     double m_KV;
-    bool m_State;
     double m_TargetV;
     double m_DeltaP;
     double m_6SQPI;   /// 1/6pi^1/2

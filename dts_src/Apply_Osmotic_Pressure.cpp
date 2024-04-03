@@ -5,10 +5,8 @@
 #include "Nfunction.h"
 Apply_Osmotic_Pressure::Apply_Osmotic_Pressure()
 {
-    m_State = false;
-
 }
-Apply_Osmotic_Pressure::Apply_Osmotic_Pressure(bool State, std::string type, int eqsteps, double gamma,  double P0)
+Apply_Osmotic_Pressure::Apply_Osmotic_Pressure(int eqsteps, double gamma,  double P0)
 {
     double pi = acos(-1);
      m_6SQPI = 1.0/(6.0*sqrt(pi));   /// 1/6pi^1/2    
@@ -16,7 +14,6 @@ Apply_Osmotic_Pressure::Apply_Osmotic_Pressure(bool State, std::string type, int
     m_TotalArea = 0;
     m_NoEQStep = eqsteps;
     m_P0 = P0;
-    m_State = State;
     m_Gamma  = gamma;
     
     
@@ -105,7 +102,7 @@ double Apply_Osmotic_Pressure::SingleTriangleVolume(triangle *pt)
     return vol;
 }
 
-double Apply_Osmotic_Pressure::GetEnergyChange(int step, double oldvolume, double newvolume)
+double Apply_Osmotic_Pressure::GetEnergyChange(int step, double oa, double oldvolume, double na, double newvolume)
 {
 
     double alpha=1;

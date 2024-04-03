@@ -108,7 +108,11 @@ m_V1=v1;
 m_V2=v2;
 m_V3=v3;
 }
-
+void triangle::UpdateID(int id) // this should be used for none active trinagles
+{
+    m_ID = id;
+    return;
+}
 
 
 

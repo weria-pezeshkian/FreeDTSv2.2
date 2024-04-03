@@ -27,6 +27,9 @@ State::State(std::vector <std::string> argument)
 
     //============ Initialization of all inputs and data structures for input
     m_pDynamicBox = new NoBoxChange;
+    m_pDynamicTopology = new ConstantTopology;
+    m_pOpenEdgeEvolution = new NoEvolution;
+    m_pVolumeCoupling    = new NoCoupling;
     m_pConstant_NematicForce = &m_Constant_NematicForce;
     m_Argument = argument;
     m_Targeted_State = true;
@@ -70,12 +73,6 @@ State::State(std::vector <std::string> argument)
     m_MCMove.LinkFlip = 1;
     m_MCMove.InclusionMove_Angle = 1;
     m_MCMove.InclusionMove_Kawasaki = 1;
-    m_VolumeConstraint.State = false;
-    m_VolumeConstraint.EQSteps = 1000;
-    m_VolumeConstraint.DeltaP = 0;
-    m_VolumeConstraint.K = 0;
-    m_VolumeConstraint.targetV = 1 ;
-    m_STRUC_OSMOTIC.State = false;
     m_STRUC_ConstantArea.State = false;
     m_STRUC_ConstantVertexArea.State = false;
     m_STRUC_ActiveTwoStateInclusion.state = false;
@@ -134,7 +131,7 @@ State::State(std::vector <std::string> argument)
     if(readingfromrestart==false) // if reading restart fails, we just start from begining
     {
         meshblueprint = BluePrint.MashBluePrintFromInput_Top(m_InputFileName,m_TopologyFile);
-        std::cout<<"-----> Note: Mesh was taken from the topology  "<<std::endl;
+        std::cout<<"---> note: Mesh was taken from the topology  "<<std::endl;
     }
         m_Mesh.GenerateMesh(meshblueprint);
     
@@ -282,6 +279,16 @@ void State::ReadInputFile(std::string file)
             input>>str>>m_Initial_Step;
             getline(input,rest);
         }
+        else if(firstword == "Final_Step")
+        {
+            input>>str>>m_Final_Step;
+            getline(input,rest);
+        }
+        else if(firstword == "Box_Centering_F")
+        {
+            input>>str>>m_Centering;
+            getline(input,rest);
+        }
         else if(firstword == "Integrator")
         {
             input>>str>>m_Integrator;
@@ -362,28 +369,51 @@ void State::ReadInputFile(std::string file)
             // Consume remaining input line
             getline(input, rest);
         }
+        else if(firstword == "Dynamic_Topology")
+        {
+            
+            std::string type;
+            int period = 0;
+
+            input >> str >> type >> period;
+
+            if (type == "Scission_By3Edges") {
+                
+                m_pDynamicTopology = new Three_Edge_Scission(period, this);
+            }
+            // Consume remaining input line
+            getline(input, rest);
+        }
+        else if(firstword == "OpenEdgeEvolution")
+        {
+            // OpenEdgeEvolution =  EvolutionWithConstantVertex PT_steps
+            std::string type;
+            int period = 0;
+            input >> str >> type >> period;
+            getline(input,rest);
+            if (type == "EvolutionWithConstantVertex") {
+                
+                m_pOpenEdgeEvolution = new OpenEdgeEvolutionWithConstantVertex(period, this);
+            }
+        }
         else if(firstword == "Volume_Constraint")
         {
-            std::string state;
-            m_VolumeConstraint.State = false;
-        input>>str>>state>>(m_VolumeConstraint.EQSteps)>>(m_VolumeConstraint.DeltaP)>>(m_VolumeConstraint.K)>>(m_VolumeConstraint.targetV);
-            if(state == "on" || state == "ON" || state == "On" )
-               m_VolumeConstraint.State = true;
+            
+            std::string type;
+            input >> str >> type;
+            if(type == "SecondOrderCoupling"){
+                int eqsteps = 0;
+                double dp,k,vt;
+                input>>eqsteps>>dp>>k>>vt;
+                m_pVolumeCoupling = new CmdVolumeCouplingSecondOrder(eqsteps, dp,  k, vt);
+            }
+            else if(type == "Osmotic_Pressure"){
+                int eqsteps = 0;
+                double gamma,p0;
+                input>>eqsteps>>gamma>>p0;
+                m_pVolumeCoupling = new Apply_Osmotic_Pressure(eqsteps,gamma,p0);
+            }
             getline(input,rest);
-            
-            
-            CmdVolumeCouplingSecondOrder C(m_VolumeConstraint.State, m_VolumeConstraint.EQSteps, m_VolumeConstraint.DeltaP,  m_VolumeConstraint.K, m_VolumeConstraint.targetV);
-            m_VolumeCouplingSecondOrder = C;
-        }
-        else if(firstword == "Osmotic_Pressure")
-        {
-                    std::string state;
-          input>>str>>state>>(m_STRUC_OSMOTIC.Type)>>(m_STRUC_OSMOTIC.EQSteps)>>(m_STRUC_OSMOTIC.Gamma)>>(m_STRUC_OSMOTIC.P0);
-          if(state=="on" || state=="ON" || state=="On" || state=="yes" || state=="Yes" )
-          m_STRUC_OSMOTIC.State = true;
-          Apply_Osmotic_Pressure C(m_STRUC_OSMOTIC.State,m_STRUC_OSMOTIC.Type,m_STRUC_OSMOTIC.EQSteps,m_STRUC_OSMOTIC.Gamma,m_STRUC_OSMOTIC.P0);
-          m_Apply_Osmotic_Pressure = C;
-          
         }
         else if(firstword == "Apply_Constant_Area")
         {
@@ -395,16 +425,6 @@ void State::ReadInputFile(std::string file)
             Apply_Constant_Area C(m_STRUC_ConstantArea.State,m_STRUC_ConstantArea.EQSteps,m_STRUC_ConstantArea.Gamma,m_STRUC_ConstantArea.K0);
             m_Apply_Constant_Area = C;
             
-        }
-        else if(firstword == "Final_Step")
-        {
-            input>>str>>m_Final_Step;
-            getline(input,rest);
-        }
-        else if(firstword == "Box_Centering_F")
-        {
-            input>>str>>m_Centering;
-            getline(input,rest);
         }
         else if(firstword == "MinfaceAngle")
         {
@@ -592,21 +612,6 @@ void State::ReadInputFile(std::string file)
             else
                 m_Parallel_Tempering.State = false;
         }
-        else if(firstword == "OpenEdgeEvolutionWithConstantVertex")
-        {
-            // OpenEdgeEvolutionWithConstantVertex  = on PT_steps
-            std::string state;
-            int rate;
-            input>>str>>state>>rate;
-            getline(input,rest);
-            bool edgestate = false;
-            if(state=="on"|| state=="yes"|| state=="On"|| state=="ON"|| state=="Yes"|| state=="YES")
-                edgestate = true;
-            
-            
-            OpenEdgeEvolutionWithConstantVertex  tem(edgestate,rate,this);
-            m_OpenEdgeEvolutionWithConstantVertex = tem;
-        }
         else if(firstword == "OutPutTRJ_BTS")
         {
             input>>str>>(m_TRJBTS.btsPeriod)>>(m_TRJBTS.btsPrecision)>>(m_TRJBTS.btsFile_name);
@@ -695,9 +700,7 @@ void State::WriteStateLog()
     statelog<<"OutPutTRJ_TSI = "<<(m_TRJTSI.tsiPeriod)<<"  "<<(m_TRJTSI.tsiPrecision)<<"  "<<(m_TRJTSI.tsiFolder_name)<<"  "<<std::endl;
     statelog<<"OutPutTRJ_BTS = "<<(m_TRJBTS.btsPeriod)<<"  "<<(m_TRJBTS.btsPrecision)<<"  "<<(m_TRJBTS.btsFile_name)<<"  "<<std::endl;
     std::string state = "off";
-    if (m_VolumeConstraint.State == true)
-    state = "on";
-    statelog<<"Volume_Constraint = "<<state<<"  "<<(m_VolumeConstraint.EQSteps)<<" "<<(m_VolumeConstraint.DeltaP)<<"  "<<(m_VolumeConstraint.K)<<"  "<<(m_VolumeConstraint.targetV)<<std::endl;
+
     
     //statelog<<" OpenEdgeEvolutionWithConstantVertex = .... "<<std::endl;
      //if(m_SpringPotentialBetweenTwoGroups->GetState()==true)
