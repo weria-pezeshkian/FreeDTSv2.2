@@ -19,6 +19,8 @@ public:
     void operator=(const Vec3D& other);
     double norm() const;
     static double dot(const Vec3D& v1, const Vec3D& v2);
+    bool isbad() const; // Function to check if any element is non-finite
+
 private:
     double m_X;
     double m_Y;

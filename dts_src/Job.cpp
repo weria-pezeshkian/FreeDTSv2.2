@@ -14,28 +14,21 @@
 #include "MC_Simulation.h"
 #include "MC_Simulation_B.h"
 #include "RNG.h"
-
+/*
+This is the task distribution class, also it allows to run
+ */
 
 Job::Job(std::vector <std::string> argument)
 {
-std::string Exe=argument.at(0);
-    std::string ExeName = "DTS";
-    Nfunction f;
 
-if (Exe.size()<3)
+    Nfunction f;
+    std::string ex_name = f.SubstringFromRight(argument[0], '/');
+if (ex_name!=EXE_NAME) // EXE_NAME is defined in the SimDef.h file
 {
-        std::cout<<" Error:  (a) unrecognized exacutable name --->"<<Exe<<" :( "<<std::endl;
-}
-else if (Exe.size()>3 && Exe.at(Exe.size()-4)!='/')
-{
-        std::cout<<" Error:  (b) unrecognized exacutable name --->"<<Exe<<" :( "<<std::endl;
+        std::cout<<" Error: unrecognized exacutable name --->"<<ex_name<<" :( "<<std::endl;
 }
 else
 {
-        char L1 = Exe.at(Exe.size()-1);
-        char L2 = Exe.at(Exe.size()-2);
-        char L3 = Exe.at(Exe.size()-3);
-if(L1==ExeName.at(2) && L2==ExeName.at(1) && L3==ExeName.at(0))
 {
 #ifdef _OPENMP
 State tem_S(argument);
@@ -191,8 +184,6 @@ std::cout<<"thread id "<<Thread_ID<<" total no threead "<<omp_get_num_threads()<
             }
 #endif
         }
-        else
-        std::cout<<" Error:  (c) unrecognized exacutable name --->"<<Exe<<" :( "<<std::endl;
     }
 
 

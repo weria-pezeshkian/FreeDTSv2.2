@@ -23,13 +23,13 @@ Nfunction();
     void CleanFiles();
     std::vector<std::string> split(std::string str);
     bool FileExist (const std::string& name);
+    std::string SubstringFromRight(const std::string& input, const char& chr);
     bool isEven(int x);
     private :
     int L;
     double NUMBER;
     std::string WORD;
     float Quicksqrt(float num);
-
 
 };
 

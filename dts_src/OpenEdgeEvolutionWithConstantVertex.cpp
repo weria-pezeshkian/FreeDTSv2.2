@@ -30,19 +30,9 @@ OpenEdgeEvolutionWithConstantVertex::~OpenEdgeEvolutionWithConstantVertex()
 void OpenEdgeEvolutionWithConstantVertex::Initialize()
 {
   // creating some trinagle and links to later create from them
-    std::cout<<" here 1\n";
-
     m_pMESH = m_pState->m_pMesh;
-    
-    std::cout<<" here 2\n";
-
     int Nt = m_pMESH->m_pEdgeV.size();
-    
-    std::cout<<Nt<<" here 3\n";
-
     m_pBox = m_pMESH->m_pBox;
-    std::cout<<" here 4\n";
-
     // due to mirro links 2*(Nt-3)+Nt
     int lid = 2*((m_pMESH->m_pMHL).size())+(m_pMESH->m_pEdgeL).size();
     for (int i=0;i<3*Nt-6;i++)
@@ -58,28 +48,12 @@ void OpenEdgeEvolutionWithConstantVertex::Initialize()
         m_GhostT.push_back(temt);
         tid++;
     }
-    std::cout<<" here 5\n";
-
     for (std::vector<links>::iterator it = m_GhostL.begin() ; it != m_GhostL.end(); ++it)
         m_pGhostL.push_back(&(*it));
     
-    std::cout<<" here 6\n";
-
     for (std::vector<triangle>::iterator it = m_GhostT.begin() ; it != m_GhostT.end(); ++it)
         m_pGhostT.push_back(&(*it));
     
-    
-    
-    
-    // calculate the total links size; not sure yet.
-    //std::vector<links*> edgelink = m_pMESH->m_pEdgeL;
-    //for (std::vector<links*>::iterator it = edgelink.begin() ; it != edgelink.end(); ++it)
-    //{
-        //(*it)->UpdateEdgeVector(m_pBox);
-      //  m_WholeSize+=(*it)->GetEdgeSize();
-    //}
-    
-    // end
 }
 void OpenEdgeEvolutionWithConstantVertex::MC_Move(RNG* rng, double lmin, double lmax, double minangle)
 {
@@ -134,29 +108,23 @@ if(createorkill<0.5)
         }
 
         double eold = v1->GetEnergy();
-      //  std::cout<<" old "<<eold<<"  ";
         eold+= v2->GetEnergy();
-      //  std::cout<<"  "<<v2->GetEnergy()<<"  "<<" length  "<<v2->m_VLength<<" ";;
         eold+= v3->GetEnergy();
-      //  std::cout<<"  "<<v3->GetEnergy()<<"  "<<" length  "<<v3->m_VLength<<" ";
 
         //=== inclusion interaction energy;
         
         std::vector <links *> nvl1 = v1->GetVLinkList();
         for (std::vector<links *>::iterator it = nvl1.begin() ; it != nvl1.end(); ++it)
             eold+=2*(*it)->GetIntEnergy();
-       // std::cout<<"  "<<eold<<"  ";
 
         std::vector <links *> nvl2 = v2->GetVLinkList();
         for (std::vector<links *>::iterator it = nvl2.begin() ; it != nvl2.end(); ++it)
             eold+=2*(*it)->GetIntEnergy();
-       // std::cout<<"  "<<eold<<"  ";
 
         std::vector <links *> nvl3 = v3->GetVLinkList();
         for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it)
             eold+=2*(*it)->GetIntEnergy();
         
-       // std::cout<<"  "<<eold<<"  ";
 
 
         // create a link (this also updates the gemotry)
@@ -164,29 +132,48 @@ if(createorkill<0.5)
 
         
         {
+            Vec3D LD1 = (v1->GetInclusion())->GetGDirection();
+            Vec3D LD2 = (v2->GetInclusion())->GetGDirection();
+            Vec3D LD3 = (v3->GetInclusion())->GetGDirection();
+
             if(v1->VertexOwnInclusion())
             {
-                Tensor2  G2L = v1->GetG2LTransferMatrix();
-                Vec3D LD = G2L*((v1->GetInclusion())->GetGDirection());
-                LD(2) = 0;
-                LD = LD*(1/LD.norm());
-                (v1->GetInclusion())->UpdateLocalDirection(LD);
+                LD1 = (v1->GetG2LTransferMatrix())*LD1;
+                if(LD1.isbad())
+                {
+                    //== reject the move
+                    KillALink(newlink);
+                    return;
+                }
+                LD1(2) = 0;
+                LD1 = LD1*(1/LD1.norm());
+                (v1->GetInclusion())->UpdateLocalDirection(LD1);
             }
             if(v2->VertexOwnInclusion())
             {
-                Tensor2  G2L = v2->GetG2LTransferMatrix();
-                Vec3D LD = G2L*((v2->GetInclusion())->GetGDirection());
-                LD(2) = 0;
-                LD = LD*(1/LD.norm());
-                (v2->GetInclusion())->UpdateLocalDirection(LD);
+                LD2 = (v2->GetG2LTransferMatrix())*LD2;
+                if(LD2.isbad())
+                {
+                    //== reject the move
+                    KillALink(newlink);
+                    return;
+                }
+                LD2(2) = 0;
+                LD2 = LD2*(1/LD2.norm());
+                (v2->GetInclusion())->UpdateLocalDirection(LD2);
             }
             if(v3->VertexOwnInclusion())
             {
-                Tensor2  G2L = v3->GetG2LTransferMatrix();
-                Vec3D LD = G2L*((v3->GetInclusion())->GetGDirection());
-                LD(2) = 0;
-                LD = LD*(1/LD.norm());
-                (v3->GetInclusion())->UpdateLocalDirection(LD);
+                LD3 = (v3->GetG2LTransferMatrix())*LD3;
+                if(LD3.isbad())
+                {
+                    //== reject the move
+                    KillALink(newlink);
+                    return;
+                }
+                LD3(2) = 0;
+                LD3 = LD3*(1/LD3.norm());
+                (v3->GetInclusion())->UpdateLocalDirection(LD3);
             }
         }
         
@@ -510,29 +497,48 @@ else  // if(createorkill<0.5)
         KillALink(plink);
         
         {
+            Vec3D LD1 = (v1->GetInclusion())->GetGDirection();
+            Vec3D LD2 = (v2->GetInclusion())->GetGDirection();
+            Vec3D LD3 = (v3->GetInclusion())->GetGDirection();
+
             if(v1->VertexOwnInclusion())
             {
-                Tensor2  G2L = v1->GetG2LTransferMatrix();
-                Vec3D LD = G2L*((v1->GetInclusion())->GetGDirection());
-                LD(2) = 0;
-                LD = LD*(1/LD.norm());
-                (v1->GetInclusion())->UpdateLocalDirection(LD);
+                LD1 = (v1->GetG2LTransferMatrix())*LD1;
+                if(LD1.isbad())
+                {
+                    //== reject the move
+                    CreateALink(v1);
+                    return;
+                }
+                LD1(2) = 0;
+                LD1 = LD1*(1/LD1.norm());
+                (v1->GetInclusion())->UpdateLocalDirection(LD1);
             }
             if(v2->VertexOwnInclusion())
             {
-                Tensor2  G2L = v2->GetG2LTransferMatrix();
-                Vec3D LD = G2L*((v2->GetInclusion())->GetGDirection());
-                LD(2) = 0;
-                LD = LD*(1/LD.norm());
-                (v2->GetInclusion())->UpdateLocalDirection(LD);
+                LD2 = (v2->GetG2LTransferMatrix())*LD2;
+                if(LD2.isbad())
+                {
+                    //== reject the move
+                    CreateALink(v1);
+                    return;
+                }
+                LD2(2) = 0;
+                LD2 = LD2*(1/LD2.norm());
+                (v2->GetInclusion())->UpdateLocalDirection(LD2);
             }
             if(v3->VertexOwnInclusion())
             {
-                Tensor2  G2L = v3->GetG2LTransferMatrix();
-                Vec3D LD = G2L*((v3->GetInclusion())->GetGDirection());
-                LD(2) = 0;
-                LD = LD*(1/LD.norm());
-                (v3->GetInclusion())->UpdateLocalDirection(LD);
+                LD3 = (v3->GetG2LTransferMatrix())*LD3;
+                if(LD3.isbad())
+                {
+                    //== reject the move
+                    CreateALink(v1);
+                    return;
+                }
+                LD3(2) = 0;
+                LD3 = LD3*(1/LD3.norm());
+                (v3->GetInclusion())->UpdateLocalDirection(LD3);
             }
         }
         

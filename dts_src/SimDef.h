@@ -29,6 +29,7 @@
 #define BTSExt         "bts"
 #define RestartExt         "res"
 #define S_Name "DTS"
+#define EXE_NAME            "DTS"
 
 
 

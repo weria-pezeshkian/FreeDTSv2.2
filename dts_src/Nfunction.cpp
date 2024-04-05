@@ -193,3 +193,12 @@ float Nfunction::Quicksqrt(float num)
     
     return y;
 }
+std::string Nfunction::SubstringFromRight(const std::string& input, const char& chr) {
+    size_t pos = input.find_last_of(chr);
+    if (pos != std::string::npos) {
+        return input.substr(pos + 1);
+    } else {
+        // If there is no '/' in the string, return the entire string
+        return input;
+    }
+}
