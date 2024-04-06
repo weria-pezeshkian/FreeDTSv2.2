@@ -12,8 +12,11 @@ class MESH
 public:
 
     MESH();
-    
     ~MESH();
+
+    inline double GetMinLength()                    const      {return m_MinLength;}
+    inline double GetMaxLength()                    const      {return m_MaxLength;}
+    inline double GetMinAngle()                     const      {return m_MinAngle;}
 
     
 private:
@@ -22,6 +25,9 @@ private:
     std::vector<links>          m_Links;
     std::vector<inclusion>      m_Inclusion;
     Vec3D                       m_Box;
+    double m_MinLength;
+    double m_MaxLength;
+    double m_MinAngle;
 public:
     std::vector <InclusionType> m_InclusionType;
     std::vector <InclusionType*> m_pInclusionType;

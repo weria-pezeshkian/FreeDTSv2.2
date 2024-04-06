@@ -9,15 +9,32 @@
 #include "RNG.h"
 #include "Energy.h"
 #include "DynamicTopology.h"
-
+struct pot_triangle {    // data structure for a potential triangle
+        int id;
+        int cid; // connected id
+        vertex *pv1;
+        vertex *pv2;
+        vertex *pv3;
+        links *pl1;
+        links *pl2;
+        links *pl3;
+    };
+    struct pair_pot_triangle {    // data structure for a potential triangle
+        int id;
+        pot_triangle PT1;
+        pot_triangle PT2;
+    };
 class State;
 class Three_Edge_Scission : public DynamicTopology { // to use for polymorphism
+
+
+    
 public:
     Three_Edge_Scission();
     Three_Edge_Scission(int period, State *pState);
     ~Three_Edge_Scission();
 
-    
+
 public:
     void initialize();
     bool MCMove(double * TotalEnergy, double temp, GenerateCNTCells *pGenCNT );
@@ -38,7 +55,11 @@ private:
     void AddtoTriangleList(triangle* z, std::vector<triangle*> &vect);
     bool Anglevalid4Vhole(vertex *v1, double minangle);
 
-    std::vector<triangle> FindThreeEdgedLoop(MESH* mesh);
+    bool connected_2pot_triangles(pot_triangle potT1, pot_triangle potT2);
+    std::vector<pair_pot_triangle> FindPotentialTriangles(MESH* mesh);
+    bool DoAScission(pair_pot_triangle pair);
+    bool DoAFussion(pair_pot_triangle pair);
+
     double m_Beta;
 
 

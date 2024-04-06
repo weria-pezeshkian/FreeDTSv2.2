@@ -1,7 +1,7 @@
 Integrator                      = MC_B
-MC_Moves                        = 1 1 1 1 1  
+MC_Moves                        = 0 0 0 0 0  
 Initial_Step                    = 1
-Final_Step                      = 400
+Final_Step                      = 2
 Display_periodic                = 1
 OutPutEnergy_periodic           = 100
 Restart_periodic                = 10000
@@ -10,10 +10,7 @@ VertexArea		       	= 100 0.4 0 0.7
 Edge_Parameters			= 5   0   0 
 OutPutTRJ_TSI                   = 1000  10  TrjTSI
 GeneralOutputFilename           = output
-ConstantField			=  5  1 0 0 
-Constant_NematicForce           =  2 1 1
-OpenEdgeEvolutionWithConstantVertex = on 1
-Dynamic_Topology			  = Scission_By3Edges 5
+Dynamic_Topology		= Scission_By3Edges 5
 INCLUSION
 Define 2 Inclusions
 SRotation   Type   K   KG  KP  KL   C0     C0P   C0L  lambda   lkg   lkn    cn0
@@ -22,7 +19,7 @@ SRotation   Type   K   KG  KP  KL   C0     C0P   C0L  lambda   lkg   lkn    cn0
 GenerateInclusions
 Selection_Type Random
 TypeID     1  2
-Density    1  0.0
+Density    0  0.0
 Inclusion-Inclusion-Int
 1    1    1   2     0     -4
  

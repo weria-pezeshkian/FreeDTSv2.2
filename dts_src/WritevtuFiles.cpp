@@ -299,6 +299,19 @@ for (int i=0;i<numv;i++)
 }
 Output<<"        </DataArray>"<<"\n";
 }
+//=== write group id
+{
+        Output<<"        <DataArray type=\"Float32\" Name=\""<<"GroupID"<<"\" Format=\"ascii\">"<<"\n";
+
+
+        for (int i=0;i<numv;i++)
+        {
+                vertex* a=ver.at(i);
+                        Output<<"          "<<a->GetGroup()<<"\n";
+
+        }
+        Output<<"        </DataArray>"<<"\n";
+}
 
     WriteInclusion("dir", ver, &Output);
 

@@ -7,6 +7,10 @@ MESH class for quick access
  */
 MESH::MESH()
 {
+    m_MinLength = 1;
+    m_MaxLength = 3;
+    m_MinAngle = -0.5;;
+    
     m_pEdgeV.clear();
 }
 MESH::~MESH()
