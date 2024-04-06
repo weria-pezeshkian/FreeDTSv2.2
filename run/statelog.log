@@ -4,13 +4,13 @@
 Integrator = MC_B
 MC_Moves = 0  0  0  0  0
 Initial_Step = 1
-Final_Step = 2
+Final_Step = 1
 MinfaceAngle = -0.5
 OutPutEnergy_periodic = 100
 Restart_periodic = 10000
 TopologyFile = output10.tsi
 Seed = 36723
-Kappa = 10  10
+Kappa = 10  0
 Display_periodic = 1
 CNTCELL = 2 2 2 
 GeneralOutputFilename = output

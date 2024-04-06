@@ -1,12 +1,12 @@
 Integrator                      = MC_B
 MC_Moves                        = 0 0 0 0 0  
 Initial_Step                    = 1
-Final_Step                      = 2
+Final_Step                      = 1
 Display_periodic                = 1
 OutPutEnergy_periodic           = 100
 Restart_periodic                = 10000
-Kappa                           = 20 10
-VertexArea		       	= 100 0.4 0 0.7
+Kappa                           = 20 0
+VertexArea		       	= 0 0.4 0 0.7
 Edge_Parameters			= 5   0   0 
 OutPutTRJ_TSI                   = 1000  10  TrjTSI
 GeneralOutputFilename           = output

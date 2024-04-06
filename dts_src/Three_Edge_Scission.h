@@ -33,9 +33,6 @@ public:
     Three_Edge_Scission();
     Three_Edge_Scission(int period, State *pState);
     ~Three_Edge_Scission();
-
-
-public:
     void initialize();
     bool MCMove(double * TotalEnergy, double temp, GenerateCNTCells *pGenCNT );
 
@@ -47,18 +44,17 @@ private:
     State *m_pState;
     Energy *m_pEnergyCalculator;
     void RemoveFromLinkList(links* z, std::vector<links*> &vect);
-    void RemoveFromVertexList(vertex* z, std::vector<vertex*> &vect);
     void RemoveFromTriangleList(triangle* z, std::vector<triangle*> &vect);
-    
     void AddtoLinkList(links* z, std::vector<links*> &vect);
-    void AddtoVertexList(vertex* z, std::vector<vertex*> &vect);
     void AddtoTriangleList(triangle* z, std::vector<triangle*> &vect);
+    
     bool Anglevalid4Vhole(vertex *v1, double minangle);
-
+    bool CorrectOrientation(pot_triangle p1,pot_triangle p2);
     bool connected_2pot_triangles(pot_triangle potT1, pot_triangle potT2);
     std::vector<pair_pot_triangle> FindPotentialTriangles(MESH* mesh);
     bool DoAScission(pair_pot_triangle pair);
     bool DoAFussion(pair_pot_triangle pair);
+    bool CreateATriangleFromAPotentialTriangle(pot_triangle p1);
 
     double m_Beta;
 
