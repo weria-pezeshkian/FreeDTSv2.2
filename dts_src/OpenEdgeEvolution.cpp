@@ -17,7 +17,6 @@ This class is a base class for changing the box
 */
 OpenEdgeEvolution::OpenEdgeEvolution() {
     // Constructor implementation
-    m_Rate = 0;
 }
 
 OpenEdgeEvolution::~OpenEdgeEvolution() {
@@ -28,14 +27,12 @@ OpenEdgeEvolution::~OpenEdgeEvolution() {
 //---- a class for no box change
 NoEvolution::NoEvolution()
 {
-    m_Rate = 0;
 }
 NoEvolution::~NoEvolution(){
     
 }
 void NoEvolution::Initialize(){
     std::cout<<"---> note: there is no defined algorithm for edge treatment, edge size remains constant \n";
-    m_Rate = 0;
 }
 void NoEvolution::MC_Move(RNG* rng, double lmin, double lmax, double maxangle){
 

@@ -17,11 +17,9 @@ class OpenEdgeEvolution {
 public:
     OpenEdgeEvolution();
     virtual ~OpenEdgeEvolution();
-
     virtual void MC_Move(RNG* rng, double lmin, double lmax, double maxangle) = 0;
     virtual void Initialize() = 0;
-    int m_Rate;
-
+    virtual inline int GetRate(){ return 0;}
 
 };
 //---- a class for no box change
@@ -32,11 +30,9 @@ public:
 
     void Initialize();
     void MC_Move(RNG* rng, double lmin, double lmax, double maxangle);
+    inline int GetRate() {return 0;}
 
 
-private:
-
-    int m_Rate;
 };
 
 #endif

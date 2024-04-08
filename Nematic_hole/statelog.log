@@ -2,8 +2,7 @@
 ;  ../DTS   -in   input.dts   -top   top.top   
 ;------------------------------------------  
 Integrator = MC_B
-MC_Moves = 1  1  1
-MC_MovesRate = 1  1  1
+MC_Moves = 1  1  1  1  1
 Initial_Step = 1
 Final_Step = 2000000
 MinfaceAngle = -0.5
@@ -18,8 +17,6 @@ GeneralOutputFilename = output
 Min_Max_LinkLenghtsSquare = 1  3
 OutPutTRJ_TSI = 1000  10  TrjTSI  
 OutPutTRJ_BTS = 0  1  dts.bts  
-Frame_Tension = on  Position_Rescale 0  5
-Volume_Constraint = off  1000 0  0  1
 INCLUSION
 Define 3 Inclusions 
  SRotation Type   K  KG KP KL C0 C0P C0L 

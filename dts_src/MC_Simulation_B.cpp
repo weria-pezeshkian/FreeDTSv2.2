@@ -393,8 +393,10 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
 
     }
 //==============  Edge evolotion
-    if(mc_edge_evo->m_Rate!=0 && mcstep%(mc_edge_evo->m_Rate)==0)
+    if(mc_edge_evo->GetRate()!=0 && mcstep%(mc_edge_evo->GetRate())==0)
+    {
         mc_edge_evo->MC_Move(&Random1,m_Lmin2,m_Lmax2,m_minAngle);
+    }
     
     //== change topology
     {

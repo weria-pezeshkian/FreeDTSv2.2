@@ -21,7 +21,7 @@ OpenEdgeEvolutionWithConstantVertex::OpenEdgeEvolutionWithConstantVertex(int rat
     m_WholeSize = 0;
     m_pState = pState;
     m_Beta =   m_pState->m_Beta;
-    m_pEnergyCalculator = pState->GetEnergyCalculator();
+    m_pEnergyCalculator = pState->GetEnergyCalculator();    
 }
 OpenEdgeEvolutionWithConstantVertex::~OpenEdgeEvolutionWithConstantVertex()
 {
@@ -55,6 +55,11 @@ void OpenEdgeEvolutionWithConstantVertex::Initialize()
         m_pGhostT.push_back(&(*it));
     
 }
+/*void OpenEdgeEvolutionWithConstantVertex::MC_Move(RNG* rng, double lmin, double lmax, double minangle)
+{
+    if(m_Rate)
+    Move(RNG* rng, double lmin, double lmax, double minangle);
+}*/
 void OpenEdgeEvolutionWithConstantVertex::MC_Move(RNG* rng, double lmin, double lmax, double minangle)
 {
 
@@ -66,6 +71,7 @@ void OpenEdgeEvolutionWithConstantVertex::MC_Move(RNG* rng, double lmin, double 
 #endif
     int NL = (m_pMESH->m_pEdgeV).size();
     int NS = (m_pMESH->m_pSurfV).size();
+    
 if(createorkill<0.5)
 {
         // an atempt to create a link                       //       v3
@@ -75,7 +81,7 @@ if(createorkill<0.5)
     {
         int n = rng->IntRNG(m_pMESH->m_pEdgeV.size());
         vertex *v1 =m_pMESH->m_pEdgeV[n];
-
+    
         if(Linkisvalid(v1,lmin, lmax, minangle)==false)
             return;
 
@@ -130,14 +136,10 @@ if(createorkill<0.5)
         // create a link (this also updates the gemotry)
          links *newlink = CreateALink(v1);
 
-        
         {
-            Vec3D LD1 = (v1->GetInclusion())->GetGDirection();
-            Vec3D LD2 = (v2->GetInclusion())->GetGDirection();
-            Vec3D LD3 = (v3->GetInclusion())->GetGDirection();
-
             if(v1->VertexOwnInclusion())
             {
+                Vec3D LD1 = (v1->GetInclusion())->GetGDirection();
                 LD1 = (v1->GetG2LTransferMatrix())*LD1;
                 if(LD1.isbad())
                 {
@@ -151,6 +153,7 @@ if(createorkill<0.5)
             }
             if(v2->VertexOwnInclusion())
             {
+                Vec3D LD2 = (v2->GetInclusion())->GetGDirection();
                 LD2 = (v2->GetG2LTransferMatrix())*LD2;
                 if(LD2.isbad())
                 {
@@ -164,6 +167,7 @@ if(createorkill<0.5)
             }
             if(v3->VertexOwnInclusion())
             {
+                Vec3D LD3 = (v3->GetInclusion())->GetGDirection();
                 LD3 = (v3->GetG2LTransferMatrix())*LD3;
                 if(LD3.isbad())
                 {
@@ -448,7 +452,6 @@ else  // if(createorkill<0.5)
         eold+= v2->GetEnergy();
         eold+= v3->GetEnergy();
         
-        
         //
         {
         std::vector <links *> nvl1 = v1->GetVLinkList();
@@ -468,7 +471,6 @@ else  // if(createorkill<0.5)
             eold-=2*(plink->GetNeighborLink2())->GetIntEnergy();
 
         }
-        
         //== this is a new piece to use global inclusion direction as a constant variable during the move: note global direction should be projected on the new local plane
         {
             if(v1->VertexOwnInclusion())
@@ -490,19 +492,14 @@ else  // if(createorkill<0.5)
                 (v3->GetInclusion())->UpdateGlobalDirection(GD);
             }
         }
-        
-        
+
         
         // we kill a link and update the geomotry
         KillALink(plink);
-        
         {
-            Vec3D LD1 = (v1->GetInclusion())->GetGDirection();
-            Vec3D LD2 = (v2->GetInclusion())->GetGDirection();
-            Vec3D LD3 = (v3->GetInclusion())->GetGDirection();
-
             if(v1->VertexOwnInclusion())
             {
+                Vec3D LD1 = (v1->GetInclusion())->GetGDirection();
                 LD1 = (v1->GetG2LTransferMatrix())*LD1;
                 if(LD1.isbad())
                 {
@@ -516,6 +513,7 @@ else  // if(createorkill<0.5)
             }
             if(v2->VertexOwnInclusion())
             {
+                Vec3D LD2 = (v2->GetInclusion())->GetGDirection();
                 LD2 = (v2->GetG2LTransferMatrix())*LD2;
                 if(LD2.isbad())
                 {
@@ -529,6 +527,7 @@ else  // if(createorkill<0.5)
             }
             if(v3->VertexOwnInclusion())
             {
+                Vec3D LD3 = (v3->GetInclusion())->GetGDirection();
                 LD3 = (v3->GetG2LTransferMatrix())*LD3;
                 if(LD3.isbad())
                 {
@@ -541,9 +540,6 @@ else  // if(createorkill<0.5)
                 (v3->GetInclusion())->UpdateLocalDirection(LD3);
             }
         }
-        
-        
-        
         // new energy
         double enew = m_pEnergyCalculator->SingleVertexEnergy(v1);
         enew+= m_pEnergyCalculator->SingleVertexEnergy(v2);

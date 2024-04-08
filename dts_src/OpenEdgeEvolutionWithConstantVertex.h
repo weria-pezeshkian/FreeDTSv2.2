@@ -16,19 +16,20 @@ public:
     OpenEdgeEvolutionWithConstantVertex();
     OpenEdgeEvolutionWithConstantVertex(int rate, State *pState);
     ~OpenEdgeEvolutionWithConstantVertex();
+    inline int GetRate() {return m_Rate;}
 
     
 public:
     double m_WholeSize;
     
 public:
-    int m_Rate;
     std::vector<triangle*>      m_pGhostT; // Some trinagles ....
     std::vector<links*>         m_pGhostL;  // some edges for  ...
     void Initialize();
     void MC_Move(RNG* rng, double lmin, double lmax, double maxangle);
     
 private:
+    int m_Rate;
     std::vector<triangle>       m_GhostT; // Some trinagles for initial storing
     std::vector<links>          m_GhostL;
     MESH* m_pMESH;
