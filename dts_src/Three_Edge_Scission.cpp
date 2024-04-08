@@ -72,7 +72,7 @@ bool Three_Edge_Scission::MCMove(double * TotalEnergy, double temp, GenerateCNTC
             std::cout<<" we faild to cut \n";
         }
     }
-    auto end = std::chrono::steady_clock::now();
+   // auto end = std::chrono::steady_clock::now();
    // auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
    // std::cout << "Time taken: " << duration.count() << " milliseconds" << std::endl;
     return false;

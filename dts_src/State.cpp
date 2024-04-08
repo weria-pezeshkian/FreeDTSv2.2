@@ -395,6 +395,10 @@ void State::ReadInputFile(std::string file)
                 
                 m_pOpenEdgeEvolution = new OpenEdgeEvolutionWithConstantVertex(period, this);
             }
+            if (type == "EvolutionWithConstantVertex_B") {
+                
+                m_pOpenEdgeEvolution = new OpenEdgeEvolutionWithConstantVertex_B(period, this);
+            }
         }
         else if(firstword == "Volume_Constraint")
         {

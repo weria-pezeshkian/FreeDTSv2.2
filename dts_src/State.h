@@ -28,6 +28,7 @@
 #include "Three_Edge_Scission.h"
 #include "OpenEdgeEvolution.h"
 #include "OpenEdgeEvolutionWithConstantVertex.h"
+#include "OpenEdgeEvolutionWithConstantVertex_B.h"
 #include "VolumeCoupling.h"
 
 /*#include "inclusion.h"

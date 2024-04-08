@@ -43,6 +43,20 @@ double Vec3D::norm() const {
 double Vec3D::dot(const Vec3D& v1, const Vec3D& v2) {
     return v1.m_X * v2.m_X + v1.m_Y * v2.m_Y + v1.m_Z * v2.m_Z;
 }
+
 bool Vec3D::isbad() const {
+    
     return !std::isfinite(m_X) || !std::isfinite(m_Y) || !std::isfinite(m_Z);
 }
+bool Vec3D::isgood() const {
+    return std::isfinite(m_X) && std::isfinite(m_Y) && std::isfinite(m_Z);
+}
+/*
+ 
+ bool Vec3D::isbad() const {
+     return std::isinf(m_X) || std::isnan(m_X) ||
+            std::isinf(m_Y) || std::isnan(m_Y) ||
+            std::isinf(m_Z) || std::isnan(m_Z);
+ }
+ 
+ */
