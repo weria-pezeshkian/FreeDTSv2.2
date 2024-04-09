@@ -330,6 +330,57 @@ if(createorkill<0.5)
         
         double *glo_energy=&(m_pState->m_TotEnergy);
 
+        {
+
+            if(v1->VertexOwnInclusion())
+
+            {
+
+                Tensor2  L2G = v1->GetL2GTransferMatrix();
+
+                Vec3D GD = L2G*((v1->GetInclusion())->GetLDirection());
+
+                (v1->GetInclusion())->UpdateGlobalDirection(GD);
+
+            }
+
+            if(v2->VertexOwnInclusion())
+
+            {
+
+                Tensor2  L2G = v2->GetL2GTransferMatrix();
+
+                Vec3D GD = L2G*((v2->GetInclusion())->GetLDirection());
+
+                (v2->GetInclusion())->UpdateGlobalDirection(GD);
+
+            }
+
+            if(v3->VertexOwnInclusion())
+
+            {
+
+                Tensor2  L2G = v3->GetL2GTransferMatrix();
+
+                Vec3D GD = L2G*((v3->GetInclusion())->GetLDirection());
+
+                (v3->GetInclusion())->UpdateGlobalDirection(GD);
+
+            }
+
+            if(v4->VertexOwnInclusion())
+
+            {
+
+                Tensor2  L2G = v4->GetL2GTransferMatrix();
+
+                Vec3D GD = L2G*((v4->GetInclusion())->GetLDirection());
+
+                (v3->GetInclusion())->UpdateGlobalDirection(GD);
+
+            }
+
+        }
         
        // double testE1 = SystemEnergy();
         //std::cout<<testE1<<"  energy before "<<*glo_energy<<"\n";
@@ -370,7 +421,55 @@ if(createorkill<0.5)
               
       (m_pState->CurvatureCalculator())->SurfVertexCurvature(v1);  // v1 is still an edge vertex
       (m_pState->CurvatureCalculator())->SurfVertexCurvature(v2);  // // v2 is still an edge vertex
-
+        
+        if(v1->VertexOwnInclusion()){
+            Vec3D LD1 = (v1->GetInclusion())->GetGDirection();
+            LD1 = (v1->GetG2LTransferMatrix())*LD1;
+            if(LD1.isbad()){
+                //== reject the move
+                KillALinkOnSurf(newL1);
+                return;
+            }
+                LD1(2) = 0;
+                LD1 = LD1*(1/LD1.norm());
+                (v1->GetInclusion())->UpdateLocalDirection(LD1);
+        }
+        if(v2->VertexOwnInclusion()){
+            Vec3D LD2 = (v2->GetInclusion())->GetGDirection();
+            LD2 = (v2->GetG2LTransferMatrix())*LD2;
+            if(LD2.isbad()){
+                //== reject the move
+                KillALinkOnSurf(newL1);
+                return;
+            }
+                LD2(2) = 0;
+                LD2 = LD2*(1/LD2.norm());
+                (v2->GetInclusion())->UpdateLocalDirection(LD2);
+        }
+        if(v3->VertexOwnInclusion()){
+            Vec3D LD3 = (v3->GetInclusion())->GetGDirection();
+            LD3 = (v3->GetG2LTransferMatrix())*LD3;
+            if(LD3.isbad()){
+                //== reject the move
+                KillALinkOnSurf(newL1);
+                return;
+            }
+                LD3(2) = 0;
+                LD3 = LD3*(1/LD3.norm());
+                (v3->GetInclusion())->UpdateLocalDirection(LD3);
+        }
+        if(v4->VertexOwnInclusion()){
+            Vec3D LD4 = (v4->GetInclusion())->GetGDirection();
+            LD4 = (v4->GetG2LTransferMatrix())*LD4;
+            if(LD4.isbad()){
+                //== reject the move
+                KillALinkOnSurf(newL1);
+                return;
+            }
+                LD4(2) = 0;
+                LD4 = LD4*(1/LD4.norm());
+                (v4->GetInclusion())->UpdateLocalDirection(LD4);
+        }
         
         double enew = m_pEnergyCalculator->SingleVertexEnergy(v1);
         enew+= m_pEnergyCalculator->SingleVertexEnergy(v2);
@@ -417,6 +516,42 @@ if(createorkill<0.5)
                 e=m_pEnergyCalculator->TwoInclusionsInteractionEnergy(*it);
             for (std::vector<links *>::iterator it = nvl4.begin() ; it != nvl4.end(); ++it)
                 e=m_pEnergyCalculator->TwoInclusionsInteractionEnergy(*it);
+            }
+            
+            if(v1->VertexOwnInclusion())
+
+            {
+                Tensor2  G2L = v1->GetG2LTransferMatrix();
+                Vec3D LD = G2L*((v1->GetInclusion())->GetGDirection());
+                if(fabs(LD(2))>0.00001){
+
+                    std::cout<<" something is wrong here, this should not happen. vector should be on the plane \n";
+                }
+                (v1->GetInclusion())->UpdateLocalDirection(LD);
+            }
+            if(v2->VertexOwnInclusion()) {
+                Tensor2  G2L = v2->GetG2LTransferMatrix();
+                Vec3D LD = G2L*((v2->GetInclusion())->GetGDirection());
+                if(fabs(LD(2))>0.00001){
+                    std::cout<<" something is wrong here, this should not happen. vector should be on the plane \n";
+                }
+                (v2->GetInclusion())->UpdateLocalDirection(LD);
+            }
+            if(v3->VertexOwnInclusion()){
+                Tensor2  G2L = v3->GetG2LTransferMatrix();
+                Vec3D LD = G2L*((v3->GetInclusion())->GetGDirection());
+                if(fabs(LD(2))>0.00001){
+                    std::cout<<" something is wrong here, this should not happen. vector should be on the plane \n";
+                }
+                (v3->GetInclusion())->UpdateLocalDirection(LD);
+            }
+            if(v4->VertexOwnInclusion()){
+                Tensor2  G2L = v4->GetG2LTransferMatrix();
+                Vec3D LD = G2L*((v4->GetInclusion())->GetGDirection());
+                if(fabs(LD(2))>0.00001){
+                    std::cout<<" something is wrong here, this should not happen. vector should be on the plane \n";
+                }
+                (v4->GetInclusion())->UpdateLocalDirection(LD);
             }
          //   (*glo_energy)=(*glo_energy)+DE;
 
