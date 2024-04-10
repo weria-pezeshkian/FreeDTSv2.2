@@ -36,7 +36,7 @@ ConstantTopology::~ConstantTopology(){
 void ConstantTopology::initialize(){
     std::cout<<"---> note: there is no algorithm for topology change, the surface topology will remain constant \n";
 }
-bool ConstantTopology::MCMove(double * tot_Energy, double temp, GenerateCNTCells *pGenCNT) {
+bool ConstantTopology::MCMove(double * tot_Energy, RNG *rng, GenerateCNTCells *pGenCNT) {
 
     return false;
 }

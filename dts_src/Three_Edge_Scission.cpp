@@ -24,7 +24,7 @@ Three_Edge_Scission::Three_Edge_Scission(int period, State *pState)
     m_Beta =   m_pState->m_Beta;
     m_pEnergyCalculator = pState->GetEnergyCalculator();
 }
-bool Three_Edge_Scission::MCMove(double * TotalEnergy, double temp, GenerateCNTCells *pGenCNT )
+bool Three_Edge_Scission::MCMove(double * TotalEnergy, RNG *rng, GenerateCNTCells *pGenCNT )
 {
     if(m_GhostT.size()<4 || m_pGhostL.size()<4){
         std::cout<<" --->note: the number of the links and trinagles in repository is not enough, restart the simulations \n";
@@ -39,16 +39,25 @@ bool Three_Edge_Scission::MCMove(double * TotalEnergy, double temp, GenerateCNTC
     for (std::vector<pair_pot_triangle>::iterator it = pair_list.begin() ; it != pair_list.end(); ++it)
     {
         double enew = 0;
-        double eold = ((it->PT1).pv1)->GetEnergy();
+        double eold = 0;
+        eold+= ((it->PT1).pv1)->GetEnergy();
         eold+= ((it->PT1).pv2)->GetEnergy();
         eold+= ((it->PT1).pv3)->GetEnergy();
         eold+= ((it->PT2).pv1)->GetEnergy();
         eold+= ((it->PT2).pv2)->GetEnergy();
         eold+= ((it->PT2).pv3)->GetEnergy();
+        
+        
+        //=== inclusion interaction energy;
+        
+       /* std::vector <links *> nvl1 = v1->GetVLinkList();
+        for (std::vector<links *>::iterator it = nvl1.begin() ; it != nvl1.end(); ++it)
+            eold+=2*(*it)->GetIntEnergy();
+
+        */
 
         if(DoAScission(*it))
         {
-            std::cout<<" cut was good \n";
             (m_pState->CurvatureCalculator())->SurfVertexCurvature((it->PT1).pv1);
             (m_pState->CurvatureCalculator())->SurfVertexCurvature((it->PT1).pv2);
             (m_pState->CurvatureCalculator())->SurfVertexCurvature((it->PT1).pv3);
@@ -63,9 +72,25 @@ bool Three_Edge_Scission::MCMove(double * TotalEnergy, double temp, GenerateCNTC
             enew+= (m_pState->GetEnergyCalculator())->SingleVertexEnergy((it->PT2).pv2);
             enew+= (m_pState->GetEnergyCalculator())->SingleVertexEnergy((it->PT2).pv3);
             
+            /*
+             //=== inclusion interaction energy;
+            for (std::vector<links *>::iterator it = nvl1.begin() ; it != nvl1.end(); ++it)
+                enew+=m_pEnergyCalculator->TwoInclusionsInteractionEnergy(*it);
+            */
+            
             double de = enew - eold;
-            double *glo_energy=&(m_pState->m_TotEnergy);
-            (*glo_energy)=(*glo_energy)+de;
+            double thermal = rng->UniformRNG(1.0);
+            if(de<0 || exp(-de)>thermal){
+                std::cout<<" cut was good \n";
+
+                //== Accepted
+                double *glo_energy=&(m_pState->m_TotEnergy);
+                (*glo_energy)=(*glo_energy)+de;
+            }
+            else{
+                
+                //== rejected
+            }
         }
         else
         {
@@ -471,6 +496,13 @@ bool Three_Edge_Scission::DoAScission(pair_pot_triangle pair)
       (p2.pv3)->RemoveFromNeighbourVertex(p1.pv3);
 
     //=== update links shape Operator
+      (p1.pl1)->UpdateNormal();
+      (p1.pl2)->UpdateNormal();
+      (p1.pl3)->UpdateNormal();
+      (p2.pl1)->UpdateNormal();
+      (p2.pl2)->UpdateNormal();
+      (p2.pl3)->UpdateNormal();
+
       (p1.pl1)->UpdateShapeOperator(m_pBox);
       (p1.pl2)->UpdateShapeOperator(m_pBox);
       (p1.pl3)->UpdateShapeOperator(m_pBox);
@@ -542,4 +574,37 @@ void Three_Edge_Scission::AddtoLinkList(links* z, std::vector<links*> &vect)
 void Three_Edge_Scission::AddtoTriangleList(triangle* z, std::vector<triangle*> &vect)
 {
     vect.push_back(z);
+}
+// this should be deleted at the end
+double  Three_Edge_Scission::UpdateEnergy()
+{
+    double en = 0;
+
+    
+    for (std::vector<triangle *>::iterator it = (m_pMESH->m_pActiveT).begin() ; it != (m_pMESH->m_pActiveT).end(); ++it)
+    (*it)->UpdateNormal_Area(m_pBox);
+
+    //===== Prepare links:  normal vector and shape operator
+    for (std::vector<links *>::iterator it = (m_pMESH->m_pHL).begin() ; it != (m_pMESH->m_pHL).end(); ++it)
+    {
+            (*it)->UpdateNormal();
+            (*it)->UpdateShapeOperator(m_pBox);
+    }
+
+    //======= Prepare vertex:  area and normal vector and curvature of surface vertices not the edge one
+    for (std::vector<vertex *>::iterator it = (m_pMESH->m_pSurfV).begin() ; it != (m_pMESH->m_pSurfV).end(); ++it)
+        (m_pState->CurvatureCalculator())->SurfVertexCurvature(*it);
+        
+    //====== edge links should be updated
+    for (std::vector<links *>::iterator it = (m_pMESH->m_pEdgeL).begin() ; it != (m_pMESH->m_pEdgeL).end(); ++it)
+            (*it)->UpdateEdgeVector(m_pBox);
+
+    for (std::vector<vertex *>::iterator it = (m_pMESH->m_pEdgeV).begin() ; it != (m_pMESH->m_pEdgeV).end(); ++it)
+            (m_pState->CurvatureCalculator())->EdgeVertexCurvature(*it);
+
+    Energy*   pEnergyCalculator = m_pState->GetEnergyCalculator();
+    en=pEnergyCalculator->TotalEnergy(m_pMESH->m_pSurfV,m_pMESH->m_pHL);
+    en+=pEnergyCalculator->TotalEnergy(m_pMESH->m_pEdgeV,m_pMESH->m_pEdgeL);
+    
+    return en;
 }

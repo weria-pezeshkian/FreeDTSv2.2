@@ -55,6 +55,8 @@ private:
     void KillALinkOnSurf(links *);
     bool Linkisvalid(vertex *, double lmin, double lmax, double maxangle);
     double  SystemEnergy();
+    triangle* CloseATriangleHole(vertex *v1);
+    bool KillATriangle(links *l1);
 
 
 

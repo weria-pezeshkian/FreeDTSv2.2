@@ -49,6 +49,8 @@ public:
   void Updatevertex(vertex * );
   void UpdateLocalDirection(Vec3D );
   void UpdateGlobalDirection(Vec3D );
+  bool UpdateGlobalDirectionFromLocal();
+  bool UpdateLocalDirectionFromGlobal();
 
 public:
     void ReadInclusionFromFile(std::ifstream *inputfile,std::vector <vertex *> pv);

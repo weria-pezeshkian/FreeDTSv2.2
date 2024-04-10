@@ -401,7 +401,7 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
     //== change topology
     {
     double thermal=Random1.UniformRNG(1.0);
-    bool top_move = mc_topology->MCMove(tot_Energy, thermal, (&CNT));
+    bool top_move = mc_topology->MCMove(tot_Energy, &Random1, (&CNT));
     }
 
 //==== Active Inclsuion exchange two state; as these movie are indepenednt of the energy based move, the have no conditions

@@ -61,6 +61,24 @@ void inclusion::UpdateGlobalDirection(Vec3D v)
 {
     m_GDirection = v;
 }
+bool inclusion::UpdateGlobalDirectionFromLocal(){
+    
+    m_GDirection = (m_pvertex->GetL2GTransferMatrix())*m_LDirection;
+    
+    if(m_GDirection.isbad())
+        return false;
+
+    return true;
+}
+bool inclusion::UpdateLocalDirectionFromGlobal(){
+    
+    m_LDirection = (m_pvertex->GetG2LTransferMatrix())*m_GDirection;
+    if(m_LDirection.isbad())
+        return false;
+
+    return true;
+}
+
 #endif
 
 

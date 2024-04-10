@@ -34,7 +34,7 @@ public:
     Three_Edge_Scission(int period, State *pState);
     ~Three_Edge_Scission();
     void initialize();
-    bool MCMove(double * TotalEnergy, double temp, GenerateCNTCells *pGenCNT );
+    bool MCMove(double * TotalEnergy, RNG *rng, GenerateCNTCells *pGenCNT );
 
 private:
     std::vector<triangle>       m_GhostT; // Some trinagles for initial storing
@@ -58,6 +58,7 @@ private:
 
     double m_Beta;
 
+    double  UpdateEnergy();
 
 public:
     std::vector<triangle*>      m_pGhostT; // Some trinagles ....
