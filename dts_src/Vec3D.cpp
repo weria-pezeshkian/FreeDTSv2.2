@@ -39,7 +39,6 @@ void Vec3D::operator=(const Vec3D& other) {
 double Vec3D::norm() const {
     return std::sqrt(m_X * m_X + m_Y * m_Y + m_Z * m_Z);
 }
-
 double Vec3D::dot(const Vec3D& v1, const Vec3D& v2) {
     return v1.m_X * v2.m_X + v1.m_Y * v2.m_Y + v1.m_Z * v2.m_Z;
 }
@@ -51,6 +50,10 @@ bool Vec3D::isbad() const {
 bool Vec3D::isgood() const {
     return std::isfinite(m_X) && std::isfinite(m_Y) && std::isfinite(m_Z);
 }
+void Vec3D::print(){
+    std::cout<<m_X<<"  "<<m_Y<<"  "<<m_Z<<"\n";
+}
+
 /*
  
  bool Vec3D::isbad() const {

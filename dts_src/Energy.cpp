@@ -200,18 +200,14 @@ double Energy::Energy_OneLinkFlip(links * plinks)
     
 
 }
-double Energy::Energy_OneVertexMove(vertex * pVeretx)
-{
+double Energy::Energy_OneVertexMove(vertex * pVeretx){
 // moving a vertex leads to changes in the energy of the vertex and its beighbouring vertices. The function give the total energy of such system. 
     double E=0.0;
     std::vector<vertex *> NpVer=pVeretx->GetVNeighbourVertex(); /// Get The vertexs on the ring
     E+=SingleVertexEnergy(pVeretx);
-    for (std::vector<vertex *>::iterator it = NpVer.begin() ; it != NpVer.end(); ++it)
-    {
+    for (std::vector<vertex *>::iterator it = NpVer.begin() ; it != NpVer.end(); ++it){
         E+=SingleVertexEnergy(*it);
     }
-
-
 
     return E;
 }

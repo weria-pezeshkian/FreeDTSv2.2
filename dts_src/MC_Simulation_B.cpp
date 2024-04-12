@@ -545,7 +545,10 @@ if(mcstep%500==0) // Optimize R and RB
     {
         energyfile.close();
     }
-    std::cout<<SystemEnergy()<<"  "<<*tot_Energy<<std::endl;
+    
+    DetailedSystemEnergy();
+    double fen = SystemEnergy();
+    std::cout<<std::setprecision(8)<<fen<<"  "<<*tot_Energy<<std::endl;
     simtime=clock()-simtime;
     #pragma omp critical
     std::cout<<" total time "<<((float)simtime)/CLOCKS_PER_SEC<<" second \n";
@@ -575,22 +578,22 @@ double  MC_Simulation_B::SystemEnergy()
         (*it1)->UpdateVZPos(z);
     }
     
-    for (std::vector<triangle *>::iterator it = (m_pMESH->m_pActiveT).begin() ; it != (m_pMESH->m_pActiveT).end(); ++it)
-    (*it)->UpdateNormal_Area(m_pBox);
+     for (std::vector<triangle *>::iterator it = (m_pMESH->m_pActiveT).begin() ; it != (m_pMESH->m_pActiveT).end(); ++it)
+      (*it)->UpdateNormal_Area(m_pBox);
 
     //===== Prepare links:  normal vector and shape operator
-    for (std::vector<links *>::iterator it = (m_pMESH->m_pHL).begin() ; it != (m_pMESH->m_pHL).end(); ++it)
+         for (std::vector<links *>::iterator it = (m_pMESH->m_pHL).begin() ; it != (m_pMESH->m_pHL).end(); ++it)
     {
-            (*it)->UpdateNormal();
-            (*it)->UpdateShapeOperator(m_pBox);
+              (*it)->UpdateNormal();
+              (*it)->UpdateShapeOperator(m_pBox);
     }
 
     //======= Prepare vertex:  area and normal vector and curvature of surface vertices not the edge one
-    for (std::vector<vertex *>::iterator it = (m_pMESH->m_pSurfV).begin() ; it != (m_pMESH->m_pSurfV).end(); ++it)
+      for (std::vector<vertex *>::iterator it = (m_pMESH->m_pSurfV).begin() ; it != (m_pMESH->m_pSurfV).end(); ++it)
         (m_pState->CurvatureCalculator())->SurfVertexCurvature(*it);
         
     //====== edge links should be updated
-    for (std::vector<links *>::iterator it = (m_pMESH->m_pEdgeL).begin() ; it != (m_pMESH->m_pEdgeL).end(); ++it)
+      for (std::vector<links *>::iterator it = (m_pMESH->m_pEdgeL).begin() ; it != (m_pMESH->m_pEdgeL).end(); ++it)
             (*it)->UpdateEdgeVector(m_pBox);
 
     for (std::vector<vertex *>::iterator it = (m_pMESH->m_pEdgeV).begin() ; it != (m_pMESH->m_pEdgeV).end(); ++it)
@@ -773,6 +776,29 @@ void MC_Simulation_B::ReadIndexFile(std::string indexfilename)
                 }
                 indexfile.close();
     
+}
+void MC_Simulation_B::DetailedSystemEnergy(){
+    std::vector<double> energyv,energyl;
+    for (int i=0;i<m_pActiveL.size();i++){
+        energyl.push_back((m_pActiveL[i])->GetIntEnergy());
+    }
+    for (int i=0;i<m_pActiveV.size();i++){
+        energyv.push_back((m_pActiveV[i])->GetEnergy());
+    }
+double fen = SystemEnergy();
+for (int i=0;i<(m_pMESH->m_pActiveL).size();i++){
+    if(fabs((m_pActiveL[i])->GetIntEnergy()-energyl[i])>0.000001){
+        std::cout<<"int energy: "<<std::setprecision(5)<<(m_pActiveL[i])->GetIntEnergy()<<"  "<<energyl[i]<<" vid "<<((m_pActiveL[i])->GetV1())->GetVID()<<"  ";
+    std::cout<<((m_pActiveL[i])->GetV2())->GetVID()<<"  "<<((m_pActiveL[i])->GetV3())->GetVID()<<" \n ";
+    }
+}
+for (int i=0;i<(m_pMESH->m_pActiveV).size();i++){
+        if(fabs((m_pActiveV[i])->GetEnergy()-energyv[i])>0.000001){
+            std::cout<<"v energy: "<<std::setprecision(5)<<(m_pActiveV[i])->GetEnergy()<<"  "<<energyv[i]<<" vid "<<((m_pActiveV[i]))->GetVID()<<"  ";
+        }
+    }
+
+    return;
 }
 /*
 

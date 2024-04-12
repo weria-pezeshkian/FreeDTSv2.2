@@ -34,8 +34,10 @@ void VertexMCMove::MC_MoveAVertex(int step, vertex *pvertex, double dx, double d
     m_Triangle.clear();
     m_pLIntEChange.clear();
     m_pAVer.clear();
-m_step = step;
-m_pvertex=pvertex;
+    
+    
+    m_step = step;
+    m_pvertex=pvertex;
     
     m_DetaR = 0;
     m_DeltaA = 0;
@@ -325,10 +327,10 @@ void VertexMCMove::Move()
         bool addit=true;
         for (std::vector<links *>::iterator it2 = m_pLIntEChange.begin() ; it2 != m_pLIntEChange.end(); ++it2)
         {
-            if((*it2)->GetID()==(*it)->GetID())
+            if((*it2)==(*it))
                 addit=false;
             else if((*it2)->GetMirrorFlag()==true)
-            if(((*it2)->GetMirrorLink())->GetID()==(*it)->GetID())
+            if(((*it2)->GetMirrorLink())==(*it))
                 addit=false;
             
 

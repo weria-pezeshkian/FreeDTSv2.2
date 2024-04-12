@@ -68,6 +68,7 @@ bool inclusion::UpdateGlobalDirectionFromLocal(){
     if(m_GDirection.isbad())
         return false;
 
+        
     return true;
 }
 bool inclusion::UpdateLocalDirectionFromGlobal(){

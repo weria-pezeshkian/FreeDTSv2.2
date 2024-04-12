@@ -5,6 +5,7 @@
  Copyright (c) Weria Pezeshkian
 
  Edge treatment, this is a new development since June 2023;
+ 
  What it does:
  
  // 1. We need to give error if there is a edge; we cannot have osmotic pressure ...
@@ -18,17 +19,14 @@ OpenEdgeEvolutionWithConstantVertex::OpenEdgeEvolutionWithConstantVertex()
 OpenEdgeEvolutionWithConstantVertex::OpenEdgeEvolutionWithConstantVertex(int rate, State *pState)
 {
     m_Rate = rate;
-    m_WholeSize = 0;
     m_pState = pState;
     m_Beta =   m_pState->m_Beta;
-    m_pEnergyCalculator = pState->GetEnergyCalculator();    
+    m_pEnergyCalculator = pState->GetEnergyCalculator();
 }
-OpenEdgeEvolutionWithConstantVertex::~OpenEdgeEvolutionWithConstantVertex()
-{
+OpenEdgeEvolutionWithConstantVertex::~OpenEdgeEvolutionWithConstantVertex(){
     
 }
-void OpenEdgeEvolutionWithConstantVertex::Initialize()
-{
+void OpenEdgeEvolutionWithConstantVertex::Initialize(){
   // creating some trinagle and links to later create from them
     m_pMESH = m_pState->m_pMesh;
     int Nt = m_pMESH->m_pEdgeV.size();
@@ -53,27 +51,17 @@ void OpenEdgeEvolutionWithConstantVertex::Initialize()
     
     for (std::vector<triangle>::iterator it = m_GhostT.begin() ; it != m_GhostT.end(); ++it)
         m_pGhostT.push_back(&(*it));
-    
+
 }
-/*void OpenEdgeEvolutionWithConstantVertex::MC_Move(RNG* rng, double lmin, double lmax, double minangle)
-{
-    if(m_Rate)
-    Move(RNG* rng, double lmin, double lmax, double minangle);
-}*/
 void OpenEdgeEvolutionWithConstantVertex::MC_Move(RNG* rng, double lmin, double lmax, double minangle)
 {
-
     double createorkill = rng->UniformRNG(1.0);
     double thermal = rng->UniformRNG(1.0);
-     
-#if DEBUG_MODE == Enabled
-    std::cout<<" mess_d: MC_Move Function  for the open edge: Starts \n";
-#endif
     int NL = (m_pMESH->m_pEdgeV).size();
     int NS = (m_pMESH->m_pSurfV).size();
-    
-if(createorkill<0.5)
-{
+
+
+if(createorkill<0.5){
         // an atempt to create a link                       //       v3
                                                             //      /   \
                                                           //     v1-----v2
@@ -81,7 +69,6 @@ if(createorkill<0.5)
     {
         int n = rng->IntRNG(m_pMESH->m_pEdgeV.size());
         vertex *v1 =m_pMESH->m_pEdgeV[n];
-    
         if(Linkisvalid(v1,lmin, lmax, minangle)==false)
             return;
 
@@ -90,35 +77,25 @@ if(createorkill<0.5)
         vertex *v3 = l2->GetV2();
         links* l1 = v3->m_pEdgeLink;
         vertex *v2 = l1->GetV2();
-
-        //== this is a new piece to use global inclusion direction as a constant variable during the move: note global direction should be projected on the new local plane
-        {
-            if(v1->VertexOwnInclusion())
-            {
-                Tensor2  L2G = v1->GetL2GTransferMatrix();
-                Vec3D GD = L2G*((v1->GetInclusion())->GetLDirection());
-                (v1->GetInclusion())->UpdateGlobalDirection(GD);
-            }
-            if(v2->VertexOwnInclusion())
-            {
-                Tensor2  L2G = v2->GetL2GTransferMatrix();
-                Vec3D GD = L2G*((v2->GetInclusion())->GetLDirection());
-                (v2->GetInclusion())->UpdateGlobalDirection(GD);
-            }
-            if(v3->VertexOwnInclusion())
-            {
-                Tensor2  L2G = v3->GetL2GTransferMatrix();
-                Vec3D GD = L2G*((v3->GetInclusion())->GetLDirection());
-                (v3->GetInclusion())->UpdateGlobalDirection(GD);
-            }
+ //----   for constant global direction type of moves
+        if(v1->VertexOwnInclusion()){
+            if(!(v1->GetInclusion())->UpdateGlobalDirectionFromLocal())
+                return;
+        }
+        if(v2->VertexOwnInclusion()){
+            if(!(v2->GetInclusion())->UpdateGlobalDirectionFromLocal())
+                return;
+        }
+        if(v3->VertexOwnInclusion()){
+            if(!(v3->GetInclusion())->UpdateGlobalDirectionFromLocal())
+                return;
         }
 
         double eold = v1->GetEnergy();
         eold+= v2->GetEnergy();
         eold+= v3->GetEnergy();
 
-        //=== inclusion interaction energy;
-        
+        //=== inclusion interaction energy; it is multipled by two because only half is assinged to each edge
         std::vector <links *> nvl1 = v1->GetVLinkList();
         for (std::vector<links *>::iterator it = nvl1.begin() ; it != nvl1.end(); ++it)
             eold+=2*(*it)->GetIntEnergy();
@@ -130,90 +107,76 @@ if(createorkill<0.5)
         std::vector <links *> nvl3 = v3->GetVLinkList();
         for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it)
             eold+=2*(*it)->GetIntEnergy();
-        
 
+        eold+=2*(v1->m_pPrecedingEdgeLink)->GetIntEnergy();
 
         // create a link (this also updates the gemotry)
          links *newlink = CreateALink(v1);
 
-        {
-            if(v1->VertexOwnInclusion())
-            {
-                Vec3D LD1 = (v1->GetInclusion())->GetGDirection();
+        //----   for constant global direction type of moves
+        if (v1->VertexOwnInclusion() || v2->VertexOwnInclusion() || v3->VertexOwnInclusion()) {
+            Vec3D LD1, LD2, LD3;
+            if(v1->VertexOwnInclusion()){
+                LD1 = (v1->GetInclusion())->GetGDirection();
                 LD1 = (v1->GetG2LTransferMatrix())*LD1;
-                if(LD1.isbad())
-                {
-                    //== reject the move
+                if(LD1.isbad()){
                     KillALink(newlink);
                     return;
                 }
                 LD1(2) = 0;
                 LD1 = LD1*(1/LD1.norm());
-                (v1->GetInclusion())->UpdateLocalDirection(LD1);
             }
-            if(v2->VertexOwnInclusion())
-            {
-                Vec3D LD2 = (v2->GetInclusion())->GetGDirection();
+            if(v2->VertexOwnInclusion()){
+                LD2 = (v2->GetInclusion())->GetGDirection();
                 LD2 = (v2->GetG2LTransferMatrix())*LD2;
-                if(LD2.isbad())
-                {
+                if(LD2.isbad()){
                     //== reject the move
                     KillALink(newlink);
                     return;
                 }
                 LD2(2) = 0;
                 LD2 = LD2*(1/LD2.norm());
-                (v2->GetInclusion())->UpdateLocalDirection(LD2);
             }
-            if(v3->VertexOwnInclusion())
-            {
-                Vec3D LD3 = (v3->GetInclusion())->GetGDirection();
+            if(v3->VertexOwnInclusion()){
+                LD3 = (v3->GetInclusion())->GetGDirection();
                 LD3 = (v3->GetG2LTransferMatrix())*LD3;
-                if(LD3.isbad())
-                {
+                if(LD3.isbad()){
                     //== reject the move
                     KillALink(newlink);
                     return;
                 }
                 LD3(2) = 0;
                 LD3 = LD3*(1/LD3.norm());
-                (v3->GetInclusion())->UpdateLocalDirection(LD3);
             }
+//-- this should happen at the end, otherwise this early links get bad number
+            if(v1->VertexOwnInclusion())
+            (v1->GetInclusion())->UpdateLocalDirection(LD1);
+            if(v2->VertexOwnInclusion())
+            (v2->GetInclusion())->UpdateLocalDirection(LD2);
+            if(v3->VertexOwnInclusion())
+            (v3->GetInclusion())->UpdateLocalDirection(LD3);
         }
         
         // new energy
         double enew = m_pEnergyCalculator->SingleVertexEnergy(v1);
-      //  std::cout<<"\n new "<<enew<<"  ";
-
         enew+= m_pEnergyCalculator->SingleVertexEnergy(v2);
-      //  std::cout<<" "<<m_pEnergyCalculator->SingleVertexEnergy(v2)<<"  ";
-
         enew+=m_pEnergyCalculator->SingleVertexEnergy(v3);
-      //  std::cout<<" "<<m_pEnergyCalculator->SingleVertexEnergy(v3)<<" length  "<<v3->m_VLength<<" ";
 
         //=== inclusion interaction energy
-        
         for (std::vector<links *>::iterator it = nvl1.begin() ; it != nvl1.end(); ++it)
             enew+=m_pEnergyCalculator->TwoInclusionsInteractionEnergy(*it);
-      //  std::cout<<" "<<enew<<"  ";
-
         for (std::vector<links *>::iterator it = nvl2.begin() ; it != nvl2.end(); ++it)
             enew+=m_pEnergyCalculator->TwoInclusionsInteractionEnergy(*it);
-      //  std::cout<<" "<<enew<<"  ";
-
         for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it)
             enew+=m_pEnergyCalculator->TwoInclusionsInteractionEnergy(*it);
-      //  std::cout<<" "<<enew<<"  ";
+
+            enew+=m_pEnergyCalculator->TwoInclusionsInteractionEnergy(v1->m_pPrecedingEdgeLink);
 
             // the new created link
-           enew+=m_pEnergyCalculator->TwoInclusionsInteractionEnergy(newlink);
-
-      //  std::cout<<" "<<enew<<" \n ";
+            enew+=m_pEnergyCalculator->TwoInclusionsInteractionEnergy(newlink);
 
         double *glo_energy=&(m_pState->m_TotEnergy);
         double DE = (enew-eold);
-       // std::cout<<" DE "<<DE<<" \n ";
-      //  std::cout<<" edge "<<(m_pMESH->m_pEdgeV).size()<<" \n ";
 
         //if(double(NL)/double(NS+1)*exp(-m_Beta*DE)>thermal )
         if(exp(-m_Beta*DE)>thermal )
@@ -223,42 +186,30 @@ if(createorkill<0.5)
         else
         {
             KillALink(newlink);
-            
-            
-            {
-                if(v1->VertexOwnInclusion())
-                {
+                if(v1->VertexOwnInclusion()){
                     Tensor2  G2L = v1->GetG2LTransferMatrix();
                     Vec3D LD = G2L*((v1->GetInclusion())->GetGDirection());
-                    if(fabs(LD(2))>0.00001)
-                    {
+                    if(fabs(LD(2))>0.00001){
                         std::cout<<" something is wrong here, this should not happen. vector should be on the plane \n";
                     }
                     (v1->GetInclusion())->UpdateLocalDirection(LD);
                 }
-                if(v2->VertexOwnInclusion())
-                {
+                if(v2->VertexOwnInclusion()){
                     Tensor2  G2L = v2->GetG2LTransferMatrix();
                     Vec3D LD = G2L*((v2->GetInclusion())->GetGDirection());
-                    if(fabs(LD(2))>0.00001)
-                    {
+                    if(fabs(LD(2))>0.00001){
                         std::cout<<" something is wrong here, this should not happen. vector should be on the plane \n";
                     }
                     (v2->GetInclusion())->UpdateLocalDirection(LD);
                 }
-                if(v3->VertexOwnInclusion())
-                {
+                if(v3->VertexOwnInclusion()){
                     Tensor2  G2L = v3->GetG2LTransferMatrix();
                     Vec3D LD = G2L*((v3->GetInclusion())->GetGDirection());
-                    if(fabs(LD(2))>0.00001)
-                    {
+                    if(fabs(LD(2))>0.00001){
                         std::cout<<" something is wrong here, this should not happen. vector should be on the plane \n";
                     }
                     (v3->GetInclusion())->UpdateLocalDirection(LD);
                 }
-            }
-            
-            
             double e = m_pEnergyCalculator->SingleVertexEnergy(v1);
             e = m_pEnergyCalculator->SingleVertexEnergy(v2);
             e = m_pEnergyCalculator->SingleVertexEnergy(v3);
@@ -270,9 +221,11 @@ if(createorkill<0.5)
             for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it)
                 e=m_pEnergyCalculator->TwoInclusionsInteractionEnergy(*it);
             }
+            e=m_pEnergyCalculator->TwoInclusionsInteractionEnergy(v1->m_pPrecedingEdgeLink);
+
         }
     }
-    else if((m_pMESH->m_pEdgeL).size()==3) {
+    else if((m_pMESH->m_pEdgeL).size()==3){
         vertex *v1 =m_pMESH->m_pEdgeV[0];
         links* l1 = v1->m_pEdgeLink;
         vertex *v2 = l1->GetV2();
@@ -294,67 +247,73 @@ if(createorkill<0.5)
         std::vector <links *> nvl3 = v3->GetVLinkList();
         for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it)
             eold+=2*(*it)->GetIntEnergy();
-        
+
         double *glo_energy=&(m_pState->m_TotEnergy);
 
-        {
+        //--- to have the inclsuion direction constant in 3d
             if(v1->VertexOwnInclusion()){
-                (v1->GetInclusion())->UpdateGlobalDirectionFromLocal();
+                if(!(v1->GetInclusion())->UpdateGlobalDirectionFromLocal())
+                    return;
             }
             if(v2->VertexOwnInclusion()){
-                (v2->GetInclusion())->UpdateGlobalDirectionFromLocal();
+                if(!(v2->GetInclusion())->UpdateGlobalDirectionFromLocal())
+                    return;
             }
             if(v3->VertexOwnInclusion()){
-                (v3->GetInclusion())->UpdateGlobalDirectionFromLocal();
+                if(!(v3->GetInclusion())->UpdateGlobalDirectionFromLocal())
+                    return;
             }
-        }
-        
+  
+        //==== creating the triangles
         triangle *T = CloseATriangleHole(v1);
-        if(v1->VertexOwnInclusion()){
-            Vec3D LD1 = (v1->GetInclusion())->GetGDirection();
-            LD1 = (v1->GetG2LTransferMatrix())*LD1;
-            if(LD1.isbad()){
-                //== reject the move
-                KillATriangle(l1->GetMirrorLink());
-                return;
-            }
+
+        if (v1->VertexOwnInclusion() || v2->VertexOwnInclusion() || v3->VertexOwnInclusion()) {
+            Vec3D LD1, LD2, LD3;
+            if(v1->VertexOwnInclusion()){
+                LD1 = (v1->GetInclusion())->GetGDirection();
+                LD1 = (v1->GetG2LTransferMatrix())*LD1;
+                if(LD1.isbad()){
+                    KillATriangle(l1);
+                    return;
+                }
                 LD1(2) = 0;
                 LD1 = LD1*(1/LD1.norm());
-                (v1->GetInclusion())->UpdateLocalDirection(LD1);
-        }
-        if(v2->VertexOwnInclusion()){
-            Vec3D LD = (v2->GetInclusion())->GetGDirection();
-            LD = (v2->GetG2LTransferMatrix())*LD;
-            if(LD.isbad()){
-                //== reject the move
-                KillATriangle(l1->GetMirrorLink());
-        
-                return;
             }
-                LD(2) = 0;
-                LD = LD*(1/LD.norm());
-                (v2->GetInclusion())->UpdateLocalDirection(LD);
-        }
-        if(v3->VertexOwnInclusion()){
-            Vec3D LD = (v3->GetInclusion())->GetGDirection();
-            LD = (v3->GetG2LTransferMatrix())*LD;
-            if(LD.isbad()){
-                //== reject the move
-                KillATriangle(l1->GetMirrorLink());
-        
-                return;
+            if(v2->VertexOwnInclusion()){
+                LD2 = (v2->GetInclusion())->GetGDirection();
+                LD2 = (v2->GetG2LTransferMatrix())*LD2;
+                if(LD2.isbad()){
+                    KillATriangle(l1);
+                    return;
+                }
+                LD2(2) = 0;
+                LD2 = LD2*(1/LD2.norm());
             }
-                LD(2) = 0;
-                LD = LD*(1/LD.norm());
-                (v3->GetInclusion())->UpdateLocalDirection(LD);
+            if(v3->VertexOwnInclusion()){
+                LD3 = (v3->GetInclusion())->GetGDirection();
+                LD3 = (v3->GetG2LTransferMatrix())*LD3;
+                if(LD3.isbad()){
+                    KillATriangle(l1);
+                    return;
+                }
+                LD3(2) = 0;
+                LD3 = LD3*(1/LD3.norm());
+            }
+//-- this should happen at the end, otherwise this early links get bad number
+            if(v1->VertexOwnInclusion())
+            (v1->GetInclusion())->UpdateLocalDirection(LD1);
+            if(v2->VertexOwnInclusion())
+            (v2->GetInclusion())->UpdateLocalDirection(LD2);
+            if(v3->VertexOwnInclusion())
+            (v3->GetInclusion())->UpdateLocalDirection(LD3);
         }
+
         
         double enew = m_pEnergyCalculator->SingleVertexEnergy(v1);
         enew+= m_pEnergyCalculator->SingleVertexEnergy(v2);
         enew+=m_pEnergyCalculator->SingleVertexEnergy(v3);
         
         //=== inclusion interaction energy
-        
         for (std::vector<links *>::iterator it = nvl1.begin() ; it != nvl1.end(); ++it)
             enew+=m_pEnergyCalculator->TwoInclusionsInteractionEnergy(*it);
         for (std::vector<links *>::iterator it = nvl2.begin() ; it != nvl2.end(); ++it)
@@ -362,15 +321,39 @@ if(createorkill<0.5)
         for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it)
             enew+=m_pEnergyCalculator->TwoInclusionsInteractionEnergy(*it);
 
-        
-        
         double DE = (enew-eold);
-        if(exp(-m_Beta*DE)>thermal ){
-             (*glo_energy)=(*glo_energy)+DE;
+
+        if(exp(-m_Beta*DE)>thermal )
+        {
+            (*glo_energy)=(*glo_energy)+DE;
         }
         else{
-            KillATriangle(l1->GetMirrorLink());
-
+            KillATriangle(l1);
+            if(v1->VertexOwnInclusion()){
+                Tensor2  G2L = v1->GetG2LTransferMatrix();
+                Vec3D LD = G2L*((v1->GetInclusion())->GetGDirection());
+                if(fabs(LD(2))>0.00001){
+                    std::cout<<"--> error: something is wrong here, this should not happen. vector should be on the plane \n";
+                }
+                (v1->GetInclusion())->UpdateLocalDirection(LD);
+            }
+            if(v2->VertexOwnInclusion()){
+                Tensor2  G2L = v2->GetG2LTransferMatrix();
+                Vec3D LD = G2L*((v2->GetInclusion())->GetGDirection());
+                if(fabs(LD(2))>0.00001){
+                    std::cout<<"--> error: something is wrong here, this should not happen. vector should be on the plane \n";
+                }
+                (v2->GetInclusion())->UpdateLocalDirection(LD);
+            }
+            if(v3->VertexOwnInclusion()){
+                Tensor2  G2L = v3->GetG2LTransferMatrix();
+                Vec3D LD = G2L*((v3->GetInclusion())->GetGDirection());
+                if(fabs(LD(2))>0.00001){
+                    std::cout<<"--> error: something is wrong here, this should not happen. vector should be on the plane \n";
+                }
+                (v3->GetInclusion())->UpdateLocalDirection(LD);
+            }
+            
             double e = m_pEnergyCalculator->SingleVertexEnergy(v1);
             e = m_pEnergyCalculator->SingleVertexEnergy(v2);
             e = m_pEnergyCalculator->SingleVertexEnergy(v3);
@@ -382,55 +365,25 @@ if(createorkill<0.5)
                 e=m_pEnergyCalculator->TwoInclusionsInteractionEnergy(*it);
             for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it)
                 e=m_pEnergyCalculator->TwoInclusionsInteractionEnergy(*it);
-
-            
-            if(v1->VertexOwnInclusion()){
-                Tensor2  G2L = v1->GetG2LTransferMatrix();
-                Vec3D LD = G2L*((v1->GetInclusion())->GetGDirection());
-                if(fabs(LD(2))>0.00001)
-                {
-                    std::cout<<" something is wrong here, this should not happen. vector should be on the plane \n";
-                }
-                (v1->GetInclusion())->UpdateLocalDirection(LD);
-            }
-            if(v2->VertexOwnInclusion()){
-                Tensor2  G2L = v2->GetG2LTransferMatrix();
-                Vec3D LD = G2L*((v2->GetInclusion())->GetGDirection());
-                if(fabs(LD(2))>0.00001)
-                {
-                    std::cout<<" something is wrong here, this should not happen. vector should be on the plane \n";
-                }
-                (v2->GetInclusion())->UpdateLocalDirection(LD);
-            }
-            if(v3->VertexOwnInclusion()){
-                Tensor2  G2L = v3->GetG2LTransferMatrix();
-                Vec3D LD = G2L*((v3->GetInclusion())->GetGDirection());
-                if(fabs(LD(2))>0.00001)
-                {
-                    std::cout<<" something is wrong here, this should not happen. vector should be on the plane \n";
-                }
-                (v3->GetInclusion())->UpdateLocalDirection(LD);
-            }
         }
     }
-    else if((m_pMESH->m_pEdgeL).size()==0)
-    {
-        
+    else if((m_pMESH->m_pEdgeL).size()==0){
+        return;
     }
-    else
-    {
+    else if((m_pMESH->m_pEdgeL).size()!=3){
         std::cout<<(m_pMESH->m_pEdgeL).size()<<"\n";
         std::cout<<"error---> it should not happen, this is not expected \n";
     }
+    return;
 }
-else  // if(createorkill<0.5)
+else// if (createorkill>0.5)
 {
-        // an atempt to kill a link
-    if(m_pMESH->m_pEdgeL.size()!=0 )
-    {
+    // an atempt to kill a link
+    if(m_pMESH->m_pEdgeL.size()!=0 ){
     
             int n = rng->IntRNG(m_pMESH->m_pEdgeL.size());
-            links *plink =m_pMESH->m_pEdgeL.at(n);
+            links *plink =m_pMESH->m_pEdgeL[n];
+    
             vertex *v1 = plink->GetV1();
             vertex *v2 = plink->GetV2();
             vertex *v3 = plink->GetV3();
@@ -442,7 +395,7 @@ else  // if(createorkill<0.5)
         double eold = v1->GetEnergy();
         eold+= v2->GetEnergy();
         eold+= v3->GetEnergy();
-        
+
         //
         {
         std::vector <links *> nvl1 = v1->GetVLinkList();
@@ -457,80 +410,72 @@ else  // if(createorkill<0.5)
         for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it)
             eold+=2*(*it)->GetIntEnergy();
             
+            //--- this link does not exist in the nb of any vertices
+            eold+=2*(v1->m_pPrecedingEdgeLink)->GetIntEnergy();
+
             // because these two links were counted two times
             eold-=2*(plink->GetNeighborLink1())->GetIntEnergy();
             eold-=2*(plink->GetNeighborLink2())->GetIntEnergy();
-
         }
         //== this is a new piece to use global inclusion direction as a constant variable during the move: note global direction should be projected on the new local plane
-        {
-            if(v1->VertexOwnInclusion())
-            {
-                Tensor2  L2G = v1->GetL2GTransferMatrix();
-                Vec3D GD = L2G*((v1->GetInclusion())->GetLDirection());
-                (v1->GetInclusion())->UpdateGlobalDirection(GD);
-            }
-            if(v2->VertexOwnInclusion())
-            {
-                Tensor2  L2G = v2->GetL2GTransferMatrix();
-                Vec3D GD = L2G*((v2->GetInclusion())->GetLDirection());
-                (v2->GetInclusion())->UpdateGlobalDirection(GD);
-            }
-            if(v3->VertexOwnInclusion())
-            {
-                Tensor2  L2G = v3->GetL2GTransferMatrix();
-                Vec3D GD = L2G*((v3->GetInclusion())->GetLDirection());
-                (v3->GetInclusion())->UpdateGlobalDirection(GD);
-            }
+        if(v1->VertexOwnInclusion()){
+            if(!(v1->GetInclusion())->UpdateGlobalDirectionFromLocal())
+                return;
+        }
+        if(v2->VertexOwnInclusion()){
+            if(!(v2->GetInclusion())->UpdateGlobalDirectionFromLocal())
+                return;
+        }
+        if(v3->VertexOwnInclusion()){
+            if(!(v3->GetInclusion())->UpdateGlobalDirectionFromLocal())
+                return;
         }
 
-        
         // we kill a link and update the geomotry
         KillALink(plink);
-        {
-            if(v1->VertexOwnInclusion())
-            {
-                Vec3D LD1 = (v1->GetInclusion())->GetGDirection();
+
+        // updating the local inc direction from the global one
+        if (v1->VertexOwnInclusion() || v2->VertexOwnInclusion() || v3->VertexOwnInclusion()) {
+            Vec3D LD1, LD2, LD3;
+            if(v1->VertexOwnInclusion()){
+                LD1 = (v1->GetInclusion())->GetGDirection();
                 LD1 = (v1->GetG2LTransferMatrix())*LD1;
-                if(LD1.isbad())
-                {
-                    //== reject the move
+                if(LD1.isbad()){
                     CreateALink(v1);
                     return;
                 }
                 LD1(2) = 0;
                 LD1 = LD1*(1/LD1.norm());
-                (v1->GetInclusion())->UpdateLocalDirection(LD1);
             }
-            if(v2->VertexOwnInclusion())
-            {
-                Vec3D LD2 = (v2->GetInclusion())->GetGDirection();
+            if(v2->VertexOwnInclusion()){
+                LD2 = (v2->GetInclusion())->GetGDirection();
                 LD2 = (v2->GetG2LTransferMatrix())*LD2;
-                if(LD2.isbad())
-                {
-                    //== reject the move
+                if(LD2.isbad()){
                     CreateALink(v1);
                     return;
                 }
                 LD2(2) = 0;
                 LD2 = LD2*(1/LD2.norm());
-                (v2->GetInclusion())->UpdateLocalDirection(LD2);
             }
-            if(v3->VertexOwnInclusion())
-            {
-                Vec3D LD3 = (v3->GetInclusion())->GetGDirection();
+            if(v3->VertexOwnInclusion()){
+                LD3 = (v3->GetInclusion())->GetGDirection();
                 LD3 = (v3->GetG2LTransferMatrix())*LD3;
-                if(LD3.isbad())
-                {
-                    //== reject the move
+                if(LD3.isbad()){
                     CreateALink(v1);
                     return;
                 }
                 LD3(2) = 0;
                 LD3 = LD3*(1/LD3.norm());
-                (v3->GetInclusion())->UpdateLocalDirection(LD3);
             }
+//-- this should happen at the end, otherwise this early links get bad number
+            if(v1->VertexOwnInclusion())
+            (v1->GetInclusion())->UpdateLocalDirection(LD1);
+            if(v2->VertexOwnInclusion())
+            (v2->GetInclusion())->UpdateLocalDirection(LD2);
+            if(v3->VertexOwnInclusion())
+            (v3->GetInclusion())->UpdateLocalDirection(LD3);
         }
+ 
         // new energy
         double enew = m_pEnergyCalculator->SingleVertexEnergy(v1);
         enew+= m_pEnergyCalculator->SingleVertexEnergy(v2);
@@ -550,27 +495,22 @@ else  // if(createorkill<0.5)
         for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it)
             enew+=m_pEnergyCalculator->TwoInclusionsInteractionEnergy(*it);
         }
+        enew+=m_pEnergyCalculator->TwoInclusionsInteractionEnergy(v1->m_pPrecedingEdgeLink);
+
         
         double *glo_energy=&(m_pState->m_TotEnergy);
-
         double DE = (enew-eold);
-               
         //if(double(NS)/double(NL+1)*(exp(-m_Beta*DE)>thermal ))
-        if((exp(-m_Beta*DE)>thermal ))
-        {
+        if(exp(-m_Beta*DE)>thermal) {
              (*glo_energy)=(*glo_energy)+DE;
         }
-        else
-        {
-            CreateALink(v1);
-            
-            {
+        else{       // reject the move
+                    CreateALink(v1);
                 if(v1->VertexOwnInclusion())
                 {
                     Tensor2  G2L = v1->GetG2LTransferMatrix();
                     Vec3D LD = G2L*((v1->GetInclusion())->GetGDirection());
-                    if(fabs(LD(2))>0.00001)
-                    {
+                    if(fabs(LD(2))>0.00001){
                         std::cout<<" something is wrong here, this should not happen. vector should be on the plane \n";
                     }
                     (v1->GetInclusion())->UpdateLocalDirection(LD);
@@ -579,8 +519,7 @@ else  // if(createorkill<0.5)
                 {
                     Tensor2  G2L = v2->GetG2LTransferMatrix();
                     Vec3D LD = G2L*((v2->GetInclusion())->GetGDirection());
-                    if(fabs(LD(2))>0.00001)
-                    {
+                    if(fabs(LD(2))>0.00001){
                         std::cout<<" something is wrong here, this should not happen. vector should be on the plane \n";
                     }
                     (v2->GetInclusion())->UpdateLocalDirection(LD);
@@ -589,13 +528,11 @@ else  // if(createorkill<0.5)
                 {
                     Tensor2  G2L = v3->GetG2LTransferMatrix();
                     Vec3D LD = G2L*((v3->GetInclusion())->GetGDirection());
-                    if(fabs(LD(2))>0.00001)
-                    {
+                    if(fabs(LD(2))>0.00001){
                         std::cout<<" something is wrong here, this should not happen. vector should be on the plane \n";
                     }
                     (v3->GetInclusion())->UpdateLocalDirection(LD);
                 }
-            }
             
             
             {
@@ -614,18 +551,14 @@ else  // if(createorkill<0.5)
             std::vector <links *> nvl3 = v3->GetVLinkList();
             for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it)
                 e=m_pEnergyCalculator->TwoInclusionsInteractionEnergy(*it);
-
+            
+            e=m_pEnergyCalculator->TwoInclusionsInteractionEnergy(v1->m_pPrecedingEdgeLink);
             }
            // std::cout<<"killed rejected \n";
 
         }
         // int energy;
         //double eint = TwoInclusionsInteractionEnergy(l0);
-
-        // we have not included the edge energy yet, in particular if there are proteins on v1 and v2; new interaction should appear.
-        // also many more geo vertices should be updated
-        
-        
     }
 }
   
@@ -660,373 +593,394 @@ void OpenEdgeEvolutionWithConstantVertex::AddtoTriangleList(triangle* z, std::ve
 {
     vect.push_back(z);
 }
-links* OpenEdgeEvolutionWithConstantVertex::CreateALink(vertex *v1)
-{
-    // an atempt to create a link                       //       v3
-    // between v1 and v2                                //      /   \
-                                                      //     v1-----v2
-
-    links* l2 = v1->m_pEdgeLink;
-    vertex *v3 = l2->GetV2();
-    links* l1 = v3->m_pEdgeLink;
-    vertex *v2 = l1->GetV2();
-
-    links *outlink;
-
-        // we added the triangle
-        if(m_pGhostT.size()<1)
-        {
-            std::cout<<" error 882---> we do not have enough storage for the new trinagles \n";
-            exit(0);
-        }
-        triangle *t = m_pGhostT.at(0);  // one trinagule is created
-        t->UpdateVertex(v1,v2,v3);
-        RemoveFromTriangleList(t,m_pGhostT);
-        AddtoTriangleList(t,m_pMESH->m_pActiveT);
-        
-        // add the trinagle to the vertcies list
-        v1->AddtoTraingleList(t);
-        v2->AddtoTraingleList(t);
-        v3->AddtoTraingleList(t);
-        
-        // v3 is no longer an edge vertex
-        RemoveFromVertexList(v3,m_pMESH->m_pEdgeV);
-        AddtoVertexList(v3,m_pMESH->m_pSurfV);
-        v3->m_VertexType = 0; // meaning it is not an edge vertex anymore
-        
-        // we create three links, two mirror and one edge
-        if(m_pGhostL.size()<3)
-        {
-            std::cout<<" error 883---> we do not have enough storage for the new links \n";
-            exit(0);
-        }
-        RemoveFromLinkList(l1,m_pMESH->m_pEdgeL);
-        RemoveFromLinkList(l2,m_pMESH->m_pEdgeL);
-        
-        links *l0 = m_pGhostL[0];
-        links *ml1 = m_pGhostL[1];
-        links *ml2 = m_pGhostL[2];
-        l0->m_LinkType = 1; // only this needs it as the rest will have 0 in constrcuter
-        ml1->m_LinkType = 0; // only this needs it as the rest will have 0 in constrcuter
-        ml2->m_LinkType = 0; // only this needs it as the rest will have 0 in constrcuter
-
-        RemoveFromLinkList(ml1,m_pGhostL);
-        RemoveFromLinkList(ml2,m_pGhostL);
-        RemoveFromLinkList(l0,m_pGhostL);
-        AddtoLinkList(l0,m_pMESH->m_pEdgeL);
-        AddtoLinkList(ml1,m_pMESH->m_pActiveL);
-        AddtoLinkList(ml2,m_pMESH->m_pActiveL);
-
-        v1->m_pEdgeLink = l0;
-        v2->m_pPrecedingEdgeLink = l0;
-        l0->UpdateV(v1,v2,v3);
-        l0->UpdateTriangle(t);
-
-        
-        ml1->UpdateV(v2,v3,v1);
-        ml2->UpdateV(v3,v1,v2);
-        ml1->UpdateTriangle(t);
-        ml2->UpdateTriangle(t);
-        
-        ml1->UpdateMirrorLink(l1);
-        ml2->UpdateMirrorLink(l2);
-        l1->UpdateMirrorLink(ml1);
-        l2->UpdateMirrorLink(ml2);
-        l1->m_LinkType = 0;
-        l2->m_LinkType = 0;
-        l1->UpdateMirrorFlag(true);
-        l2->UpdateMirrorFlag(true);
-        ml1->UpdateMirrorFlag(true);
-        ml2->UpdateMirrorFlag(true);
-        ml1->UpdateNeighborLink1(ml2);
-        ml1->UpdateNeighborLink2(l0);
-        ml2->UpdateNeighborLink1(l0);
-        ml2->UpdateNeighborLink2(ml1);
-        l0->UpdateNeighborLink1(ml1);
-        l0->UpdateNeighborLink2(ml2);
-        
-        v1->AddtoNeighbourVertex(v2);
-        v2->AddtoNeighbourVertex(v1);
-        v1->AddtoLinkList(l0);
-        v3->AddtoLinkList(ml2);
-        v2->AddtoLinkList(ml1);
-
-        // adding ml1 and ml2 and l1 and l2 to m_pMHL and m_pHL
-        AddtoLinkList(l1,m_pMESH->m_pMHL);
-        AddtoLinkList(l2,m_pMESH->m_pMHL);
-        AddtoLinkList(ml1,m_pMESH->m_pHL);
-        AddtoLinkList(ml2,m_pMESH->m_pHL);
-        outlink = l0;
+// an atempt to create a link                       //        v3                      v3
+// between v1 and v2                                // ml3  /   \  ml2---> ml3,l3  // T \\  l2, ml2   ml3(v1,v3)  ml2(v3,v2)
+                                                  //     v1      v2               v1---->v2
+links* OpenEdgeEvolutionWithConstantVertex::CreateALink(vertex *v1){           //     l1
+// l1 will be created and
+    if(m_pGhostT.size()<1 && m_pGhostL.size()<3){
+        std::cout<<" error 882---> we do not have enough storage for the new trinagle and links \n";
+        exit(0);
+    }
     
-      // now we should update the geomtry of the affected v, l, t
-    t->UpdateNormal_Area(m_pBox);   //trinagule normal and area should be found
-    l1->UpdateNormal();   // normal of the links with mirror should be updated
+    links* ml3 = v1->m_pEdgeLink;
+    vertex *v3 = ml3->GetV2();
+    links* ml2 = v3->m_pEdgeLink;
+    vertex *v2 = ml2->GetV2();
+    links *l1 = m_pGhostL[0];
+    links *l2 = m_pGhostL[1];
+    links *l3 = m_pGhostL[2];
+    triangle *tre = m_pGhostT[0];  // one trinagule is created
+
+//---- create the triangle
+    tre->UpdateVertex(v1,v2,v3);
+    m_pGhostT.erase(m_pGhostT.begin());
+    AddtoTriangleList(tre,m_pMESH->m_pActiveT);
+    l1->UpdateTriangle(tre);
+    l2->UpdateTriangle(tre);
+    l3->UpdateTriangle(tre);
+    v1->AddtoTraingleList(tre);
+    v2->AddtoTraingleList(tre);
+    v3->AddtoTraingleList(tre);
+    
+//----- update the links
+      //-- update l1 and l2 that have became a surface edge
+    RemoveFromLinkList(ml2,m_pMESH->m_pEdgeL);
+    RemoveFromLinkList(ml3,m_pMESH->m_pEdgeL);
+    AddtoLinkList(ml2,m_pMESH->m_pHL);
+    AddtoLinkList(ml3,m_pMESH->m_pHL);
+    ml2->m_LinkType = 0;
+    ml3->m_LinkType = 0;
+    l2->m_LinkType = 0;
+    l3->m_LinkType = 0;
+    l1->m_LinkType = 1;
+    ml2->UpdateMirrorFlag(true);
+    ml3->UpdateMirrorFlag(true);
+    l2->UpdateMirrorFlag(true);
+    l3->UpdateMirrorFlag(true);
+    l1->UpdateMirrorFlag(false);
+    ml2->UpdateMirrorLink(l2);
+    ml3->UpdateMirrorLink(l3);
+    l2->UpdateMirrorLink(ml2);
+    l3->UpdateMirrorLink(ml3);
+    AddtoLinkList(l2,m_pMESH->m_pMHL);   // since we just added ml1 to m_pHL
+    AddtoLinkList(l3,m_pMESH->m_pMHL);
+    m_pGhostL.erase(m_pGhostL.begin());   // three times for l1,l2,l1
+    m_pGhostL.erase(m_pGhostL.begin());   // three times for l1,l2,l1
+    m_pGhostL.erase(m_pGhostL.begin());    // three times for l1,l2,l1
+    AddtoLinkList(l1,m_pMESH->m_pEdgeL);
+    AddtoLinkList(l1,m_pMESH->m_pActiveL);
+    AddtoLinkList(l2,m_pMESH->m_pActiveL);
+    AddtoLinkList(l3,m_pMESH->m_pActiveL);
+
+    l1->UpdateNeighborLink1(l2);
+    l1->UpdateNeighborLink2(l3);
+    l2->UpdateNeighborLink1(l3);
+    l2->UpdateNeighborLink2(l1);
+    l3->UpdateNeighborLink1(l1);
+    l3->UpdateNeighborLink2(l2);
+    l1->UpdateV(v1,v2,v3);
+    l2->UpdateV(v2,v3,v1);
+    l3->UpdateV(v3,v1,v2);
+//----update vertices
+    //----update v3 that has become a surf
+    RemoveFromVertexList(v3,m_pMESH->m_pEdgeV);   // only this vertex becames a surf
+    AddtoVertexList(v3,m_pMESH->m_pSurfV);
+    v3->m_VertexType = 0;                          // meaning it is not an edge vertex anymore
+    //----update other vertices
+    v1->m_pEdgeLink = l1;
+    v2->m_pPrecedingEdgeLink = l1;
+    v1->AddtoNeighbourVertex(v2);
+    v2->AddtoNeighbourVertex(v1);
+    v1->AddtoLinkList(l1);
+    v2->AddtoLinkList(l2);
+    v3->AddtoLinkList(l3);
+    
+ //----- now we should update the geomtry of the affected v, l, t
+    tre->UpdateNormal_Area(m_pBox);   //trinagule normal and area should be found
     l2->UpdateNormal();   // normal of the links with mirror should be updated
+    l3->UpdateNormal();   // normal of the links with mirror should be updated
 
     // their mirror will be updated by the function within
-    l1->UpdateShapeOperator(m_pBox);   // this link is now a surface link and should be found a shape operator
+    l1->UpdateEdgeVector(m_pBox);   // l1 is an edge link, we need only the edge vector and length
     l2->UpdateShapeOperator(m_pBox);   // this link is now a surface link and should be found a shape operator
-    l0->UpdateEdgeVector(m_pBox);   // l0 is an edge link, we need only the edge vector and length
+    l3->UpdateShapeOperator(m_pBox);   // this link is now a surface link and should be found a shape operator
     
     (m_pState->CurvatureCalculator())->EdgeVertexCurvature(v1);  // v1 is still an edge vertex
     (m_pState->CurvatureCalculator())->EdgeVertexCurvature(v2);  // // v2 is still an edge vertex
     (m_pState->CurvatureCalculator())->SurfVertexCurvature(v3);  // v3 is now a surface vertex
 
-    return outlink;
+    return l1;
 }
-void OpenEdgeEvolutionWithConstantVertex::KillALinkOnSurf(links *plink)
+
+//         v3                    v2
+//  l3  // T1 \\ l2  -->  ml3  /   \  ml2
+//      v1-l1- v2             v1    v3
+bool OpenEdgeEvolutionWithConstantVertex::KillALink(links *l1)
 {
-   // std::cout<<" this function has not been impliminted yet \n";
-    links *mplink = plink->GetMirrorLink();
-    triangle *t1 = plink->GetTriangle();
-    triangle *t2 = mplink->GetTriangle();
-    vertex *v1 = plink->GetV1();
-    vertex *v2 = plink->GetV2();
-    vertex *v3 = plink->GetV3();
-    vertex *v4 = mplink->GetV3();
-    links *l1 = plink->GetNeighborLink1();
-    links *l2 = plink->GetNeighborLink2();
-    links *l3 = mplink->GetNeighborLink1();
-    links *l4 = mplink->GetNeighborLink2();
-    links *ml1 = l1->GetMirrorLink();
-    links *ml2 = l2->GetMirrorLink();
-    links *ml3 = l3->GetMirrorLink();
-    links *ml4 = l4->GetMirrorLink();
+        triangle *tri = l1->GetTriangle();
+        vertex *v1 = l1->GetV1();
+        vertex *v2 = l1->GetV2();
+        vertex *v3 = l1->GetV3();
+        links *l2 = l1->GetNeighborLink1();
+        links *l3 = l2->GetNeighborLink1();
+        links *ml2 = l2->GetMirrorLink();
+        links *ml3 = l3->GetMirrorLink();
     
-    // make the plink and mplink a ghost
-    RemoveFromLinkList(plink,m_pMESH->m_pHL);           // too expensive
-    RemoveFromLinkList(mplink,m_pMESH->m_pHL);          // too expensive
-    RemoveFromLinkList(plink,m_pMESH->m_pMHL);          // too expensive
-    RemoveFromLinkList(mplink,m_pMESH->m_pMHL);      // too expensive
-    RemoveFromLinkList(plink,m_pMESH->m_pActiveL);   // too expensive
-    RemoveFromLinkList(mplink,m_pMESH->m_pActiveL);  // too expensive
-    AddtoLinkList(mplink,m_pGhostL);
-    AddtoLinkList(plink,m_pGhostL);
-
+//--- remove the triangle
+    RemoveFromTriangleList(tri,m_pMESH->m_pActiveT);
+    AddtoTriangleList(tri,m_pGhostT);
+          //--- remove the trinagle from all the vertcies list
+    v1->RemoveFromTraingleList(tri);
+    v2->RemoveFromTraingleList(tri);
+    v3->RemoveFromTraingleList(tri);
     
-    // adding the 4 mirrors into the edge
-    AddtoLinkList(ml1,m_pMESH->m_pEdgeL);
-    AddtoLinkList(ml2,m_pMESH->m_pEdgeL);
-    AddtoLinkList(ml3,m_pMESH->m_pEdgeL);
-    AddtoLinkList(ml4,m_pMESH->m_pEdgeL);
-    RemoveFromLinkList(ml1,m_pMESH->m_pHL);  // too expensive; I should find a better way
-    RemoveFromLinkList(ml1,m_pMESH->m_pMHL);  // too expensive
-    RemoveFromLinkList(ml2,m_pMESH->m_pHL);  // too expensive
-    RemoveFromLinkList(ml2,m_pMESH->m_pMHL);  // too expensive
-    RemoveFromLinkList(ml3,m_pMESH->m_pHL);  // too expensive; I should find a better way
-    RemoveFromLinkList(ml3,m_pMESH->m_pMHL);  // too expensive
-    RemoveFromLinkList(ml4,m_pMESH->m_pHL);  // too expensive
-    RemoveFromLinkList(ml4,m_pMESH->m_pMHL);  // too expensive
-    
-    // the 4 edge lose mirror
-    ml1->UpdateMirrorFlag(false);
-    ml2->UpdateMirrorFlag(false);
-    ml3->UpdateMirrorFlag(false);
-    ml4->UpdateMirrorFlag(false);
-    ml1->m_LinkType = 1;
-    ml2->m_LinkType = 1;
-    ml3->m_LinkType = 1;
-    ml4->m_LinkType = 1;
-    
-    // all 4 v becomes  edge vertices
-    RemoveFromVertexList(v1,m_pMESH->m_pSurfV);  // too expensive
-    RemoveFromVertexList(v2,m_pMESH->m_pSurfV);  // too expensive
-    RemoveFromVertexList(v3,m_pMESH->m_pSurfV);  // too expensive
-    RemoveFromVertexList(v4,m_pMESH->m_pSurfV);  // too expensive
-    AddtoVertexList(v1,m_pMESH->m_pEdgeV);
-    AddtoVertexList(v2,m_pMESH->m_pEdgeV);
-    AddtoVertexList(v3,m_pMESH->m_pEdgeV);
-    AddtoVertexList(v4,m_pMESH->m_pEdgeV);
-    v1->m_VertexType = 1; // v1 is now an edge vertex; it used to be surf vertex
-    v2->m_VertexType = 1; // v2 is now an edge vertex; it used to be surf vertex
-    v3->m_VertexType = 1; // v3 is now an edge vertex; it used to be surf vertex
-    v4->m_VertexType = 1; // v4 is now an edge vertex; it used to be surf vertex
-
-    v1->m_pEdgeLink = ml2;
-    v2->m_pEdgeLink = ml4;
-    v3->m_pEdgeLink = ml1;
-    v4->m_pEdgeLink = ml3;
-
-    v1->m_pPrecedingEdgeLink = ml3;
-    v2->m_pPrecedingEdgeLink = ml1;
-    v3->m_pPrecedingEdgeLink = ml2;
-    v4->m_pPrecedingEdgeLink = ml4;
-    
-    // now 4  links need to be removed as well
+//---- remove the links l1, l2 and l3 ; note the mirors remain allive but will become an edge link
     RemoveFromLinkList(l1,m_pMESH->m_pActiveL);  // too expensive
     RemoveFromLinkList(l2,m_pMESH->m_pActiveL);  // too expensive
     RemoveFromLinkList(l3,m_pMESH->m_pActiveL);  // too expensive
-    RemoveFromLinkList(l4,m_pMESH->m_pActiveL);  // too expensive
-    RemoveFromLinkList(l1,m_pMESH->m_pHL);  // too expensive
     RemoveFromLinkList(l2,m_pMESH->m_pHL);  // too expensive
     RemoveFromLinkList(l3,m_pMESH->m_pHL);  // too expensive
-    RemoveFromLinkList(l4,m_pMESH->m_pHL);  // too expensive
-    RemoveFromLinkList(l1,m_pMESH->m_pMHL);  // too expensive
     RemoveFromLinkList(l2,m_pMESH->m_pMHL);  // too expensive
     RemoveFromLinkList(l3,m_pMESH->m_pMHL);  // too expensive
-    RemoveFromLinkList(l4,m_pMESH->m_pMHL);  // too expensive
+    RemoveFromLinkList(l1,m_pMESH->m_pEdgeL);    // this link does not exist in m_pMHL and m_pHL
     AddtoLinkList(l1,m_pGhostL);
     AddtoLinkList(l2,m_pGhostL);
     AddtoLinkList(l3,m_pGhostL);
-    AddtoLinkList(l4,m_pGhostL);
+    v1->RemoveFromLinkList(l1);
+    v2->RemoveFromLinkList(l2);
+    v3->RemoveFromLinkList(l3);
     
-    // removing the edge from vertex list
-     v1->RemoveFromLinkList(plink);
-     v2->RemoveFromLinkList(mplink);
-     v1->RemoveFromLinkList(l3);
-     v2->RemoveFromLinkList(l1);
-     v4->RemoveFromLinkList(l4);
-     v3->RemoveFromLinkList(l2);
+//--- convert the links into edge links ml2 and ml3
+    RemoveFromLinkList(ml2,m_pMESH->m_pHL);  // too expensive; I should find a better way
+    RemoveFromLinkList(ml3,m_pMESH->m_pHL);  // too expensive
+    RemoveFromLinkList(ml2,m_pMESH->m_pMHL);  // too expensive
+    RemoveFromLinkList(ml3,m_pMESH->m_pMHL);  // too expensive
+    ml2->UpdateMirrorFlag(false);
+    ml3->UpdateMirrorFlag(false);
+    ml2->m_LinkType = 1;
+    ml3->m_LinkType = 1;
+    AddtoLinkList(ml2,m_pMESH->m_pEdgeL);    // adding the two mirror into the edge
+    AddtoLinkList(ml3,m_pMESH->m_pEdgeL);   // adding the two mirror into the edge
 
-    // v1 and v2 should also not be connected and they are not nighbour anymore
+//--- convert the three vertices into edge vertex,
+        //--- only v2 needs an update: v1 and v3 are already an edge vertex.
+    RemoveFromVertexList(v3,m_pMESH->m_pSurfV);  // too expensive
+    AddtoVertexList(v3,m_pMESH->m_pEdgeV);
+    v3->m_VertexType = 1; //
+       //-- v1 and v2 are no longer connected
     v1->RemoveFromNeighbourVertex(v2);
     v2->RemoveFromNeighbourVertex(v1);
-    
-    // the trinagle will be killed
-    RemoveFromTriangleList(t1,m_pMESH->m_pActiveT); // too expensive
-    AddtoTriangleList(t1,m_pGhostT);
-    RemoveFromTriangleList(t2,m_pMESH->m_pActiveT); // too expensive
-    AddtoTriangleList(t2,m_pGhostT);
-    // remove the trinagle from all the vertcies list
-    v1->RemoveFromTraingleList(t1);
-    v2->RemoveFromTraingleList(t1);
-    v3->RemoveFromTraingleList(t1);
-    v1->RemoveFromTraingleList(t2);
-    v2->RemoveFromTraingleList(t2);
-    v3->RemoveFromTraingleList(t2);
-    
-    // now we should update the geomtry of the affected v, l
-ml1->UpdateEdgeVector(m_pBox);   // edge vector should be updated
-ml2->UpdateEdgeVector(m_pBox);   // edge vector should be updated
-ml3->UpdateEdgeVector(m_pBox);   // edge vector should be updated
-ml4->UpdateEdgeVector(m_pBox);   // edge vector should be updated
-
-(m_pState->CurvatureCalculator())->EdgeVertexCurvature(v1);  // v1 is an edge vertex
-(m_pState->CurvatureCalculator())->EdgeVertexCurvature(v2);  // // v2 is  an edge vertex
-(m_pState->CurvatureCalculator())->EdgeVertexCurvature(v3);  // v3 is now an edge vertex
-(m_pState->CurvatureCalculator())->EdgeVertexCurvature(v4);  // v3 is now an edge vertex
-
-}
-void OpenEdgeEvolutionWithConstantVertex::KillALink(links *plink)
-{
-        triangle *t = plink->GetTriangle();
-        vertex *v1 = plink->GetV1();
-        vertex *v2 = plink->GetV2();
-        vertex *v3 = plink->GetV3();
-        links *l1 = plink->GetNeighborLink1();
-        links *l2 = plink->GetNeighborLink2();
-        links *ml1 = l1->GetMirrorLink();
-        links *ml2 = l2->GetMirrorLink();
-        // make the plink a ghost
-        RemoveFromLinkList(plink,m_pMESH->m_pEdgeL);
-        AddtoLinkList(plink,m_pGhostL);
-        // adding the two mirror into the edge
-        AddtoLinkList(ml1,m_pMESH->m_pEdgeL);
-        AddtoLinkList(ml2,m_pMESH->m_pEdgeL);
-        RemoveFromLinkList(ml1,m_pMESH->m_pHL);  // too expensive; I should find a better way
-        RemoveFromLinkList(ml2,m_pMESH->m_pHL);  // too expensive
-        RemoveFromLinkList(ml1,m_pMESH->m_pMHL);  // too expensive
-        RemoveFromLinkList(ml2,m_pMESH->m_pMHL);  // too expensive
-        
-        // the two edge lose mirror
-        ml1->UpdateMirrorFlag(false);
-        ml2->UpdateMirrorFlag(false);
-        ml1->m_LinkType = 1;
-        ml2->m_LinkType = 1;
-    
-        // v3 becomes an edge vertex
-        RemoveFromVertexList(v3,m_pMESH->m_pSurfV);  // too expensive
-        AddtoVertexList(v3,m_pMESH->m_pEdgeV);
-        v3->m_VertexType = 1; // v3 is not an edge vertex; it used to be surf vertex
-        v3->m_pEdgeLink = ml1;
-        v3->m_pPrecedingEdgeLink = ml2;
-    
-        // edge link of v1 and PrecedingEdgeLink of v2 should be updated
-        v1->m_pEdgeLink = ml2;
-        v2->m_pPrecedingEdgeLink = ml1;
-        
-        // now two  links need to be removed as well
-        RemoveFromLinkList(l1,m_pMESH->m_pActiveL);  // too expensive
-        RemoveFromLinkList(l2,m_pMESH->m_pActiveL);  // too expensive
-        RemoveFromLinkList(l1,m_pMESH->m_pHL);  // too expensive
-        RemoveFromLinkList(l2,m_pMESH->m_pHL);  // too expensive
-        RemoveFromLinkList(l1,m_pMESH->m_pMHL);  // too expensive
-        RemoveFromLinkList(l2,m_pMESH->m_pMHL);  // too expensive
-        AddtoLinkList(l1,m_pGhostL);
-        AddtoLinkList(l2,m_pGhostL);
-        // we need to also remove them from m_pHL and m_pMHL
-        
-
-       // removing the edge from vertex list
-        v1->RemoveFromLinkList(plink);
-        v3->RemoveFromLinkList(l2);
-        v2->RemoveFromLinkList(l1);
-        // v1 and v2 should also not be connected and they are nit nighbour anymore
-        v1->RemoveFromNeighbourVertex(v2);
-        v2->RemoveFromNeighbourVertex(v1);
-
-        // the trinagle will be killed
-        RemoveFromTriangleList(t,m_pMESH->m_pActiveT); // too expensive
-        AddtoTriangleList(t,m_pGhostT);
-        // remove the trinagle from all the vertcies list
-        v1->RemoveFromTraingleList(t);
-        v2->RemoveFromTraingleList(t);
-        v3->RemoveFromTraingleList(t);
-    
-    
-            // now we should update the geomtry of the affected v, l
-        ml1->UpdateEdgeVector(m_pBox);   // edge vector should be updated
+       // now we updated the vertex edge links and preceding link; note: v3 edge links will not be changed and also v1  preceding link will not be changed
+        v1->m_pEdgeLink = ml3;
+        v3->m_pEdgeLink = ml2;
+        v3->m_pPrecedingEdgeLink = ml3;
+        v2->m_pPrecedingEdgeLink = ml2 ;
+//--- now we should update the geomtry of the affected v, l
         ml2->UpdateEdgeVector(m_pBox);   // edge vector should be updated
+        ml3->UpdateEdgeVector(m_pBox);   // edge vector should be updated
   
         (m_pState->CurvatureCalculator())->EdgeVertexCurvature(v1);  // v1 is still an edge vertex
         (m_pState->CurvatureCalculator())->EdgeVertexCurvature(v2);  // // v2 is still an edge vertex
         (m_pState->CurvatureCalculator())->EdgeVertexCurvature(v3);  // v3 is now an edge vertex
     
+    return true;
+    
 }
-bool OpenEdgeEvolutionWithConstantVertex::Linkisvalid(vertex *v1, double lmin, double lmax, double minangle)
+
+// an atempt to create a triangle                    //       v3              v3
+// using v1                                          // l3   /   \ l2  -->  // T \\
+                                                  //       v1---v2        v1 ====v2
+                                                    //        l1
+triangle* OpenEdgeEvolutionWithConstantVertex::CloseATriangleHole(vertex *v1)
 {
-    
 
-    // check if the new link length is within the allowed range and also if the angle of the new trinagule is fine with respect to the two other trinagules
-    bool isvalid = true;
-    
-    links* l2 = v1->m_pEdgeLink;
-    vertex *v3 = l2->GetV2();
-    links* l1 = v3->m_pEdgeLink;
+
+    links* l1 = v1->m_pEdgeLink;
     vertex *v2 = l1->GetV2();
-    
-    triangle t(0,v1,v2,v3);
-    Vec3D *Box = v1->GetBox();
-    t.UpdateNormal_Area(Box);
-    Vec3D n1 = t.GetNormalVector();
-    Vec3D n2 = (l2->GetTriangle())->GetNormalVector();
-    Vec3D n3 = (l1->GetTriangle())->GetNormalVector();
+    links* l2 = v2->m_pEdgeLink;
+    vertex *v3 = l2->GetV2();
+    links* l3 = v3->m_pEdgeLink;
 
-    Vec3D P1(v1->GetVXPos(),v1->GetVYPos(),v1->GetVZPos());
-    Vec3D P2(v2->GetVXPos(),v2->GetVYPos(),v2->GetVZPos());
-    Vec3D DP = P2-P1;
-    
-    for (int i=0;i<3;i++)
-    if(fabs(DP(i))>(*Box)(i)/2.0)
-    {
-        if(DP(i)<0)
-            DP(i)=(*Box)(i)+DP(i);
-        else if(DP(i)>0)
-            DP(i)=DP(i)-(*Box)(i);
+        // we added the triangle
+    if(m_pGhostT.size()<1 || m_pGhostL.size()<3){
+        std::cout<<" error 882---> we do not have enough storage for the new trinagles or links \n";
+        exit(0);
     }
 
-    double dist2 = P1.dot(DP,DP);
+//-- new triangle and links that need to be created.
+    links *ml1 = m_pGhostL[0];
+    links *ml2 = m_pGhostL[1];
+    links *ml3 = m_pGhostL[2];
+    triangle *outtriangle = m_pGhostT[0];
+//-- build the new triangle
+    m_pGhostT.erase(m_pGhostT.begin());
+    AddtoTriangleList(outtriangle,m_pMESH->m_pActiveT);
+    // this trinagle is made of v1, v2 and v3 but aniwise
+    outtriangle->UpdateVertex(v2,v1,v3);
+    // add the trinagle to the vertcies list
+    v1->AddtoTraingleList(outtriangle);
+    v2->AddtoTraingleList(outtriangle);
+    v3->AddtoTraingleList(outtriangle);
+    // note, the exsisting links belong to different trinagles. ml1, ml2, ml3 making this trinagle
+    ml1->UpdateTriangle(outtriangle);
+    ml2->UpdateTriangle(outtriangle);
+    ml3->UpdateTriangle(outtriangle);
+//-- build the ml links
+    //-- removing from ghost containers
+    m_pGhostL.erase(m_pGhostL.begin());  // rm ml1
+    m_pGhostL.erase(m_pGhostL.begin());  // rm ml2
+    m_pGhostL.erase(m_pGhostL.begin());  // rm ml3
+    //--add ml links to active
+    AddtoLinkList(ml1,m_pMESH->m_pActiveL);
+    AddtoLinkList(ml2,m_pMESH->m_pActiveL);
+    AddtoLinkList(ml3,m_pMESH->m_pActiveL);
+    //--- to mhl
+    AddtoLinkList(ml1,m_pMESH->m_pMHL);  // note: this is true because l1 is added to hl
+    AddtoLinkList(ml2,m_pMESH->m_pMHL);
+    AddtoLinkList(ml3,m_pMESH->m_pMHL);
+    //-- next link
+    ml1->UpdateNeighborLink1(ml3);
+    ml1->UpdateNeighborLink2(ml2);
+    ml2->UpdateNeighborLink1(ml1);
+    ml2->UpdateNeighborLink2(ml3);
+    ml3->UpdateNeighborLink1(ml2);
+    ml3->UpdateNeighborLink2(ml1);
+    //-- update their vertex
+    ml1->UpdateV(v2,v1,v3);
+    ml2->UpdateV(v3,v2,v1);
+    ml3->UpdateV(v1,v3,v2);
+    //== adding the m links to vertices list
+    v1->AddtoLinkList(ml3);
+    v3->AddtoLinkList(ml2);
+    v2->AddtoLinkList(ml1);
+    ml1->m_LinkType = 0; //
+    ml2->m_LinkType = 0; //
+    ml3->m_LinkType = 0; //
+    ml1->UpdateMirrorFlag(true);
+    ml2->UpdateMirrorFlag(true);
+    ml3->UpdateMirrorFlag(true);
+    ml1->UpdateMirrorLink(l1);
+    ml2->UpdateMirrorLink(l2);
+    ml3->UpdateMirrorLink(l3);
+//-- update l1,l2,l3
+    l1->m_LinkType = 0; //
+    l2->m_LinkType = 0; //
+    l3->m_LinkType = 0; //
+    l1->UpdateMirrorFlag(true);
+    l2->UpdateMirrorFlag(true);
+    l3->UpdateMirrorFlag(true);
+    l1->UpdateMirrorLink(ml1);
+    l2->UpdateMirrorLink(ml2);
+    l3->UpdateMirrorLink(ml3);
+    //  l1 and l2 to  m_pHL
+    AddtoLinkList(l1,m_pMESH->m_pHL);  //note  ml1  ml2 and ml3 are in mhl
+    AddtoLinkList(l2,m_pMESH->m_pHL);
+    AddtoLinkList(l3,m_pMESH->m_pHL);
+    RemoveFromLinkList(l1,m_pMESH->m_pEdgeL);     // they are part of normal links now
+    RemoveFromLinkList(l2,m_pMESH->m_pEdgeL);
+    RemoveFromLinkList(l3,m_pMESH->m_pEdgeL);
+//== uodate vertices
+    v1->m_VertexType = 0; // meaning it is not an edge vertex anymore
+    v2->m_VertexType = 0; // meaning it is not an edge vertex anymore
+    v3->m_VertexType = 0; // meaning it is not an edge vertex anymore
+    //-- removing from vedge containers
+    RemoveFromVertexList(v1,m_pMESH->m_pEdgeV);   // v1, v2 , v3 is no longer an edge vertex
+    RemoveFromVertexList(v2,m_pMESH->m_pEdgeV);
+    RemoveFromVertexList(v3,m_pMESH->m_pEdgeV);
+    //--- adding to the containers
+    AddtoVertexList(v1,m_pMESH->m_pSurfV);
+    AddtoVertexList(v2,m_pMESH->m_pSurfV);
+    AddtoVertexList(v3,m_pMESH->m_pSurfV);
+
+// updating the geomtry
+      // triangle area and normal
+    outtriangle->UpdateNormal_Area(m_pBox);   //trinagule normal and area should be found
+    ml1->UpdateNormal();   // normal of the links with mirror should be updated
+    ml2->UpdateNormal();   // normal of the links with mirror should be updated
+    ml3->UpdateNormal();   // normal of the links with mirror should be updated
+
+    // their mirror will be updated by the function within
+    ml1->UpdateShapeOperator(m_pBox);   // this link is now a surface link and should be found a shape operator
+    ml2->UpdateShapeOperator(m_pBox);   // this link is now a surface link and should be found a shape operator
+    ml3->UpdateShapeOperator(m_pBox);   // this link is now a surface link and should be found a shape operator
     
+    (m_pState->CurvatureCalculator())->SurfVertexCurvature(v1);  // v1 is still an edge vertex
+    (m_pState->CurvatureCalculator())->SurfVertexCurvature(v2);  // // v2 is still an edge vertex
+    (m_pState->CurvatureCalculator())->SurfVertexCurvature(v3);  // v3 is now a surface vertex
+
+
+    return outtriangle;
+}
+// the triangle should belong to l1 (l1 get killed at the end)
+// ---------------------------                      //               v3               v3
+// between v1 and v2                                //     l3     //  \\ l2 --->     /   \
+                                                  //             v1 ====v2          v1---v2
+                                                         //          l1
+
+// this function kills target_triangle and the assosciated links l1,l2,l3. It send them to the ghost area
+bool OpenEdgeEvolutionWithConstantVertex::KillATriangle(links *l1){
+//=== note: the mirror will be killed not l1,
+    // this are the objects that will be killed
+    links *ml1 = l1->GetMirrorLink();
+    links *ml3 = ml1->GetNeighborLink1();   //    in the reverse function ml1->UpdateNeighborLink1(ml3);
+    links *ml2 = ml3->GetNeighborLink1();   //    in the reverse function ml3->UpdateNeighborLink1(ml2);
+    triangle *target_triangle = ml1->GetTriangle();
+
+    //-- other objects
+    links *l2 = ml2->GetMirrorLink();
+    links *l3 = ml3->GetMirrorLink();
+    vertex *v1 = ml1->GetV2();
+    vertex *v2 = ml1->GetV1();      //  in the reverse function ml2->UpdateV(v3,v2,v1);
+    vertex *v3 = ml1->GetV3();
+
+//-- remove the triangle, only from active t and verices. Note the links that have this triangle will die anyway
+    AddtoTriangleList(target_triangle,m_pGhostT);
+    RemoveFromTriangleList(target_triangle,m_pMESH->m_pActiveT);
+    v1->RemoveFromTraingleList(target_triangle);
+    v2->RemoveFromTraingleList(target_triangle);
+    v3->RemoveFromTraingleList(target_triangle);
     
-    if(dist2<lmin || dist2>lmax)
-        return false;
-    if( n1.dot(n1,n2)<minangle)
-        return false;
-    if( n1.dot(n1,n3)<minangle)
-        return false;
+//--- remove the links ml1, ml2, ml3 links
+    RemoveFromLinkList(ml1,m_pMESH->m_pActiveL);
+    RemoveFromLinkList(ml2,m_pMESH->m_pActiveL);
+    RemoveFromLinkList(ml3,m_pMESH->m_pActiveL);
+    RemoveFromLinkList(ml1,m_pMESH->m_pMHL);
+    RemoveFromLinkList(ml2,m_pMESH->m_pMHL);
+    RemoveFromLinkList(ml3,m_pMESH->m_pMHL);
+    RemoveFromLinkList(ml1,m_pMESH->m_pHL);  // we know that they were added to mhl but for more generality
+    RemoveFromLinkList(ml2,m_pMESH->m_pHL);
+    RemoveFromLinkList(ml3,m_pMESH->m_pHL);
+    AddtoLinkList(ml1,m_pGhostL);
+    AddtoLinkList(ml2,m_pGhostL);
+    AddtoLinkList(ml3,m_pGhostL);
+// update l1,l2 and l3 links
+    RemoveFromLinkList(l1,m_pMESH->m_pHL);  // this link also has became an edge links, should be removed form the list
+    RemoveFromLinkList(l2,m_pMESH->m_pHL); // this link also has became an edge links, should be removed form the list
+    RemoveFromLinkList(l3,m_pMESH->m_pHL); // this link also has became an edge links, should be removed form the list
+    RemoveFromLinkList(l1,m_pMESH->m_pMHL); // we know they were added to phl but for generality
+    RemoveFromLinkList(l2,m_pMESH->m_pMHL); // this link also has became an edge links, should be removed form the list
+    RemoveFromLinkList(l3,m_pMESH->m_pMHL); // this link also has became an edge links, should be removed form the list
+    AddtoLinkList(l1,m_pMESH->m_pEdgeL);    // so they became an edge link
+    AddtoLinkList(l2,m_pMESH->m_pEdgeL);
+    AddtoLinkList(l3,m_pMESH->m_pEdgeL);
+    l1->UpdateMirrorFlag(false);
+    l2->UpdateMirrorFlag(false);
+    l3->UpdateMirrorFlag(false);
+    l1->m_LinkType = 1;
+    l2->m_LinkType = 1;
+    l3->m_LinkType = 1;
+//-- convert the vertices into edge
+    RemoveFromVertexList(v1,m_pMESH->m_pSurfV);
+    RemoveFromVertexList(v2,m_pMESH->m_pSurfV);
+    RemoveFromVertexList(v3,m_pMESH->m_pSurfV);
+    AddtoVertexList(v1,m_pMESH->m_pEdgeV);
+    AddtoVertexList(v2,m_pMESH->m_pEdgeV);
+    AddtoVertexList(v3,m_pMESH->m_pEdgeV);
+    v1->m_VertexType = 1;
+    v2->m_VertexType = 1;
+    v3->m_VertexType = 1;
     
-    return isvalid;
+    v1->RemoveFromLinkList(ml3);    // in the counter function    v1->AddtoLinkList(ml3);
+    v2->RemoveFromLinkList(ml1);    // in the counter function    v2->AddtoLinkList(ml1);
+    v3->RemoveFromLinkList(ml2);    // in the counter function    v3->AddtoLinkList(ml2);
+
+    v1->m_pEdgeLink = l1;    // for here is not needed (since v1 was an edge vector). But in a general case, v1 may not have an edge vector
+    v2->m_pEdgeLink = l2;
+    v3->m_pEdgeLink = l3;
+    v1->m_pPrecedingEdgeLink = l3;
+    v2->m_pPrecedingEdgeLink = l1;
+    v3->m_pPrecedingEdgeLink = l2;
+      // now we should update the geomtry of the affected v1,v2,v3, ml1,ml2,ml3,
+    l1->UpdateEdgeVector(m_pBox);   // this is an edge link, we need only the edge vector and length
+    l2->UpdateEdgeVector(m_pBox);   // this is an edge link, we need only the edge vector and length
+    l3->UpdateEdgeVector(m_pBox);   // this is an edge link, we need only the edge vector and length
     
+    (m_pState->CurvatureCalculator())->EdgeVertexCurvature(v1);  // v1 is still an edge vertex
+    (m_pState->CurvatureCalculator())->EdgeVertexCurvature(v2);  // // v2 is still an edge vertex
+    (m_pState->CurvatureCalculator())->EdgeVertexCurvature(v3);  // v3 is now a surface vertex
+
+    return true;
 }
 double  OpenEdgeEvolutionWithConstantVertex::SystemEnergy()
 {
@@ -1042,14 +996,12 @@ double  OpenEdgeEvolutionWithConstantVertex::SystemEnergy()
         (*it)->UpdateNormal_Area(m_pBox);
     
     
-    for (std::vector<links *>::iterator it = mLink.begin() ; it != mLink.end(); ++it)
-    {
+    for (std::vector<links *>::iterator it = (m_pMESH->m_pHL).begin() ; it != (m_pMESH->m_pHL).end(); ++it){
         (*it)->UpdateNormal();
         (*it)->UpdateShapeOperator(m_pBox);
     }
     
-    
-    for (std::vector<vertex *>::iterator it = ActiveV.begin() ; it != ActiveV.end(); ++it)
+    for (std::vector<vertex *>::iterator it = (m_pMESH->m_pSurfV).begin() ; it != (m_pMESH->m_pSurfV).end(); ++it)
         (m_pState->CurvatureCalculator())->SurfVertexCurvature(*it);
 
     //====== edge links should be updated
@@ -1065,262 +1017,49 @@ double  OpenEdgeEvolutionWithConstantVertex::SystemEnergy()
     
     return en;
 }
-bool OpenEdgeEvolutionWithConstantVertex::Anglevalid4Vhole(vertex *v1, double minangle)
+//           va -- v3----vb
+//            \n2 /n1\n3/
+//             v1--- v2
+//                DP
+bool OpenEdgeEvolutionWithConstantVertex::Linkisvalid(vertex *v1, double lmin, double lmax, double minangle)
 {
-    
-
-    // Only to check when only 4 vertices in the hole to see the angle is valid
-    bool isvalid = true;
-    
+    // check if the new link length is within the allowed range and also if the angle of the new trinagule is fine with respect to the two other trinagules
     links* l2 = v1->m_pEdgeLink;
     vertex *v3 = l2->GetV2();
     links* l1 = v3->m_pEdgeLink;
     vertex *v2 = l1->GetV2();
-    links* l3 = v2->m_pEdgeLink;
-    vertex *v4 = l3->GetV2();;
-
-    triangle t1(0,v1,v2,v3);
-    triangle t2(0,v1,v4,v2);
-
     Vec3D *Box = v1->GetBox();
-    t1.UpdateNormal_Area(Box);
-    Vec3D n1 = t1.GetNormalVector();
-    t2.UpdateNormal_Area(Box);
-    Vec3D n2 = t2.GetNormalVector();
-    
 
-    if( n1.dot(n1,n2)<minangle)
+    Vec3D P1(v1->GetVXPos(),v1->GetVYPos(),v1->GetVZPos());
+    Vec3D P2(v2->GetVXPos(),v2->GetVYPos(),v2->GetVZPos());
+    Vec3D DP = P2-P1;
+    
+    for (int i=0;i<3;i++)
+    if(fabs(DP(i))>(*Box)(i)/2.0)
+    {
+        if(DP(i)<0)
+            DP(i)=(*Box)(i)+DP(i);
+        else if(DP(i)>0)
+            DP(i)=DP(i)-(*Box)(i);
+    }
+    double dist2 = P1.dot(DP,DP);
+    if(dist2<lmin || dist2>lmax){
         return false;
-
+    }
     
-    return isvalid;
+    triangle t(0,v1,v2,v3);
+    t.UpdateNormal_Area(Box);
+    Vec3D n1 = t.GetNormalVector();
+    Vec3D n2 = (l2->GetTriangle())->GetNormalVector();
+    Vec3D n3 = (l1->GetTriangle())->GetNormalVector();
     
-}
-triangle* OpenEdgeEvolutionWithConstantVertex::CloseATriangleHole(vertex *v1)
-{
-    // an atempt to create a link                       //       v3             v3
-    // between v1 and v2                                //      /   \     -->  //  \\
-                                                      //       v1---v2        v1 ====v2
-
-    links* l1 = v1->m_pEdgeLink;
-    vertex *v2 = l1->GetV2();
-    links* l2 = v2->m_pEdgeLink;
-    vertex *v3 = l2->GetV2();
-    links* l3 = v3->m_pEdgeLink;
-
-        // we added the triangle
-        if(m_pGhostT.size()<1)
-        {
-            std::cout<<" error 882---> we do not have enough storage for the new trinagles \n";
-            exit(0);
-        }
-        triangle *outtriangle = m_pGhostT[0];  // one trinagule is created
-        // note, the exsisting links belong to different trinagles. This trinagle are made of the mirror and sequence should be as this
-        outtriangle->UpdateVertex(v1,v3,v2);
-        RemoveFromTriangleList(outtriangle,m_pGhostT);
-        AddtoTriangleList(outtriangle,m_pMESH->m_pActiveT);
-        
-        // add the trinagle to the vertcies list
-        v1->AddtoTraingleList(outtriangle);
-        v2->AddtoTraingleList(outtriangle);
-        v3->AddtoTraingleList(outtriangle);
-        
-        // v1, v2 , v3 is no longer an edge vertex
-        RemoveFromVertexList(v1,m_pMESH->m_pEdgeV);
-        AddtoVertexList(v1,m_pMESH->m_pSurfV);
-        v1->m_VertexType = 0; // meaning it is not an edge vertex anymore
-        RemoveFromVertexList(v2,m_pMESH->m_pEdgeV);
-        AddtoVertexList(v2,m_pMESH->m_pSurfV);
-        v2->m_VertexType = 0; // meaning it is not an edge vertex anymore
-        RemoveFromVertexList(v3,m_pMESH->m_pEdgeV);
-        AddtoVertexList(v3,m_pMESH->m_pSurfV);
-        v3->m_VertexType = 0; // meaning it is not an edge vertex anymore
-        
-        // we create three links, two mirror and one edge
-        if(m_pGhostL.size()<3)
-        {
-            std::cout<<" error 883---> we do not have enough storage for the new links \n";
-            exit(0);
-        }
-        RemoveFromLinkList(l1,m_pMESH->m_pEdgeL);
-        RemoveFromLinkList(l2,m_pMESH->m_pEdgeL);
-        RemoveFromLinkList(l3,m_pMESH->m_pEdgeL);
-        AddtoLinkList(l1,m_pMESH->m_pActiveL);
-        AddtoLinkList(l2,m_pMESH->m_pActiveL);
-        AddtoLinkList(l3,m_pMESH->m_pActiveL);
-
-        links *ml1 = m_pGhostL[0];
-        links *ml2 = m_pGhostL[1];
-        links *ml3 = m_pGhostL[2];
-        l1->m_LinkType = 0; // only this needs it as the rest will have 0 in constrcuter
-        l2->m_LinkType = 0; // only this needs it as the rest will have 0 in constrcuter
-        l3->m_LinkType = 0; // only this needs it as the rest will have 0 in constrcuter
-
+    if( n1.dot(n1,n2)<minangle){
+        return false;
+    }
+    if( n1.dot(n1,n3)<minangle){
+        return false;
+    }
     
-        RemoveFromLinkList(ml1,m_pGhostL);
-        RemoveFromLinkList(ml2,m_pGhostL);
-        RemoveFromLinkList(ml3,m_pGhostL);
-        AddtoLinkList(ml1,m_pMESH->m_pActiveL);
-        AddtoLinkList(ml2,m_pMESH->m_pActiveL);
-        AddtoLinkList(ml3,m_pMESH->m_pActiveL);
-
-        
-        ml1->UpdateV(v2,v1,v3);
-        ml2->UpdateV(v3,v2,v1);
-        ml3->UpdateV(v1,v3,v2);
-
-        ml1->UpdateTriangle(outtriangle);
-        ml2->UpdateTriangle(outtriangle);
-        ml3->UpdateTriangle(outtriangle);
-
-        ml1->UpdateMirrorLink(l1);
-        ml2->UpdateMirrorLink(l2);
-        ml3->UpdateMirrorLink(l3);
-        l1->UpdateMirrorLink(ml1);
-        l2->UpdateMirrorLink(ml2);
-        l3->UpdateMirrorLink(ml3);
-
-        l1->UpdateMirrorFlag(true);
-        l2->UpdateMirrorFlag(true);
-        l3->UpdateMirrorFlag(true);
-
-        ml1->UpdateMirrorFlag(true);
-        ml2->UpdateMirrorFlag(true);
-        ml3->UpdateMirrorFlag(true);
-
-        ml1->UpdateNeighborLink1(ml2);
-        ml1->UpdateNeighborLink2(ml3);
-        ml2->UpdateNeighborLink1(ml3);
-        ml2->UpdateNeighborLink2(ml1);
-        ml3->UpdateNeighborLink1(ml1);
-        ml3->UpdateNeighborLink2(ml2);
-        //====
-    std::cout<<" should be checked \n";
-    //    v1->AddtoNeighbourVertex(v3);
-     //   v2->AddtoNeighbourVertex(v1);
-      //  v3->AddtoNeighbourVertex(v2);
-
-    
-        v1->AddtoLinkList(ml3);
-        v3->AddtoLinkList(ml2);
-        v2->AddtoLinkList(ml1);
-
-        // adding ml1 and ml2 and l1 and l2 to m_pMHL and m_pHL
-        AddtoLinkList(l1,m_pMESH->m_pMHL);
-        AddtoLinkList(l2,m_pMESH->m_pMHL);
-        AddtoLinkList(l3,m_pMESH->m_pMHL);
-
-        AddtoLinkList(ml1,m_pMESH->m_pHL);
-        AddtoLinkList(ml2,m_pMESH->m_pHL);
-        AddtoLinkList(ml3,m_pMESH->m_pHL);
-
-    
-      // now we should update the geomtry of the affected v, l, t
-    outtriangle->UpdateNormal_Area(m_pBox);   //trinagule normal and area should be found
-    l1->UpdateNormal();   // normal of the links with mirror should be updated
-    l2->UpdateNormal();   // normal of the links with mirror should be updated
-    l3->UpdateNormal();   // normal of the links with mirror should be updated
-
-    // their mirror will be updated by the function within
-    l1->UpdateShapeOperator(m_pBox);   // this link is now a surface link and should be found a shape operator
-    l2->UpdateShapeOperator(m_pBox);   // this link is now a surface link and should be found a shape operator
-    l3->UpdateShapeOperator(m_pBox);   // l0 is an edge link, we need only the edge vector and length
-    
-    (m_pState->CurvatureCalculator())->SurfVertexCurvature(v1);  // v1 is still an edge vertex
-    (m_pState->CurvatureCalculator())->SurfVertexCurvature(v2);  // // v2 is still an edge vertex
-    (m_pState->CurvatureCalculator())->SurfVertexCurvature(v3);  // v3 is now a surface vertex
-
-    return outtriangle;
-}
-// the triangle should belong to l1 (l1 get killed at the end)
-bool OpenEdgeEvolutionWithConstantVertex::KillATriangle(links *l1)
-{
-    // ---------------------------                      //               v3               v3
-    // between v1 and v2                                //             //  \\   --->     /   \
-                                                      //             v1 ====v2          v1---v2
-
-    
-    // this function kills target_triangle and the assosciated links l1,l2,l3. It send them to the ghost area
-    
-    vertex *v1 = l1->GetV1();
-    vertex *v2 = l1->GetV2();
-    vertex *v3 = l1->GetV3();
-    links* l2 = l1->GetNeighborLink1();
-    links* l3 = l2->GetNeighborLink1();
-    triangle *target_triangle = l1->GetTriangle();
-    links *ml1 = l1->GetMirrorLink();
-    links *ml2 = l2->GetMirrorLink();
-    links *ml3 = l3->GetMirrorLink();
-
-    
-    
-        RemoveFromTriangleList(target_triangle,m_pMESH->m_pActiveT);
-        AddtoTriangleList(target_triangle,m_pGhostT);
-        v1->RemoveFromTraingleList(target_triangle);
-        v2->RemoveFromTraingleList(target_triangle);
-        v3->RemoveFromTraingleList(target_triangle);
-        RemoveFromVertexList(v1,m_pMESH->m_pSurfV);
-        RemoveFromVertexList(v2,m_pMESH->m_pSurfV);
-        RemoveFromVertexList(v3,m_pMESH->m_pSurfV);
-        AddtoVertexList(v1,m_pMESH->m_pEdgeV);
-        AddtoVertexList(v1,m_pMESH->m_pEdgeV);
-        AddtoVertexList(v1,m_pMESH->m_pEdgeV);
-        v1->m_VertexType = 1;
-        v2->m_VertexType = 1;
-        v3->m_VertexType = 1;
-        v1->RemoveFromLinkList(l1);
-        v2->RemoveFromLinkList(l2);
-        v3->RemoveFromLinkList(l3);
-    
-    RemoveFromLinkList(l1,m_pMESH->m_pActiveL);
-    RemoveFromLinkList(l2,m_pMESH->m_pActiveL);
-    RemoveFromLinkList(l3,m_pMESH->m_pActiveL);
-    RemoveFromLinkList(l1,m_pMESH->m_pHL);
-    RemoveFromLinkList(l1,m_pMESH->m_pMHL);
-    RemoveFromLinkList(l2,m_pMESH->m_pHL);
-    RemoveFromLinkList(l2,m_pMESH->m_pMHL);
-    RemoveFromLinkList(l3,m_pMESH->m_pHL);
-    RemoveFromLinkList(l3,m_pMESH->m_pMHL);
-    AddtoLinkList(l1,m_pGhostL);
-    AddtoLinkList(l2,m_pGhostL);
-    AddtoLinkList(l3,m_pGhostL);
-    
-    RemoveFromLinkList(ml1,m_pMESH->m_pHL);
-    RemoveFromLinkList(ml1,m_pMESH->m_pMHL);
-    RemoveFromLinkList(ml2,m_pMESH->m_pHL);
-    RemoveFromLinkList(ml2,m_pMESH->m_pMHL);
-    RemoveFromLinkList(ml3,m_pMESH->m_pHL);
-    RemoveFromLinkList(ml3,m_pMESH->m_pMHL);
-        AddtoLinkList(ml1,m_pMESH->m_pEdgeL);
-        AddtoLinkList(ml2,m_pMESH->m_pEdgeL);
-        AddtoLinkList(ml3,m_pMESH->m_pEdgeL);
-        ml1->UpdateMirrorFlag(false);
-        ml2->UpdateMirrorFlag(false);
-        ml3->UpdateMirrorFlag(false);
-        ml1->m_LinkType = 1;
-        ml2->m_LinkType = 1;
-        ml3->m_LinkType = 1;
-
-        //====
-    std::cout<<" should be checked \n";
-    //    v1->AddtoNeighbourVertex(v3);
-     //   v2->AddtoNeighbourVertex(v1);
-      //  v3->AddtoNeighbourVertex(v2);
-
-    
-      // now we should update the geomtry of the affected v, l, t
-    l1->UpdateNormal();   // normal of the links with mirror should be updated
-    l2->UpdateNormal();   // normal of the links with mirror should be updated
-    l3->UpdateNormal();   // normal of the links with mirror should be updated
-
-    // their mirror will be updated by the function within
-    ml1->UpdateEdgeVector(m_pBox);   // this link is now a surface link and should be found a shape operator
-    ml2->UpdateEdgeVector(m_pBox);   // this link is now a surface link and should be found a shape operator
-    ml3->UpdateEdgeVector(m_pBox);   // l0 is an edge link, we need only the edge vector and length
-    
-    (m_pState->CurvatureCalculator())->EdgeVertexCurvature(v1);  // v1 is still an edge vertex
-    (m_pState->CurvatureCalculator())->EdgeVertexCurvature(v2);  // // v2 is still an edge vertex
-    (m_pState->CurvatureCalculator())->EdgeVertexCurvature(v3);  // v3 is now a surface vertex
-
     return true;
+    
 }

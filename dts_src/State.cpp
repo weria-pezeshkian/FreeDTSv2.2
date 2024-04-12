@@ -397,6 +397,7 @@ void State::ReadInputFile(std::string file)
             }
             else if (type == "EvolutionWithConstantVertex_B") {
                 
+                std::cout<<"---> warning: this algorthem for edge treatment has errors. It is up to you to use it \n";
                 m_pOpenEdgeEvolution = new OpenEdgeEvolutionWithConstantVertex_B(period, this);
             }
             else {

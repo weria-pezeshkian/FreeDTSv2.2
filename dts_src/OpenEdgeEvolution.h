@@ -4,7 +4,7 @@
 #include "GenerateCNTCells.h"
 #include "RNG.h"
 
-// Define a base class with a virtual function
+// Define a base class with a virtual function for different open edge treatment algorthems
 /*
 =======================================================
  developed 2024 by Weria
@@ -22,7 +22,7 @@ public:
     virtual inline int GetRate(){ return 0;}
 
 };
-//---- a class for no box change
+//---- a class for no edge change
 class NoEvolution : public OpenEdgeEvolution {
 public:
     NoEvolution();
