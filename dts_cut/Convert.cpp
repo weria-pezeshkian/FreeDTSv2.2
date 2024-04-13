@@ -32,6 +32,7 @@ Convert::Convert(std::vector <std::string> argument)
     m_Zoom(1) = 1;
     m_Zoom(2) = 1;
     m_center = false;
+    m_CutType = "direction";
     m_Translate(0)=0; m_Translate(1)=0; m_Translate(2)=0;
     Nfunction f;
     ExploreArguments();     // read the input data
@@ -123,34 +124,46 @@ Convert::Convert(std::vector <std::string> argument)
 
     
 
-
-    //make the cut
-    Vec3D Dir(0,1,0);
-    std::cout<<" direction is "<<Dir(1)<<"\n";
-    Dir = Dir*(1.0/Dir.norm());
-    
+    std::vector<Vertex_Map> newVlist;
+    std::vector<Vertex_Map> RemVlist;
+//======================== make the cut
+if(m_CutType == "direction"){
     double cutsize = 0.2;
+    Vec3D Dir(1,0,0);
+    std::cout<<" enter the direction vector: \n";
+    std::cin>>Dir(0)>>Dir(1)>>Dir(2);
+    Dir = Dir*(1.0/Dir.norm());
+    std::cout<<" enter the cut percentage%: \n";
+    std::cin>>cutsize;
+    
     double dmin = 10000;
     double dmax = -100000;
-    
-    std::vector<Vertex_Map> newVlist; 
-    std::vector<Vertex_Map> RemVlist; 
-        double x0 = bvertex[0].x -m_Box(0)/2;
-        double y0 = bvertex[0].y -m_Box(1)/2;
-        double z0 = bvertex[0].z -m_Box(2)/2;
-        double R0 = 8;
 
+for (std::vector<Vertex_Map>::iterator it = bvertex.begin() ; it != bvertex.end(); ++it){
+    double x = it->x -m_Box(0)/2;
+    double y = it->y -m_Box(1)/2;
+    double z = it->z -m_Box(2)/2;
+    Vec3D X(x,y,z);
     
-        for (std::vector<Vertex_Map>::iterator it = bvertex.begin() ; it != bvertex.end(); ++it)
-    {
+    double cos = X.dot(X,Dir);
+    if(cos>dmax)
+        dmax = cos;
+    
+    if(cos<dmin)
+        dmin = cos;
+}
+    
+    double size = dmax-dmin;
+    size = size*(1-cutsize);
+    
+for (std::vector<Vertex_Map>::iterator it = bvertex.begin() ; it != bvertex.end(); ++it){
         double x = it->x -m_Box(0)/2;
         double y = it->y -m_Box(1)/2;
         double z = it->z -m_Box(2)/2;
-        
-        
-        double d = (x-x0)*(x-x0)+(y-y0)*(y-y0)+(z-z0)*(z-z0);
-        
-        if(d<R0*R0)
+        Vec3D X(x,y,z);
+        double cos = X.dot(X,Dir);
+        double f = cos - dmin;
+        if(size<f)
         {
         RemVlist.push_back(*it);
         }
@@ -160,8 +173,50 @@ Convert::Convert(std::vector <std::string> argument)
         }
         
     }
+}
+else if(m_CutType == "vertex"){
+
+    int vid;
+    std::cout<<" enter id of the vertex \n";
+    std::cin>>vid;
+    double x0 = bvertex[0].x -m_Box(0)/2;
+    double y0 = bvertex[0].y -m_Box(1)/2;
+    double z0 = bvertex[0].z -m_Box(2)/2;
+    
+    Vec3D A(1,1,1);
+    std::cout<<" enter the a b c: \n";
+    std::cin>>A(0)>>A(1)>>A(2);
+    A = A*(1.0/A.norm());
+
+    double R0= 8;
+    std::cout<<" enter the R \n";
+    std::cin>>R0;
+    
+
+    
 
 
+    
+    for (std::vector<Vertex_Map>::iterator it = bvertex.begin() ; it != bvertex.end(); ++it){
+        double x = it->x -m_Box(0)/2;
+        double y = it->y -m_Box(1)/2;
+        double z = it->z -m_Box(2)/2;
+        
+        
+        double d = A(0)*(x-x0)*(x-x0)+A(1)*(y-y0)*(y-y0)+A(2)*(z-z0)*(z-z0);
+        
+        if(d<R0*R0)
+        {
+        RemVlist.push_back(*it);
+        }
+        else
+        {
+        newVlist.push_back(*it);
+        }
+    }
+    
+}
+//================
     std::map<int, int> newVmap;  //index to vid
     int i=0;
      for (std::vector<Vertex_Map>::iterator it = newVlist.begin() ; it != newVlist.end(); ++it)
@@ -294,6 +349,10 @@ void Convert::ExploreArguments()
         {
             m_MaxLinkLengthSquare = f.String_to_Double(m_Argument.at(i+1));
         }
+        else if(Arg1=="-type")
+        {
+            m_CutType = m_Argument.at(i+1);
+        }
         else if(Arg1=="-minDist")
         {
             m_MinVerticesDistanceSquare = f.String_to_Double(m_Argument.at(i+1));
@@ -348,6 +407,10 @@ void Convert::HelpMessage()
     std::cout<<"-------------------------------------------------------------------------------"<<"\n";
     std::cout<<"  -in         string       out.q               input file name, could be tsi or q file formats "<<"\n";
     std::cout<<"  -o          string       out.tsi             output file name, could be tsi/vtu/gro or q file formats "<<"\n";
+    std::cout<<"  -type       string       direction           vertex/direction "<<"\n";
+
+    
+    
     std::cout<<"=========================================================================="<<"\n";
     std::cout<<"=========================================================================="<<"\n";
     std::cout<<"------------------ version "<<SoftWareVersion<<" ------------------"<<"\n";

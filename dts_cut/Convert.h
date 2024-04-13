@@ -43,7 +43,7 @@ private:
     bool m_center;
     Vec3D m_Zoom;
     Vec3D m_Translate;
-    
+    std::string m_CutType;
     
 
 

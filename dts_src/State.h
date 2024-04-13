@@ -74,13 +74,6 @@ struct STRUC_ConstantArea {  // data structure for inputs of constant area algor
     double K0;
     
 };
-struct STRUC_ConstanVertextArea {  // data structure for inputs of constant area algorithm
-    bool State;
-    int EQSteps;
-    double Gamma;
-    double K0;
-    
-};
 struct STRUC_MCMOVES {  // data structure for turning on and off certain moves and specify the rate
     double VertexMove;
     double LinkFlip;
@@ -163,7 +156,6 @@ public:
     std::string m_Integrator;               //  Type of integrator (for now only mc exist)
     STRUC_RESTART m_RESTART;                // To check if this is a restart simulation of fresh start
     STRUC_ConstantArea m_STRUC_ConstantArea;
-    STRUC_ConstanVertextArea m_STRUC_ConstantVertexArea;
     STRUC_MCMOVES m_MCMove;                 // data structure for turning on and off certain moves
     STRUC_ActiveTwoStateInclusion m_STRUC_ActiveTwoStateInclusion;  // input data to start active two state membrane
     Parallel_Tempering m_Parallel_Tempering; // an object that includes info about Parallel Tempering method that we are applying

@@ -2,7 +2,7 @@
 1) edge evolutions 
 
 a) we have define the edge parameters in vertices class;
-b) we will have a sperate class to update the edge vertex; 
+b) we have a seperate class to update the edge vertex; 
 
 
 2) effecency in moves

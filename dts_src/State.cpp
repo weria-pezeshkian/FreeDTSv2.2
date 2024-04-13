@@ -74,7 +74,6 @@ State::State(std::vector <std::string> argument)
     m_MCMove.InclusionMove_Angle = 1;
     m_MCMove.InclusionMove_Kawasaki = 1;
     m_STRUC_ConstantArea.State = false;
-    m_STRUC_ConstantVertexArea.State = false;
     m_STRUC_ActiveTwoStateInclusion.state = false;
     m_STRUC_ActiveTwoStateInclusion.nametype1 = " ";
     m_STRUC_ActiveTwoStateInclusion.nametype2 = " ";
@@ -96,18 +95,6 @@ State::State(std::vector <std::string> argument)
     ReadInputFile(m_InputFileName);  // Reading from input file
     ExploreArguments();     // Update last state
     WriteStateLog();        // writing a log file
-    
-
-
-#if TEST_MODE == Enabled
-    std::cout<<"----> In the State Class: inputs are taken from the input file and command line arguments  -- "<<std::endl;
-#endif
- 
-
-
-
-
-
     
 
     //===============================================================================================
