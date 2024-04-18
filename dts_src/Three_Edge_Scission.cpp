@@ -141,8 +141,11 @@ void Three_Edge_Scission::initialize()
 
 
 }
-//== second method
+//== this function get a mesh and search through it and finds possible fission sites
 std::vector<pair_pot_triangle> Three_Edge_Scission::FindPotentialTriangles(MESH* mesh){
+
+//---- this part searches through all the links and finds possible triangles that do not exist. This means, it finds triple vertices (v1,v2,v3) that are connected by edges but such
+// trinagle is not defined.
     
     int id = 0;
     std::vector<pot_triangle> list;
@@ -165,8 +168,7 @@ std::vector<pair_pot_triangle> Three_Edge_Scission::FindPotentialTriangles(MESH*
                             PotT.pv1 = pv1; PotT.pv2 = pv2; PotT.pv3 = pv3;
                             PotT.pl1= (*il1); PotT.pl2= (*il2); PotT.pl3= (*il3);
                             list.push_back(PotT);
-                            //std::cout<<pv1->GetVID()<<"   "<<pv2->GetVID()<<"   "<<pv3->GetVID()<<"   \n";
-                            // this could be made better if we create our out delet function and delete them all at once 
+                            //--- we remove these links from all link containor so we do not search through them again
                             all_link.erase(std::remove(all_link.begin(), all_link.end(), (*il2)), all_link.end());
                             all_link.erase(std::remove(all_link.begin(), all_link.end(), (*il3)), all_link.end());
                             all_link.erase(std::remove(all_link.begin(), all_link.end(), (*il2)->GetMirrorLink()), all_link.end());
@@ -198,7 +200,7 @@ for (int i=0;i<list.size();i++)
     }
 }
    //==== shoudl be removed
-    for (int i=0;i<pair_list.size();i++)
+   /* for (int i=0;i<pair_list.size();i++)
     {
         pot_triangle p1 = (pair_list[i]).PT1;
         pot_triangle p2 = (pair_list[i]).PT2;
@@ -209,20 +211,24 @@ for (int i=0;i<list.size();i++)
         (p2.pv1)->UpdateGroup(2+(p2.pv1)->GetGroup());
         (p2.pv2)->UpdateGroup(2+(p2.pv2)->GetGroup());
         (p2.pv3)->UpdateGroup(2+(p2.pv3)->GetGroup());
-    }
+    }*/
     //===
     
     return pair_list;
 }
+//-- connected_2pot_triangles function check if the two potential trinagles are well connected for a fission. not, T1 and T2 do not exist yet, but they can apear if v1,v2,v3 get
+//          v1------------v4            disconnected from v4, v5, v6. This function checks for such cases
+//         /T1\         / T2\
+//        v2--v3-------v4---v6
 bool Three_Edge_Scission::connected_2pot_triangles(pot_triangle potT1, pot_triangle potT2)
 {
     if(potT2.cid != -1 || potT1.cid != -1)
         return false;
-    if(potT2.pv1 == potT1.pv1 || potT2.pv1 == potT1.pv2 || potT2.pv1 == potT1.pv3)
+    if(potT2.pv1 == potT1.pv1 || potT2.pv1 == potT1.pv2 || potT2.pv1 == potT1.pv3)  // if the two trinagles have a shared vertex
         return false;
-    if(potT2.pv2 == potT1.pv1 || potT2.pv2 == potT1.pv2 || potT2.pv2 == potT1.pv3)
+    if(potT2.pv2 == potT1.pv1 || potT2.pv2 == potT1.pv2 || potT2.pv2 == potT1.pv3) // if the two trinagles have a shared vertex
         return false;
-    if(potT2.pv3 == potT1.pv1 || potT2.pv3 == potT1.pv2 || potT2.pv3 == potT1.pv3)
+    if(potT2.pv3 == potT1.pv1 || potT2.pv3 == potT1.pv2 || potT2.pv3 == potT1.pv3) // if the two trinagles have a shared vertex
         return false;
     
     
@@ -232,7 +238,10 @@ bool Three_Edge_Scission::connected_2pot_triangles(pot_triangle potT1, pot_trian
     std::vector <vertex *> nv1 = (potT1.pv1)->GetVNeighbourVertex();
     std::vector <vertex *> nv2 = (potT1.pv2)->GetVNeighbourVertex();
     std::vector <vertex *> nv3 = (potT1.pv3)->GetVNeighbourVertex();
-    int connect[3][3] = {0};
+    int connect[3][3] = {0};   // a matrix that shows how each vertex of the two trinagle are connected
+    // here we attempt to fill the connect matrix and make sure that for each vertex from T1 at least one connected vertex from T2 exist
+    // this condidtion is stored in test1-3 varible. However, it can happen in which all the verices from T1 is connected to one vertex from T2
+    // therefore we check the connect matrix
     for (std::vector<vertex*>::iterator it = nv1.begin() ; it != nv1.end(); it++){
         
         if(potT2.pv1 == (*it) || potT2.pv1 == (*it) || potT2.pv1 == (*it))
@@ -268,13 +277,13 @@ bool Three_Edge_Scission::connected_2pot_triangles(pot_triangle potT1, pot_trian
             connect[2][2]=1;
     }
 
-    
+//-- only if the trinagles are connected; we check if T2 is also well connected to T1. connect mat is to avoid repeataion of previous process
     if(test1==true && test2==true && test3==true )
     {
         for (int i=0;i<3;i++){
             int row = 0;
             for (int j=0;j<3;j++){
-                row+= connect[j][i];
+                row+= connect[i][j];
             }
             if(row==0)
                 return false;
@@ -287,6 +296,7 @@ bool Three_Edge_Scission::connected_2pot_triangles(pot_triangle potT1, pot_trian
     
     return false;
 }
+//--- v1,v2 and v3 may not have the correct trinagluation Orientation.
 bool Three_Edge_Scission::CorrectOrientation(pot_triangle p1,pot_triangle p2)
 {
     links* ml1 = (p1.pl1)->GetMirrorLink();

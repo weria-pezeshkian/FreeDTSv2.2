@@ -42,7 +42,7 @@ private:
     double  CheckLengthBetweenTwoVertex(vertex* v1, vertex* v2, Vec3D *pBox);
     double  CheckFaceAngle(links * l, Vec3D *);
     Vec3D   CalculateNormal(vertex* v1 ,vertex* v2 ,vertex* v3,Vec3D *pBox);
-    void ReadIndexFile(std::string indexfilename);
+    bool ReadIndexFile(std::string indexfilename);
     MESH* m_pMESH;
     State *m_pState;
 

@@ -85,7 +85,10 @@ int enper=pState->m_OutPutEnergy_periodic;     // how aften write into the energ
         VTU.Writevtu((m_pMESH->m_pActiveV),(m_pMESH->m_pActiveT),(m_pMESH->m_pHL),file);
     
     if(pState->m_IndexFile == true)
-    ReadIndexFile(pState->m_IndexFileName);
+        if(!ReadIndexFile(pState->m_IndexFileName)){
+            exit(1);
+
+        }
 //=========================================================================================
 //======== We now create CNT object so that we can generate the cells anytime we want
 //============================================================================================
@@ -423,13 +426,6 @@ if(mcstep%displaywrite==0 && displaywrite!=0)
         file="conf"+f.Int_to_String(int(mcstep/displaywrite))+".vtu";
         VTU.Writevtu((m_pMESH->m_pActiveV),(m_pMESH->m_pActiveT),(m_pMESH->m_pHL),file);
 }
-if(Targeted_State==true)
-if((pState->m_RESTART).restartPeriod!=0 && mcstep%((pState->m_RESTART).restartPeriod)==0)
-{
-     pRestart->WrireRestart(mcstep,gfilename,(pState->m_pMesh),R,RB);
-
-     energyfile.flush(); // the eneergy file
-}
 if((pState->m_TRJBTS).btsPeriod!=0 && mcstep%((pState->m_TRJBTS).btsPeriod)==0 )
 {
     btsFile.WrireBTSFile(mcstep,  (pState->m_pMesh));
@@ -477,15 +473,21 @@ if( pState->m_OutPutEnergy_periodic!=0  && mcstep%(pState->m_OutPutEnergy_period
         if(mc_linkflip >0)
             std::cout<<"; Alexander move: "<<LRate/double(totallmove)*100.0<<" % "<<std::flush;
         if(m_pInclusions.size()!=0)
-            std::cout<<"Incluions move: "<<InRate/double(totalinmove)*100.0<<" %. ";
+            std::cout<<"Incluions move: "<<InRate/double(totalinmove)*100.0<<" %. "<<std::flush;
         if(BoxChangePeriodTau!=0)
-            std::cout<<"; Box size update:  "<<boxrate/double(totalboxmove)*100.0<<" % ";
+            std::cout<<"; Box size update:  "<<boxrate/double(totalboxmove)*100.0<<" % "<<std::flush;
             std::cout << '\r';
             std::cout << "\033[K";
 
         }
 }
+if(Targeted_State==true)
+if((pState->m_RESTART).restartPeriod!=0 && mcstep%((pState->m_RESTART).restartPeriod)==0)
+    {
+         pRestart->WrireRestart(mcstep,gfilename,(pState->m_pMesh),R,RB);
 
+         energyfile.flush(); // the eneergy file
+    }
 //========== Optimiszing R and RB
 if(mcstep%500==0) // Optimize R and RB
 {
@@ -737,46 +739,39 @@ void  MC_Simulation_B::CenterIntheBox()
         (*it)->UpdateVZPos(z-zcm+(*m_pBox)(2)/2.0);
     }
 }
-void MC_Simulation_B::ReadIndexFile(std::string indexfilename)
-{
-    Nfunction f;
-    std::string ext = indexfilename.substr(indexfilename.find_last_of(".") + 1);
-    std::string filename;
-    
-    if(ext=="inx")
-    filename = indexfilename;
-    else
-    filename = indexfilename+".inx";
-            
-        if(f.FileExist(filename)==false)
-        {
-                std::cout<<"-----> Error: the index file name with the name "<<filename<<" does not exist"<<std::endl;
-                exit(0);
-        }
-                std::ifstream indexfile;
-                indexfile.open(filename.c_str());
-                
+//--- this function reads the index file and assigned the group name to the vertex
+bool MC_Simulation_B::ReadIndexFile(std::string filename) {
+    std::ifstream indexfile(filename);
+    if (!indexfile) {
+        std::cerr << "---> error: Unable to open index file " << filename << std::endl;
+        return false;
+    }
 
-                int NAtom = 0;
-                while (true)
-                {
-                    std::string name;
-                    if(indexfile.eof())
-                        break;
-                    indexfile>>name>>NAtom;
-                    int id;
-                        for (int i=0;i<NAtom;i++)
-                        {
-                            indexfile>>id;
-                            if(id<m_pActiveT.size())
-                            (m_pActiveV[id])->UpdateGroupName(name);
-                            else
-                            std::cout<<"---> Error: some problems with the index file "<<std::endl;
-                        }
-                }
-                indexfile.close();
+    std::string name;
+    int NAtom;
+    int gid = 1;
+    while (indexfile >> name >> NAtom) {
+        int vid;
+        for (int i = 0; i < NAtom; ++i) {
+            if (!(indexfile >> vid)) {
+                std::cerr << "Error: Failed to read ID from index file" << std::endl;
+                return false;
+            }
+            if (vid < m_pActiveV.size()) {
+                m_pActiveV[vid]->UpdateGroupName(name);
+                m_pActiveV[vid]->UpdateGroup(gid);
+            } else {
+                std::cerr << "Error: ID " << vid << " exceeds active vector size" << std::endl;
+                return false;
+            }
+        }
+        gid++;
+    }
+    indexfile.close();
     
+    return true;
 }
+//--- end of reading index file
 void MC_Simulation_B::DetailedSystemEnergy(){
     std::vector<double> energyv,energyl;
     for (int i=0;i<m_pActiveL.size();i++){

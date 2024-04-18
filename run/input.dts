@@ -9,6 +9,7 @@ Kappa                           = 20 0
 VertexArea		       	= 0 0.3 0 0.7
 Edge_Parameters			= 5   0   0 
 OutPutTRJ_TSI                   = 10  10  TrjTSI
+FreezingAGroup			= Poles
 GeneralOutputFilename           = output
 ConstantField			=  0  1 0 0 
 Constant_NematicForce           =  0 1 1

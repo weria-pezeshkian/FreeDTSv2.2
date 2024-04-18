@@ -181,10 +181,17 @@ void State::ExploreArguments()
         {
             m_GeneralOutputFilename = m_Argument.at(i+1);
         }
-        else if(Arg1=="-ndx")
-        {
-            m_IndexFileName = m_Argument.at(i+1);
+        else if(Arg1=="-ndx"){   // get the index file and also check if the file exist and it has inx extension
+            m_IndexFileName = m_Argument[i+1];
             m_IndexFile = true;
+            if(f.SubstringFromRight(m_IndexFileName,'.')!="inx"){
+                m_IndexFileName = m_IndexFileName+".inx";
+            }
+            if(f.FileExist(m_IndexFileName)==false){
+                        std::cout<<"---> error: the index file name with the name "<<m_IndexFileName<<" does not exist"<<std::endl;
+                        exit(1);
+            }
+
         }
         else if(Arg1=="-b")
         {
