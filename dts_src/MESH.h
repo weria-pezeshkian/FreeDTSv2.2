@@ -14,21 +14,29 @@ public:
     MESH();
     ~MESH();
 
-    inline double GetMinLength()                    const      {return m_MinLength;}
-    inline double GetMaxLength()                    const      {return m_MaxLength;}
-    inline double GetMinAngle()                     const      {return m_MinAngle;}
+    inline double GetMinLength()                        const      {return m_MinLength;}
+    inline double GetMaxLength()                        const      {return m_MaxLength;}
+    inline double GetMinAngle()                         const      {return m_MinAngle;}
+    inline std::vector<vertex*>     GetActiveV()        const      {return m_pActiveV;}
+    inline std::vector<triangle*>   GetActiveT()        const      {return m_pActiveT;}
+    inline std::vector<links*>      GetActiveL()        const      {return m_pActiveL;}
 
     
-private:
-    std::vector<vertex>         m_Vertex;
-    std::vector<triangle>       m_Triangle;
-    std::vector<links>          m_Links;
-    std::vector<inclusion>      m_Inclusion;
-    Vec3D                       m_Box;
-    double m_MinLength;
-    double m_MaxLength;
-    double m_MinAngle;
+
 public:
+    // this has not been completed yet
+    bool MakeALinkGhost(links* l);
+    bool MakeAVertexGhost(links* l);
+    bool MakeATriangleGhost(links* l);
+    
+
+public:
+    void GenerateMesh(MeshBluePrint meshblueprint);
+    MeshBluePrint Convert_Mesh_2_BluePrint(MESH *mesh);
+    void  CenterMesh();
+
+    
+    
     std::vector <InclusionType> m_InclusionType;
     std::vector <InclusionType*> m_pInclusionType;
     
@@ -50,12 +58,24 @@ public:
     std::vector<inclusion*>     m_pInclusion;
     Vec3D                       *m_pBox;
     
-    void GenerateMesh(MeshBluePrint meshblueprint);
-    MeshBluePrint Convert_Mesh_2_BluePrint(MESH *mesh);
-    
-
 
     
+    
+private:
+    std::vector<vertex>         m_Vertex;
+    std::vector<triangle>       m_Triangle;
+    std::vector<links>          m_Links;
+    std::vector<inclusion>      m_Inclusion;
+    Vec3D                       m_Box;
+    std::vector<triangle>       m_GhostT; // Some trinagles for initial storing
+    std::vector<links>          m_GhostL;
+    std::vector<vertex>         m_GhostV;
+    std::vector<triangle*>       m_pGhostT; // Some trinagles for initial storing
+    std::vector<links*>          m_pGhostL;
+    std::vector<vertex*>         m_pGhostV;
+    double m_MinLength;
+    double m_MaxLength;
+    double m_MinAngle;
     
 };
 

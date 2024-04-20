@@ -102,18 +102,47 @@ void vertex::UpdateVZPos(double z) {
         m_Z = z;
     }
 }
-void vertex::AddtoLinkList(links* z)
+void vertex::AddtoLinkList(links* l)
 {
-m_VLinkList.push_back(z);
+    m_VLinkList.push_back(l);
+    return;
+}
+bool vertex::AddtoLinkListCarefully(links* l) {
+    // Check if the link already exists in the list
+    for (std::vector<links*>::iterator it = m_VLinkList.begin() ; it != m_VLinkList.end(); ++it){
+        if (*it == l)
+            return false;
+    }
+    // Link does not exist, add it to the list
+    m_VLinkList.push_back(l);
+    return true;
 }
 void vertex::RemoveFromLinkList(links* z)
 {
 
 m_VLinkList.erase(std::remove(m_VLinkList.begin(), m_VLinkList.end(), z), m_VLinkList.end());
 }
+bool vertex::RemoveFromLinkListCarefully(links* l) {
+    std::vector<links*>::iterator it = std::find(m_VLinkList.begin(), m_VLinkList.end(), l);
+    if (it != m_VLinkList.end()) {
+        m_VLinkList.erase(it);
+        return true; // Vertex found and removed
+    }
+    return false; // Vertex not found
+}
 void vertex::AddtoTraingleList(triangle* z)
 {
 m_VTraingleList.push_back(z);
+}
+bool vertex::AddtoTriangleListCarefully(triangle* t) {
+    // Check if the link already exists in the list
+    for (std::vector<triangle*>::iterator it = m_VTraingleList.begin() ; it != m_VTraingleList.end(); ++it){
+        if (*it == t)
+            return false;
+    }
+    // Link does not exist, add it to the list
+    m_VTraingleList.push_back(t);
+    return true;
 }
 void vertex::RemoveFromTraingleList(triangle* z)
 {
@@ -121,7 +150,18 @@ m_VTraingleList.erase(std::remove(m_VTraingleList.begin(), m_VTraingleList.end()
 }
 void vertex::AddtoNeighbourVertex(vertex* z)
 {
-m_VNeighbourVertex.push_back(z);
+    m_VNeighbourVertex.push_back(z);
+    return;
+}
+bool vertex::AddtoNeighbourVertexCarefully(vertex* v) {
+    // Check if the link already exists in the list
+    for (std::vector<vertex*>::iterator it = m_VNeighbourVertex.begin() ; it != m_VNeighbourVertex.end(); ++it){
+        if (*it == v)
+            return false;
+    }
+    // Link does not exist, add it to the list
+    m_VNeighbourVertex.push_back(v);
+    return true;
 }
 void vertex::RemoveFromNeighbourVertex(vertex* z)
 {

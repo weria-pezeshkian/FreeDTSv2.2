@@ -38,10 +38,7 @@ public:
         inline double GetIntEnergy()             const      {return m_IntEnergy;}
         inline double GetEdgeSize()              const      {return m_EdgeSize;}
         inline Vec3D GetEdgeVector()             const      {return m_EdgeVector;}
-
-    
-
-
+        inline int GetEdgeType()                 const      {return m_LinkType;}
 public:
     void UpdateTriangle(triangle *v);
     void UpdateV(vertex *v1,vertex *v2,vertex *v3);
@@ -60,9 +57,10 @@ public:
     void UpdateIntEnergy(double en);
     void UpdateEdgeVector(Vec3D *pbox);
     void PutEdgeVector(Vec3D , double);
-
+    
+    
 private:
-
+    int m_ID;
     triangle *m_T1;
     vertex  *m_V1;
     vertex  *m_V2;
@@ -70,25 +68,43 @@ private:
     links   *m_mirorlink;
     links   *m_neighborlink1; /// triangle is 1-2-3;  the link is 1->2   this point to 2->3
     links   *m_neighborlink2; /// the link is 1->2   this is 3->1
-
-    int m_ID;
     bool m_Show;
     bool m_mirorflag;
     int m_LinkSide;
-
-    private:
-    Vec3D m_Normal;    // average of the two trinagule normal for edge links, it is 
-
+    Vec3D m_Normal;    // average of the two trinagule normal for edge links, it is
     Vec3D m_Be;
     double m_He;
     double m_IntEnergy;
     int m_SimTimeStep;
     
-    
 public:
     Vec3D m_EdgeVector;    // a vector along the edge
     double m_EdgeSize;    // size of the edge
     int m_LinkType;  // 0 surface link; 1 edge link;
+
+public:
+    bool SetCopy();            // Copies the key ellements into the old type
+    bool Reverse2PreviousCopy();  // reverse the edge to the value set at the time of MakeCopy()
+
+    // this are old value of the key variables we need this for the copying
+private:
+    triangle *m_OldT1;     //
+    vertex  *m_OldV1;
+    vertex  *m_OldV2;
+    vertex  *m_OldV3;
+    links   *m_Oldmirorlink;
+    links   *m_Oldneighborlink1; /// triangle is 1-2-3;  the link is 1->2   this point to 2->3
+    links   *m_Oldneighborlink2; /// the link is 1->2   this is 3->1
+    bool m_Oldmirorflag;
+    int m_OldLinkSide;
+    Vec3D m_OldNormal;    // average of the two trinagule normal for edge links, it is
+    Vec3D m_OldBe;
+    double m_OldHe;
+    double m_OldIntEnergy;
+    Vec3D m_OldEdgeVector;    // a vector along the edge
+    double m_OldEdgeSize;    // size of the edge
+    int m_OldLinkType;  // 0 surface link; 1 edge link;
+
 
 };
 

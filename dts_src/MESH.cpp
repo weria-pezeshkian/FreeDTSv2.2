@@ -254,6 +254,35 @@ void MESH::GenerateMesh(MeshBluePrint meshblueprint)
 
 
 
+    //====== ghost
+    int lid = 2*(m_pMHL.size())+m_pEdgeL.size();
+    int tid = m_pActiveT.size() ;
+    int vid = m_pActiveV.size() ;
+
+    
+    for (int i=0;i<100;i++){
+        links teml(lid);
+        m_GhostL.push_back(teml);
+        lid++;
+    }
+    for (int i=0;i<100;i++){
+        triangle temt(tid);
+        m_GhostT.push_back(temt);
+        tid++;
+    }
+    for (int i=0;i<100;i++){
+        vertex temv(vid);
+        m_GhostV.push_back(temv);
+        vid++;
+    }
+    for (std::vector<links>::iterator it = m_GhostL.begin() ; it != m_GhostL.end(); ++it)
+        m_pGhostL.push_back(&(*it));
+    
+    for (std::vector<triangle>::iterator it = m_GhostT.begin() ; it != m_GhostT.end(); ++it)
+        m_pGhostT.push_back(&(*it));
+    
+    for (std::vector<vertex>::iterator it = m_GhostV.begin() ; it != m_GhostV.end(); ++it)
+        m_pGhostV.push_back(&(*it));
 
     
     //WritevtuFiles VTU(pState);
@@ -319,4 +348,24 @@ MeshBluePrint MESH::Convert_Mesh_2_BluePrint(MESH *mesh)
     
     return BluePrint;
 }
-
+void  MESH::CenterMesh(){
+    double xcm=0;
+    double ycm=0;
+    double zcm=0;
+    for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it){
+        xcm+=(*it)->GetVXPos();
+        ycm+=(*it)->GetVYPos();
+        zcm+=(*it)->GetVZPos();
+    }
+    xcm=xcm/double(m_pActiveV.size());
+    ycm=ycm/double(m_pActiveV.size());
+    zcm=zcm/double(m_pActiveV.size());
+    
+    for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it){
+        (*it)->UpdateVXPos((*it)->GetVXPos()-xcm+(*m_pBox)(0)/2.0);
+        (*it)->UpdateVYPos((*it)->GetVYPos()-ycm+(*m_pBox)(1)/2.0);
+        (*it)->UpdateVZPos((*it)->GetVZPos()-zcm+(*m_pBox)(2)/2.0);
+    }
+    
+    return;
+}

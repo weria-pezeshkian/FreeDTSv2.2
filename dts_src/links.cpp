@@ -32,72 +32,108 @@ links::~links()
 {
     
 }
-void links::UpdateTriangle(triangle *v)
-{
+void links::UpdateTriangle(triangle *v){
     m_T1=v;
+    return;
 }
-
-void links::UpdateV(vertex *v1,vertex *v2,vertex *v3)
-{
+void links::UpdateV(vertex *v1,vertex *v2,vertex *v3){
     m_V3=v3;
     m_V2=v2;
     m_V1=v1;
+    return;
 }
-void links::UpdateSimTimeStep(int v)
-{
+void links::UpdateSimTimeStep(int v){
     m_SimTimeStep=v;
+    return;
 }
-void links::UpdateV3(vertex *v3)
-{
+void links::UpdateV3(vertex *v3){
     m_V3=v3;
-
+    return;
 }
-
-void links::UpdateMirrorLink(links* v)
-{
+void links::UpdateMirrorLink(links* v){
     m_mirorlink=v;
+    return;
 }
-void links::UpdateNeighborLink1(links* v)
-{
+bool links::SetCopy(){           // Copies the key ellements into the old type
+    m_OldT1 = m_T1;     //
+    m_OldV1 = m_V1;
+    m_OldV2 = m_V2;
+    m_OldV3 = m_V3;
+    m_Oldmirorlink = m_mirorlink;
+    m_Oldneighborlink1 = m_neighborlink1;
+    m_Oldneighborlink2  = m_neighborlink2;
+    m_Oldmirorflag = m_mirorflag;
+    m_OldLinkSide = m_LinkSide;
+    m_OldNormal = m_Normal;
+    m_OldBe = m_Be;
+    m_OldHe = m_He;
+    m_OldIntEnergy = m_IntEnergy;
+    m_OldEdgeVector = m_EdgeVector;
+    m_OldEdgeSize = m_EdgeSize;
+    m_OldLinkType = m_LinkType;
+
+    return true;
+}
+bool links::Reverse2PreviousCopy(){           // reverse to the last copy and part of the mirror variables
+    
+    m_T1 = m_OldT1;
+    m_V1 = m_OldV1;
+    m_V2 = m_OldV2;
+    m_V3 = m_OldV3;
+    m_mirorlink = m_Oldmirorlink;
+    m_neighborlink1 = m_Oldneighborlink1;
+    m_neighborlink2 = m_Oldneighborlink2;
+    m_mirorflag = m_Oldmirorflag;
+    m_LinkSide = m_OldLinkSide;
+    m_Normal = m_OldNormal;
+    m_Be = m_OldBe;
+    m_He = m_OldHe;
+    m_IntEnergy = m_OldIntEnergy;
+    m_EdgeVector = m_OldEdgeVector;
+    m_EdgeSize = m_OldEdgeSize;
+    m_LinkType = m_OldLinkType;
+    
+    //---- update some for mirror
+    m_mirorlink->PutShapeOperator(m_Be,m_He);
+    m_mirorlink->UpdateIntEnergy(m_IntEnergy);
+    m_mirorlink->PutNormal(m_Normal);
+
+    return true;
+}
+void links::UpdateNeighborLink1(links* v){
     m_neighborlink1=v;
 }
-void links::UpdateNeighborLink2(links* v)
-{
+void links::UpdateNeighborLink2(links* v){
     m_neighborlink2=v;
 }
-void links::UpdateVisualize(bool v)
-{
+void links::UpdateVisualize(bool v){
     m_Show=v;
 }
-void links::UpdateMirrorFlag(bool v)
-{
+void links::UpdateMirrorFlag(bool v){
     m_mirorflag=v;
+    return;
 }
 void links::UpdateNormal()
 {
-
-   if(this->GetMirrorFlag()==true)
-   {
+   if(this->GetMirrorFlag()==true){
        Vec3D v2=(m_mirorlink->GetTriangle())->GetNormalVector();
        Vec3D v1=m_T1->GetNormalVector();
        m_Normal=v1+v2;
        double norm=m_Normal.norm();
-       m_Normal=m_Normal*(1.0/norm);
-       if(norm==0)
-       {
+       if(norm==0){
            std::cout<<"error 2022----> one of the normals has zero size; normal link cannot be defined  \n";
            exit(0);
        }
+       m_Normal=m_Normal*(1.0/norm);
        m_mirorlink->PutNormal(m_Normal);
     }
-    else
-    {
+    else{
         // this is an edge link
         std::cout<<" developer error: link type and id "<<m_LinkType<<"  "<<m_ID<<" \n";
         std::cout<<"error ----> normal vector for edge links has not been defined   \n";
         exit(0);
     }
-
+    return;
 }
 void links::PutNormal(Vec3D n)
 {

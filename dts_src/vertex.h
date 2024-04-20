@@ -33,16 +33,16 @@ public:
         inline Vec3D GetNormalVector()                      {return m_Normal;}
         inline std::vector <double> GetCurvature()          {return m_Curvature;}// surface curvature
         inline double GetEnergy()                           {return m_Energy;}
-        inline std::vector <links *> GetVLinkList()             {return m_VLinkList;}
-        inline std::vector <triangle *> GetVTraingleList()         {return m_VTraingleList;}
-        inline std::vector <vertex *> GetVNeighbourVertex()     {return m_VNeighbourVertex;}
         inline CNTCell * GetVCNTCell()                      {return m_CNTCell;}
         inline inclusion* GetInclusion()                    {return m_pInclusion;}
         inline bool VertexOwnInclusion()                    {return m_OwnInclusion;}
         inline Vec3D *GetBox()                              {return m_pBox;}
         inline int GetSimTimeStep()                         {return m_SimTimeStep;}
         inline int GetGroup()                               {return m_Group;}
-        inline std::string GetGroupName()                               {return m_GroupName;}
+        inline std::string GetGroupName()                   {return m_GroupName;}
+        inline std::vector <links *> GetVLinkList()             {return m_VLinkList;}
+        inline std::vector <triangle *> GetVTraingleList()         {return m_VTraingleList;}
+        inline std::vector <vertex *> GetVNeighbourVertex()     {return m_VNeighbourVertex;}
     
 public:
   // A set of functions to update vertex variables
@@ -61,9 +61,13 @@ public:
   void UpdateOwnInclusion(bool );
   void UpdateVID(int); // this should never be called, only for temporarily vis functions
   void AddtoLinkList(links* z);
+  bool AddtoLinkListCarefully(links* z);
   void AddtoTraingleList(triangle * z);
+  bool AddtoTriangleListCarefully(triangle* t);
   void AddtoNeighbourVertex(vertex* z);
+  bool AddtoNeighbourVertexCarefully(vertex* v);
   void RemoveFromLinkList(links* z);
+  bool RemoveFromLinkListCarefully(links* l);
   void RemoveFromTraingleList(triangle * z);
   void RemoveFromNeighbourVertex(vertex* z);
   void UpdateGroup(int z);

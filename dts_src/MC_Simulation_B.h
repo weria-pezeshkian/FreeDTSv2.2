@@ -32,10 +32,8 @@ private:
     std::vector<links*>       &m_pEdgeL;
     
 private:
-    void  CenterIntheBox();
     double  SystemEnergy();
     void DetailedSystemEnergy();
-
     
     // A set of functions to check if a mesh is good for mc with vertices move
     bool    CheckMesh(MESH *pMesh);

@@ -34,7 +34,7 @@ MC_Simulation_B::MC_Simulation_B(State *pState): m_pMESH(pState->m_pMesh), m_pAc
     double simtime = clock();
     m_pState =  pState,
 #if TEST_MODE == Enabled
-    std::cout<<"----> Note: We have reached simulation class -- : "<<std::endl;
+    std::cout<<"----> Note: Simulation has started: MC type B  -- : "<<std::endl;
 #endif
 
 
@@ -56,7 +56,6 @@ m_Lmax2    = pState->m_MaxLinkLengthSquare;
 int displaywrite=pState->m_Display_periodic;
 std::string gfilename=pState->m_GeneralOutputFilename;
 bool Targeted_State = pState->m_Targeted_State;
-int enper=pState->m_OutPutEnergy_periodic;     // how aften write into the energy files
 #if DEBUG_MODE == Enabled
     std::cout<<" simulation: reading varaible \n";
 #endif
@@ -284,13 +283,11 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
     //=========Beginning of one MC move
 
     double VerexORbox=0;
-    if( BoxChangePeriodTau!=0)
-    {
+    if( BoxChangePeriodTau!=0){
         VerexORbox=Random1.UniformRNG(1.0)*double(BoxChangePeriodTau);
         VerexORbox=1.0/VerexORbox;
     }
-    if(VerexORbox<1)
-    {
+    if(VerexORbox<1){
 
             //== do link flip if it is allowed
             int no_link = m_pMESH->m_pHL.size();
@@ -325,8 +322,7 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
                 if(mc_rigidwall->GetState()==true)
                 cwp=mc_rigidwall->CheckVertexMoveWithinWalls(mcstep,R*dx,R*dy,R*dz,lpvertex);
 
-                if(cwp==true )
-                {
+                if(cwp==true ){
                     mc_VMove->MC_MoveAVertex(mcstep,lpvertex,R*dx,R*dy,R*dz,thermal);
                     VRate+=mc_VMove->GetMoveValidity();
                     totalvmove++;
@@ -335,13 +331,11 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
         }// end of if(mc_vertexmove == true)
         
         //== do edge v move
-            int no_edgeV = int(((pState->m_MCMove).EdgeVertexMove)*((m_pMESH->m_pEdgeV).size()));
-        for(int t=0;t<no_edgeV;t++)
-        {
+        int no_edgeV = int(((pState->m_MCMove).EdgeVertexMove)*((m_pMESH->m_pEdgeV).size()));
+        for(int t=0;t<no_edgeV;t++){
             int n=Random1.IntRNG((m_pMESH->m_pEdgeV).size());
             vertex *lpvertex = (m_pMESH->m_pEdgeV)[n];   //
-            if(lpvertex->GetGroupName()!=pState->m_FreezGroupName)
-            {
+            if(lpvertex->GetGroupName()!=pState->m_FreezGroupName){
                 double dx=1-2*Random1.UniformRNG(1.0);            // Inside a cube with the side length of R
                 double dy=1-2*Random1.UniformRNG(1.0);
                 double dz=1-2*Random1.UniformRNG(1.0);
@@ -360,8 +354,7 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
         }// end if(edgevertexmove == true)
         
         int no_kawa = int(mc_inclusionmove_kawa*m_pInclusions.size());
-        for(int t=0;t<no_kawa;t++)
-        {
+        for(int t=0;t<no_kawa;t++){
             int n=Random1.IntRNG(m_pInclusions.size());
             inclusion *linclusion = m_pInclusions.at(n);   //
             mc_IncMove->MC_Move_AnInclusion(linclusion,&Random1, 1);
@@ -369,8 +362,7 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
             totalinmove++;
         }
         int no_angle = int(mc_inclusionmove_angle*m_pInclusions.size());
-        for(int t=0;t<no_angle;t++)
-        {
+        for(int t=0;t<no_angle;t++){
             int n=Random1.IntRNG(m_pInclusions.size());
             inclusion *linclusion = m_pInclusions.at(n);   //
             mc_IncMove->MC_Move_AnInclusion(linclusion,&Random1, 2);
@@ -412,13 +404,11 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
     if(ActiveTwoState->GetState() == true)
     ActiveTwoState->ActiveExchange(tot_Energy);
 
-//====================centering the box =============================================
-if(box_centering_f!=0)
-if(mcstep%box_centering_f==0)
-{
-        CenterIntheBox();// center the box
-        CNT.Generate(); // update cnt cell;
-}    
+//==================== centering the mesh in the box =============================================
+    if (box_centering_f != 0 && mcstep % box_centering_f == 0) {
+        (pState->m_pMesh)->CenterMesh(); // Center the mesh in the box
+        CNT.Generate(); // Update CNT cells due to vertex location changes
+    }
 //==================== We are now writing some dynamics files
 if(Targeted_State==true)
 if(mcstep%displaywrite==0 && displaywrite!=0)
@@ -482,52 +472,35 @@ if( pState->m_OutPutEnergy_periodic!=0  && mcstep%(pState->m_OutPutEnergy_period
         }
 }
 if(Targeted_State==true)
-if((pState->m_RESTART).restartPeriod!=0 && mcstep%((pState->m_RESTART).restartPeriod)==0)
-    {
+if((pState->m_RESTART).restartPeriod!=0 && mcstep%((pState->m_RESTART).restartPeriod)==0){
+         energyfile.flush(); // the eneergy file should be flushed first
          pRestart->WrireRestart(mcstep,gfilename,(pState->m_pMesh),R,RB);
-
-         energyfile.flush(); // the eneergy file
-    }
+}
 //========== Optimiszing R and RB
 if(mcstep%500==0) // Optimize R and RB
 {
     double vrate=double(VRate)/double(totalvmove);
     double Boxrate=double(boxrate)/double(totalboxmove);
-        if(mcstep<double(final)*0.01 && mcstep<10000)
-        {
-            if(mc_vertexmove == true)
-            {
-                if(vrate<0.4)
-                {
-                if(R>0.01)
-                R=R/1.1;
+        if(mcstep<double(final)*0.01 && mcstep<10000){
+            if(mc_vertexmove == true){
+                if(vrate<0.4){
+                    if(R>0.01)
+                        R=R/1.1;
                 }
-                else if(vrate>0.6)
-                {
-                if(R<0.2)
-                R=1.1*R;
+                else if(vrate>0.6){
+                    if(R<0.2)
+                        R=1.1*R;
                 }
-#if TEST_MODE == Enabled
-                #pragma omp critical
-                std::cout<<" Dx for vertex  is : "<<R<<std::endl;
-#endif
             }
-        if(BoxChangePeriodTau !=0)
-        {
-            if(Boxrate<0.4)
-            {
+        if(BoxChangePeriodTau !=0){
+            if(Boxrate<0.4){
                 if(RB>0.01)
                 RB=RB/1.1;
             }
-            else if(Boxrate>0.6)
-            {
+            else if(Boxrate>0.6){
                 if(RB<0.2)
                 RB=1.1*RB;
             }
-#if TEST_MODE == Enabled
-            #pragma omp critical
-            std::cout<<" Dx for box are: "<<RB<<std::endl;
-#endif
          }
         }
         
@@ -580,14 +553,24 @@ double  MC_Simulation_B::SystemEnergy()
         (*it1)->UpdateVZPos(z);
     }
     
-     for (std::vector<triangle *>::iterator it = (m_pMESH->m_pActiveT).begin() ; it != (m_pMESH->m_pActiveT).end(); ++it)
-      (*it)->UpdateNormal_Area(m_pBox);
+    for (std::vector<triangle *>::iterator it = (m_pMESH->m_pActiveT).begin() ; it != (m_pMESH->m_pActiveT).end(); ++it){
+        double oldarea = (*it)->GetArea();
+        (*it)->UpdateNormal_Area(m_pBox);
+        double newarea = (*it)->GetArea();
+        if(fabs(newarea-oldarea)>0.0002)
+            std::cout<<"  area is different \n";
+    }
 
     //===== Prepare links:  normal vector and shape operator
          for (std::vector<links *>::iterator it = (m_pMESH->m_pHL).begin() ; it != (m_pMESH->m_pHL).end(); ++it)
     {
+        Vec3D oldN = (*it)->GetNormal();
               (*it)->UpdateNormal();
               (*it)->UpdateShapeOperator(m_pBox);
+        Vec3D newN = (*it)->GetNormal()-oldN;
+         if(fabs(newN(0))>0.001 || fabs(newN(1))>0.001 || fabs(newN(2))>0.001)
+             std::cout<<"  normal is different "<<(*it)->GetID()<<"  "<<(*it)->GetMirrorLink()->GetID()<<"\n";
+
     }
 
     //======= Prepare vertex:  area and normal vector and curvature of surface vertices not the edge one
@@ -709,36 +692,6 @@ Vec3D   MC_Simulation_B::CalculateNormal(vertex* v1 ,vertex* v2 ,vertex* v3, Vec
     
     return N;
 }
-//==============================================================================================================
-//==================== A function to center the mesh center of geometry in the box center ======================
-//==============================================================================================================
-void  MC_Simulation_B::CenterIntheBox()
-{
-    
-    double xcm=0;
-    double ycm=0;
-    double zcm=0;
-    for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it)
-    {
-        xcm+=(*it)->GetVXPos();
-        ycm+=(*it)->GetVYPos();
-        zcm+=(*it)->GetVZPos();
-    }
-    xcm=xcm/m_pActiveV.size();
-    ycm=ycm/m_pActiveV.size();
-    zcm=zcm/m_pActiveV.size();
-    
-    for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it)
-    {
-        double x=(*it)->GetVXPos();
-        double y=(*it)->GetVYPos();
-        double z=(*it)->GetVZPos();
-        
-        (*it)->UpdateVXPos(x-xcm+(*m_pBox)(0)/2.0);
-        (*it)->UpdateVYPos(y-ycm+(*m_pBox)(1)/2.0);
-        (*it)->UpdateVZPos(z-zcm+(*m_pBox)(2)/2.0);
-    }
-}
 //--- this function reads the index file and assigned the group name to the vertex
 bool MC_Simulation_B::ReadIndexFile(std::string filename) {
     std::ifstream indexfile(filename);
@@ -795,79 +748,7 @@ for (int i=0;i<(m_pMESH->m_pActiveV).size();i++){
 
     return;
 }
-/*
 
-        }
-
-
-//===============
-//=== end of the MC_Simulation_B
-//==============================
- 
-
-     
-    energyfile.close();   // close the energy file
-
-
-
-    double tot=En.TotalEnergy(m_pAllV,m_pHalfLinks1);
-    if(m_pSPBTG->GetState()==true)
-    {
-        tot+=m_pSPBTG->CalculateEnergy(final);
-    }
- if(fabs(tot-tot_Energy)>0.001)
-  {
-      	sms="Error: The total energy: after all moves energy is different from actual energy ";
-	f.Write_One_ErrorMessage(sms);
-	sms="actual value "+f.Int_to_String(tot);
-	f.Write_One_ErrorMessage(sms);
-	sms="end energy value "+f.Int_to_String(tot_Energy);
-	f.Write_One_ErrorMessage(sms);
-  }
-
-std::cout<<"Energy evaluation "<<tot<<"  should be equal "<<tot_Energy<<"\n";
-    
-if(VolumeCoupling == "on")
-{
-    double CalV=pVOL->GetTotalVolume();
-    double VFinal=pVOL->TotalVolumeFromTriangels(m_pAllT);
-    if(fabs(CalV-VFinal)>0.001)
-    {
-        sms="Error: volume after all moves is different from actual volume ";
-        f.Write_One_ErrorMessage(sms);
-        sms="actual value "+f.Int_to_String(VFinal);
-        f.Write_One_ErrorMessage(sms);
-        sms="end energy value "+f.Int_to_String(CalV);
-        f.Write_One_ErrorMessage(sms);
-    }
-    std::cout<<"Volume evaluation "<<VFinal<<"  should be equal "<<CalV<<"\n";
-}
-
-	if(llength.size()>0)
-	{
-		std::ofstream linklength;
-		linklength.open("link.txt");
-		std::vector <double> hist; 
-
-		for (int j=0;j<80;j++)
-		hist.push_back(0);
-
-		for (int j=0;j<80;j++)
-		for (int i=0;i<llength.size();i++)
-		{
-			double x=llength.at(i);
-			if(x>=j*0.01+1 && x<(j+1)*0.01+1)
-			hist.at(j)=hist.at(j)+1;
-		}
-
-			for (int j=0;j<80;j++)
-			linklength<<j*0.01+1<<"  "<<hist.at(j)<<"\n";
-	}
-}
-
-
-
-*/
 
 
 

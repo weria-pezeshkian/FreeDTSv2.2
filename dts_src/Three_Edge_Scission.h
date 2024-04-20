@@ -1,5 +1,6 @@
-#if !defined(AFX_Three_Edge_Scission_H_INCLUDED_)
-#define AFX_Three_Edge_Scission_H_INCLUDED_
+#if !defined(THREE_EDGE_SCISSION_H_INCLUDED)
+#define THREE_EDGE_SCISSION_H_INCLUDED
+
 #include "inclusion.h"
 #include "triangle.h"
 #include "vertex.h"
@@ -20,9 +21,13 @@ struct pot_triangle {    // data structure for a potential triangle
         links *pl3;
     };
     struct pair_pot_triangle {    // data structure for a potential triangle
+        bool state;
         int id;
         pot_triangle PT1;
         pot_triangle PT2;
+        std::vector <links *> ConnectingLinks;       // this does not include the mirror links
+        std::vector <triangle *> ConnectingTriangles;
+
     };
 class State;
 class Three_Edge_Scission : public DynamicTopology { // to use for polymorphism
@@ -47,14 +52,18 @@ private:
     void RemoveFromTriangleList(triangle* z, std::vector<triangle*> &vect);
     void AddtoLinkList(links* z, std::vector<links*> &vect);
     void AddtoTriangleList(triangle* z, std::vector<triangle*> &vect);
+    template<typename T>
+    bool AddtoVectorCarefully(T* z, std::vector<T*> &vect);
     
     bool Anglevalid4Vhole(vertex *v1, double minangle);
-    bool CorrectOrientation(pot_triangle p1,pot_triangle p2);
-    bool connected_2pot_triangles(pot_triangle potT1, pot_triangle potT2);
+    bool CorrectOrientation(pot_triangle &p1,pot_triangle &p2);
+    pair_pot_triangle connected_2pot_triangles(pot_triangle potT1, pot_triangle potT2);
     std::vector<pair_pot_triangle> FindPotentialTriangles(MESH* mesh);
-    bool DoAScission(pair_pot_triangle pair);
+    std::vector <triangle *> DoAScission(pair_pot_triangle &pair);
+    bool ReverseAScission(pair_pot_triangle &pair, triangle *t1, triangle *t2);   // this is the exact reverse action of DoAScission; different from DoAFussion
+
     bool DoAFussion(pair_pot_triangle pair);
-    bool CreateATriangleFromAPotentialTriangle(pot_triangle p1);
+    triangle * CreateATriangleFromAPotentialTriangle(pot_triangle &p1);
 
     double m_Beta;
 

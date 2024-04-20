@@ -13,7 +13,7 @@ FreezingAGroup			= Poles
 GeneralOutputFilename           = output
 ConstantField			=  0  1 0 0 
 Constant_NematicForce           =  0 1 1
-OpenEdgeEvolution               = EvolutionWithConstantVertex  1
+OpenEdgeEvolution               = EvolutionWithConstantVertex  0
 INCLUSION
 Define 2 Inclusions
 SRotation   Type   K   KG  KP  KL   C0     C0P   C0L  lambda   lkg   lkn    cn0
