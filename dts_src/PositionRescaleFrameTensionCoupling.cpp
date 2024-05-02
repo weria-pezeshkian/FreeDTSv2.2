@@ -51,7 +51,6 @@ void PositionRescaleFrameTensionCoupling::initialize()
     m_pLmax2 = &(m_pState->m_MaxLinkLengthSquare);
     m_pminAngle = &(m_pState->m_MinFaceAngle);
     m_step = 0;
-    m_pCFGC = m_pState->GetGlobalCurvature();
     m_Beta = m_pState->m_Beta;
 }
 bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * tot_Energy, double temp, int step, GenerateCNTCells *pGenCNT)
@@ -102,7 +101,7 @@ bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * to
     // === before any move should be done
     double DetaR = 0;
     double DeltaA = 0;
-    if(m_pCFGC->GetState()==true)
+    if(m_pState->GetGlobalCurvature()->GetState()==true)
     {
         for (std::vector<vertex *>::iterator it = (m_pMESH->m_pActiveV).begin() ; it != (m_pMESH->m_pActiveV).end(); ++it)
         {
@@ -175,13 +174,13 @@ bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * to
     double DE_totA = 0;
     double newarea_FixedTotArea = 0;
     double oldarea_FixedTotArea = 0;
-    if((m_pState->GetApply_Constant_Area())->GetState()==true)
+    if((m_pState->GetTotalAreaCoupling())->GetState()==true)
     {
-        oldarea_FixedTotArea = (m_pState->GetApply_Constant_Area())->GetTotalArea();
+        oldarea_FixedTotArea = (m_pState->GetTotalAreaCoupling())->GetTotalArea();
         for (std::vector<triangle *>::iterator it = (m_pMESH->m_pActiveT).begin() ; it != (m_pMESH->m_pActiveT).end(); ++it)
             newarea_FixedTotArea+=(*it)->GetArea();
 
-        DE_totA =(m_pState->GetApply_Constant_Area())->GetEnergyChange(m_step,oldarea_FixedTotArea,newarea_FixedTotArea);
+        DE_totA =(m_pState->GetTotalAreaCoupling())->CalculateEnergyChange(m_step,oldarea_FixedTotArea,newarea_FixedTotArea);
     }
     //=== previous might be removed in future
     
@@ -200,7 +199,7 @@ bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * to
     //=== energy of changes in gloabal curvature due to CouplingtoFixedGlobalCurvature
     //=== the value of DeltaA and DetaR were computed before now we subtract new area
     double eG = 0;
-    if(m_pCFGC->GetState()==true)
+    if(m_pState->GetGlobalCurvature()->GetState()==true)
     {
         for (std::vector<vertex *>::iterator it = (m_pMESH->m_pActiveV).begin() ; it != (m_pMESH->m_pActiveV).end(); ++it)
         {
@@ -210,7 +209,7 @@ bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * to
             DetaR-=(C.at(0)+C.at(1))*area;
         }
 
-        eG = m_pCFGC->CalculateEnergyChange(-DeltaA,-DetaR);
+        eG = m_pState->GetGlobalCurvature()->CalculateEnergyChange(-DeltaA,-DetaR);
     }
     
     /*
@@ -245,14 +244,14 @@ bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * to
         //if(nv*log(AreaRatio)-m_Beta*diff_energy>log(temp) )
         if(pow((AreaRatio),nv)*exp(-m_Beta*(diff_energy+dE_nematic_force))>temp )
        {
-        if(m_pCFGC->GetState()==true)
-        m_pCFGC->UpdateEnergyChange(-DeltaA,-DetaR);
+        if(m_pState->GetGlobalCurvature()->GetState()==true)
+            m_pState->GetGlobalCurvature()->UpdateEnergyChange(-DeltaA,-DetaR);
          
          (*tot_Energy)=(*tot_Energy)+DE;  // we only add DE because this is only elastic energy
          (m_pState->m_pConstant_NematicForce)->m_ActiveEnergy+=dE_nematic_force;
          // Update area for the constant area system
-         if((m_pState->GetApply_Constant_Area())->GetState()==true)
-         (m_pState->GetApply_Constant_Area())->UpdateArea(oldarea_FixedTotArea,newarea_FixedTotArea);
+         if((m_pState->GetTotalAreaCoupling())->GetState()==true)
+         (m_pState->GetTotalAreaCoupling())->UpdateArea(oldarea_FixedTotArea,newarea_FixedTotArea);
 
          m_Move=true;
            

@@ -39,7 +39,7 @@ public:
     Three_Edge_Scission(int period, State *pState);
     ~Three_Edge_Scission();
     void initialize();
-    bool MCMove(double * TotalEnergy, RNG *rng, GenerateCNTCells *pGenCNT );
+    bool MCMove(int step, double * TotalEnergy, RNG *rng, GenerateCNTCells *pGenCNT );
 
 private:
     std::vector<triangle>       m_GhostT; // Some trinagles for initial storing
@@ -64,9 +64,10 @@ private:
 
     bool DoAFussion(pair_pot_triangle pair);
     triangle * CreateATriangleFromAPotentialTriangle(pot_triangle &p1);
-
+    bool MCScissionMove(int step, double * TotalEnergy, RNG *rng);
+    bool MCFussionMove(int step, double * TotalEnergy, RNG *rng);
     double m_Beta;
-
+    int m_Period;
     double  UpdateEnergy();
 
 public:
@@ -74,7 +75,8 @@ public:
     std::vector<links*>         m_pGhostL;  // some edges for  ...
 
 
-
+template<typename T>
+void KeepOneOccurrence(std::vector<T*> &vect);
 
 
     

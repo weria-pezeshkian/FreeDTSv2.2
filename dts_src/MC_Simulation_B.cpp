@@ -46,10 +46,10 @@ std::cout<<std::setprecision( Precision );
 Nfunction f;
 double R=pState->m_R_Vertex;   /// Move Vertex  size
 double RB=pState->m_R_Box;   /// box move size
-    m_Beta = (pState->m_Beta);  // temprature
 int ini=pState->m_Initial_Step;  	// initial step for the Simulation; usually zero
 int final=pState->m_Final_Step;  	// final step for the Simulation
 int box_centering_f = pState->m_Centering; // box centering
+    
 m_minAngle = pState->m_MinFaceAngle;
 m_Lmin2    = pState->m_MinVerticesDistanceSquare;
 m_Lmax2    = pState->m_MaxLinkLengthSquare;
@@ -64,7 +64,7 @@ bool Targeted_State = pState->m_Targeted_State;
 #ifdef _OPENMP
     if(Targeted_State==true)
     {
-        std::cout<<"targeted thread---> id "<<omp_get_thread_num()<<" beta "<<m_Beta<<"\n";
+        std::cout<<"targeted thread---> id "<<omp_get_thread_num()<<" beta "<<(pState->m_Beta)<<"\n";
     }
 #endif
     
@@ -187,26 +187,27 @@ if(mc_linkflip == true || mc_vertexmove == true)
 }
 int TotNoVertex=m_pSurfV.size();
     
-//------ dynamic box algorithm
+//------> dynamic box algorithm
     DynamicBox *mc_box = pState->GetDynamicBox();
     mc_box->initialize();
     int BoxChangePeriodTau = mc_box->GetTau();
-//------------dynamic topology algorithm -----------
+//----> dynamic topology algorithm -----------
     DynamicTopology *mc_topology = pState->GetDynamicTopology();
     mc_topology->initialize();
-//------edge treatment -----
+//------> edge treatment -----
     OpenEdgeEvolution * mc_edge_evo = pState->GetOpenEdgeEvolution();
     mc_edge_evo->Initialize();
-//---- voulme coupling
+//----> voulme coupling
     VolumeCoupling *volumecoupling = pState->GetVolumeCoupling();
     volumecoupling->Initialize(m_pActiveT);
+//---> global curvature coupling
+    GlobalCurvature * gc_globalcurvature = pState->GetGlobalCurvature();
+    gc_globalcurvature->Initialize(m_pActiveV);
     
     CoupleToWallPotential * mc_rigidwall = pState->GetRigidWallCoupling();
     if(mc_rigidwall->GetState()==true)
     mc_rigidwall->Initialize(m_pActiveV);
-    CouplingtoFixedGlobalCurvature * gc_globalcurvature = pState->GetGlobalCurvature();
-    if (gc_globalcurvature->GetState() == true)
-    gc_globalcurvature->CalculateGlobalVariables(m_pActiveV);
+
     SpringPotentialBetweenTwoGroups * harmonic2groups = pState->Get2GroupHarmonic();
     if(harmonic2groups->GetState()==true)
     harmonic2groups->MakeGroups(m_pActiveV, pState->m_IndexFileName);
@@ -235,40 +236,10 @@ int TotNoVertex=m_pSurfV.size();
     int LRate = 0;
     int boxrate = 0;
     int totalinmove = 0;
-//=======================================================================
 //============================= Energy Files =================================
-//======================================================================
-    std::string outenergyfile=gfilename+"-en.xvg";
-    std::ofstream energyfile;
-    energyfile<<std::fixed;
-    energyfile<<std::setprecision( Precision );
-    // if it is not a restart. you should clean it first
-    if((pState->m_RESTART).restartState==true)
-    {
-        energyfile.open(outenergyfile.c_str(),std::fstream::app);
-        // more here, make sure the file has info only up to the crash point
-    }
-    else
-        energyfile.open(outenergyfile.c_str());
-    if((pState->m_RESTART).restartState==false)
-    {
-    energyfile<<" ## mcstep  energy ";
-    if((m_pState->m_pConstant_NematicForce)->m_F0!=0)
-        energyfile<<"  active_nematic_energy ";
-    if(BoxChangePeriodTau!=0)
-        energyfile<<" Lx  Ly  Lz ";
-    if (gc_globalcurvature->GetState() == true)
-        energyfile<<" global_curvature_energy  ";
-    if(harmonic2groups->GetState()==true)
-        energyfile<<" harmonic_energy harmonic_force distance ";
-    if(volumecoupling->GetState()==true)
-        energyfile<<" volume area ";
-    if((pState->GetApply_Constant_Area())->GetState()==true)
-        energyfile<<" area_constantArea ";
-    if(ActiveTwoState->GetState() == true)
-    energyfile<<" ActiveEnergy DeltaN ";
-    energyfile<<std::endl;
-    }
+//---> time seri file open: energy file
+    m_pState->m_pTimeSeriesDataOutput->OpenTimeSeriesDataOutput();
+
 
 //======================
 #if TEST_MODE == Enabled
@@ -280,8 +251,6 @@ int TotNoVertex=m_pSurfV.size();
     std::cout<<"---> Running simulation from  "<<ini<<" to "<<final<<std::endl;
 for (int mcstep=ini;mcstep<final+1;mcstep++)
 {
-    //=========Beginning of one MC move
-
     double VerexORbox=0;
     if( BoxChangePeriodTau!=0){
         VerexORbox=Random1.UniformRNG(1.0)*double(BoxChangePeriodTau);
@@ -395,8 +364,8 @@ for (int mcstep=ini;mcstep<final+1;mcstep++)
     
     //== change topology
     {
-    double thermal=Random1.UniformRNG(1.0);
-    bool top_move = mc_topology->MCMove(tot_Energy, &Random1, (&CNT));
+        double thermal=Random1.UniformRNG(1.0);
+        bool top_move = mc_topology->MCMove(mcstep, tot_Energy, &Random1, (&CNT));
     }
 
 //==== Active Inclsuion exchange two state; as these movie are indepenednt of the energy based move, the have no conditions
@@ -425,33 +394,15 @@ if((pState->m_TRJTSI).tsiPeriod!=0 && mcstep%((pState->m_TRJTSI).tsiPeriod)==0 )
     std::string file=gfilename+f.Int_to_String(int(mcstep/(pState->m_TRJTSI).tsiPeriod))+"."+TSIExt;
    TSIFile.WriteTSI(mcstep,file, m_pActiveV, m_pActiveT, m_pInclusions);
 }
-if( pState->m_OutPutEnergy_periodic!=0  && mcstep%(pState->m_OutPutEnergy_periodic)==0)
-{
-    energyfile<<mcstep<<"   "<<*tot_Energy<<"   ";
-    if((m_pState->m_pConstant_NematicForce)->m_F0!=0)
-    energyfile<<(m_pState->m_pConstant_NematicForce)->m_ActiveEnergy<<"  ";
-    if(BoxChangePeriodTau!=0)
-    energyfile<<(*m_pBox)(0)<<"  "<<(*m_pBox)(1)<<"  "<<(*m_pBox)(2)<<"  ";
-    if (gc_globalcurvature->GetState() == true)
-    energyfile<<gc_globalcurvature->GetEnergy()<<"  ";
-    if(harmonic2groups->GetState()==true)
-      energyfile<<harmonic2groups->GetEnergy()<<"  "<<harmonic2groups->GetForce()<<"  "<<harmonic2groups->GetDistance()<<"  ";
-    if(volumecoupling->GetState()==true )  
-    energyfile<<volumecoupling->GetTotalVolume()<<"   "<<volumecoupling->GetTotalArea()<<"  ";
+//--> write energy and other info into the file output-en.xvg
+    m_pState->m_pTimeSeriesDataOutput->WrireTimeSeriesDataOutput(mcstep);
 
-    
-    
-    if((pState->GetApply_Constant_Area())->GetState()==true)
-     energyfile<<"   "<<(pState->GetApply_Constant_Area())->GetTotalArea()<<"  ";
-    
-    if(ActiveTwoState->GetState() == true)
-    {
-        energyfile<<*(ActiveTwoState->GetActiveEnergy())<<"   "<<ActiveTwoState->GetDeltaN()<<"   ";
+if( pState->m_pTimeSeriesDataOutput->GetPeriodic()!=0  && mcstep%(pState->m_pTimeSeriesDataOutput->GetPeriodic())==0)
+{
+    if(ActiveTwoState->GetState() == true){
+        // I do not know what this suppose to do
         *(ActiveTwoState->GetActiveEnergy()) = 0;
     }
-    
-    energyfile<<std::endl;
-    
     //======= write acceptance rate
     if(Targeted_State==true)
         {
@@ -473,8 +424,9 @@ if( pState->m_OutPutEnergy_periodic!=0  && mcstep%(pState->m_OutPutEnergy_period
 }
 if(Targeted_State==true)
 if((pState->m_RESTART).restartPeriod!=0 && mcstep%((pState->m_RESTART).restartPeriod)==0){
-         energyfile.flush(); // the eneergy file should be flushed first
-         pRestart->WrireRestart(mcstep,gfilename,(pState->m_pMesh),R,RB);
+    
+        m_pState->m_pTimeSeriesDataOutput->FlushTimeSeriesFile();
+        pRestart->WrireRestart(mcstep,gfilename,(pState->m_pMesh),R,RB);
 }
 //========== Optimiszing R and RB
 if(mcstep%500==0) // Optimize R and RB
@@ -516,10 +468,7 @@ if(mcstep%500==0) // Optimize R and RB
 }// Optimize R and RB
 }//End of Sim Loop for (int i=ini;i<final+1;i++)
 //================ checking for energy leak, both should be equal
-//=== closing all the open files
-    {
-        energyfile.close();
-    }
+
     
     DetailedSystemEnergy();
     double fen = SystemEnergy();

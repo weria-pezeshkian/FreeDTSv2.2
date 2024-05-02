@@ -13,21 +13,21 @@ This object affects the simulation results in every step. It is a global couplin
 #include "vertex.h"
 #include "triangle.h"
 #include "links.h"
-class CouplingtoFixedGlobalCurvature
-{
+#include "GlobalCurvature.h"
+
+class CouplingtoFixedGlobalCurvature : public  GlobalCurvature {
+    
 public:
-    CouplingtoFixedGlobalCurvature();
-    CouplingtoFixedGlobalCurvature(bool state);
-    CouplingtoFixedGlobalCurvature(bool state,  double K, double GlobalC0);
+    CouplingtoFixedGlobalCurvature(double K, double GlobalC0);
     ~CouplingtoFixedGlobalCurvature();
 
        inline bool GetState()                           {return m_State;} // if the coupling is active
-       inline double GetEnergy()                           {return m_Energy;} // Only part of energy asscoiated with this class
+       inline double GetEnergy()                        {return m_Energy;} // Only part of energy asscoiated with this class
     
 public:
-    void CalculateGlobalVariables(std::vector<vertex *> Ver);
-    double CalculateEnergyChange(double DA, double DC);
-    void UpdateEnergyChange(double DA, double DC);
+    void Initialize(std::vector<vertex *> &all_vertices);
+    void UpdateEnergyChange(double delta_area, double delta_curvature);
+    double CalculateEnergyChange(double delta_area, double delta_curvature);
 
 private:
     double m_K;        // energy coupling constant (in the constructor it will be devided by 2)

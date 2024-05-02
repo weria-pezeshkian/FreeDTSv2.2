@@ -214,13 +214,16 @@ double Energy::Energy_OneVertexMove(vertex * pVeretx){
 double Energy::TwoInclusionsInteractionEnergy(links * lp)
 {
 
+   // std::cout<<" here 1\n";
     vertex * v1 = lp->GetV1();
     vertex * v2 = lp->GetV2();
     double e=0;
-    
+   // std::cout<<" here 2\n";
+
     bool has1=v1->VertexOwnInclusion();
     bool has2=v2->VertexOwnInclusion();
-    
+   // std::cout<<" here 3\n";
+
     if(has1==true && has2==true)
     {
         int id1=(v1->GetInclusion())->GetInclusionTypeID();

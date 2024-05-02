@@ -17,6 +17,64 @@ MESH::~MESH()
 {
     
 }
+void MESH::UpdateMinMaxLength(double lmin, double lmax){
+ 
+    m_MinLength = lmin;
+    m_MaxLength = lmax;
+    return;
+}
+void MESH::UpdateMinAngle(double angle){
+ 
+    m_MinAngle = angle;
+    return;
+}
+void MESH::RemoveFromLinkList(links* z, std::vector<links*> &vect){
+    vect.erase(std::remove(vect.begin(), vect.end(), z), vect.end());
+    return;
+}
+void MESH::RemoveFromTriangleList(triangle* z, std::vector<triangle*> &vect)
+{
+    vect.erase(std::remove(vect.begin(), vect.end(), z), vect.end());
+    return;
+}
+void MESH::RemoveFromVertexList(vertex* z, std::vector<vertex*> &vect){
+    
+    vect.erase(std::remove(vect.begin(), vect.end(), z), vect.end());
+    return;
+}
+void MESH::MakeALinkGhost(links* l){
+    RemoveFromLinkList(l,m_pActiveL);
+    RemoveFromLinkList(l,m_pHL);
+    RemoveFromLinkList(l,m_pMHL);
+    m_pGhostL.push_back(l);
+    return;
+}
+void MESH::MakeATriangleGhost(triangle* tri){
+    RemoveFromTriangleList(tri,m_pActiveT);
+    m_pGhostT.push_back(tri);
+    return;
+}
+void  MESH::CenterMesh(){
+    double xcm=0;
+    double ycm=0;
+    double zcm=0;
+    for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it){
+        xcm+=(*it)->GetVXPos();
+        ycm+=(*it)->GetVYPos();
+        zcm+=(*it)->GetVZPos();
+    }
+    xcm=xcm/double(m_pActiveV.size());
+    ycm=ycm/double(m_pActiveV.size());
+    zcm=zcm/double(m_pActiveV.size());
+    
+    for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it){
+        (*it)->UpdateVXPos((*it)->GetVXPos()-xcm+(*m_pBox)(0)/2.0);
+        (*it)->UpdateVYPos((*it)->GetVYPos()-ycm+(*m_pBox)(1)/2.0);
+        (*it)->UpdateVZPos((*it)->GetVZPos()-zcm+(*m_pBox)(2)/2.0);
+    }
+    
+    return;
+}
 void MESH::GenerateMesh(MeshBluePrint meshblueprint)
 {
     m_Box = meshblueprint.simbox;
@@ -252,29 +310,21 @@ void MESH::GenerateMesh(MeshBluePrint meshblueprint)
     
     std::cout<<"---> active vertex "<<m_pActiveV.size()<<" surf vertex "<<m_pSurfV.size()<<"  edge vertex "<<m_pEdgeV.size()<<" -- \n";
 
-
-
-    //====== ghost
+    //====== create ghost
     int lid = 2*(m_pMHL.size())+m_pEdgeL.size();
     int tid = m_pActiveT.size() ;
     int vid = m_pActiveV.size() ;
 
-    
-    for (int i=0;i<100;i++){
-        links teml(lid);
-        m_GhostL.push_back(teml);
-        lid++;
+    for (int i = 0; i < m_pActiveV.size(); ++i) {
+        m_GhostL.push_back(links(lid++));
     }
-    for (int i=0;i<100;i++){
-        triangle temt(tid);
-        m_GhostT.push_back(temt);
-        tid++;
+    for (int i = 0; i < m_pActiveV.size(); ++i) {
+        m_GhostT.push_back(triangle(tid++));
     }
-    for (int i=0;i<100;i++){
-        vertex temv(vid);
-        m_GhostV.push_back(temv);
-        vid++;
+    for (int i = 0; i < m_pActiveV.size(); ++i) {
+        m_GhostV.push_back(vertex(vid++));
     }
+
     for (std::vector<links>::iterator it = m_GhostL.begin() ; it != m_GhostL.end(); ++it)
         m_pGhostL.push_back(&(*it));
     
@@ -348,24 +398,4 @@ MeshBluePrint MESH::Convert_Mesh_2_BluePrint(MESH *mesh)
     
     return BluePrint;
 }
-void  MESH::CenterMesh(){
-    double xcm=0;
-    double ycm=0;
-    double zcm=0;
-    for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it){
-        xcm+=(*it)->GetVXPos();
-        ycm+=(*it)->GetVYPos();
-        zcm+=(*it)->GetVZPos();
-    }
-    xcm=xcm/double(m_pActiveV.size());
-    ycm=ycm/double(m_pActiveV.size());
-    zcm=zcm/double(m_pActiveV.size());
-    
-    for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it){
-        (*it)->UpdateVXPos((*it)->GetVXPos()-xcm+(*m_pBox)(0)/2.0);
-        (*it)->UpdateVYPos((*it)->GetVYPos()-ycm+(*m_pBox)(1)/2.0);
-        (*it)->UpdateVZPos((*it)->GetVZPos()-zcm+(*m_pBox)(2)/2.0);
-    }
-    
-    return;
-}
+

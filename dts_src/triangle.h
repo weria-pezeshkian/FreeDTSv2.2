@@ -25,6 +25,8 @@ public:
         inline double GetArea()                  	{return m_Area;}
     	inline Vec3D GetAreaVector()                {return m_AreaVector;}
         inline Vec3D GetNormalVector()              {return m_Normal;}
+    
+//--- only needed for visualization
         inline bool GetRepresentation()             {return m_Representation;}
 
 public:
@@ -39,10 +41,12 @@ private:
     vertex *m_V2;
     vertex *m_V3;
   int m_ID;
-  bool m_Representation;
   Vec3D m_Normal;
   Vec3D m_AreaVector;
   double m_Area;
+    
+    bool m_Representation;
+
 
 };
 

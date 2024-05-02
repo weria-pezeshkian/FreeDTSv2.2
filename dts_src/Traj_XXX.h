@@ -9,18 +9,17 @@
 #include "Nfunction.h"
 #include "CreateMashBluePrint.h"
 
-class Traj_XXX
-{
+class Traj_XXX {
 public:
     
-    Traj_XXX(Vec3D *pBox, std::string tsiFolder_name);
-     ~Traj_XXX();
+        Traj_XXX(Vec3D *pBox, std::string tsiFolder_name);
+        ~Traj_XXX();
 
 
 
 
 
-        inline int GetStep()                     			  {return m_Step;}
+        inline int GetStep()                     			      {return m_Step;}
         inline bool GetCondition()                     			  {return m_Condition;}
 
 public:

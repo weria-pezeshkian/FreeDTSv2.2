@@ -3,12 +3,10 @@
 
 #include "Curvature.h"
 #include "Tensor2.h"
-Curvature::Curvature()
-{
+Curvature::Curvature(){
     
 }
-Curvature::~Curvature()
-{
+Curvature::~Curvature(){
 
 }
 void Curvature::SurfVertexCurvature(vertex * pvertex)
@@ -244,16 +242,10 @@ void Curvature::SurfVertexCurvature(vertex * pvertex)
         
         
     }
-
-
-    
     c1=c1/Area;
     c2=c2/Area;
     m_pVertex->UpdateCurvature(c1,c2);
-    
-    
 
- 
 }
 void Curvature::EdgeVertexCurvature(vertex * pvertex)
 {
@@ -353,6 +345,33 @@ Tensor2 Curvature::Householder(Vec3D N)
     
     return Hous;
 }
+/*
+ Tensor2 Curvature::Householder(Vec3D N)
+ {
+     Tensor2 Hous;
+
+     // Directly set Zk(2) to 1.0, avoiding unnecessary initialization
+     Vec3D Zk(0.0, 0.0, 1.0);
+     Zk += N;
+     const double ZkNorm = Zk.norm();
+
+     // Avoid normalization if ZkNorm is close to zero
+     if (ZkNorm > std::numeric_limits<double>::epsilon()) {
+         Zk *= 1.0 / ZkNorm;
+         
+         Tensor2 I('I');
+         Tensor2 W = Hous.makeTen(Zk);
+         Hous = (I - W * 2) * (-1);
+     }
+     else {
+         // Handle the case where ZkNorm is close to zero to prevent division by zero
+         // You might want to implement specific logic for this case
+         // For example, returning a default Tensor2
+     }
+
+     return Hous;
+ }
+ */
 /// normal vector update
 Vec3D Curvature::Calculate_Vertex_Normal(vertex *pvertex)
 {

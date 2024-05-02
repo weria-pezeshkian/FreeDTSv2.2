@@ -18,7 +18,7 @@ public:
     DynamicTopology();
     virtual ~DynamicTopology();
 
-    virtual bool MCMove(double* totalenergy, RNG *rng, GenerateCNTCells* pGenCNT) = 0;
+    virtual bool MCMove(int step, double* totalenergy, RNG *rng, GenerateCNTCells* pGenCNT) = 0;
     virtual void initialize() = 0;
     
 
@@ -31,7 +31,7 @@ public:
 
     
     void initialize();
-    bool MCMove(double * TotalEnergy, RNG *rng, GenerateCNTCells *pGenCNT );
+    bool MCMove(int step, double * TotalEnergy, RNG *rng, GenerateCNTCells *pGenCNT );
 };
 
 #endif

@@ -1,20 +1,15 @@
-#include "Apply_Constant_Area.h"
+#include "CouplingTotalAreaToHarmonicPotential.h"
 #include "Nfunction.h"
 
 
-Apply_Constant_Area::Apply_Constant_Area()
-{
-    m_State = false;
-
-}
-Apply_Constant_Area::Apply_Constant_Area(bool State, int eqsteps, double gamma,  double K0)
+CouplingTotalAreaToHarmonicPotential::CouplingTotalAreaToHarmonicPotential(int eqsteps, double gamma,  double K0)
 {
     double pi = acos(-1);
      m_6SQPI = 1.0/(6.0*sqrt(pi));   /// 1/6pi^1/2    
     m_TotalArea = 0;
     m_NoEQStep = eqsteps;
     m_K0 = K0;
-    m_State = State;
+    m_State = true;
     m_Gamma  = gamma;
     m_K0 = m_K0/2;
     m_NT = 1;
@@ -27,24 +22,12 @@ Apply_Constant_Area::Apply_Constant_Area(bool State, int eqsteps, double gamma, 
 
     
 }
-Apply_Constant_Area::~Apply_Constant_Area()
+CouplingTotalAreaToHarmonicPotential::~CouplingTotalAreaToHarmonicPotential()
 {
     
-}
-double Apply_Constant_Area::AreaofTrianglesAroundVertex(vertex *pv)
-{
-    double A=0.0;
-    
-    
-    std::vector <triangle *> pvT=pv->GetVTraingleList();
-    for (std::vector<triangle *>::iterator it = pvT.begin() ; it != pvT.end(); ++it)
-		A+=(*it)->GetArea();
-
-    
-    return A;
 }
 //==========================================================
-void Apply_Constant_Area::Initialize(std::vector<triangle *> pTriangle)
+void CouplingTotalAreaToHarmonicPotential::Initialize(std::vector<triangle *> &pTriangle)
 {
     double A=0.0;
 	m_NT = double(pTriangle.size());
@@ -61,7 +44,7 @@ void Apply_Constant_Area::Initialize(std::vector<triangle *> pTriangle)
     m_K0 = m_K0/m_NT/3*16;       // making the K0 t dependent   E=0.5*N*K*(A/A0-1)^2; K=0.5*N*K/A0^2==> E=0.5*N*K/A0^2(A-A0)^2
 
 }
-double Apply_Constant_Area::GetEnergyChange(int step, double oldarea, double newarea)
+double CouplingTotalAreaToHarmonicPotential::CalculateEnergyChange(int step, double oldarea, double newarea)
 {
 
     double alpha=1;
@@ -81,10 +64,21 @@ double Apply_Constant_Area::GetEnergyChange(int step, double oldarea, double new
 
     return DE;
 }
-void Apply_Constant_Area::UpdateArea(double oldarea,  double newarea)
+void CouplingTotalAreaToHarmonicPotential::UpdateArea(double oldarea,  double newarea)
 {
 
     m_TotalArea+=newarea-oldarea;
 }
+double CouplingTotalAreaToHarmonicPotential::AreaofTrianglesAroundVertex(vertex *pv)
+{
+    double A=0.0;
+    
+    
+    std::vector <triangle *> pvT=pv->GetVTraingleList();
+    for (std::vector<triangle *>::iterator it = pvT.begin() ; it != pvT.end(); ++it)
+        A+=(*it)->GetArea();
 
+    
+    return A;
+}
 

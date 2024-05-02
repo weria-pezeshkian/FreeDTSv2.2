@@ -7,7 +7,6 @@
 #include "Vec3D.h"
 #include "Energy.h"
 #include "GenerateCNTCells.h"
-#include "CouplingtoFixedGlobalCurvature.h"
 #include "SpringPotentialBetweenTwoGroups.h"
 #include "CNTCell.h"
 #include "triangle.h"
@@ -55,7 +54,6 @@ private:
     double *m_pLmin2;
     double *m_pLmax2;
     double *m_pminAngle;
-    CouplingtoFixedGlobalCurvature *m_pCFGC;
     SpringPotentialBetweenTwoGroups *m_pSPBTG;
 
 

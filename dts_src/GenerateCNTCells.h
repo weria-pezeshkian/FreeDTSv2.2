@@ -14,10 +14,7 @@ public:
 	GenerateCNTCells(std::vector< vertex* > ver,Vec3D cntsize,Vec3D *pBox);
 	~GenerateCNTCells();
 
-
-
-
-        inline std::vector <CNTCell *> GetAllCNTCells()           {return m_pAllCNTCells;}
+    inline std::vector <CNTCell *> GetAllCNTCells()           {return m_pAllCNTCells;}
     inline std::vector <double> GetCNTCellSize()        {return m_CNTCellSize;}
     inline std::vector <int> GetCNTCellNo()        {return m_CNTCellNo;}
 
@@ -28,9 +25,9 @@ public:
     
 
 //  void AddtoVertexList(vertex * z);
-
     void Generate();
 
+    // bool 
 private:
 std::vector <CNTCell *> m_pAllCNTCells;
 std::vector <CNTCell > m_AllCNTCells;

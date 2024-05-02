@@ -1,0 +1,76 @@
+#if !defined(AFX_AbstractEnergy_H)
+#define AFX_AbstractEnergy_H
+#include <iostream>
+
+// Define a Abstract class with a virtual function and some main function
+/*
+=======================================================
+ developed 2024 by Weria
+ Weria Pezeshkian (weria.pezeshkian@gmail.com)
+ Copyright (c) Weria Pezeshkian
+This class is a Abstract class for system energy. Only includes the individual vertex and inclsuion energy
+========================================================
+*/
+class  AbstractEnergy {
+public:
+    AbstractEnergy(){
+        m_Lambda = 0;        // line tension
+        m_Kappa_Geo = 0;    // geodesic curvature rigidity for edge V
+        m_Kappa_Norm = 0;   // normal curvature rigidty for edge V
+        m_kappa = 0;        // bending rigidity
+        m_kappa_G = 0;      // gaussian curvature rigidity
+        m_MeanCurvature = 0;
+    }
+    virtual ~ AbstractEnergy(){
+        
+    }
+   // virtual  double CalaculateEnergyofSingleVertex(vertex * pvertex) = 0;
+    virtual inline std::string GetDerivedDefaultReadName() {return "";}
+    inline static std::string GetBaseDefaultReadName() {return "EnergyMethod";}
+    
+//---> real functions
+    inline double GetEnergy()               const                 {return m_TotalEnergy;}
+    void UpdateTotalEnergy(double en){
+       
+        m_TotalEnergy = en;
+        return;
+    }
+    inline double GetKappa()                          {return m_kappa;}
+
+    
+    void SetSurfRigidity(double kappa, double kappa_g, double c0){
+        m_kappa = kappa;
+        m_kappa_G = kappa_g;
+        m_MeanCurvature = c0;
+        return;
+    }
+    void SetEdgeRigidity(double lambda, double kappa_geo, double kappa_norm){
+        m_Lambda = lambda;
+        m_Kappa_Geo = kappa_geo;
+        m_Kappa_Norm = kappa_norm;
+        return;
+    }
+    void SetSizeCoupling(double ka, double a0, double kl, double l0){
+        m_Ka = ka;
+        m_Area0 = a0;
+        m_Kl = kl;
+        m_l0 = l0;
+        return;
+    }
+private:
+    double m_TotalEnergy;
+    
+private:
+    double m_Lambda;    // line tension
+    double m_Kappa_Geo;  // geodesic curvature rigidity for edge V
+    double m_Kappa_Norm;  // normal curvature rigidty for edge V
+    double m_kappa; // bending rigidity
+    double m_kappa_G; // gaussian curvature rigidity
+    double m_MeanCurvature; // gaussian curvature rigidity
+    double m_Ka;          // coupling for mean area
+    double m_Area0;     // mean area of v
+    double m_Kl;        // couple for mean edge length
+    double m_l0;        // mean edge length
+};
+
+#endif

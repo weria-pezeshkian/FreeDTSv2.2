@@ -2,11 +2,15 @@
 #include <math.h>
 #include <limits.h>
 #include "Vec3D.h" 
-
+/*
+ Perhaps we could use array so we do not have if condition for accessing membranes 
+ */
 
 Vec3D::Vec3D(double x, double y, double z) : m_X(x), m_Y(y), m_Z(z) {}
 
 double& Vec3D::operator()(const int n) {
+   // if (n < 0 || n >= 3) throw std::out_of_range("Index out of range");
+    
     if (n == 0) return m_X;
     else if (n == 1) return m_Y;
     else return m_Z;

@@ -26,10 +26,14 @@ State::State(std::vector <std::string> argument)
 #endif
 
     //============ Initialization of all inputs and data structures for input
-    m_pDynamicBox = new NoBoxChange;
-    m_pDynamicTopology = new ConstantTopology;
-    m_pOpenEdgeEvolution = new NoEvolution;
-    m_pVolumeCoupling    = new NoCoupling;
+    m_pTimeSeriesDataOutput             = new TimeSeriesDataOutput(this);
+    m_pDynamicBox                       = new NoBoxChange;
+    m_pDynamicTopology                  = new ConstantTopology;
+    m_pOpenEdgeEvolution                = new NoEvolution;
+    m_pVolumeCoupling                   = new NoCoupling;
+    m_pCoupleGlobalCurvature            = new NoGlobalCurvature;
+    m_pTotalAreaCoupling                = new NoTotalAreaCoupling;
+    m_pBoundary                         = new PBCBoundary;
     m_pConstant_NematicForce = &m_Constant_NematicForce;
     m_Argument = argument;
     m_Targeted_State = true;
@@ -73,7 +77,6 @@ State::State(std::vector <std::string> argument)
     m_MCMove.LinkFlip = 1;
     m_MCMove.InclusionMove_Angle = 1;
     m_MCMove.InclusionMove_Kawasaki = 1;
-    m_STRUC_ConstantArea.State = false;
     m_STRUC_ActiveTwoStateInclusion.state = false;
     m_STRUC_ActiveTwoStateInclusion.nametype1 = " ";
     m_STRUC_ActiveTwoStateInclusion.nametype2 = " ";
@@ -391,13 +394,28 @@ void State::ReadInputFile(std::string file)
             }
             else if (type == "EvolutionWithConstantVertex_B") {
                 
-                std::cout<<"---> warning: this algorthem for edge treatment has errors. It is up to you to use it \n";
+                std::cout<<"---> warning: this algorithm for edge treatment has errors. It is up to you to use it \n";
                 m_pOpenEdgeEvolution = new OpenEdgeEvolutionWithConstantVertex_B(period, this);
             }
             else {
                 
                 std::cout<<"---> error: unknown Open Edge Evolution type: "<<type<<"\n";
             }
+        }
+        else if(firstword == "GlobalCurvature")
+        {
+            std::string type;
+            double k,gc0;
+            input>>str>>type>>k>>gc0;
+            if(type == "CoupledToHarmonicPotential") {
+                m_pCoupleGlobalCurvature = new CouplingtoFixedGlobalCurvature(k,gc0);
+            }
+            else {
+                std::cout<<"---> error: this algorithm for global curvature is unknown \n";
+                std::cout<<"----------- no global curvature coupling with be applied \n";
+            }
+            getline(input,rest);
+            
         }
         else if(firstword == "Volume_Constraint")
         {
@@ -418,16 +436,25 @@ void State::ReadInputFile(std::string file)
             }
             getline(input,rest);
         }
-        else if(firstword == "Apply_Constant_Area")
-        {
-            std::string state;
-            m_STRUC_ConstantArea.State = false;
-            input>>str>>state>>(m_STRUC_ConstantArea.EQSteps)>>(m_STRUC_ConstantArea.Gamma)>>(m_STRUC_ConstantArea.K0);
-            if(state=="on" || state=="ON" || state=="On" || state=="yes" || state=="Yes" )
-                m_STRUC_ConstantArea.State = true;
-            Apply_Constant_Area C(m_STRUC_ConstantArea.State,m_STRUC_ConstantArea.EQSteps,m_STRUC_ConstantArea.Gamma,m_STRUC_ConstantArea.K0);
-            m_Apply_Constant_Area = C;
+        else if(firstword == "TotalAreaCoupling"){
             
+            std::string type;
+            int eq_steps;
+            double gamma , k0;
+            input>>str>>type;
+
+            if(type=="CouplingTotalAreaToHarmonicPotential"){
+                input>>eq_steps>>gamma>>k0;
+                m_pTotalAreaCoupling = new CouplingTotalAreaToHarmonicPotential(eq_steps,gamma,k0);
+            }
+            getline(input,rest);
+        }
+        else if(firstword == "TotalAreaCoupling"){
+            std::string type;
+            input>>str>>type;
+            if(type == "Spherical"){
+                //m_pBoundary
+            }
         }
         else if(firstword == "MinfaceAngle")
         {
@@ -436,7 +463,9 @@ void State::ReadInputFile(std::string file)
         }
         else if(firstword == "OutPutEnergy_periodic")
         {
-            input>>str>>m_OutPutEnergy_periodic;
+            int period;
+            input>>str>>period;
+            m_pTimeSeriesDataOutput->UpdatePeriod(period);
             getline(input,rest);
         }
         else if(firstword == "Restart_periodic")
@@ -447,23 +476,6 @@ void State::ReadInputFile(std::string file)
         else if(firstword == "TopologyFile")
         {
             input>>str>>m_TopologyFile;
-            getline(input,rest);
-        }
-        else if(firstword == "CouplingtoFixedGlobalCurvature")
-        {
-            std::string state;
-            double k,c0;
-            input>>str>>state>>k>>c0;
-            if(state == "yes" || state == "on")
-            {
-                CouplingtoFixedGlobalCurvature  CoupleGCurvature(true,k,c0);
-                m_CoupleGCurvature = CoupleGCurvature;
-            }
-            else
-            {
-                CouplingtoFixedGlobalCurvature  CoupleGCurvature(false,k,c0);
-                m_CoupleGCurvature = CoupleGCurvature;
-            }
             getline(input,rest);
         }
         else if(firstword == "HarmonicPotentialBetweenTwoGroups")

@@ -1,5 +1,6 @@
-#if !defined(AFX_vertex_H_8P4B21B8_C13C_5648_BF23_124095086234__INCLUDED_)
-#define AFX_vertex_H_8P4B21B8_C13C_5648_BF23_124095086234__INCLUDED_
+#if !defined(AFX_vertex_H_9P4B21B8_C13C_5648_BF23_124095086234__INCLUDED_)
+#define AFX_vertex_H_9P4B21B8_C13C_5648_BF23_124095086234__INCLUDED_
+#include "Voxel.h"
 #include "SimDef.h"
 #include "CNTCell.h"
 #include "Vec3D.h"
@@ -27,6 +28,9 @@ public:
         inline double GetVXPos()                            {return m_X;}
         inline double GetVYPos()                            {return m_Y;}
         inline double GetVZPos()                            {return m_Z;}
+        inline double GetXPos()                             {return m_X;}
+        inline double GetYPos()                             {return m_Y;}
+        inline double GetZPos()                             {return m_Z;}
         inline double GetArea()                             {return m_Area;}
         inline Tensor2  GetL2GTransferMatrix()              {return m_T_Local_2_Global;}
         inline Tensor2  GetG2LTransferMatrix()              {return m_T_Global_2_Local;}
@@ -45,6 +49,9 @@ public:
         inline std::vector <vertex *> GetVNeighbourVertex()     {return m_VNeighbourVertex;}
     
 public:
+    
+    bool SetCopy();            // Copies the key ellements into the old type
+    bool Reverse2PreviousCopy();  // reverse the edge to the value set at the time of MakeCopy()
   // A set of functions to update vertex variables
   void UpdateVXPos(double x);    // a function for update the x position of a vertex
   void UpdateVYPos(double y);   // a function for update the y position of a vertex
@@ -71,13 +78,21 @@ public:
   void RemoveFromTraingleList(triangle * z);
   void RemoveFromNeighbourVertex(vertex* z);
   void UpdateGroup(int z);
+  void UpdateVoxel(Voxel<vertex> * pVoxel);
 
   void UpdateSimTimeStep(int v);   // we should remove this function at some point
 
-    public:
+public:
     bool CheckCNT();
-    
+    bool VertexMoveIsFine(double dx,double dy, double dz,  double mindist, double maxdist);
+    bool CheckVoxel();
+    bool UpdateVoxelAfterAVertexMove(); // update the voxel after the move has happened.
+    //-- checks the face angles of trinagle around the vertex and with the next triangles
+    bool CheckFacesAfterAVertexMove(double &minangle);  // this checks if the faces are fine, if not, the move need to be rejected.
 
+private:
+    double SquareDistanceFromAVertex(vertex* pv2);
+    double SquareDistanceOfAVertexFromAPoint(double X, double Y, double Z, vertex* pv2);
 private:
 
     int m_ID;         // ID of the vertex, a unique number
@@ -101,8 +116,9 @@ private:
     Tensor2  m_T_Local_2_Global;         //  Local to global transformation matrix
     Tensor2  m_T_Global_2_Local;        //  global to local transformation matrix
     std::string m_GroupName;
-    
-    
+     Voxel<vertex> * m_pVoxel;
+   // Voxel * m_pVoxel;
+
     
     
 public:
@@ -122,6 +138,33 @@ public:
     links * m_pPrecedingEdgeLink;// preceding link at the edge
     
     
+// members for copying.
+private:
+    double m_OldX;       // X coordinate
+    double m_OldY;       // Y coordinate
+    double m_OldZ;       // Z coordinate
+    std::vector <triangle *> m_OldVTraingleList;  // A list holding all the nighbouring triangles
+    std::vector <links *> m_OldVLinkList;      // A list holding all the nighbouring edges (linkss)
+    std::vector <vertex *> m_OldVNeighbourVertex; // A list holding all the nighbouring vertexes
+    inclusion *m_OldpInclusion;                    // pointer to an inclusion that the vertex hold (could be empty)
+    bool m_OldOwnInclusion;                        // to check if the vertex own any inclusion
+    double m_OldArea;                              // area of the vertex
+    CNTCell * m_OldCNTCell;                        // a unitcell that the vertex belong to at any point of the simulation, it will be chnage during a simulation
+    int m_OldGroup;            // Id of a group that the vertex belong too
+    Vec3D m_OldNormal;
+    std::vector<double> m_OldCurvature;
+    double m_OldEnergy;
+    Tensor2  m_OldT_Local_2_Global;         //  Local to global transformation matrix
+    Tensor2  m_OldT_Global_2_Local;        //  global to local transformation matrix
+    std::string m_OldGroupName;
+    Voxel<vertex> * m_OldpVoxel;
+    double m_OldGeodesic_Curvature;          // Edge Vertex Curvature
+    double m_OldNormal_Curvature;          // Edge Vertex Curvature
+    double m_OldVLength;                       // length of the vertex
+    double m_OldLambda;                   // line tension
+    int m_OldVertexType;                   // 0 surface vertex; 1 edge vertex;
+    links * m_OldpEdgeLink;
+    links * m_OldpPrecedingEdgeLink;// preceding link at the edge
     
 };
 

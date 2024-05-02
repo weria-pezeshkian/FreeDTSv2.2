@@ -1,7 +1,6 @@
 #if !defined(AFX_VolumeCoupling_H)
 #define AFX_VolumeCoupling_H
 #include <iostream>
-#include "GenerateCNTCells.h"
 
 // Define a base class with a virtual function
 /*
