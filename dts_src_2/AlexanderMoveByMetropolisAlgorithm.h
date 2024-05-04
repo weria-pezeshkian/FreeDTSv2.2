@@ -24,6 +24,9 @@ private:
     bool CheckFacesAfterAVertexMove(double &minangle, vertex* p_vertex);
     double SystemEnergy(); // For bug finding only; slow function (should be deleted in production code)
 
+    inline  std::string GetDerivedDefaultReadName() {return "MetropolisAlgorithm";}
+    inline static std::string GetDefaultReadName() {return "MetropolisAlgorithm";}
+    
 private:
     double *m_pLmin2;
     double *m_pLmax2;

@@ -1,11 +1,11 @@
 #if !defined(AFX_MESH_H_INCLUDED_)
 #define AFX_MESH_H_INCLUDED_
 #include <map>
+#include "SimDef.h"
 #include "inclusion.h"
 #include "triangle.h"
 #include "vertex.h"
 #include "links.h"
-#include "SimDef.h"
 #include "CreateMashBluePrint.h"
 /*
  by Weria Pezeshkian (weria.pezeshkian@gmail.com)
@@ -22,6 +22,8 @@ public:
     inline std::vector<vertex*>     GetActiveV()        const       {return m_pActiveV;}
     inline std::vector<triangle*>   GetActiveT()        const       {return m_pActiveT;}
     inline std::vector<links*>      GetActiveL()        const       {return m_pActiveL;}
+    inline std::vector<vertex*>     GetSurfV()        const         {return m_pSurfV;}
+    inline std::vector<vertex*>     GetEdgeV()        const         {return m_pEdgeV;}
     inline std::vector<links*>      GetEdgeL()          const       {return m_pEdgeL;}
     inline std::vector<links*>      GetRightL()         const       {return m_pHL;}
     inline std::vector<links*>      GetLeftL()          const       {return m_pMHL;}
@@ -34,12 +36,22 @@ public:
     inline double                   GetMinLength()      const      {return m_MinLength;}
     inline double                   GetMaxLength()      const      {return m_MaxLength;}
     inline double                   GetMinAngle()       const      {return m_MinAngle;}
+    inline const bool               GetHasCrossedPBC()  const      {return m_MeshCrossedPBC;}
 
     
     std::vector <InclusionType*>    GetInclusionType()     const {return m_pInclusionType;}
+    
+    inline void UpdateCrossedPBC(bool newValue){
+        if(!m_MeshCrossedPBC)
+            m_MeshCrossedPBC = newValue;
+        return;
+    }
 
 
 public:
+
+    
+    
     void RemoveFromLinkList(links* z, std::vector<links*> &vect);
     void RemoveFromTriangleList(triangle* z, std::vector<triangle*> &vect);
     void RemoveFromVertexList(vertex* z, std::vector<vertex*> &vect);
@@ -101,7 +113,7 @@ private:
     double  m_TotalArea;
     double m_TotalVolume;
     double m_TotalCurvature;   // not sure about this, as this is more of a curvature class
-
+    bool m_MeshCrossedPBC;
     
 };
 

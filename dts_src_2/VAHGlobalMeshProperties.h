@@ -15,32 +15,41 @@ class triangle;
 class VAHGlobalMeshProperties  {
 public:
     VAHGlobalMeshProperties(State* pstate);
-    ~VAHGlobalMeshProperties();
+    virtual ~VAHGlobalMeshProperties();
 
 
-       inline double GetTotalVolume()             const     {return m_TotalVolume;}
-       inline double GetTotalArea()               const          {return m_TotalArea;}
-       inline double GetTotalMeanCurvature()      const            {return m_TotalH;}
+       inline double GetTotalVolume()             const             {return m_TotalVolume;}
+       inline double GetTotalArea()               const             {return m_TotalArea;}
+       inline double GetTotalMeanCurvature()      const             {return m_TotalCurvature;}
 
 public:
     
 
     
     
-    void Initialize(std::vector<triangle *> pTriangle);   ///
-    double VolumeofTrianglesAroundVertex(vertex * pVeretx);   /// this does not mean anything outside of this code
-    double SingleTriangleVolume(triangle * ptriangle);   /// and this one
+    void   Initialize();   //
+    ///
+protected:
+    double GetRingVolumeOfVertex(vertex * pVeretx);   /// this does not mean anything outside of this code
+    void CalculateRingVolumeOfVertex(vertex * pVeretx, double &vol, double &area);   //
+    void CalculateRingCurvatureOfVertex(vertex * pVeretx, double &curve, double &area);   //
+
+    ///
+private:
+    double CalculateSingleTriangleVolume(triangle * ptriangle);   // and this one
+    double CalculateSingleTriangleArea(triangle * ptriangle);   //
+    double CalculateSingleVertexArea(triangle * vertex);   //
 
     //=====
     
-    
+protected:
+    State* m_pState;
     
 private:
     double m_TotalVolume;
     double m_TotalArea;
-    int m_TotalH;
+    int m_TotalCurvature;    //  Delta A = h*m_TotalCurvature = h* Sum [2H_vA_v]
     
-    State* m_pState;
 
 
 };

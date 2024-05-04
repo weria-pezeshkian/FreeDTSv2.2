@@ -60,7 +60,7 @@ public:
 private:
     double m_TotalEnergy;
     
-private:
+protected:
     double m_Lambda;    // line tension
     double m_Kappa_Geo;  // geodesic curvature rigidity for edge V
     double m_Kappa_Norm;  // normal curvature rigidty for edge V

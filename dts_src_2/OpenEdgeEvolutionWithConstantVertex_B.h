@@ -47,7 +47,8 @@ private:
     bool Anglevalid4Vhole(vertex *v1, double minangle);
 
 
-
+    inline  std::string GetDerivedDefaultReadName() {return "EvolutionWithConstantVertex_B";}
+    inline static std::string GetDefaultReadName() {return "EvolutionWithConstantVertex_B";}
     
 private:
     links* CreateALink(vertex *);

@@ -16,8 +16,8 @@ public:
     AbstractVertexPositionIntegrator(){
         m_FreezGroupName = "";
         m_DR = 0.05;
-        m_UpdateRate_Surf = 1;
-        m_UpdateRate_Edge = 1;
+        m_NumberOfMovePerStep_Surf = 1;
+        m_NumberOfMovePerStep_Edge = 1;
     }
     virtual ~ AbstractVertexPositionIntegrator(){
         
@@ -27,8 +27,6 @@ public:
 
     inline std::string GetFreezGroupName()              {return m_FreezGroupName;}
     inline double GetDR()                               {return m_DR;}
-    inline double GetRate_Surf()                       {return m_UpdateRate_Surf;}
-    inline double GetRate_Edge()                       {return m_UpdateRate_Edge;}
     virtual inline std::string GetDerivedDefaultReadName() = 0;
     
     inline static std::string GetBaseDefaultReadName() {return "VertexPositionIntegrator";}
@@ -43,16 +41,35 @@ public:
         return;
     }
     void SetMoveRate(double update_rateSur, double update_rateEdge ){
-        m_UpdateRate_Surf = update_rateSur;
-        m_UpdateRate_Edge = update_rateEdge;
+        m_NumberOfMovePerStep_Surf = update_rateSur;
+        m_NumberOfMovePerStep_Edge = update_rateEdge;
         return;
     }
+    double GetAcceptanceRate(bool reset) {
+        // Check if there have been attempted moves to avoid division by zero
+        if (m_NumberOfAttemptedMoves == 0) {
+            return 0.0; // Return 0 if no moves have been attempted
+        }
+
+        // Calculate acceptance rate
+        double rate = static_cast<double>(m_AcceptedMoves) / m_NumberOfAttemptedMoves;
+
+        // Reset counters if requested
+        if (reset) {
+            m_NumberOfAttemptedMoves = 0;
+            m_AcceptedMoves = 0;
+        }
+
+        return rate;
+    }
     
-private:
+protected:
+    double m_NumberOfAttemptedMoves;
+    double m_AcceptedMoves;
     std::string m_FreezGroupName;
-    double m_DR;
-    double m_UpdateRate_Surf;
-    double m_UpdateRate_Edge;
+    double m_DR;                // size of the box change of a vertex
+    double m_NumberOfMovePerStep_Surf;   // how many updates should be made per step
+    double m_NumberOfMovePerStep_Edge;   // how many updates should be made per step
 
 };
 

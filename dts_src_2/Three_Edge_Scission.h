@@ -41,6 +41,9 @@ public:
     void initialize();
     bool MCMove(int step, double * TotalEnergy, RNG *rng, Voxelization<vertex>* p_Allvoxel );
 
+    inline  std::string GetDerivedDefaultReadName() {return "Three_Edge_Scission";}
+    inline static std::string GetDefaultReadName() {return "Three_Edge_Scission";}
+    
 private:
     std::vector<triangle>       m_GhostT; // Some trinagles for initial storing
     std::vector<links>          m_GhostL;

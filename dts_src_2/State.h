@@ -112,12 +112,14 @@
 #include "ConstantExternalField.h"
 //--- rigid boundries
 #include "AbstractBoundary.h"
+#include "RigidWallTypes.h"
 #include "Voxelization.h"
 //--- simulation
 #include "AbstractSimulation.h"
 #include "MC_Simulation.h"
 //--- accessory objects
 #include "RNG.h"
+#include "VAHGlobalMeshProperties.h"
 
 struct ParallelReplicaData {  // data structure for turning on and off certain moves
     ParallelReplicaData(){State = false;}
@@ -177,7 +179,7 @@ inline MESH                     *GetMesh()                                      
 inline Voxelization<vertex>     *GetVoxelization()                              {return m_pVoxelization;}
 inline AbstractSimulation           *GetSimulation()                                {return m_pSimulation;};
 //--- accessory objects
-inline const RNG            *GetRandomNumberGenerator()                 const { return m_RandomNumberGenerator; }
+inline  RNG            *GetRandomNumberGenerator()                 const { return m_RandomNumberGenerator; }
 //--- some constant variables
 inline std::vector <std::string> GetCommandLineArgument()                       {return m_Argument;}
 inline std::string               GetRunTag()                                    {return m_GeneralOutputFilename;}
@@ -211,13 +213,25 @@ private:
     AbstractDynamicBox            *m_pDynamicBox;
     AbstractDynamicTopology       *m_pDynamicTopology;
     AbstractOpenEdgeEvolution     *m_pOpenEdgeEvolution;
+    
+    VAHGlobalMeshProperties       *m_pVAHCalculator;
     AbstractVolumeCoupling        *m_pVolumeCoupling;
     AbstractGlobalCurvature       *m_pCoupleGlobalCurvature;
     AbstractTotalAreaCoupling     *m_pTotalAreaCoupling;
+    
+    /*
+     AbstractVolumeCoupling        *m_pVolumeCoupling = new AbstractVolumeCoupling(*m_pVAHCalculator);
+     AbstractGlobalCurvature       *m_pCoupleGlobalCurvature = = new AbstractGlobalCurvature(*m_pVAHCalculator);
+     AbstractTotalAreaCoupling     *m_pTotalAreaCoupling = new AbstractTotalAreaCoupling (*m_pVAHCalculator);
+     
+     */
+    
+    
     AbstractBoundary              *m_pBoundary;
     AbstractCurvature             *m_pCurvatureCalculations;
     AbstractSimulation            *m_pSimulation;
     AbstractEnergy                *m_pEnergyCalculator;
+
 //--- accessory objects
     RNG      *m_RandomNumberGenerator;
 //----

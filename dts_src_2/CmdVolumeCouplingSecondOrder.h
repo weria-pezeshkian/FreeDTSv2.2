@@ -23,6 +23,8 @@ public:
        inline double GetTotalArea()                  {return m_TotalArea;}
        inline bool GetState()                   {return true;}
     
+    inline  std::string GetDerivedDefaultReadName()  {return "SecondOrder";}
+    inline static std::string GetDefaultReadName() {return "SecondOrder";}
 
 
 public:

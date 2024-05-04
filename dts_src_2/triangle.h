@@ -26,6 +26,7 @@ public:
         inline vertex *GetV2()                  	{return m_V2;}
         inline vertex *GetV3()                  	{return m_V3;}
         inline double GetArea()                  	{return m_Area;}
+        inline double GetVolume()                   {return m_Volume;}
     	inline Vec3D GetAreaVector()                {return m_AreaVector;}
         inline Vec3D GetNormalVector()              {return m_Normal;}
     
@@ -34,9 +35,11 @@ public:
 
 public:
 void UpdateRepresentation(bool); 	/// this is for visulaization output and does not effect the simulation
-void UpdateNormal_Area(Vec3D *Box);     // A function to recalcualte the area and normal when the one of its vertices moves
-void UpdateVertex(vertex *v1,vertex *v2,vertex *v3); // If a link flips the triangle changes its vertices, this function do the job
+void UpdateNormal_Area(Vec3D *Box);     // this might be send to other classes
+void UpdateNormal_Area(Vec3D& norm, double& area);     // A function to uopdate normal and area
 
+void UpdateVertex(vertex *v1,vertex *v2,vertex *v3); // If a link flips the triangle changes its vertices, this function do the job
+void UpdateVolume(double vol);
 void UpdateID(int id); // this should not be used for active trinagles
 
 private:
@@ -47,7 +50,8 @@ private:
   Vec3D m_Normal;
   Vec3D m_AreaVector;
   double m_Area;
-    
+double m_Volume;
+
     bool m_Representation;
 
 

@@ -1,63 +1,148 @@
 
 #include "VAHGlobalMeshProperties.h"
 #include "State.h"
-VAHGlobalMeshProperties::VAHGlobalMeshProperties(State* pState){
-    m_pState = pState;
+VAHGlobalMeshProperties::VAHGlobalMeshProperties(State* pState) : m_pState(pState) {
+    m_TotalVolume = 0.0;
+    m_TotalArea = 0.0;
+    m_TotalCurvature = 0.0;
 }
 VAHGlobalMeshProperties::~VAHGlobalMeshProperties() {
     
 }
-double VAHGlobalMeshProperties::VolumeofTrianglesAroundVertex(vertex *pv)
+void VAHGlobalMeshProperties::CalculateRingVolumeOfVertex(vertex *pv, double &vol, double &area)
 {
-    double vol=0;
-    std::vector <triangle *> pvT=pv->GetVTraingleList();
-    for (std::vector<triangle *>::iterator it = pvT.begin() ; it != pvT.end(); ++it){
-        vol+=SingleTriangleVolume(*it);
+    vol = 0.0;
+    area = 0.0;
+    const std::vector<triangle *>& ring_triangles = pv->GetVTraingleList();
+    for (std::vector<triangle *>::const_iterator it = ring_triangles.begin() ; it != ring_triangles.end(); ++it){
+        vol+=CalculateSingleTriangleVolume(*it);
+        area += (*it)->GetArea();
+
     }
-    return vol;
+    return;
+}
+void VAHGlobalMeshProperties::CalculateRingCurvatureOfVertex(vertex *pv, double &curve, double &area)
+{
+    curve = 0.0;
+    area = 0.0;
+    const std::vector<vertex *>& ring_vertices = pv->GetVNeighbourVertex();
+    for (std::vector<vertex *>::const_iterator it = ring_vertices.begin() ; it != ring_vertices.end(); ++it){
+        curve +=(*it)->GetArea() * ((*it)->GetP1Curvature() + (*it)->GetP2Curvature());
+        area += (*it)->GetArea();
+
+    }
+    return;
 }
 //==========================================================
-void VAHGlobalMeshProperties::Initialize(std::vector<triangle *> pTriangle){
+void VAHGlobalMeshProperties::Initialize() {
     
-    double V=0.0;
-    double A=0.0;
+    m_TotalVolume = 0.0;
+    m_TotalArea = 0.0;
+    m_TotalCurvature = 0.0;
 
-    for (std::vector<triangle *>::iterator it = pTriangle.begin() ; it != pTriangle.end(); ++it)
-    {
-        V+=SingleTriangleVolume(*it);
-        A+=(*it)->GetArea();
+    // Get references to mesh components
+    const std::vector<triangle *>& pAllTriangles = m_pState->GetMesh()->GetActiveT();
+    const std::vector<vertex *>& pAllVertices = m_pState->GetMesh()->GetSurfV();
+
+    // Iterate over triangles and vertices
+    for (std::vector<triangle *>::const_iterator it = pAllTriangles.begin(); it != pAllTriangles.end(); ++it) {
+        m_TotalVolume += CalculateSingleTriangleVolume(*it);
+        m_TotalArea += (*it)->GetArea();
     }
-    m_TotalVolume = V;
-    m_TotalArea = A;
+    for (std::vector<vertex *>::const_iterator it = pAllVertices.begin(); it != pAllVertices.end(); ++it) {
+        m_TotalCurvature += (*it)->GetArea() * ((*it)->GetP1Curvature() + (*it)->GetP2Curvature());
+    }
     
     return;
 }
-double VAHGlobalMeshProperties::SingleTriangleVolume(triangle *pt){
-    double vol=0;
-    vertex* pv= pt->GetV1();
-    double area= pt->GetArea();
-    Vec3D Norm=pt->GetNormalVector();
-    Vec3D R (pv->GetVXPos(),pv->GetVYPos(),pv->GetVZPos());
-    
-    // If the system is PBC broken, then the volume will be wrong .....
-    {
-        vertex* pv2= pt->GetV2();
-        Vec3D R2 (pv2->GetVXPos(),pv2->GetVYPos(),pv2->GetVZPos());
-        R2=R2-R;
-        vertex* pv3= pt->GetV3();
-        Vec3D R3 (pv3->GetVXPos(),pv3->GetVYPos(),pv3->GetVZPos());
-        R3=R3-R;
-        
-        if(R2.dot(R2,R2)>4 || R3.dot(R3,R3)>4)
-        {
-            Nfunction f;
-            std::string sms="---> Error, the system crossed the PBC while using volume coupling; use a large box .. ";
-            std::cout<<sms<<std::endl;
-            exit(0);
-        }
+double VAHGlobalMeshProperties::CalculateSingleTriangleVolume(triangle *pTriangle) {
+   
+    if(m_pState->GetMesh()->GetHasCrossedPBC()){
+        *(m_pState->GetTimeSeriesLog()) << "---> the system has crossed the PBC while asking for volume coupling.";
+        *(m_pState->GetTimeSeriesLog()) << " SOLUTION:Restart the simulation and center the system. Also, activate the command for centering the box.";
+
+         exit(0);
     }
-    vol=area*(R.dot(Norm,R))/3.0;
-    return vol;
+    
+    double T_area = pTriangle->GetArea();
+    Vec3D Normal_v = pTriangle->GetNormalVector();
+    Vec3D Pos = pTriangle->GetV1()->GetPos();
+
+    // Compute triangle volume
+    return T_area * (Pos.dot(Normal_v, Pos)) / 3.0;
 }
+/*
+void triangle::CalculateTriangleNormal_Area(Vec3D *pBox) // normal vector update
+{
+Vec3D Box=(*pBox);
+    m_Area=0.0;
+    double x1=m_V1->GetVXPos();
+    double y1=m_V1->GetVYPos();
+    double z1=m_V1->GetVZPos();
+    double x2=m_V2->GetVXPos();
+    double y2=m_V2->GetVYPos();
+    double z2=m_V2->GetVZPos();
+    double x3=m_V3->GetVXPos();
+    double y3=m_V3->GetVYPos();
+    double z3=m_V3->GetVZPos();
+    
 
+    
+    double dx1=x2-x1;
+    if(fabs(dx1)>Box(0)/2.0)
+    {
+        if(dx1<0)
+        dx1=Box(0)+dx1;
+        else if(dx1>0)
+        dx1=dx1-Box(0);
+    }
+    double dy1=y2-y1;
+    if(fabs(dy1)>Box(1)/2.0)
+    {
+        if(dy1<0)
+        dy1=Box(1)+dy1;
+        else if(dy1>0)
+        dy1=dy1-Box(1);
+    }
+    double dz1=z2-z1;
+    if(fabs(dz1)>Box(2)/2.0)
+    {
+        if(dz1<0)
+        dz1=Box(2)+dz1;
+        else if(dz1>0)
+        dz1=dz1-Box(2);
+    }
+    double dx2=x3-x1;
+    if(fabs(dx2)>Box(0)/2.0)
+    {
+        if(dx2<0)
+        dx2=Box(0)+dx2;
+        else if(dx2>0)
+        dx2=dx2-Box(0);
+    }
+    double dy2=y3-y1;
+    if(fabs(dy2)>Box(1)/2.0)
+    {
+        if(dy2<0)
+        dy2=Box(1)+dy2;
+        else if(dy2>0)
+        dy2=dy2-Box(1);
+    }
+    double dz2=z3-z1;
+    if(fabs(dz2)>Box(2)/2.0)
+    {
+        if(dz2<0)
+        dz2=Box(2)+dz2;
+        else if(dz2>0)
+        dz2=dz2-Box(2);
+    }
+    Vec3D v1(dx1,dy1,dz1);
+    Vec3D v2(dx2,dy2,dz2);
+    m_Normal=v1*v2;
+    m_AreaVector=m_Normal;
+    m_Area=m_Normal.norm();
+    m_Normal=m_Normal*(1.0/m_Area);
+    m_Area=0.5*m_Area;
 
+}
+*/

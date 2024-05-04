@@ -46,6 +46,9 @@ public:
 public:
     void Initialize();
     bool do_Simulation();
+    
+    inline  std::string GetDerivedDefaultReadName() {return "MC_Simulation";}
+    inline static std::string GetDefaultReadName() {return "MC_Simulation";}
 
 private:
     State *m_pState;

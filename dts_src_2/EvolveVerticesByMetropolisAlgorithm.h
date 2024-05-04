@@ -17,19 +17,23 @@ public:
     bool EvolveOneStep(int step);
 
 private:
-    int EvolveOneVertex(int step, vertex *pvertex, double dx, double dy, double dz,double temp);
+    bool EvolveOneVertex(int step, vertex *pvertex, double dx, double dy, double dz,double temp);
     bool VertexMoveIsFine(vertex* pvertex, double dx,double dy, double dz,  double mindist2, double maxdist2);
     bool CheckFacesAfterAVertexMove(double &minangle, vertex* p_vertex);
-
+    inline  std::string GetDerivedDefaultReadName() {return "MetropolisAlgorithm";}
+    inline static std::string GetDefaultReadName() {return "MetropolisAlgorithm";}
+    
     double  SystemEnergy();  // it is for bug finding only; slow function, this is for development time, should be deleted
 private:
     double *m_pLmin2;
     double *m_pLmax2;
     double *m_pminAngle;
     double *m_pBeta;
-    double *m_RateOfVMovePerStep;
     State *m_pState;
     Vec3D *m_pBox;
+    
+
+    
 
 
 };

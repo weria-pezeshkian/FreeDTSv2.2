@@ -1,6 +1,7 @@
 #if !defined(AFX_AbstractGlobalCurvature_H)
 #define AFX_AbstractGlobalCurvature_H
 #include <iostream>
+#include "VAHGlobalMeshProperties.h"
 
 // Define a base class with a virtual function
 /*
@@ -11,9 +12,9 @@
 This class is a base class for global Curvature and how energy should change
 ========================================================
 */
-class  AbstractGlobalCurvature {
+class  AbstractGlobalCurvature  : public VAHGlobalMeshProperties {
 public:
-    AbstractGlobalCurvature(){
+    AbstractGlobalCurvature(VAHGlobalMeshProperties *VHA, State *pstate) : VAHGlobalMeshProperties(pstate) {
         
     }
     virtual ~ AbstractGlobalCurvature(){
@@ -33,7 +34,7 @@ public:
 //---- a class for no box change
 class NoGlobalCurvature : public  AbstractGlobalCurvature {
 public:
-    NoGlobalCurvature(){
+    NoGlobalCurvature(VAHGlobalMeshProperties *VHA, State *pstate) : AbstractGlobalCurvature(VHA, pstate) {
         
     }
     ~NoGlobalCurvature(){

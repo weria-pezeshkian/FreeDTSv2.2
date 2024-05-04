@@ -1,16 +1,15 @@
+#include <fstream>
 #include "MESH.h"
-
 /*
  Weria Pezeshkian (weria.pezeshkian@gmail.com)
  Copyright (c) Weria Pezeshkian
 MESH class for quick access 
  */
-MESH::MESH()
+MESH::MESH() : m_MeshCrossedPBC(false)
 {
     m_MinLength = 1;
     m_MaxLength = 3;
     m_MinAngle = -0.5;;
-    
     m_pEdgeV.clear();
 }
 MESH::~MESH()
@@ -77,7 +76,7 @@ void MESH::GenerateMesh(MeshBluePrint meshblueprint)
     // Making vertices
     for (std::vector<Vertex_Map>::iterator it = (meshblueprint.bvertex).begin() ; it != (meshblueprint.bvertex).end(); ++it)
     {
-            vertex v(it->id,it->x,it->y,it->z);
+            vertex v(this, it->id,it->x,it->y,it->z);
             v.UpdateBox(m_pBox);
             v.UpdateDomainID(it->domain);
             m_Vertex.push_back(v);
@@ -311,7 +310,7 @@ void MESH::GenerateMesh(MeshBluePrint meshblueprint)
         m_GhostT.push_back(triangle(tid++));
     }
     for (int i = 0; i < m_pActiveV.size(); ++i) {
-        m_GhostV.push_back(vertex(vid++));
+        m_GhostV.push_back(vertex(this, vid++));
     }
 
     for (std::vector<links>::iterator it = m_GhostL.begin() ; it != m_GhostL.end(); ++it)

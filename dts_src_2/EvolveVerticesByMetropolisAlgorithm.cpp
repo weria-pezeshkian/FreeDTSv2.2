@@ -5,6 +5,8 @@
 #include "State.h"
 
 EvolveVerticesByMetropolisAlgorithm::EvolveVerticesByMetropolisAlgorithm(){
+    m_NumberOfAttemptedMoves = 0;
+    m_AcceptedMoves = 0;
 
 }
 EvolveVerticesByMetropolisAlgorithm::~EvolveVerticesByMetropolisAlgorithm(){
@@ -13,12 +15,14 @@ EvolveVerticesByMetropolisAlgorithm::~EvolveVerticesByMetropolisAlgorithm(){
 bool EvolveVerticesByMetropolisAlgorithm::Initialize(State *pState){
     
     m_pState    = pState;
-    m_pBox      = (pState->m_pMesh)->m_pBox;
-    m_pminAngle = &(m_pState->m_MinFaceAngle);
-    m_pLmin2    = &(m_pState->m_MinVerticesDistanceSquare);
-    m_pLmax2    = &(m_pState->m_MaxLinkLengthSquare);
-    m_pBeta     = &(m_pState->m_Beta);
-    *m_RateOfVMovePerStep = 1;
+    m_pBox      = pState->GetMesh()->m_pBox;
+   // m_pminAngle = &(m_pState->m_MinFaceAngle);
+   // m_pLmin2    = &(m_pState->m_MinVerticesDistanceSquare);
+   // m_pLmax2    = &(m_pState->m_MaxLinkLengthSquare);
+   // m_pBeta     = &(m_pState->m_Beta);
+    
+    m_NumberOfAttemptedMoves = 0;
+    m_AcceptedMoves = 0;
 
    // m_R_Vertex=0.05;   // Move Vertex  within a box with this size
 
@@ -26,20 +30,62 @@ bool EvolveVerticesByMetropolisAlgorithm::Initialize(State *pState){
 }
 bool EvolveVerticesByMetropolisAlgorithm::EvolveOneStep(int step){
  
-  //  for (int i=0;i<;i++) {
+    const std::vector<vertex *>& pSurfVertices = m_pState->GetMesh()->GetSurfV();
+    const std::vector<vertex *>& pEdgeVertices = m_pState->GetMesh()->GetSurfV();
+
+    int no_surf_v = pSurfVertices.size();
+    int no_steps_surf = no_surf_v*m_NumberOfMovePerStep_Surf;
+    int no_edge_v = pEdgeVertices.size();
+    int no_steps_edge = no_edge_v*m_NumberOfMovePerStep_Edge;
     
-    double dx;//=1-2*Random1.UniformRNG(1.0);            // Inside a cube with the side length of R
-    double dy;//=1-2*Random1.UniformRNG(1.0);
-    double dz;//=1-2*Random1.UniformRNG(1.0);
-    double thermal;//=Random1.UniformRNG(1.0);
-    vertex *pvertex;
-    EvolveOneVertex(step, pvertex, dx, dy, dz,thermal);
-   // }
+  for (int i = 0; i< no_steps_surf;i++) {
+    
+      int r_vid = m_pState->GetRandomNumberGenerator()->IntRNG(no_surf_v);
+      vertex *pvertex = pSurfVertices[r_vid];
+      if( m_FreezGroupName == pvertex->GetGroupName()){
+          continue;
+      }
+      double dx=1-2*(m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
+      double dy=1-2*(m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
+      double dz=1-2*(m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
+      
+      if(!m_pState->GetBoundary()->MoveHappensWithinTheBoundary(dx,dy,dz, pvertex)){
+          continue;
+      }
+      
+      double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
+      if(EvolveOneVertex(step, pvertex, m_DR*dx, m_DR*dy, m_DR*dz,thermal)){
+          m_AcceptedMoves++;
+      }
+      m_NumberOfAttemptedMoves++;
+    }
+    
+    for (int i = 0; i< no_steps_edge;i++) {
+      
+        int r_vid = m_pState->GetRandomNumberGenerator()->IntRNG(no_edge_v);
+        vertex *pvertex = pEdgeVertices[r_vid];
+        if( m_FreezGroupName == pvertex->GetGroupName()){
+            continue;
+        }
+        double dx=1-2*(m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
+        double dy=1-2*(m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
+        double dz=1-2*(m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
+        if(!m_pState->GetBoundary()->MoveHappensWithinTheBoundary(dx,dy,dz, pvertex)){
+            continue;
+        }
+        
+        double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
+
+        if(EvolveOneVertex(step, pvertex, m_DR*dx, m_DR*dy, m_DR*dz,thermal)){
+            m_AcceptedMoves++;
+        }
+        m_NumberOfAttemptedMoves++;
+    }
     
     return true;
 }
-int EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pvertex, double dx, double dy, double dz,double temp){
-    int moveresult = 0;
+bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pvertex, double dx, double dy, double dz,double temp){
+    
     double old_energy = 0;
     double new_energy = 0;
 
@@ -49,77 +95,35 @@ int EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pvert
     
 //---> lets get some variables before moving
     // --- get the initial total area and volume if they are needed.
-    // this section could be centrilized. Somewhere the total volume and total area and dA should be one
-   /* double old_volume = 0;
-    double old_total_area = 0;
-    double old_total_delta_area = 0;
-    if((m_pState->GetVolumeCoupling())->GetState()==true  || (m_pState->GetTotalAreaCoupling())->GetState()==true)
-    {
-        if((m_pState->GetVolumeCoupling())->GetState()==true ){
-            old_volume = m_pState->GetVolumeCoupling()->GetTotalVolume();
-            old_total_area = m_pState->GetVolumeCoupling()->GetTotalArea();
-        }
-        else if((m_pState->GetTotalAreaCoupling())->GetState()==true){
-            old_total_area = m_pState->GetTotalAreaCoupling()->GetTotalArea();
-        }
+     double old_Tvolume = 0;
+     double old_Tarea = 0;
+     double old_Tcurvature = 0;
+    if(m_pState->GetVolumeCoupling()->GetDerivedDefaultReadName()!="NoCoupling"){
+        //GetRingVolumeOfVertex(pvertex);
     }
-    if(m_pState->GetGlobalCurvature()->GetState()==true){
-
-    }*/
-    //----
     //--- obtain vertices energy terms
-    old_energy=pvertex->GetEnergy();
-    std::vector <vertex *> vNeighbourV = pvertex->GetVNeighbourVertex();
-    for (std::vector<vertex *>::iterator it = vNeighbourV.begin() ; it != vNeighbourV.end(); ++it){
+    old_energy = pvertex->GetEnergy();
+    const std::vector<vertex *>& vNeighbourV = pvertex->GetVNeighbourVertex();
+    for (std::vector<vertex *>::const_iterator it = vNeighbourV.begin() ; it != vNeighbourV.end(); ++it){
+        
         old_energy+=(*it)->GetEnergy();
     }
     //-- obtain link interaction energies
     
+    //--- Move the vertex;
+    //--- update triangles normal
+    
+    //--- check the angle
+    
+    //obtain new energy
     
     
-    return moveresult;
-}
-// this function can be deleted any time; it is for test cases only
-double  EvolveVerticesByMetropolisAlgorithm::SystemEnergy()
-{
-    /*
-    MESH* m_pMESH = m_pState->m_pMesh;
-    std::vector<vertex *> ActiveV = m_pMESH->m_pActiveV;
-    std::vector<triangle *> pActiveT = m_pMESH->m_pActiveT;
-    std::vector<links *> mLink = m_pMESH->m_pHL;
-    std::vector<links *>  pEdgeL = m_pMESH->m_pEdgeL;
-    std::vector<vertex *> EdgeV  = m_pMESH->m_pEdgeV;
-    double en = 0;
-    
-
-    for (std::vector<triangle *>::iterator it = pActiveT.begin() ; it != pActiveT.end(); ++it)
-        (*it)->UpdateNormal_Area(m_pBox);
+    // see if it matches
     
     
-    for (std::vector<links *>::iterator it = mLink.begin() ; it != mLink.end(); ++it)
-    {
-        (*it)->UpdateNormal();
-        (*it)->UpdateShapeOperator(m_pBox);
-    }
     
     
-    for (std::vector<vertex *>::iterator it = ActiveV.begin() ; it != ActiveV.end(); ++it)
-        (m_pState->CurvatureCalculator())->SurfVertexCurvature(*it);
-
-    //====== edge links should be updated
-    for (std::vector<links *>::iterator it = pEdgeL.begin() ; it != pEdgeL.end(); ++it)
-            (*it)->UpdateEdgeVector(m_pBox);
-
-    for (std::vector<vertex *>::iterator it = EdgeV.begin() ; it != EdgeV.end(); ++it)
-            (m_pState->CurvatureCalculator())->EdgeVertexCurvature(*it);
-    
-    en=m_pEnergyCalculator->TotalEnergy(ActiveV,mLink);
-    //en=en+ m_pEnergyCalculator->TotalEnergy(EdgeV,pEdgeL);
-   
-    
-    return en;
-     */
-    return 0;
+    return true;
 }
 //---> this does not check the angle of the faces. Because this should be done after the move:
 //waste of calculation if we do ith before the move. Unless, we store the values. That also not good because move could get rejected.
@@ -178,4 +182,49 @@ bool EvolveVerticesByMetropolisAlgorithm::CheckFacesAfterAVertexMove(double &min
         }
     }
     return true;
+}
+
+
+//========
+// this function can be deleted any time; it is for test cases only
+double  EvolveVerticesByMetropolisAlgorithm::SystemEnergy()
+{
+    /*
+    MESH* m_pMESH = m_pState->m_pMesh;
+    std::vector<vertex *> ActiveV = m_pMESH->m_pActiveV;
+    std::vector<triangle *> pActiveT = m_pMESH->m_pActiveT;
+    std::vector<links *> mLink = m_pMESH->m_pHL;
+    std::vector<links *>  pEdgeL = m_pMESH->m_pEdgeL;
+    std::vector<vertex *> EdgeV  = m_pMESH->m_pEdgeV;
+    double en = 0;
+    
+
+    for (std::vector<triangle *>::iterator it = pActiveT.begin() ; it != pActiveT.end(); ++it)
+        (*it)->UpdateNormal_Area(m_pBox);
+    
+    
+    for (std::vector<links *>::iterator it = mLink.begin() ; it != mLink.end(); ++it)
+    {
+        (*it)->UpdateNormal();
+        (*it)->UpdateShapeOperator(m_pBox);
+    }
+    
+    
+    for (std::vector<vertex *>::iterator it = ActiveV.begin() ; it != ActiveV.end(); ++it)
+        (m_pState->CurvatureCalculator())->SurfVertexCurvature(*it);
+
+    //====== edge links should be updated
+    for (std::vector<links *>::iterator it = pEdgeL.begin() ; it != pEdgeL.end(); ++it)
+            (*it)->UpdateEdgeVector(m_pBox);
+
+    for (std::vector<vertex *>::iterator it = EdgeV.begin() ; it != EdgeV.end(); ++it)
+            (m_pState->CurvatureCalculator())->EdgeVertexCurvature(*it);
+    
+    en=m_pEnergyCalculator->TotalEnergy(ActiveV,mLink);
+    //en=en+ m_pEnergyCalculator->TotalEnergy(EdgeV,pEdgeL);
+   
+    
+    return en;
+     */
+    return 0;
 }

@@ -1,6 +1,7 @@
 #if !defined(AFX_AbstractVolumeCoupling_H)
 #define AFX_AbstractVolumeCoupling_H
 #include <iostream>
+#include "VAHGlobalMeshProperties.h"
 
 // Define a base class with a virtual function
 /*
@@ -11,10 +12,13 @@
 This class is a base class for changing the box
 ========================================================
 */
-class AbstractVolumeCoupling {
+class AbstractVolumeCoupling : public VAHGlobalMeshProperties {
 public:
-    AbstractVolumeCoupling();
-    virtual ~AbstractVolumeCoupling();
+    AbstractVolumeCoupling(VAHGlobalMeshProperties *VHA, State* pstate) : VAHGlobalMeshProperties(pstate) {
+    }
+    virtual ~AbstractVolumeCoupling(){
+        
+    }
 
     virtual inline bool GetState()= 0;
     virtual inline double GetTotalVolume() = 0;
@@ -31,8 +35,8 @@ public:
 //---- a class for no box change
 class NoCoupling : public AbstractVolumeCoupling {
 public:
-    NoCoupling(){
-        
+   // NoCoupling(VAHGlobalMeshProperties *VHA, State* pstate) : AbstractVolumeCoupling(VHA, pstate) {
+        NoCoupling(VAHGlobalMeshProperties *VHA, State* pstate) : AbstractVolumeCoupling(VHA, pstate) {
     }
     ~NoCoupling(){
         
@@ -40,7 +44,7 @@ public:
     inline bool GetState()                   {return false;}
     inline double GetTotalVolume()                  {return 0;}
     inline double GetTotalArea()                  {return 0;}
-    virtual inline std::string GetDerivedDefaultReadName() = {return "NoVolumeCoupling";}
+    virtual inline std::string GetDerivedDefaultReadName()  {return "NoCoupling";}
 
     
     void    Initialize(std::vector<triangle *> pTriangle)       {return;}

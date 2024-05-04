@@ -17,6 +17,9 @@ public:
 
     bool Initialize(State *pState);
     bool EvolveOneStep(int step);
+    
+    inline  std::string GetDerivedDefaultReadName() {return "MetropolisAlgorithm";}
+    inline static std::string GetDefaultReadName() {return "MetropolisAlgorithm";}
 
 private:
    void MC_Move_AnInclusion(inclusion *pinc, RNG *, int);

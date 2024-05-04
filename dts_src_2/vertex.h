@@ -13,11 +13,12 @@
  *******************/
 class links;
 class triangle;
-class vertex
-{
+class MESH;
+class vertex {
+    
 public:
-	vertex(int id, double x, double y, double z);
-	vertex(int id);
+	vertex(MESH* pMesh, int id, double x, double y, double z);
+	vertex(MESH* pMesh, int id);
     vertex();
 
 	 ~vertex();
@@ -49,7 +50,7 @@ public:
         inline double GetXPos()                             {return m_X;}
         inline double GetYPos()                             {return m_Y;}
         inline double GetZPos()                             {return m_Z;}
-        inline const Vec3D GetPos()        const            {return   Vec3D(m_X,m_Y,m_Z);}
+        inline  Vec3D GetPos()                              {return   Vec3D(m_X,m_Y,m_Z);}
 
 //---->
         inline double GetP1Curvature()          {return m_PrincipalCurvature_1;}// surface curvature
@@ -165,7 +166,7 @@ private:
     int m_OldVertexType;                   // 0 surface vertex; 1 edge vertex;
     links * m_OldpEdgeLink;
     links * m_OldpPrecedingEdgeLink;// preceding link at the edge
-    
+    MESH* m_pMesh;
     
 
 };

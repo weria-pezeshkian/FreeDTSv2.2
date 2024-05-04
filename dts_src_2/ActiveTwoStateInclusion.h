@@ -28,7 +28,8 @@ public:
     inline int    GetDeltaN()                   {return m_DeltaN;}
 
 
-
+    inline  std::string GetDerivedDefaultReadName()  {return "ActiveTwoStateInclusion";}
+    inline static std::string GetDefaultReadName() {return "ActiveTwoStateInclusion";}
 
 
 

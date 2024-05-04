@@ -11,6 +11,7 @@
 This class is a Abstract class for curvature calculations.
 ========================================================
 */
+class State;
 class  AbstractCurvature {
 public:
     AbstractCurvature(){
@@ -19,9 +20,10 @@ public:
     virtual ~ AbstractCurvature(){
         
     }
-    virtual  bool SurfVertexCurvature(vertex *pvertex) = 0;
-    virtual  bool EdgeVertexCurvature(vertex *pvertex) = 0;
-    virtual  bool VertexCurvature(vertex *pvertex) = 0;
+    virtual  bool Initialize(State *) = 0;
+    virtual  bool UpdateSurfVertexCurvature(vertex *pvertex) = 0;
+    virtual  bool UpdateEdgeVertexCurvature(vertex *pvertex) = 0;
+    virtual  bool UpdateVertexCurvature(vertex *pvertex) = 0;
     virtual inline std::string GetDerivedDefaultReadName() {return "";}
     
     inline static std::string GetBaseDefaultReadName() {return "CurvatureMethod";}

@@ -27,6 +27,8 @@ public:
     double CalculateEnergyChange(int step, double oldarea,  double newarea);
     void UpdateArea(double oldarea, double newarea);
 
+    inline  std::string GetDerivedDefaultReadName()  {return "HarmonicPotential";}
+    inline static std::string GetDefaultReadName() {return "HarmonicPotential";}
     
 private:
     double AreaofTrianglesAroundVertex(vertex * pVeretx);   ///

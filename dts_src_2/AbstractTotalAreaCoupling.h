@@ -1,7 +1,7 @@
 #if !defined(AFX_AbstractTotalAreaCoupling_H)
 #define AFX_AbstractTotalAreaCoupling_H
 #include <iostream>
-
+#include "VAHGlobalMeshProperties.h"
 // Define a base class with a virtual function
 /*
 =======================================================
@@ -11,9 +11,9 @@
 This class is a base class for global Curvature and how energy should change
 ========================================================
 */
-class  AbstractTotalAreaCoupling {
+class  AbstractTotalAreaCoupling : public VAHGlobalMeshProperties {
 public:
-    AbstractTotalAreaCoupling(){
+    AbstractTotalAreaCoupling(VAHGlobalMeshProperties *VHA, State *pstate) : VAHGlobalMeshProperties(pstate) {
         
     }
     virtual ~ AbstractTotalAreaCoupling(){
@@ -32,13 +32,13 @@ public:
 //---- a class for no box change
 class NoTotalAreaCoupling : public  AbstractTotalAreaCoupling {
 public:
-    NoTotalAreaCoupling(){
+    NoTotalAreaCoupling(VAHGlobalMeshProperties *VHA, State *pstate) : AbstractTotalAreaCoupling(VHA, pstate) {
         
     }
     ~NoTotalAreaCoupling(){
         
     }
-    virtual inline std::string GetDerivedDefaultReadName() = {return "NoTotalAreaCoupling";}
+    virtual inline std::string GetDerivedDefaultReadName()  {return "NoTotalAreaCoupling";}
     inline bool GetState()                           {return false;} // if the coupling is active
     inline double GetTotalArea()                        {return 0;} // Only part of energy asscoiated with this class
     

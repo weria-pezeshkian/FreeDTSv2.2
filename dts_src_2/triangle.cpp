@@ -8,30 +8,38 @@
  Copyright (c) Weria Pezeshkian
  Triangle object: points to 3 vertices and has an area and normal vector
  */
-triangle::triangle(int id, vertex *v1, vertex *v2, vertex *v3)
-{
+triangle::triangle(int id, vertex *v1, vertex *v2, vertex *v3) {
 
-m_V1=v1;
-m_V2=v2;
-m_V3=v3;
-m_ID=id;
-
-m_Representation=true;
-}
-triangle::triangle(int id)
-{
-m_ID=id;
-m_Representation=true;
-}
-
-triangle::~triangle()
-{
+    m_V1=v1;
+    m_V2=v2;
+    m_V3=v3;
+    m_ID=id;
+    m_Volume = 0;
+    m_Representation=true;
     
 }
-void triangle::UpdateRepresentation(bool z)
-{
+triangle::triangle(int id) {
+    m_ID=id;
+    m_Representation=true;
+}
+triangle::~triangle() {
+    
+}
+void triangle::UpdateRepresentation(bool z) {
+    
     m_Representation = z;
 }
+void triangle::UpdateVolume(double vol){
+    m_Volume = vol;
+    return;
+}
+void triangle::UpdateNormal_Area(Vec3D& norm, double& area){
+    
+    m_Normal = norm;
+    m_Area = area;
+    return;
+}
+
 void triangle::UpdateNormal_Area(Vec3D *pBox) // normal vector update
 {
 Vec3D Box=(*pBox);
@@ -106,11 +114,11 @@ Vec3D Box=(*pBox);
 
 }
 
-void triangle::UpdateVertex(vertex *v1,vertex *v2,vertex *v3)
-{
-m_V1=v1;
-m_V2=v2;
-m_V3=v3;
+void triangle::UpdateVertex(vertex *v1,vertex *v2,vertex *v3) {
+    m_V1=v1;
+    m_V2=v2;
+    m_V3=v3;
+    return;
 }
 void triangle::UpdateID(int id) // this should be used for none active trinagles
 {

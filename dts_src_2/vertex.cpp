@@ -1,15 +1,12 @@
 
 #include <stdio.h>
+#include "MESH.h"
 #include "vertex.h"
 #include "links.h"
 #include "triangle.h"
 #include "Nfunction.h"
 
-vertex::vertex(){
-    
-// default constructor
-}
-vertex::vertex(int id, double x, double y, double z){
+vertex::vertex(MESH* pMesh, int id, double x, double y, double z) : m_pMesh(pMesh) {
 
     m_X = x;
     m_Y = y;
@@ -29,7 +26,7 @@ vertex::vertex(int id, double x, double y, double z){
     m_PrincipalCurvature_2 = 0;
     
 }
-vertex::vertex(int id){
+vertex::vertex(MESH* pMesh, int id) : m_pMesh(pMesh) {
 
     m_ID=id;
     m_X=0;
@@ -77,8 +74,10 @@ void vertex::UpdateVXPos(double x) {
     // Adjust X position if it's outside the box bounds
     if (x >= boxX) {
         m_X = x - boxX;
+        m_pMesh->UpdateCrossedPBC(true);
     } else if (x < 0) {
         m_X = x + boxX;
+        m_pMesh->UpdateCrossedPBC(true);
     } else {
         m_X = x;
     }
@@ -89,8 +88,10 @@ void vertex::UpdateVYPos(double y) {
     // Adjust Y position if it's outside the box bounds
     if (y >= boxY) {
         m_Y = y - boxY;
+        m_pMesh->UpdateCrossedPBC(true);
     } else if (y < 0) {
         m_Y = y + boxY;
+        m_pMesh->UpdateCrossedPBC(true);
     } else {
         m_Y = y;
     }
@@ -101,8 +102,10 @@ void vertex::UpdateVZPos(double z) {
     // Adjust Z position if it's outside the box bounds
     if (z >= boxZ) {
         m_Z = z - boxZ;
+        m_pMesh->UpdateCrossedPBC(true);
     } else if (z < 0) {
         m_Z = z + boxZ;
+        m_pMesh->UpdateCrossedPBC(true);
     } else {
         m_Z = z;
     }

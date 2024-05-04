@@ -15,6 +15,10 @@ public:
     ~ConstantExternalField();
 
     double GetCouplingEnergy(vertex *pvertex);
+    
+    inline  std::string GetDerivedDefaultReadName()  {return "ConstantExternalField";}
+    inline static std::string GetDefaultReadName() {return "ConstantExternalField";}
+    
 private:
     Vec3D m_FieldDirection;
     double m_FieldStrength;

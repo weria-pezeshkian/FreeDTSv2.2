@@ -37,6 +37,10 @@ public:
     void Initialize();
     void MC_Move(RNG* rng, double lmin, double lmax, double maxangle);
     
+    
+    inline  std::string GetDerivedDefaultReadName() {return "EvolutionWithConstantVertex";}
+    inline static std::string GetDefaultReadName() {return "EvolutionWithConstantVertex";}
+    
 private:
     std::vector<triangle>       m_GhostT; // Some trinagles for initial storing
     std::vector<links>          m_GhostL;
@@ -58,6 +62,7 @@ private:
     bool Linkisvalid(vertex *, double lmin, double lmax, double maxangle);
     double  SystemEnergy();
 
+    
 
     // the main hard part of the code. 4 interesting function
 private:  // this functions could be in princeple public, but no need for now

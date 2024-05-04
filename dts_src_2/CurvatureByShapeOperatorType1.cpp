@@ -9,13 +9,64 @@ CurvatureByShapeOperatorType1::CurvatureByShapeOperatorType1(){
 CurvatureByShapeOperatorType1::~CurvatureByShapeOperatorType1(){
 
 }
-bool CurvatureByShapeOperatorType1::VertexCurvature(vertex *pvertex){
+bool CurvatureByShapeOperatorType1::Initialize(State *pState){
+ /*
+  Curvature Calculation Initialization:
+
+  This function initializes the curvature and area on all the vertices and edges. The sequence involves updating various geometric properties of the mesh components before computing curvature values.
+  
+     1) Update triangle area
+     2) Update edge shape operator
+     3) update vertex shape operator
+    
+
+    Note: it also initalize m_pState and m_pBox for later use.
+    To compute the curvature of any vertex accurately, we must first compute the area and normal vectors of all vertices, along with the properties of all edges within a single ring (excluding the ring perimeter).
+  */
+
+        m_pState = pState;
+        m_pBox = m_pState->GetMesh()->GetBox();
+    
+    // update all the triangles area and normal;
+    const std::vector<triangle *>& pAllTriangles = m_pState->GetMesh()->GetActiveT();
+    for (std::vector<triangle *>::const_iterator it = pAllTriangles.begin(); it != pAllTriangles.end(); ++it) {
+        
+        (*it)->UpdateNormal_Area(m_pBox);
+    }
+//---> update the normal of the edges and then update the shape operator
+    const std::vector<links *>& pAllRight_edges = m_pState->GetMesh()->GetRightL();
+    for (std::vector<links *>::const_iterator it = pAllRight_edges.begin(); it != pAllRight_edges.end(); ++it) {
+        
+        (*it)->UpdateNormal();
+        (*it)->UpdateShapeOperator(m_pBox);
+    }
+//---> now the surface vertices curvature, including vertex shape operator
+    const std::vector<vertex *>& pAllVertices = m_pState->GetMesh()->GetSurfV();
+    for (std::vector<vertex *>::const_iterator it = pAllVertices.begin(); it != pAllVertices.end(); ++it) {
+        
+            UpdateSurfVertexCurvature(*it);
+    }
+//---> edge links
+    const std::vector<links *>& pAlllink_edges = m_pState->GetMesh()->GetEdgeL();
+    for (std::vector<links *>::const_iterator it = pAlllink_edges.begin(); it != pAlllink_edges.end(); ++it) {
+        
+            (*it)->UpdateEdgeVector(m_pBox);
+    }
+//---> update edge vertices curvature
+    const std::vector<vertex *>& pAlledge_vertex = m_pState->GetMesh()->GetEdgeV();
+    for (std::vector<vertex *>::const_iterator it = pAlledge_vertex.begin(); it != pAlledge_vertex.end(); ++it) {
+        UpdateEdgeVertexCurvature(*it);
+    }
+    
+    return true;
+}
+bool CurvatureByShapeOperatorType1::UpdateVertexCurvature(vertex *pvertex){
  
     if(pvertex->GetVertexType()==0){
-        return SurfVertexCurvature(pvertex);
+        return UpdateSurfVertexCurvature(pvertex);
     }
     else if(pvertex->GetVertexType()==1){
-        return EdgeVertexCurvature(pvertex);
+        return UpdateEdgeVertexCurvature(pvertex);
     }
     else{
         std::cout<<" vertex type "<<pvertex->GetVertexType()<<" is unrecognized \n";
@@ -24,40 +75,26 @@ bool CurvatureByShapeOperatorType1::VertexCurvature(vertex *pvertex){
     
     return true;
 }
-bool CurvatureByShapeOperatorType1::SurfVertexCurvature(vertex * pvertex){
+bool CurvatureByShapeOperatorType1::UpdateSurfVertexCurvature(vertex * pvertex){
     
-    std::vector<triangle *> Ntr=pvertex->GetVTraingleList();
-    double Area=0.0;
-    Vec3D Normal;
-    for (std::vector<triangle *>::iterator it = Ntr.begin() ; it != Ntr.end(); ++it)
-    {
-        const Vec3D& Nv = (*it)->GetAreaVector();
-        Normal=Normal+Nv;
-        Area+=(*it)->GetArea();
-    }
-    Area=Area/3.0;
-    if(Area<=0){
-        std::string sms=" ---> error: vertex has a negetive or zero area \n";
-        std::cout<<sms<<"\n";
-        return false;
-    }
-    double normalsize=Normal.norm();
-    Normal=Normal*(1.0/normalsize);
+    // Get vertex area from Calculate_Vertex_Normal
+    double Area;
+    
+    // Update vertex normal and area
+    Vec3D Normal = Calculate_Vertex_Normal(pvertex, Area);
+    
+    //--- update this values in the vertex
     pvertex->UpdateNormal_Area(Normal,Area);
-        ///=======
-    //=== Shape Operator
-    //========
+
+
     Tensor2  SV;
     Tensor2 IT('I');
-    
     Tensor2 P=IT-IT.makeTen(Normal);
-
     Tensor2 Pt=P.Transpose(P);
     std::vector<links *> NLinks=pvertex->GetVLinkList();
 
     // what if the edge vertex has one trinagle?
-    for (std::vector<links *>::iterator it = NLinks.begin() ; it != NLinks.end(); ++it)
-    {
+    for (std::vector<links *>::iterator it = NLinks.begin() ; it != NLinks.end(); ++it) {
        if((*it)->GetMirrorFlag())
        {
            Vec3D ve=(*it)->GetNormal();
@@ -68,25 +105,25 @@ bool CurvatureByShapeOperatorType1::SurfVertexCurvature(vertex * pvertex){
 
            // ff should be 1 but just for sake of numerical errors
            double ff=Se.norm();
-           if(ff==0)
-           {
+           if(ff==0) {
                std::cout<<"-----> Error: projection is zero error"<<"\n";
-               exit(0);
+               return false;
            }
-           else
-           {
+           else {
                Se=Se*(1.0/ff);
            }
         
            Tensor2 Q=P.makeTen(Se);
-        
            SV=SV+(Q)*(we*he);
        }//if((*it)->GetMirrorFlag())
-    }
+       else{
+           std::cout<<"---> error: vertex, with id "<<pvertex->GetVID() <<" is wrongly here \n";
+           return false;
+       }
+    } //     for (std::vector<links *>::iterator it = NLinks.begin() ; it != NLinks.end(); ++it) {
 
-    ///=============
-    //==== Find Curvature and local frame
-    //=============
+
+//==== Find Curvature and local frame
     
     Tensor2 Hous = Householder(Normal);
     Tensor2 LSV;// Local SV
@@ -95,9 +132,9 @@ bool CurvatureByShapeOperatorType1::SurfVertexCurvature(vertex * pvertex){
     double b=LSV(0,0)+LSV(1,1);
     double c=LSV(0,0)*LSV(1,1)-LSV(1,0)*LSV(0,1);
 
-
     double delta=b*b-4*c;
     double c1,c2;
+    
     if(delta>0.0){
         delta=sqrt(delta);
         c1=b+delta;
@@ -106,15 +143,15 @@ bool CurvatureByShapeOperatorType1::SurfVertexCurvature(vertex * pvertex){
         c2=0.5*c2;
         
     }
-    else if (fabs(delta)<0.0001){
+    else if (fabs(delta)<0.00001){
         
         c1=0.5*b;
         c2=c1;
 
     }
     else{
-        c1=100;
-        c2=100;
+        c1=1;
+        c2=1;
         std::cout<<"WARNING: faild to find curvature on vertex "<<pvertex->GetVID()<<"  because delta is "<<delta<<"  c1 and c2 are set to 100 \n";
         std::cout<<" if you face this too much, you should stop the job and .... \n";
     }
@@ -144,31 +181,12 @@ bool CurvatureByShapeOperatorType1::SurfVertexCurvature(vertex * pvertex){
 
     return true;
 }
-bool CurvatureByShapeOperatorType1::EdgeVertexCurvature(vertex * pvertex)
+bool CurvatureByShapeOperatorType1::UpdateEdgeVertexCurvature(vertex * pvertex)
 {
     // first we obtain the vertex area and normal. Area is not important here as the vertex is an edge vertex
-    std::vector<triangle *> Ntr=pvertex->GetVTraingleList();
-    
     double Area=0.0;
-    Vec3D Normal;
-    for (std::vector<triangle *>::iterator it = Ntr.begin() ; it != Ntr.end(); ++it){
-        const Vec3D& Nv = (*it)->GetAreaVector();
-        Normal=Normal+Nv;
-        Area+=(*it)->GetArea();
-    }
-    Area=Area/3.0;
-    // just in case; this should never happen unless the inputs are wrong
-    if(Area<=0){
-        std::cout<<Ntr.size()<<"\n";
-        std::string sms=" error----> bad area for vertex \n";
-        std::cout<<sms<<"\n";
-        return false;
-    }
-    double normalsize=Normal.norm();
-    Normal=Normal*(1.0/normalsize);
+    Vec3D Normal = Calculate_Vertex_Normal(pvertex, Area);
     pvertex->UpdateNormal_Area(Normal,Area);
-    
-
     
     // the shape of the system                          //         v
                                                         //     l1 / \ l2
@@ -214,31 +232,34 @@ Tensor2 CurvatureByShapeOperatorType1::Householder(Vec3D N){
     
     return Hous;
 }
-Vec3D CurvatureByShapeOperatorType1::Calculate_Vertex_Normal(vertex *pvertex){
+Vec3D CurvatureByShapeOperatorType1::Calculate_Vertex_Normal(vertex *pvertex, double &area){
     // first we obtain the vertex area and normal.
     std::vector<triangle *> Ntr=pvertex->GetVTraingleList();
     
-    double Area=0.0;
+    area=0.0;
     Vec3D Normal;
-    for (std::vector<triangle *>::iterator it = Ntr.begin() ; it != Ntr.end(); ++it)
-    {
+    
+    const std::vector<triangle *>& pNTriangles = pvertex->GetVTraingleList();
+    for (std::vector<triangle *>::const_iterator it = pNTriangles.begin(); it != pNTriangles.end(); ++it) {
         const Vec3D& Nv = (*it)->GetAreaVector();
         Normal=Normal+Nv;
-        Area+=(*it)->GetArea();
+        area+=(*it)->GetArea();
     }
-    Area=Area/3.0;
-    // just in case; this should never happen unless the inputs are wrong
-    if(Area<=0)
-    {
-        std::string sms=" error----> vertex has a zero or negetive area \n";
-        std::cout<<sms<<"\n";
-        exit(0);
+    area=area/3.0;
+    // Check for non-positive area
+    if(area<=0){
+        
+        *(m_pState->GetTimeSeriesLog())<<"---> error: vertex, with id "<<pvertex->GetVID() <<" has a negetive or zero area \n";
+        return false;
     }
     double normalsize=Normal.norm();
+    if(normalsize==0){
+        
+        *(m_pState->GetTimeSeriesLog())<<"---> error: vertex, with id "<<pvertex->GetVID() <<" has zero normal \n";
+        return false;
+    }
     Normal=Normal*(1.0/normalsize);
-    pvertex->UpdateNormal_Area(Normal,Area);
     
-
     return Normal;
 }
 

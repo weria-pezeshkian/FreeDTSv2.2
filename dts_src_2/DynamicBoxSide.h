@@ -25,8 +25,7 @@ public:
     void initialize();
     bool MCMoveBoxChange(double dx, double * TotalEnergy, double temp, int step, Voxelization<vertex>* p_Allvoxel);
     inline  std::string GetDerivedDefaultReadName()  {return "DynamicBoxSide";}
-
-    
+    inline static std::string GetDefaultReadName() {return "DynamicBoxSide";}
     
 private:
     //=== old functions

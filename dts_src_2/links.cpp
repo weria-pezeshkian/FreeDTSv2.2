@@ -184,12 +184,10 @@ void links::UpdateShapeOperator(Vec3D *pBox)
 
        if(tangle<1)
        {
-           if(sign>0)
-           {
+           if(sign>0) {
                He=-m_EdgeSize*sqrt(0.5*(1.0-tangle));
            }
-           else if(sign<0)
-           {
+           else if(sign<0) {
             He=m_EdgeSize*sqrt(0.5*(1.0-tangle));  //He=2*cos(m_Dihedral/2.0)*renorm;
            }
            else

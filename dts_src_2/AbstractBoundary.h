@@ -19,8 +19,8 @@ public:
     virtual ~ AbstractBoundary(){
         
     }
-    virtual void Initialize(std::vector <vertex *> &Apv);
-    virtual bool MoveHappensWithinTheBoundary(int step, double x, double y, double z, vertex* v) = 0;
+    virtual void Initialize();
+    virtual bool MoveHappensWithinTheBoundary(double x, double y, double z, vertex* v) = 0;
 
     virtual inline std::string GetDerivedDefaultReadName() {return "";}
     inline static std::string GetBaseDefaultReadName() {return "Boundary";}
@@ -38,11 +38,11 @@ public:
     }
 
     inline std::string GetDerivedDefaultReadName() {return "PBC";}
-    void Initialize(std::vector <vertex *> &Apv){
+    void Initialize(){
      
         return;
     }
-    bool MoveHappensWithinTheBoundary(int step, double x, double y, double z, vertex* v){
+    bool MoveHappensWithinTheBoundary(double x, double y, double z, vertex* v){
         return true;
     }
     

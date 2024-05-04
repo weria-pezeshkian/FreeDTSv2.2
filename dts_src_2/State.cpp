@@ -17,9 +17,10 @@ State::State(std::vector<std::string> argument) :
       m_pBinaryTrajectory(new NoFile),  // Initialize BinaryTrajectory
 
       //---- Initialize constraint components
-      m_pVolumeCoupling(new NoCoupling),  // Initialize VolumeCoupling
-      m_pCoupleGlobalCurvature(new NoGlobalCurvature),  // Initialize CoupleGlobalCurvature
-      m_pTotalAreaCoupling(new NoTotalAreaCoupling),  // Initialize TotalAreaCoupling
+      m_pVAHCalculator(new VAHGlobalMeshProperties(this)),
+      m_pVolumeCoupling(new NoCoupling(m_pVAHCalculator,this)),
+      m_pCoupleGlobalCurvature(new NoGlobalCurvature(m_pVAHCalculator,this)),
+      m_pTotalAreaCoupling(new NoTotalAreaCoupling(m_pVAHCalculator, this)),
       m_pForceonVerticesfromInclusions(new NoForce),  // Initialize ForceonVerticesfromInclusions
       m_pExternalFieldOnVectorFields(new NoExternalField),  // Initialize ExternalFieldOnVectorFields
       m_pApplyConstraintBetweenGroups(new NoConstraint),  // Initialize ApplyConstraintBetweenGroups
@@ -58,7 +59,6 @@ State::State(std::vector<std::string> argument) :
       m_MaxLinkLengthSquare(3.0)  // Set MaxLinkLengthSquare
 
 { // start of the "class State" constructor
-
 //-- Find input files name (input.tsi, top.top||top.tsi, index.inx, restart.res)
         if (!ExploreArguments(argument)) {
             exit(0);
@@ -74,6 +74,7 @@ State::~State()
     delete m_pNonbinaryTrajectory;
     delete m_pVisualizationFile;
     delete m_pBinaryTrajectory;
+    delete m_pVAHCalculator;
     delete m_pVolumeCoupling;
     delete m_pCoupleGlobalCurvature;
     delete m_pTotalAreaCoupling;
@@ -277,6 +278,21 @@ bool State::ReadInputFile(std::string file)
                 std::cout<<" unknown InclusionConversion method "<<std::endl;
             }
                 
+            getline(input,rest);
+        }
+        else if(firstword == AbstractBoundary::GetBaseDefaultReadName()) // " Boundary "
+        {
+            std::string type;
+            input >> str >> type;
+            if(type == TwoFlatParallelWall::GetDefaultReadName()){   // " "TwoFlatParallelWall" "
+                double thickness;
+                char direction;
+                input>>str>>thickness>>direction;
+                m_pBoundary = new TwoFlatParallelWall(this, thickness,direction);
+            }
+            else {
+                std::cout<<" unknown Boundary type: "<<type<<std::endl;
+            }
             getline(input,rest);
         }
         else if(firstword == "ForceFromInclusions")
@@ -651,21 +667,29 @@ bool State::Initialize(){
     
 //============ activate of all inputs and data structures
         m_pRestart->SetRestartFileName();
-
-     //   m_pVolumeCoupling
-               
+    
+//----> calaculate curvature for all vertices
+        m_pCurvatureCalculations->Initialize(this);
+//----> set some easy access for Vertex Position Integrator
+        m_pVertexPositionIntegrator->Initialize(this);
+//---->
+        m_pBoundary->Initialize();
+    
+//----> energy class
+    // m_pEnergyCalculator
+    
     /*
     //---- Initialize constraint components
-    m_pCoupleGlobalCurvature            = new NoGlobalCurvature;
-    m_pTotalAreaCoupling                = new NoTotalAreaCoupling;
-    m_pForceonVerticesfromInclusions    = new NoForce;
-    m_pExternalFieldOnVectorFields      = new NoExternalField;
-    m_pApplyConstraintBetweenGroups     = new NoConstraint;
-    m_pBoundary                         = new PBCBoundary;
-    m_pCurvatureCalculations            = new CurvatureByShapeOperatorType1;   // we only have this for now
+     m_pVolumeCoupling
+    m_pCoupleGlobalCurvature
+    m_pTotalAreaCoupling               
+    m_pForceonVerticesfromInclusions
+    m_pExternalFieldOnVectorFields
+    m_pApplyConstraintBetweenGroups
+    m_pBoundary
     
     // Initialize integrators
-    m_pVertexPositionIntegrator         = new EvolveVerticesByMetropolisAlgorithm;
+    m_pVertexPositionIntegrator         (m_RandomNumberGenerator)
     m_pAlexanderMove                    = new AlexanderMoveByMetropolisAlgorithm;
     m_pInclusionPoseIntegrator          = new InclusionPoseUpdateByMetropolisAlgorithm;
    
@@ -675,13 +699,15 @@ bool State::Initialize(){
     m_pOpenEdgeEvolution                = new NoEvolution;
     m_pInclusionConversion              = new NoInclusionConversion;
     //--- Initialize accessory objects
-    m_RandomNumberGenerator             = new RNG(1234);
+                 = new RNG(1234);
     // Initialize energy calculator
     m_pEnergyCalculator                 = new Energy;
     
     // Initialize simulations
     m_pSimulation                       = new MC_Simulation (this);
     */
+    
+        m_pSimulation->Initialize();
     
     return true;
 }

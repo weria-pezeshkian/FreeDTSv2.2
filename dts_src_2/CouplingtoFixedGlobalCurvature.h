@@ -28,6 +28,9 @@ public:
     void Initialize(std::vector<vertex *> &all_vertices);
     void UpdateEnergyChange(double delta_area, double delta_curvature);
     double CalculateEnergyChange(double delta_area, double delta_curvature);
+    
+    inline  std::string GetDerivedDefaultReadName()  {return "FixedGlobalCurvature";}
+    inline static std::string GetDefaultReadName() {return "FixedGlobalCurvature";}
 
 private:
     double m_K;        // energy coupling constant (in the constructor it will be devided by 2)

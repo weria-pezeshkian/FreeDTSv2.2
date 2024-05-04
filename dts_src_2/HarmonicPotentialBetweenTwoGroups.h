@@ -26,6 +26,9 @@ public:
     void CalculateEnergy(int step);
     void MovingVertex(vertex* v, Vec3D Dx);
     void RejectMovingVertex(vertex* v, Vec3D Dx);
+    
+    inline  std::string GetDerivedDefaultReadName() {return "HarmonicPotentialBetweenTwoGroups";}
+    inline static std::string GetDefaultReadName() {return "HarmonicPotentialBetweenTwoGroups";}
 
     //=====
 private:
