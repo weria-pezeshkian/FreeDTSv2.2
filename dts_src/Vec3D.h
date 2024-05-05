@@ -22,6 +22,7 @@ public:
     bool isbad() const; // Function to check if any element is non-finite
     bool isgood() const;
     void print();
+    void normalize();
 
 private:
     double m_X;

@@ -1,66 +1,44 @@
-#if !defined(AFX_inclusion_H_8P4B21B8_C13C_5648_BF23_124095086234__INCLUDED_)
-#define AFX_inclusion_H_8P4B21B8_C13C_5648_BF23_124095086234__INCLUDED_
-
+#ifndef INCLUSION_H
+#define INCLUSION_H
 
 #include "SimDef.h"
 #include "Vec3D.h"
+#include "InclusionType.h"
 
 /*
- Weria Pezeshkian (weria.pezeshkian@gmail.com)
- Copyright (c) Weria Pezeshkian
- inclusion object and type
+ * @brief inclusion class.
+ *
+ * This class models an inclusion object.
+ * It inherits from the InclusionType class.
+ *
+ * Author: Weria Pezeshkian (weria.pezeshkian@gmail.com)
+ * Copyright (c) Weria Pezeshkian
  */
-struct InclusionType {
-    std::string ITName ;   // type name
-    int ITid;       // Type ID
-    int ITN;      // inplane symmetry
-    double ITk;     // Type Kappa
-    double ITkg;  // kappaG
-    double ITk1;  // K_||
-    double ITk2;  // K_norm
-    double ITc0;  // curvature
-    double ITc1;    // direction curvature 1
-    double ITc2;    // direction curvature 2
-    double ITelambda;  // line tension
-    double ITekg;       // geodesic rigidity
-    double ITekn;       // normal curvature line rigidiy
-    double ITecn;       // spontaneous normal  curvature
-};
+
+
 class vertex;
-class inclusion
-{
+class inclusion : public InclusionType {
+
 public:
     
-	inclusion(int id);
+    inclusion(int id, const InclusionType& inctype);
 	 ~inclusion();
 
-	    inline const int GetID()                               const  {return m_ID;}
-        inline vertex* Getvertex()                                    {return m_pvertex;}
-        inline Vec3D GetLDirection()                                  {return m_LDirection;}
-        inline Vec3D GetGDirection()                                  {return m_GDirection;}
-        inline InclusionType* GetInclusionType()                       {return m_InclusionType;}
-        inline int GetInclusionTypeID()                                {return m_TypeID;}
+    inline const int GetID()                               const  {return m_ID;}
+    inline vertex* Getvertex()                                    {return m_pvertex;}
+    inline Vec3D GetLDirection()                                  {return m_LDirection;}
+    inline Vec3D GetGDirection()                                  {return m_GDirection;}
 
-public:
-    
-  void UpdateInclusionType(InclusionType* );
-  void UpdateInclusionTypeID(int Typeid);
+
   void Updatevertex(vertex * );
-  void UpdateLocalDirection(Vec3D );
-  void UpdateGlobalDirection(Vec3D );
+  void UpdateLocalDirection(const Vec3D & lo_dir);
+  void UpdateGlobalDirection(const Vec3D & lg_dir);
   bool UpdateGlobalDirectionFromLocal();
   bool UpdateLocalDirectionFromGlobal();
 
-public:
-    void ReadInclusionFromFile(std::ifstream *inputfile,std::vector <vertex *> pv);
-    void WriteInclusionToFile(std::ofstream *output);
-    void WriteInclusion();
-
 
 private:
-    int m_TypeID;
     int m_ID;
-    InclusionType *m_InclusionType;
     Vec3D m_LDirection;      /// its direction in the local frame
     Vec3D m_GDirection;       /// its direction in the global frame
     vertex *m_pvertex;

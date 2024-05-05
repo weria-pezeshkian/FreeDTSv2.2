@@ -25,7 +25,7 @@ public:
     bool isbad() const; // Function to check if any element is non-finite
     bool isgood() const;
     void print();
-    
+    void normalize();
     friend std::ostream& operator<<(std::ostream& os, const Vec3D& vec);
 
 

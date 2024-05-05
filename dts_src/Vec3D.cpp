@@ -19,7 +19,17 @@ double& Vec3D::operator()(const int n) {
 Vec3D Vec3D::operator+(const Vec3D& other) const {
     return Vec3D(m_X + other.m_X, m_Y + other.m_Y, m_Z + other.m_Z);
 }
+void Vec3D::normalize(){
+    double norm = std::sqrt(m_X*m_X + m_Y*m_Y + m_Z*m_Z);
+    if(norm==0)
+    return;
+    
+    m_X = m_X/norm;
+    m_Y = m_Y/norm;
+    m_Z = m_Z/norm;
 
+    
+}
 Vec3D Vec3D::operator-(const Vec3D& other) const {
     return Vec3D(m_X - other.m_X, m_Y - other.m_Y, m_Z - other.m_Z);
 }

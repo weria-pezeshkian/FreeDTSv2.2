@@ -27,7 +27,6 @@ public:
 	    inline int GetVID()                                 {return m_ID;}
         inline int GetVertexType()                          {return m_VertexType;}
         inline int  GetDomainID()                           {return m_DomainID;}
-        inline double GetArea()                             {return m_Area;}
         inline Tensor2  GetL2GTransferMatrix()              {return m_T_Local_2_Global;}
         inline Tensor2  GetG2LTransferMatrix()              {return m_T_Global_2_Local;}
         inline inclusion* GetInclusion()                    {return m_pInclusion;}
@@ -53,8 +52,14 @@ public:
         inline  Vec3D GetPos()                              {return   Vec3D(m_X,m_Y,m_Z);}
 
 //---->
-        inline double GetP1Curvature()          {return m_PrincipalCurvature_1;}// surface curvature
-        inline double GetP2Curvature()          {return m_PrincipalCurvature_2;}// surface curvature
+        //---> for if the vertex is surface vertex
+        inline double GetP1Curvature()              {return m_PrincipalCurvature_1;}// surface curvature
+        inline double GetP2Curvature()              {return m_PrincipalCurvature_2;}// surface curvature
+        inline double GetArea()                     {return m_Area;}
+        //---> for if the vertex is edge vertex
+        inline double GetGeodesicCurvature()        {return m_Geodesic_Curvature;}// surface curvature
+        inline double GetNormalCurvature()          {return m_Normal_Curvature;}// surface curvature
+        inline double GetLength()                   {return m_VLength;}// surface curvature
 
 public:
     
@@ -135,7 +140,7 @@ public:
     double m_Geodesic_Curvature;          // Edge Vertex Curvature
     double m_Normal_Curvature;          // Edge Vertex Curvature
     double m_VLength;                       // length of the vertex
-    double m_Lambda;                   // line tension
+    
     int m_VertexType;                   // 0 surface vertex; 1 edge vertex;
     links * m_pEdgeLink;
     links * m_pPrecedingEdgeLink;// preceding link at the edge

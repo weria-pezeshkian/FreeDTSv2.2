@@ -76,6 +76,11 @@ void Restart::WrireRestart(int step, std::string filename, MESH * pmesh, double 
         (Rfile).write((char *) &(it->ITc0), sizeof(double));
         (Rfile).write((char *) &(it->ITc1), sizeof(double));
         (Rfile).write((char *) &(it->ITc2), sizeof(double));
+        (Rfile).write((char *) &(it->ITelambda), sizeof(double));
+        (Rfile).write((char *) &(it->ITekg), sizeof(double));
+        (Rfile).write((char *) &(it->ITekn), sizeof(double));
+        (Rfile).write((char *) &(it->ITecn), sizeof(double));
+
           (Rfile).write((it->ITName).c_str(), (it->ITName).size());
         (Rfile).write("\0",sizeof(char)); // null end string for easier reading
 
@@ -86,9 +91,8 @@ void Restart::WrireRestart(int step, std::string filename, MESH * pmesh, double 
 
 }
 //=== Read a restart file and load to the  active [State] Object
-MeshBluePrint Restart::ReadRestart(std::string filename , bool *readok)
-{
-    Nfunction nf;
+MeshBluePrint Restart::ReadRestart(std::string filename , bool *readok) {
+    
     *readok = false;
     MeshBluePrint blueprint;
     std::string restartfilename;
@@ -166,6 +170,10 @@ if(Rfile.is_open())
         (Rfile).read((char *) &(inctype.ITc0), sizeof(double));
         (Rfile).read((char *) &(inctype.ITc1), sizeof(double));
         (Rfile).read((char *) &(inctype.ITc2), sizeof(double));
+        (Rfile).read((char *) &(inctype.ITelambda), sizeof(double));
+        (Rfile).read((char *) &(inctype.ITekg), sizeof(double));
+        (Rfile).read((char *) &(inctype.ITekn), sizeof(double));
+        (Rfile).read((char *) &(inctype.ITecn), sizeof(double));
         std::getline(Rfile,inctype.ITName,'\0'); // get player name (remember we null ternimated in binary)
         binctype.push_back(inctype);
     }
@@ -177,45 +185,7 @@ if(Rfile.is_open())
 
     Rfile.close();
     
-    // read energy file; remove all the data after the initail time
-    //===================================================
-    std::string energyfilename=m_pState->m_GeneralOutputFilename+"-en.xvg";
-    if (nf.FileExist(energyfilename)!=true)
-    {
-        std::cout<<"----> warning (error): the energy file for a restart: "<<energyfilename<< " does not exist "<<std::endl;
-        std::cout<<"----> This does not seem to be a restart!! "<<std::endl;
-    }
-     CopyFile(energyfilename, "en.txt");
-    std::ofstream energyfile;
-    std::ifstream ren;
-
-    energyfile.open(energyfilename.c_str());
-    ren.open("en.txt");
-    std::string enstr;
-    getline(ren,enstr);
-    energyfile<<enstr<<"\n";
-    while(true)
-    {
-        ren>>step;
-        if(ren.eof())
-        {
-            std::cout<<"----> warning: the energy file does not contains enough output, some is missing "<<std::endl;
-            break;
-        }
-        if(step>=m_pState->m_Initial_Step-1)
-            break;
-        getline(ren,enstr);
-        energyfile<<step<<enstr<<"\n";
-
-    }
-    energyfile.close();
-    ren.close();
-    remove("en.txt");
-
-    
-    
     *readok = true;
-
 }
     return blueprint;
 }

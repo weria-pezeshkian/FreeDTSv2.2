@@ -25,6 +25,9 @@ double ConstantExternalField::GetCouplingEnergy(vertex *pvertex) {
     if (!pvertex->VertexOwnInclusion())
         return 0; // If not, return zero coupling energy
     
+    if(m_FieldStrength==0)
+        return 0; // return zero coupling energy
+
     // Get the local direction of the inclusion
     Vec3D LD = pvertex->GetInclusion()->GetLDirection();
 

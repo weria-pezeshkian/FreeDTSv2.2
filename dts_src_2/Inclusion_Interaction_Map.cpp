@@ -1,6 +1,7 @@
 
 
 #include <stdio.h>
+#include <fstream>
 #include "Inclusion_Interaction_Map.h"
 #include "Nfunction.h"
 /*
@@ -9,32 +10,8 @@
  An object to read pair interaction info of the inclusion type interactions
  This object should be optimised later might even be changed .....
  */
-Inclusion_Interaction_Map::Inclusion_Interaction_Map()
-{
-    m_Lambda =0 ;
-    m_KnEdge = 0;
-    m_KgEdge =0;
-    
-    //=== area
-    m_Kva =0;
-    m_av0 =0;
-    
-    //Vec3D m_FieldDirection;
-     m_FieldStrength = 0;
-}
-Inclusion_Interaction_Map::Inclusion_Interaction_Map(std::string inputfilename)
-{
-//============================================================
-    
-    m_Lambda =0 ;
-    m_KnEdge = 0;
-    m_KgEdge =0;
-    
-    //=== area
-    m_Kva =0;
-    m_av0 =0;
-    m_FieldStrength = 0;
-    
+Inclusion_Interaction_Map::Inclusion_Interaction_Map(std::string inputfilename) {
+
 //============================================================
 for (int i=0;i<Inclusion_Type_Number;i++)
 {
@@ -47,93 +24,71 @@ for (int i=0;i<Inclusion_Type_Number;i++)
     }
     m_MAT.push_back(T);
 }
-#if TEST_MODE == Enabled
-    std::cout<<"---->Note: Make sure these interactions are defined at the end of the file -- "<<std::endl;
-#endif
+
     
-// Read parameters from the inputfile
-    Nfunction f;
+//---> open the input file
+    std::ifstream input(inputfilename.c_str());
+    if (!input.is_open()) {
+        std::cerr << "Error: Failed to open input file: " << inputfilename << std::endl;
+        return;
+    }
     std::string line;
-    std::string FileName = inputfilename;
-    std::ifstream input;
-    input.open(FileName.c_str());
-    std::string name;
-    bool hasit=false;
-    while (true)
-    {
-        getline(input,name);
-        if(input.eof())
-        {
-            if(hasit==false)
-            {
-            std::string sms="warning: no inclsuion interaction energy is mentioned in the inputfile, they are all set to zero";
-            std::cout<<sms<<"\n";
-            Nfunction Nf;
-            Nf.Write_One_LogMessage(sms);
-            }
+    bool hasInteraction = false;
+    while (getline(input, line)) {
+        if (line == "Inclusion-Inclusion-Int") {
+            hasInteraction = true;
+            readInteractionData(input);
             break;
         }
-        
-        if(name=="Inclusion-Inclusion-Int")
-        {
-            hasit = true;
-            while (true)
-            {
-                int i,j,n;
-                double a,b;
-                input>>i;
-                if(input.eof())
-                    break;
-                else
-                {
-                    input>>j>>n;
-                    getline(input,name);
-                    std::vector<std::string> var  = f.split(name);
-                    std::vector<double> doublevar;
-                    PairInt pint;
-                    for (std::vector<std::string>::iterator it = var.begin() ; it != var.end(); ++it)
-                    {
-                        if((*it)==";")
-                            break;
-                        else
-                            doublevar.push_back(f.String_to_Double(*it));
-                        
-                    }
-                    pint.FunctionType = n;
-                    pint.Varibale = doublevar;
-                    if(n==10 && doublevar.size()!=7)
-                    {
-                        std::cout<<"Error: Function type 10 need 7 parameters but "<<doublevar.size()<<" are provided \n";
-                    }
-                    (m_MAT.at(i)).at(j) = pint;
-                    (m_MAT.at(j)).at(i) = pint;
-
-                }
-                
-            
-            }
-        }
-        
-        
     }
-
+    if (!hasInteraction) {
+        std::string warning = "Warning: No inclusion interaction energy is mentioned in the input file. They are all set to zero.";
+        std::cout << warning << std::endl;
+    }
 }
 
 Inclusion_Interaction_Map::~Inclusion_Interaction_Map()
 {
    
 }
-//=== The efficiency is needed only for this function and how do we access its members. 
-PairInt Inclusion_Interaction_Map::GetPairInt (int i,int j)
-{
+
+bool Inclusion_Interaction_Map::readInteractionData(std::ifstream& input) {
+    
+    std::string name;
+    while (true) {
+        int i, j, n;
+        double a, b;
+        input >> i;
+        if (input.eof()) break;
+        
+        input >> j >> n;
+        getline(input, name);
+        std::vector<std::string> var = Nfunction::split(name);
+        PairInt pint;
+        pint.FunctionType = n;
+        for (std::vector<std::string>::iterator it = var.begin(); it != var.end(); ++it) {
+            if ((*it) == ";") break;
+            pint.Varibale.push_back(Nfunction::String_to_Double(*it));
+        }
+
+        if (n == 10 && pint.Varibale.size() != 7) {
+            std::cerr << "Error: Function type 10 needs 7 parameters but only " << pint.Varibale.size() << " are provided." << std::endl;
+            return false; 
+        }
+
+        m_MAT[i][j] = pint;
+        m_MAT[j][i] = pint;
+    }
+    
+    return true;
+}
+PairInt Inclusion_Interaction_Map::GetPairInt(int i, int j) {
 #if TEST_MODE == Enabled
-    if(i>Inclusion_Type_Number || j>Inclusion_Type_Number || i<0 || j<0)
-    {
-        std::string sms="Error: Bead types in the interaction energy";
-        std::cout<<sms<<"\n";
+    if (i >= Inclusion_Type_Number || j >= Inclusion_Type_Number || i < 0 || j < 0) {
+        std::cerr << "---> Error: Number of inclusion types exceeds the maximum limit. ";
+        std::cerr << "Please adjust the limit in the SimDef.h file." << std::endl;
+        std::cerr << "    --: Currently, the limit is set to " << Inclusion_Type_Number << std::endl;
     }
 #endif
-    PairInt Int = (m_MAT.at(i)).at(j);
-    return Int;
+    return m_MAT[i][j];
 }
-

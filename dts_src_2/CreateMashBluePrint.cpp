@@ -11,37 +11,21 @@
 CreateMashBluePrint::CreateMashBluePrint()
 {
 }
-MeshBluePrint CreateMashBluePrint::MashBluePrintFromInput_Top(std::string inputfilename, std::string topfilename)
+MeshBluePrint CreateMashBluePrint::MashBluePrintFromInput_Top(const std::string& inputfilename, const std::string& topfilename)
 {
 // initializing the box size
     m_Box(0) = 1;
     m_Box(1) = 1;
     m_Box(2) = 1;
 
-#if TEST_MODE == Enabled
-    std::cout<<"----> We have reached the CreateMashBluePrint Class -- "<<std::endl;
-#endif
     m_InputFileName = inputfilename;
     m_TopologyFileName = topfilename;
     
-    //==== We read the inclusions type from the input file, we create inclusion types
-    ReadInclusionType(m_InputFileName);
-    
-#if TEST_MODE == Enabled
-    std::cout<<"----> Inclusion types has been read from the input file -- "<<std::endl;
-#endif
-    //== We read the topology file, this could be in a several q file, or a tsi file.
-#if TEST_MODE == Enabled
-    std::cout<<"----> atempted to read topology of the system from the createmashblueprintclass -- "<<std::endl;
-#endif
     ReadTopology(topfilename);
-#if TEST_MODE == Enabled
-    std::cout<<"----> topology of the system was read from tsi or q in the createmashblueprintclass -- "<<std::endl;
-#endif
+
     m_MeshBluePrint.bvertex = m_VertexMap;
     m_MeshBluePrint.btriangle = m_TriangleMap;
     m_MeshBluePrint.binclusion = m_InclusionMap;
-    m_MeshBluePrint.binctype = m_AllInclusionType;
     m_MeshBluePrint.simbox = m_Box;
     m_MeshBluePrint.excluded_id = m_ExcludedID;
     return m_MeshBluePrint;
@@ -50,24 +34,28 @@ CreateMashBluePrint::~CreateMashBluePrint()
 {
     
 }
-void CreateMashBluePrint::ReadTopology(std::string file)
+bool CreateMashBluePrint::ReadTopology(const std::string& file)
 {
 
-        std::string ext = file.substr(file.find_last_of(".") + 1);
-        if(ext=="tsi")
+    std::string ext =  Nfunction::SubstringFromRight(file, '.');
+    if(ext == TSIExt)
         {
             Read_TSIFile(file);
 
         }
-        else if(ext=="top")
+        else if(ext == TopExt)
         {
             Read_Mult_QFile(file);
             GenerateIncFromInputfile();
         }
+    else{
+        std::cout<<" topology file type is not known "<<std::endl;
+        return false;
+    }
 
-
+    return true;
 }
-void CreateMashBluePrint::Read_TSIFile(std::string tsifile)
+void CreateMashBluePrint::Read_TSIFile(const std::string &tsifile)
 {
     Nfunction f;
     std::ifstream tsi;
@@ -207,7 +195,7 @@ void CreateMashBluePrint::Read_TSIFile(std::string tsifile)
         }
     }
 }
-void CreateMashBluePrint::Read_Mult_QFile(std::string topfile)
+void CreateMashBluePrint::Read_Mult_QFile(const std::string& topfile)
 {
     Nfunction f;
     //== read the top file and store all the q files with the group name.
@@ -326,98 +314,6 @@ void CreateMashBluePrint::Read_Mult_QFile(std::string topfile)
     std::cout<<"trinagle is read "<<"\n";
 
 }
-void CreateMashBluePrint::ReadInclusionType(std::string file)
-{
-    Nfunction f;
-    // enforcing correct file extension:  check simdef file for value of InExt
-    std::string ext = file.substr(file.find_last_of(".") + 1);
-    if(ext!=InExt)
-    file = file + "." + InExt;
-    if (f.FileExist(file)!=true)
-    {
-        std::cout<<"----> Error: the input file with the name "<<file<< " does not exist "<<std::endl;
-        m_Healthy =false;
-        exit(0);
-    }
-    std::ifstream input;
-    input.open(file.c_str());
-    std::string firstword,rest,str1,str2,TypeNames;
-    int N,TypeID, NoType;
-    double Kappa,KappaG,KappaP,KappaL,C0,C0P,C0N;
-    InclusionType EmptyIncType;
-    {
-        EmptyIncType.ITName = "noinc";   // type name
-        EmptyIncType.ITid = 0;       // Type ID
-        EmptyIncType.ITN = 0;      // inplane symmetry
-        EmptyIncType.ITk =0;     // Type Kappa
-        EmptyIncType.ITkg =0;  // kappaG
-        EmptyIncType.ITk1 =0;  // K_||
-        EmptyIncType.ITk2 =0;  // K_norm
-        EmptyIncType.ITc0 =0;  // curvature
-        EmptyIncType.ITc1 =0;    // direction curvature 1
-        EmptyIncType.ITc2 =0;    // direction curvature 2
-        EmptyIncType.ITelambda = 0;  // line tension
-        EmptyIncType.ITekg = 0 ;       // geodesic rigidity
-        EmptyIncType.ITekn = 0;       // normal curvature line rigidiy
-        EmptyIncType.ITecn =0 ;       // spontaneous normal  curvature
-    }
-    m_AllInclusionType.push_back(EmptyIncType); // we will make a default inclusion type
-    while (true)
-    {
-        input>>firstword;
-        if(input.eof() || firstword == "INCLUSION")
-            break;
-    }
-
-            input>>str1>>NoType>>str2;
-            getline(input,rest);
-            getline(input,rest); // takes a text line of SRotation Type   K  KG KP KL C0 C0P C0L no restriction for it yet
-
-#if TEST_MODE == Enabled
-    std::cout<<" --- > This line should be as below "<<rest<<std::endl;
-    std::cout<<" --- >                              SRotation Type   K  KG KP KL C0 C0P C0L "<<std::endl;
-#endif
-    
-    if(str1=="Define" || str1=="define"){
-        for(int i=0;i<NoType;i++)
-        {
-        input>>N>>TypeNames>>Kappa>>KappaG>>KappaP>>KappaL>>C0>>C0P>>C0N;
-        std::string edgedata;
-        getline(input,edgedata);
-        std::vector<std::string> ed = f.split(edgedata);
-        InclusionType IncType;
-            {
-                IncType.ITName = TypeNames;   // type name
-                IncType.ITid = i+1;       // Type ID
-                IncType.ITN = N;      // inplane symmetry
-                IncType.ITk = Kappa;     // Type Kappa
-                IncType.ITkg = KappaG;  // kappaG
-                IncType.ITk1 = KappaP;  // K_||
-                IncType.ITk2 = KappaL;  // K_norm
-                IncType.ITc0 = C0;  // curvature
-                IncType.ITc1 = C0P;    // direction curvature 1
-                IncType.ITc2 = C0N;    // direction curvature 2
-                if(ed.size()>=4)
-                {
-                IncType.ITelambda=f.String_to_Double(ed[0]);  // line tension
-                    IncType.ITekg=f.String_to_Double(ed[1]);       // geodesic rigidity
-                    IncType.ITekn=f.String_to_Double(ed[2]);       // normal curvature line rigidiy
-                    IncType.ITecn=f.String_to_Double(ed[3]);       // spontaneous normal  curvature
-                }
-                else
-                {
-                    std::cout<<" warning---> the inclusion type does not have date of edge: all set to zero \n";
-                    std::cout<<" if there is no open edge, this is fine \n";
-
-                }
-            }
-        m_AllInclusionType.push_back(IncType);
-        }
-    }
-    input.close();
-        WriteCreateMashBluePrintLog();
-
-}
 void CreateMashBluePrint::GenerateIncFromInputfile()
 {
     std::string file = m_InputFileName;
@@ -519,15 +415,4 @@ void CreateMashBluePrint::GenerateIncFromInputfile()
                     }
                 }
     delete [] V;
-}
-void CreateMashBluePrint::WriteCreateMashBluePrintLog()
-{
-    std::ofstream log;
-    log.open("statelog.log",std::fstream::app);
-    log<<"INCLUSION"<<std::endl;
-    log<<"Define "<<m_AllInclusionType.size()<<" Inclusions "<<std::endl;
-    log<<" SRotation Type   K  KG KP KL C0 C0P C0L "<<std::endl;
-    for (std::vector<InclusionType>::iterator it = m_AllInclusionType.begin() ; it != m_AllInclusionType.end(); ++it)
-        log<<it->ITN<<"  "<<it->ITName<<"  "<<it->ITk<<"  "<<"  "<<it->ITkg<<"  "<<"  "<<it->ITk1<<"  "<<"  "<<it->ITk2<<"  "<<"  "<<it->ITc0<<"  "<<"  "<<it->ITc1<<"  "<<"  "<<it->ITc2<<"  "<<std::endl;
-    log.close();
 }

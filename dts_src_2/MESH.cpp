@@ -67,10 +67,10 @@ void MESH::GenerateMesh(MeshBluePrint meshblueprint)
 {
     m_Box = meshblueprint.simbox;
     m_pBox = &m_Box;
-    m_InclusionType = meshblueprint.binctype;
+   // m_InclusionType = meshblueprint.binctype;
     
-    for (std::vector<InclusionType>::iterator it = m_InclusionType.begin() ; it != m_InclusionType.end(); ++it)
-        m_pInclusionType.push_back(&(*it));
+  //  for (std::vector<InclusionType>::iterator it = m_InclusionType.begin() ; it != m_InclusionType.end(); ++it)
+    //    m_pInclusionType.push_back(&(*it));
     
     
     // Making vertices
@@ -126,14 +126,14 @@ void MESH::GenerateMesh(MeshBluePrint meshblueprint)
     //make inclusions
     for (std::vector<Inclusion_Map>::iterator it = (meshblueprint.binclusion).begin() ; it != (meshblueprint.binclusion).end(); ++it)
     {
-        inclusion Tinc(it->id);
-        if(m_Vertex.size()<it->vid+1)
-        {
-        std::cout<<"----> Error: Inclusion vertex id is out of range "<<std::endl;
+        
+        if(m_Vertex.size()<it->vid+1 && it->tid > m_InclusionType.size()) {
+            
+            std::cout<<"----> Error: Inclusion vertex id or type id is out of range "<<std::endl;
             exit(0);
         }
+        inclusion Tinc(it->id, m_InclusionType[it->tid]);
         Tinc.Updatevertex(&(m_Vertex.at(it->vid)));
-        Tinc.UpdateInclusionTypeID(it->tid);
         Vec3D D(it->x,it->y,0);
         Tinc.UpdateLocalDirection(D);
         m_Inclusion.push_back(Tinc);
@@ -282,16 +282,9 @@ void MESH::GenerateMesh(MeshBluePrint meshblueprint)
     //
     
     
-    for (std::vector<inclusion*>::iterator it = m_pInclusion.begin() ; it != m_pInclusion.end(); ++it)
-    {
+    for (std::vector<inclusion*>::iterator it = m_pInclusion.begin() ; it != m_pInclusion.end(); ++it) {
+        
         ((*it)->Getvertex())->UpdateInclusion((*it));
-        int inc_typeid=(*it)->GetInclusionTypeID();
-        if(m_InclusionType.size()-1<inc_typeid)
-        {
-            std::cout<<" Error: inclusion with typeid of "<<inc_typeid<<" has not been defined \n";
-            exit(0);
-        }
-        (*it)->UpdateInclusionType(&(m_InclusionType.at(inc_typeid)));
     }
     // =======
     // ==== info of the mesh
@@ -370,14 +363,12 @@ MeshBluePrint MESH::Convert_Mesh_2_BluePrint(MESH *mesh)
         Inclusion_Map tim;
         tim.x = ((*it)->GetLDirection())(0);
         tim.y = ((*it)->GetLDirection())(1);
-        tim.vid = ((*it)->Getvertex())->GetVID();
-        tim.tid = ((*it)->GetInclusionType())->ITid;
-        tim.id = ((*it)->GetID());
+        tim.vid = (*it)->Getvertex()->GetVID();
+        tim.tid = (*it)->ITid;
+        tim.id = (*it)->GetID();
         binclusion.push_back(tim);
 
     }
-    // inclusion type map member of the blue print
-    BluePrint.binctype = mesh->m_InclusionType;
     // Add other map into the mesh map
     BluePrint.bvertex = bvertex;
     BluePrint.btriangle = btriangle;

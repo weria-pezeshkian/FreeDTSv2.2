@@ -19,29 +19,54 @@ public:
         m_Kappa_Norm = 0;   // normal curvature rigidty for edge V
         m_kappa = 0;        // bending rigidity
         m_kappa_G = 0;      // gaussian curvature rigidity
-        m_MeanCurvature = 0;
+        m_SCurvature0 = 0;
+        m_Ka = 0;          // coupling for mean area
+        m_Area0 = 0;     // mean area of v
+        m_Kl =0;        // couple for mean edge length
+        m_l0 =0;        // mean edge length
+        
     }
     virtual ~ AbstractEnergy(){
         
+        delete m_pInt;
+    }
+    //---- virtual functions
+    virtual inline std::string GetDerivedDefaultReadName() = 0;
+    virtual inline double CalculateAllLocalEnergy() = 0 ;
+    virtual double TwoInclusionsInteractionEnergy(links *) = 0;
+    virtual double SingleVertexEnergy(vertex *p) = 0;
+
+    
+    
+    //--- 
+    
+    
+    void Initialize(std::string inputfilename){
+        
+        m_pInt = new Inclusion_Interaction_Map(inputfilename);
+
+        return;
     }
    // virtual  double CalaculateEnergyofSingleVertex(vertex * pvertex) = 0;
-    virtual inline std::string GetDerivedDefaultReadName() {return "";}
+
+
+    
     inline static std::string GetBaseDefaultReadName() {return "EnergyMethod";}
     
 //---> real functions
     inline double GetEnergy()               const                 {return m_TotalEnergy;}
+    
     void UpdateTotalEnergy(double en){
        
         m_TotalEnergy = en;
         return;
     }
-    inline double GetKappa()                          {return m_kappa;}
 
     
     void SetSurfRigidity(double kappa, double kappa_g, double c0){
-        m_kappa = kappa;
+        m_kappa = kappa/2;
         m_kappa_G = kappa_g;
-        m_MeanCurvature = c0;
+        m_SCurvature0 = c0;
         return;
     }
     void SetEdgeRigidity(double lambda, double kappa_geo, double kappa_norm){
@@ -66,11 +91,14 @@ protected:
     double m_Kappa_Norm;  // normal curvature rigidty for edge V
     double m_kappa; // bending rigidity
     double m_kappa_G; // gaussian curvature rigidity
-    double m_MeanCurvature; // gaussian curvature rigidity
+    double m_SCurvature0; // gaussian curvature rigidity
     double m_Ka;          // coupling for mean area
     double m_Area0;     // mean area of v
     double m_Kl;        // couple for mean edge length
     double m_l0;        // mean edge length
+    
+    Inclusion_Interaction_Map * m_pInt;
+
 };
 
 #endif

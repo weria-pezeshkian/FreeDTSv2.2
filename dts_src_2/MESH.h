@@ -37,9 +37,10 @@ public:
     inline double                   GetMaxLength()      const      {return m_MaxLength;}
     inline double                   GetMinAngle()       const      {return m_MinAngle;}
     inline const bool               GetHasCrossedPBC()  const      {return m_MeshCrossedPBC;}
-
-    
     std::vector <InclusionType*>    GetInclusionType()     const {return m_pInclusionType;}
+    
+    
+    
     
     inline void UpdateCrossedPBC(bool newValue){
         if(!m_MeshCrossedPBC)

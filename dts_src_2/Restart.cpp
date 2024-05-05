@@ -70,23 +70,7 @@ void Restart::WriteRestart(std::string &filename, int step, MESH * pmesh, double
     (Rfile).write((char *) &size, sizeof(int));
     for (std::vector<Inclusion_Map>::iterator it = (blueprint.binclusion).begin() ; it != (blueprint.binclusion).end(); ++it)
         (Rfile).write((char *) &(*it), sizeof(Inclusion_Map));
-    size = (blueprint.binctype).size();
-    (Rfile).write((char *) &size, sizeof(int));
-    for (std::vector<InclusionType>::iterator it = (blueprint.binctype).begin() ; it != (blueprint.binctype).end(); ++it)
-    {
-        (Rfile).write((char *) &(it->ITid), sizeof(int));
-        (Rfile).write((char *) &(it->ITN), sizeof(int));
-        (Rfile).write((char *) &(it->ITk), sizeof(double));
-        (Rfile).write((char *) &(it->ITkg), sizeof(double));
-        (Rfile).write((char *) &(it->ITk1), sizeof(double));
-        (Rfile).write((char *) &(it->ITk2), sizeof(double));
-        (Rfile).write((char *) &(it->ITc0), sizeof(double));
-        (Rfile).write((char *) &(it->ITc1), sizeof(double));
-        (Rfile).write((char *) &(it->ITc2), sizeof(double));
-          (Rfile).write((it->ITName).c_str(), (it->ITName).size());
-        (Rfile).write("\0",sizeof(char)); // null end string for easier reading
 
-    }
     Rfile.close();
     Rfile.flush();
 
@@ -117,11 +101,9 @@ MeshBluePrint Restart::ReadFromRestart(const std::string& inputFilename, int& st
     return ReadRestart(restartFilename, step, readOk, rVertex, rBox);
 }
 //=== Read a restart file and load to the  active [State] Object
-MeshBluePrint Restart::ReadRestart(std::string filename , int &step, bool &readok, double &r_vertex, double &r_box)
-{
+MeshBluePrint Restart::ReadRestart(std::string filename , int &step, bool &readok, double &r_vertex, double &r_box) {
 
     MeshBluePrint blueprint;
-
 
     // We should make a check and see if the restart file is writtn correctly or not
     //=== just read the restart file and copy it into the current active [State] object
@@ -142,7 +124,6 @@ if(Rfile.is_open())
     std::vector<Vertex_Map> bvertex;       // a vector of all vertices (only the blueprint not the object) in the mesh
     std::vector<Triangle_Map> btriangle;   // a vector of all triangles (only the blueprint not the object) in the mesh
     std::vector<Inclusion_Map> binclusion; // a vector of all inclusions (only the blueprint not the object) in the mesh
-    std::vector <InclusionType> binctype;  // a vector containing all inclsuion type and a default one
     int size;
     Rfile.read((char *) &size, sizeof(int));
     for (int i=0;i<size;i++){
@@ -162,23 +143,6 @@ if(Rfile.is_open())
         (Rfile).read((char *) &incmap, sizeof(Inclusion_Map));
         binclusion.push_back(incmap);
     }
-    Rfile.read((char *) &size, sizeof(int));
-    for (int i=0;i<size;i++){
-        InclusionType inctype;
-        (Rfile).read((char *) &(inctype.ITid), sizeof(int));
-        (Rfile).read((char *) &(inctype.ITN), sizeof(int));
-        (Rfile).read((char *) &(inctype.ITk), sizeof(double));
-        (Rfile).read((char *) &(inctype.ITkg), sizeof(double));
-        (Rfile).read((char *) &(inctype.ITk1), sizeof(double));
-        (Rfile).read((char *) &(inctype.ITk2), sizeof(double));
-        (Rfile).read((char *) &(inctype.ITc0), sizeof(double));
-        (Rfile).read((char *) &(inctype.ITc1), sizeof(double));
-        (Rfile).read((char *) &(inctype.ITc2), sizeof(double));
-        std::getline(Rfile,inctype.ITName,'\0'); // get player name (remember we null ternimated in binary)
-        binctype.push_back(inctype);
-    }
-    
-    blueprint.binctype = binctype;
     blueprint.bvertex = bvertex;
     blueprint.btriangle = btriangle;
     blueprint.binclusion = binclusion;

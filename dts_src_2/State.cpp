@@ -40,7 +40,7 @@ State::State(std::vector<std::string> argument) :
       //--- Initialize accessory objects
       m_pCurvatureCalculations(new CurvatureByShapeOperatorType1),  // Initialize CurvatureCalculations
       m_RandomNumberGenerator(new RNG(1234)),  // Initialize RandomNumberGenerator
-      m_pEnergyCalculator(new Energy),  // Initialize EnergyCalculator
+      m_pEnergyCalculator(new Energy(this)),  // Initialize EnergyCalculator
 
       m_pSimulation(new MC_Simulation(this)),  // Initialize Simulation
       m_pParallel_Replica(new ParallelReplicaData(false)),
@@ -571,6 +571,10 @@ bool State::ReadInputFile(std::string file)
             getline(input,rest);
         }
     }
+    
+    // read inclusion
+    ReadInclusionType(input);
+    
     input.close();
     
     return true;
@@ -670,13 +674,18 @@ bool State::Initialize(){
     
 //----> calaculate curvature for all vertices
         m_pCurvatureCalculations->Initialize(this);
-//----> set some easy access for Vertex Position Integrator
+
+    //----> set some easy access for Vertex Position Integrator
         m_pVertexPositionIntegrator->Initialize(this);
-//---->
+
+//----> boundry of the simulations
         m_pBoundary->Initialize();
     
 //----> energy class
-    // m_pEnergyCalculator
+    //---> to get interaction energies
+     m_pEnergyCalculator->Initialize(m_InputFileName);
+    //---> to update each vertex and edge energy. Up to now May 2024, edge energy is not zero when both vertices has inclusions
+     m_pEnergyCalculator->CalculateAllLocalEnergy();
     
     /*
     //---- Initialize constraint components
@@ -684,12 +693,9 @@ bool State::Initialize(){
     m_pCoupleGlobalCurvature
     m_pTotalAreaCoupling               
     m_pForceonVerticesfromInclusions
-    m_pExternalFieldOnVectorFields
     m_pApplyConstraintBetweenGroups
-    m_pBoundary
     
     // Initialize integrators
-    m_pVertexPositionIntegrator         (m_RandomNumberGenerator)
     m_pAlexanderMove                    = new AlexanderMoveByMetropolisAlgorithm;
     m_pInclusionPoseIntegrator          = new InclusionPoseUpdateByMetropolisAlgorithm;
    
@@ -698,18 +704,62 @@ bool State::Initialize(){
     m_pDynamicTopology                  = new ConstantTopology;
     m_pOpenEdgeEvolution                = new NoEvolution;
     m_pInclusionConversion              = new NoInclusionConversion;
-    //--- Initialize accessory objects
-                 = new RNG(1234);
-    // Initialize energy calculator
-    m_pEnergyCalculator                 = new Energy;
     
-    // Initialize simulations
-    m_pSimulation                       = new MC_Simulation (this);
     */
     
         m_pSimulation->Initialize();
     
     return true;
 }
+bool State::ReadInclusionType(std::ifstream& input) {
+    std::string firstword, rest, str1, str2, TypeNames;
+    int N, TypeID, NoType;
+    double Kappa, KappaG, KappaP, KappaL, C0, C0P, C0N;
 
+    // Store inclusion types in a vector
+    std::vector<InclusionType> all_InclusionType;
+
+    // Add a default inclusion type
+    InclusionType emptyIncType;
+    all_InclusionType.push_back(emptyIncType);
+
+    // Read the header line
+    input >> str1 >> NoType >> str2;
+    getline(input, rest);
+    getline(input, rest); // Discard the header line
+
+    // Check if the header line indicates inclusion type definition
+    if (str1 == "Define" || str1 == "define" || str1 == "DEFINE") {
+        for (int i = 0; i < NoType; i++) {
+            input >> N >> TypeNames >> Kappa >> KappaG >> KappaP >> KappaL >> C0 >> C0P >> C0N;
+            std::string edgedata;
+            getline(input, edgedata);
+            std::vector<std::string> edge_data = Nfunction::split(edgedata);
+
+            // Parse edge data if available
+            double lam = 0, ekg = 0, ekn = 0, ecn = 0;
+            if (edge_data.size() >= 4) {
+                lam = Nfunction::String_to_Double(edge_data[0]);
+                ekg = Nfunction::String_to_Double(edge_data[1]);
+                ekn = Nfunction::String_to_Double(edge_data[2]);
+                ecn = Nfunction::String_to_Double(edge_data[3]);
+            }
+
+            // Create inclusion type and add to vector
+            InclusionType incType(TypeNames, i + 1, N, Kappa/2, KappaG, KappaP/2, KappaL/2, C0, C0P, C0N, lam, ekg, ekn, ecn);
+            all_InclusionType.push_back(incType);
+        }
+    }
+
+    // Set inclusion types in the mesh object
+    m_Mesh.m_InclusionType = all_InclusionType;
+
+    // Set pointers to inclusion types
+    m_Mesh.m_pInclusionType.clear();
+    for (size_t i = 0; i < m_Mesh.m_InclusionType.size(); ++i) {
+        m_Mesh.m_pInclusionType.push_back(&m_Mesh.m_InclusionType[i]);
+    }
+
+    return true;
+}
 

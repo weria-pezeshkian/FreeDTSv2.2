@@ -120,6 +120,8 @@
 //--- accessory objects
 #include "RNG.h"
 #include "VAHGlobalMeshProperties.h"
+#include "InclusionType.h"
+
 
 struct ParallelReplicaData {  // data structure for turning on and off certain moves
     ParallelReplicaData(){State = false;}
@@ -192,7 +194,7 @@ bool Initialize(); // makes all the objects ready for simulations, it will open 
 private:
     bool ReadInputFile(std::string inputfile);    // updates variables based on data in the inputfile
     bool ExploreArguments(std::vector<std::string> &argument);
-
+    bool ReadInclusionType(std::ifstream& input);
 private:
     AbstractApplyConstraintBetweenGroups *m_pApplyConstraintBetweenGroups;
     AbstractInclusionConversion* m_pInclusionConversion;

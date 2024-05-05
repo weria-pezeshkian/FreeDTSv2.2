@@ -102,22 +102,7 @@ void BTSFile::WriteAFrame(int &step){
     (m_File).write((char *) &size, sizeof(int));
     for (std::vector<Inclusion_Map>::iterator it = (blueprint.binclusion).begin() ; it != (blueprint.binclusion).end(); ++it)
         (m_File).write((char *) &(*it), sizeof(Inclusion_Map));
-    size = (blueprint.binctype).size();
-    (m_File).write((char *) &size, sizeof(int));
-    for (std::vector<InclusionType>::iterator it = (blueprint.binctype).begin() ; it != (blueprint.binctype).end(); ++it)
-    {
-        (m_File).write((char *) &(it->ITid), sizeof(int));
-        (m_File).write((char *) &(it->ITN), sizeof(int));
-        (m_File).write((char *) &(it->ITk), sizeof(double));
-        (m_File).write((char *) &(it->ITkg), sizeof(double));
-        (m_File).write((char *) &(it->ITk1), sizeof(double));
-        (m_File).write((char *) &(it->ITk2), sizeof(double));
-        (m_File).write((char *) &(it->ITc0), sizeof(double));
-        (m_File).write((char *) &(it->ITc1), sizeof(double));
-        (m_File).write((char *) &(it->ITc2), sizeof(double));
-        (m_File).write((it->ITName).c_str(), (it->ITName).size());
-        (m_File).write("\0",sizeof(char)); // null end string for easier reading
-    }
+    
     m_File.flush();
     return;
 }
@@ -168,30 +153,8 @@ if(m_File.is_open() && !m_File.eof() )
         (m_File).read((char *) &incmap, sizeof(Inclusion_Map));
         binclusion.push_back(incmap);
     }
-    m_File.read((char *) &size, sizeof(int));
-    for (int i=0;i<size;i++)
-    {
-        InclusionType inctype;
-        (m_File).read((char *) &inctype, sizeof(InclusionType));
-        binctype.push_back(inctype);
-    }
-    for (int i=0;i<size;i++)
-    {
-        InclusionType inctype;
-        (m_File).read((char *) &(inctype.ITid), sizeof(int));
-        (m_File).read((char *) &(inctype.ITN), sizeof(int));
-        (m_File).read((char *) &(inctype.ITk), sizeof(double));
-        (m_File).read((char *) &(inctype.ITkg), sizeof(double));
-        (m_File).read((char *) &(inctype.ITk1), sizeof(double));
-        (m_File).read((char *) &(inctype.ITk2), sizeof(double));
-        (m_File).read((char *) &(inctype.ITc0), sizeof(double));
-        (m_File).read((char *) &(inctype.ITc1), sizeof(double));
-        (m_File).read((char *) &(inctype.ITc2), sizeof(double));
-        std::getline(m_File,inctype.ITName,'\0'); // get player name (remember we null ternimated in binary)
-        binctype.push_back(inctype);
-    }
+
     
-    blueprint.binctype = binctype;
     blueprint.bvertex = bvertex;
     blueprint.btriangle = btriangle;
     blueprint.binclusion = binclusion;
