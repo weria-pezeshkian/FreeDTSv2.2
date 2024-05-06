@@ -59,6 +59,9 @@ State::State(std::vector<std::string> argument) :
       m_MaxLinkLengthSquare(3.0)  // Set MaxLinkLengthSquare
 
 { // start of the "class State" constructor
+    
+    m_pMesh = &m_Mesh;
+
 //-- Find input files name (input.tsi, top.top||top.tsi, index.inx, restart.res)
         if (!ExploreArguments(argument)) {
             exit(0);
@@ -316,15 +319,13 @@ bool State::ReadInputFile(std::string file)
             int period = 0;
             double force = 0;
 
-            input >> str >> type >> period >> force;
+            input >> str >> type ;
 
-            if (type == "SingleSideConstantForce") {
-                m_pDynamicBox = new DynamicBoxSide(period, force, this);
+            if (type == PositionRescaleFrameTensionCoupling::GetDefaultReadName()) {
+                
+                input >> period >> force;
+                m_pDynamicBox = new PositionRescaleFrameTensionCoupling(period, force, this);
             }
-            else if (type == "PositionRescale_FrameTension") {
-                m_pDynamicBox = new PositionRescaleFrameTensionCoupling(period, force,this);
-            }
-
             // Consume remaining input line
             getline(input, rest);
         }
@@ -385,16 +386,16 @@ bool State::ReadInputFile(std::string file)
             std::string type;
             input >> str >> type;
             if(type == "SecondOrderCoupling"){
-                int eqsteps = 0;
                 double dp,k,vt;
-                input>>eqsteps>>dp>>k>>vt;
-                m_pVolumeCoupling = new CmdVolumeCouplingSecondOrder(eqsteps, dp,  k, vt);
+                input>>dp>>k>>vt;
+                m_pVolumeCoupling = new CmdVolumeCouplingSecondOrder(m_pVAHCalculator, this, dp,  k, vt);
+
             }
             else if(type == "Osmotic_Pressure"){
-                int eqsteps = 0;
-                double gamma,p0;
-                input>>eqsteps>>gamma>>p0;
-                m_pVolumeCoupling = new Apply_Osmotic_Pressure(eqsteps,gamma,p0);
+                double gamma,P0;
+                input>>gamma>>P0;
+                m_pVolumeCoupling = new Apply_Osmotic_Pressure(m_pVAHCalculator, this, gamma, P0 );
+
             }
             getline(input,rest);
         }
@@ -663,8 +664,7 @@ bool State::Initialize(){
         // Generate mesh from the mesh blueprint
         m_Mesh.GenerateMesh(mesh_blueprint);
     
-        // Set the pointer to the mesh object
-        m_pMesh = &m_Mesh;
+
 
         // Update group from index file
         m_pMesh->UpdateGroupFromIndexFile(m_IndexFileName);
@@ -675,11 +675,16 @@ bool State::Initialize(){
 //----> calaculate curvature for all vertices
         m_pCurvatureCalculations->Initialize(this);
 
-    //----> set some easy access for Vertex Position Integrator
+//----> set some easy access for integrators
         m_pVertexPositionIntegrator->Initialize(this);
-
+        m_pAlexanderMove->Initialize(this);
+        m_pInclusionPoseIntegrator->Initialize(this);
+    
 //----> boundry of the simulations
         m_pBoundary->Initialize();
+    
+//-----> box change
+    m_pDynamicBox->Initialize();
     
 //----> energy class
     //---> to get interaction energies
@@ -687,6 +692,9 @@ bool State::Initialize(){
     //---> to update each vertex and edge energy. Up to now May 2024, edge energy is not zero when both vertices has inclusions
      m_pEnergyCalculator->CalculateAllLocalEnergy();
     
+//----> inclsuion exchange, active inclsuion exchange
+    //m_pInclusionConversion
+   
     /*
     //---- Initialize constraint components
      m_pVolumeCoupling
@@ -694,13 +702,9 @@ bool State::Initialize(){
     m_pTotalAreaCoupling               
     m_pForceonVerticesfromInclusions
     m_pApplyConstraintBetweenGroups
-    
-    // Initialize integrators
-    m_pAlexanderMove                    = new AlexanderMoveByMetropolisAlgorithm;
-    m_pInclusionPoseIntegrator          = new InclusionPoseUpdateByMetropolisAlgorithm;
+
    
     // Initialize supplementary integrators
-    m_pDynamicBox                       = new NoBoxChange;
     m_pDynamicTopology                  = new ConstantTopology;
     m_pOpenEdgeEvolution                = new NoEvolution;
     m_pInclusionConversion              = new NoInclusionConversion;

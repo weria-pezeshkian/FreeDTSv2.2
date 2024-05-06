@@ -62,13 +62,13 @@ double Energy::SurfVertexBendingAndStretchingEnergy(vertex * p_vertex){
         // e_v = kappa/2*(2H-c0)^2-kgK+k1/2(cp-cp0)^2+k2/2(cn-cn0)^2
         
         inclusion *p_inc=p_vertex->GetInclusion();
-        double k0 = p_inc->ITk;
-        double kg = p_inc->ITkg;
-        double k1 = p_inc->ITk1;
-        double k2 = p_inc->ITk2;
-        double c0 = p_inc->ITc0;
-        double cp10 = p_inc->ITc1;
-        double cn20 = p_inc->ITc2;
+        double k0 = p_inc->m_IncType->ITk;
+        double kg = p_inc->m_IncType->ITkg;
+        double k1 = p_inc->m_IncType->ITk1;
+        double k2 = p_inc->m_IncType->ITk2;
+        double c0 = p_inc->m_IncType->ITc0;
+        double cp10 = p_inc->m_IncType->ITc1;
+        double cn20 = p_inc->m_IncType->ITc2;
         //--- kappa/2*(2H-c0)^2-kgK+
         en += k0*(mean_times2-c0)*(mean_times2-c0) - kg*m_kappa_G;
         
@@ -112,10 +112,10 @@ double Energy::EdgeVertexBendingAndStretchingEnergy(vertex *p_vertex)
     else {
         
         inclusion *p_inc = p_vertex->GetInclusion();
-        double lambda = p_inc->ITelambda;
-        double kg     = p_inc->ITekg;
-        double kn     = p_inc->ITekn;
-        double cn0    = p_inc->ITecn;
+        double lambda = p_inc->m_IncType->ITelambda;
+        double kg     = p_inc->m_IncType->ITekg;
+        double kn     = p_inc->m_IncType->ITekn;
+        double cn0    = p_inc->m_IncType->ITecn;
         
         en += (lambda + kg*geo_c*geo_c)*length;
         
@@ -179,8 +179,8 @@ double Energy::TwoInclusionsInteractionEnergy(links * p_edge)
 
 //--> now use the type if to get the interaction parameters of this pars
     
-    int id1=(p_v1->GetInclusion())->ITid;
-    int id2=(p_v2->GetInclusion())->ITid;
+    int id1=(p_v1->GetInclusion())->m_IncType->ITid;
+    int id2=(p_v2->GetInclusion())->m_IncType->ITid;
     PairInt pair_ab = m_pInt->GetPairInt(id1,id2);
     std::vector <double> ff = pair_ab.Varibale;
     //---> get the type of function that they interact, it is an intger

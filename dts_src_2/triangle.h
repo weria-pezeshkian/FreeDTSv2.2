@@ -2,7 +2,7 @@
 #define AFX_triangle_H_6Q4B21B8_C13C_5648_BF23_124095086233__INCLUDED_
 
 #include "SimDef.h"
-
+#include "Vec3D.h"
 /*
  * File: triangle.h
  * Author: Weria Pezeshkian (weria.pezeshkian@gmail.com)
@@ -12,7 +12,6 @@
  */
 
 class vertex;   // Forward declaration
-class Vec3D;    // Forward declaration
 
 class triangle {
 

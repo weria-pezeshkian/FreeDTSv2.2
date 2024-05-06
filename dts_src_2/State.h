@@ -79,7 +79,6 @@
 #include "CurvatureByShapeOperatorType1.h"
 //-- dynamic box
 #include "AbstractDynamicBox.h"
-#include "DynamicBoxSide.h"
 #include "PositionRescaleFrameTensionCoupling.h"
 //-- dynamic topology
 #include "AbstractDynamicTopology.h"
@@ -143,10 +142,13 @@ public:
     State();
     ~State();
     
+  //  friend class Three_Edge_Scission;
+
+    
 //-- standard Integrators
-inline AbstractAlexanderMove                *GetMCMoveLinkFlip()                 {return m_pAlexanderMove;}
-inline AbstractVertexPositionIntegrator     *GetMCAVertexMove()                  {return m_pVertexPositionIntegrator;}
-inline AbstractInclusionPoseIntegrator      *GetInclusionMCMove()                {return m_pInclusionPoseIntegrator;}
+inline AbstractAlexanderMove                *GetAlexanderMove()                 {return m_pAlexanderMove;}
+inline AbstractVertexPositionIntegrator     *GetVertexPositionUpdate()                  {return m_pVertexPositionIntegrator;}
+inline AbstractInclusionPoseIntegrator      *GetInclusionPoseUpdate()                {return m_pInclusionPoseIntegrator;}
 //---- I/O managment
 inline Restart                   *GetRestart()                                      {return m_pRestart;}
 inline TimeSeriesDataOutput      *GetTimeSeriesDataOutput()                         {return m_pTimeSeriesDataOutput;}

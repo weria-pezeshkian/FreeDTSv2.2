@@ -1,7 +1,8 @@
-#if !defined(AFX_DynamicTopology_H)
-#define AFX_DynamicTopology_H
+#if !defined(AFX_DYNAMICTOPOLOGY_H)
+#define AFX_DYNAMICTOPOLOGY_H
+
+#include "SimDef.h"
 #include <iostream>
-#include "RNG.h"
 
 // Define a base class with a virtual function
 /*
@@ -12,13 +13,18 @@
 This class is a base class for changing the box
 ========================================================
 */
-class AbstractDynamicTopology {
+class vertex;
+class AbstractDynamicTopology  {
 public:
-    AbstractDynamicTopology();
-    virtual ~AbstractDynamicTopology();
+    AbstractDynamicTopology() {
+        
+    };
+    virtual ~AbstractDynamicTopology(){
+        
+    }
 
-    virtual bool MCMove(int step, double* totalenergy, RNG *rng, Voxelization<vertex>* p_Allvoxel) = 0;
-    virtual void initialize() = 0;
+    virtual bool MCMove(int step) = 0;
+    virtual void Initialize() = 0;
     
     virtual inline std::string GetDerivedDefaultReadName() {return "";}
     inline static std::string GetBaseDefaultReadName() {return "DynamicTopology";}
@@ -27,7 +33,7 @@ public:
 //---- a class for no box change
 class ConstantTopology : public AbstractDynamicTopology {
 public:
-    ConstantTopology(){
+    ConstantTopology() {
         
     }
     ~ConstantTopology(){
@@ -35,10 +41,10 @@ public:
     }
 
     inline std::string GetDerivedDefaultReadName() {return "ConstantTopology";}
-    void initialize(){
+    void Initialize(){
         return;
     }
-    bool MCMove(int step, double * TotalEnergy, RNG *rng, Voxelization<vertex>* p_Allvoxel){
+    bool MCMove(int step){
         return false;
     }
 };

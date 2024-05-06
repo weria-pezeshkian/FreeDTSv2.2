@@ -50,9 +50,6 @@ public:
 
 
 public:
-
-    
-    
     void RemoveFromLinkList(links* z, std::vector<links*> &vect);
     void RemoveFromTriangleList(triangle* z, std::vector<triangle*> &vect);
     void RemoveFromVertexList(vertex* z, std::vector<vertex*> &vect);
@@ -79,16 +76,7 @@ public:
     
 
     
-    std::vector<vertex*>        m_pActiveV; // all the active vertices edge + surf
-    std::vector<vertex*>        m_pSurfV; // all the active vertices  surf
-    std::vector<vertex*>        m_pEdgeV;  // edge
-    std::vector<links*>         m_pActiveL;   // all the links
-    std::vector<links*>         m_pHL;
-    std::vector<links*>         m_pMHL;
-    std::vector<links*>         m_pEdgeL;
-    std::vector<triangle*>      m_pActiveT;
-    std::vector<inclusion*>     m_pInclusion;
-    Vec3D                       *m_pBox;
+    
 
     std::map<std::string, std::vector<vertex*> > m_Groups;
 
@@ -107,15 +95,30 @@ private:
     double                      m_MinAngle;                         //                ||
 //======================================================================================
 
-    std::vector<triangle*>       m_pGhostT; // Some trinagles for initial storing
-    std::vector<links*>          m_pGhostL;
-    std::vector<vertex*>         m_pGhostV;
+
 //-- this variable need to be added and centerlized here
     double  m_TotalArea;
     double m_TotalVolume;
     double m_TotalCurvature;   // not sure about this, as this is more of a curvature class
     bool m_MeshCrossedPBC;
     
+    
+    
+protected:
+    std::vector<vertex*>        m_pActiveV; // all the active vertices edge + surf
+    std::vector<vertex*>        m_pSurfV; // all the active vertices  surf
+    std::vector<vertex*>        m_pEdgeV;  // edge
+    std::vector<links*>         m_pActiveL;   // all the links
+    std::vector<links*>         m_pHL;
+    std::vector<links*>         m_pMHL;
+    std::vector<links*>         m_pEdgeL;
+    std::vector<triangle*>      m_pActiveT;
+    std::vector<inclusion*>     m_pInclusion;
+    std::vector<triangle*>       m_pGhostT; // Some trinagles for initial storing
+    std::vector<links*>          m_pGhostL;
+    std::vector<vertex*>         m_pGhostV;
+    Vec3D                       *m_pBox;
+
 };
 
 

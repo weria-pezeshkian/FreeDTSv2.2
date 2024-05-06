@@ -1,7 +1,7 @@
 #if !defined(AFX_AbstractEnergy_H)
 #define AFX_AbstractEnergy_H
 #include <iostream>
-
+#include "Inclusion_Interaction_Map.h"
 // Define a Abstract class with a virtual function and some main function
 /*
 =======================================================
@@ -59,6 +59,11 @@ public:
     void UpdateTotalEnergy(double en){
        
         m_TotalEnergy = en;
+        return;
+    }
+    void AddToTotalEnergy(double d_en){
+       
+        m_TotalEnergy += d_en;
         return;
     }
 

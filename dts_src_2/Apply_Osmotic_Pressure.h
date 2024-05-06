@@ -14,8 +14,7 @@ for taraget Apply_Osmotic_Pressure.
 
 class Apply_Osmotic_Pressure : public AbstractVolumeCoupling {
 public:
-    Apply_Osmotic_Pressure();
-    Apply_Osmotic_Pressure(int eqsteps, double gamma,  double P0);
+    Apply_Osmotic_Pressure(VAHGlobalMeshProperties *VHA, State* pstate, double gamma,  double P0);
     ~Apply_Osmotic_Pressure();
 
 

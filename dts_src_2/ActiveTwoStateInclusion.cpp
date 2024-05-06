@@ -3,162 +3,120 @@
 #include <stdio.h>
 #include "ActiveTwoStateInclusion.h"
 #include "Nfunction.h"
-#include "Energy.h"
-/*
- Weria Pezeshkian (weria.pezeshkian@gmail.com)
- Copyright (c) Weria Pezeshkian
- Active inclusion
- This command is not tested and may contain errors, do not used it .....
+#include "State.h"
+ /*
+  * @file ActiveTwoStateInclusion.cpp
+  * @brief Implementation of the ActiveTwoStateInclusion class methods.
+  *
+  * This file contains the implementation of the methods declared in the ActiveTwoStateInclusion class.
+  * The class is responsible for exchanging inclusion types between two states based on active algorthem.
+  * The exchange is not done based on the energetic of the states. It is active, but energy get updated after the exchange
+  * It initializes the inclusion exchange process, performs exchanges at defined intervals, and manages energy calculations.
+  *
+  * @author Weria Pezeshkian (weria.pezeshkian@gmail.com)
+  */
+
+ActiveTwoStateInclusion::ActiveTwoStateInclusion(int period, double ep, double per, double gama, std::string t_name1,std::string t_name2 )
+    : m_Period(period), m_Epsilon(ep), m_Percentage(per), m_Gama(gama), m_TypeName_1(t_name1), m_TypeName_2(t_name2), m_N2(0), m_N1(0)
+{
+    
+}
+void ActiveTwoStateInclusion::Initialize(State *pstate) {
+    
+    m_pState = pstate;
+    const std::vector<inclusion *>& pAllInclusion = m_pState->GetMesh()->GetInclusion();
+    for (std::vector<inclusion *>::const_iterator it = pAllInclusion.begin() ; it != pAllInclusion.end(); ++it){
+        if((*it)->m_IncType->ITName == m_TypeName_1){
+            m_pSubInc.push_back(*it);
+            m_pIncType1 = (*it)->m_IncType;
+            m_N1++;
+        }
+        else if((*it)->m_IncType->ITName == m_TypeName_2){
+            m_pSubInc.push_back(*it);
+            m_pIncType2 = (*it)->m_IncType;
+            m_N2++;
+        }
+    } // end for (std::vector<inclusion *>::const_iterator it = pAllInclusion.begin() ; it != pAllInclusion.end(); ++it)
+    
+    m_Gama  = m_Gama/double(m_pSubInc.size());  // fluctuations, why do we divide it by N
+    m_N = m_N1 + m_N2;
+    m_ActiveEnergy = 0;
+    m_Delta_N0 = m_N * (2 * m_Percentage - 1);   // expected difference in the number of two states; or forced
+}
+ActiveTwoStateInclusion::~ActiveTwoStateInclusion() {
+    
+}
+bool ActiveTwoStateInclusion::Exchange(int step){
  
- */
-ActiveTwoStateInclusion::ActiveTwoStateInclusion(double ep1, double ep2,double per, double gama, std::string t1,std::string t2 )
-{
-    m_Epsilon1 = ep1;
-    m_Epsilon2 = ep2;// at the moment this is not used anywhere...
-    m_Percentge = per;
-    m_Gama = gama;
-    m_IncType1Name = t1;
-    m_IncType2Name = t2;
-    m_N2 = 0;
-    m_N1 = 0;
-    m_N = 0;
-    totDN = 0;
-    m_ActiveEnergy = 0;;
-    m_DeltaN = 0;
-    m_State = true;
     
-    std::cout<<"Active membrane "<<m_IncType1Name<<"  "<<m_IncType2Name<<"  "<<m_Epsilon1<<" "<<m_Epsilon2<<"  "<<m_Percentge<<"  "<<m_Gama<<"\n";
-}
-void ActiveTwoStateInclusion::Initialize(State *pstate)
-{
+    if( step%m_Period !=0 )
+        return false;
     
-    /*
-        m_Percentge is the difference between the two state; 1 and 2,
-        m_N is total number of the inclusions that are involved in this exchanges. So DeltaN = 2*N1-m_N
-        N1=int (m_Percentge*m_N)
-        N2 = m_N - N1
-        epsilon is the rate, we could have different rate but reducing the number of the model parameters 
-     */
-    std::cout<<" this should be fixed too \n";
-    
-    std::vector<inclusion*> pInclusions;
-    std::vector<InclusionType*> allinctype;
-    Inclusion_Interaction_Map * pint;
-    RNG* rng;
-    
-    
-    Nfunction f;
-    m_Health = true;
-    m_RNG = rng;
-    m_pInt = pint;
-    m_pInclusions = pInclusions;
-   if(m_State==true)
-    {
-        // adding all the relevant inclsuions into m_pInc
-        for (std::vector<inclusion *>::iterator it = m_pInclusions.begin() ; it != m_pInclusions.end(); ++it)
-        {
-            if(((*it)->GetInclusionType())->ITName == m_IncType1Name)
-            {
-                m_N1++;
-                m_pInc.push_back(*it);
-            }
-            else if(((*it)->GetInclusionType())->ITName == m_IncType2Name)
-            {
-                m_N2++;
-                m_pInc.push_back(*it);
-            }
-        }
-        // obtain a pointer to the inclusion type of the two inclusions
-        for (std::vector<InclusionType *>::iterator it = allinctype.begin() ; it != allinctype.end(); ++it)
-        {
-            if((*it)->ITName == m_IncType1Name)
-                m_pIncType1 = (*it);
-            else if((*it)->ITName == m_IncType2Name)
-                m_pIncType2 = (*it);
-        }
-    }
-    m_N = m_pInc.size();            //total number of the involved inclusions
-    int N10 = m_Percentge*m_N;      // averged number of the first type
-    m_DeltaN0 = 2*N10-m_N;           // expected difference in the number of two states
-    m_Gama  = m_Gama/m_N;           // fluctuations
-    
-    if (m_State==true)
-    {
-        std::string sms = " This system is coupled to an active process, i.e., ActiveTwoStateInclusion";
-        f.Write_One_LogMessage(sms);
-        std::cout<<sms<<std::endl;
-        sms = " Active parameter are:\n inial N1 "+ f.Int_to_String(m_N1)+" inial N2 "+ f.Int_to_String(m_N2)+" target N_1-N2  "+ f.Int_to_String(m_DeltaN0);
-        f.Write_One_LogMessage(sms);
-        std::cout<<sms<<std::endl;
+    // in the old version it was as: double eta = 2*double(m_N-m_DeltaN0)/double(m_N+m_DeltaN0)-1;
+    double eta = 2*double(m_N2)/double(m_N1)-1; // we force ep1 to be equal to ep2. Does not make too much sense here
 
-    }
-}
-ActiveTwoStateInclusion::~ActiveTwoStateInclusion()
-{
-    
-}
-void ActiveTwoStateInclusion::ActiveExchange(double *tot_Energy)
-{
-    
-        Energy EE (m_pInt);
-    
-        double eta = 2*double(m_N-m_DeltaN0)/double(m_N+m_DeltaN0)-1; // we force ep1 to be equal to ep2. Does not make too much sense here
-        // finding a random inclusion among the selected one
+    for (std::vector<inclusion *>::iterator it = m_pSubInc.begin() ; it != m_pSubInc.end(); ++it){
+        
+        double old_energy = 0;
+        double new_energy = 0;
+        bool exchange_happend = false;
+        int delta_N = m_N1 - m_N2;
+        double phi = double(delta_N-m_Delta_N0);
 
-    for (int i=0;i<m_pInc.size();i++)
-    {
-        int  n = m_RNG->IntRNG(m_N);
-        inclusion *tinc = m_pInc.at(n);
-        vertex* tver = tinc->Getvertex();
+        vertex* tver = (*it)->Getvertex();
+        InclusionType* inctype = (*it)->m_IncType;
+        double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
         
-        //==calculating the energies that may change
-        std::vector<links *> Llist=tver->GetVLinkList();     // links that their interaction energies may change
-        double oldEnergy=tver->GetEnergy(); // curvature energy of the vertex
-        for (std::vector<links *>::iterator it = Llist.begin() ; it != Llist.end(); ++it)
-            oldEnergy+=2*((*it)->GetIntEnergy()); // energy of the interacting inclusions (2 is for the mirror links which are not included)
-        
-        
-        double newEnergy = oldEnergy;
-        InclusionType* inctype = tinc->GetInclusionType();
-        double thermal = m_RNG->UniformRNG(1.0);
-        double phi1  = double(m_N1-m_N2-m_DeltaN0);
-        double P = 0;
-        if(inctype->ITName ==m_IncType1Name)// transition from 2-1
-        {
-            P =  m_Epsilon1*double(1)/double(m_N)*1.0/(1.0+exp(-m_Gama*phi1));// the difference between here and what we got in the paper is we loop around it and
+        if((*it)->m_IncType == m_pIncType1){ // transition from 1->2
+            double Prob = m_Epsilon / static_cast<double>(m_N) / (1.0 + exp(-m_Gama * phi));
 
-            if(P>thermal)
-            {
-                tinc->UpdateInclusionType(m_pIncType2);
-                tinc->UpdateInclusionTypeID(m_pIncType2->ITid);
+            if( Prob > thermal ) {
+                (*it)->m_IncType = m_pIncType2;
                 m_N1--;
                 m_N2++;
-                newEnergy = EE.SingleVertexEnergy(tinc->Getvertex());
-                for (std::vector<links *>::iterator it = Llist.begin() ; it != Llist.end(); ++it)
-                    newEnergy+=EE.TwoInclusionsInteractionEnergy(*it);
+                exchange_happend = true;
             }
+        } // if((*it)->m_IncType->ITName == m_TypeName_1)
+        else { // transition from 2->1
+            double Prob = m_Epsilon / static_cast<double>(m_N) / (eta + exp(m_Gama * phi));
 
-        }
-        else  if(inctype->ITName == m_IncType2Name)// transition from 1-2
-        {
-
-            P =  m_Epsilon1*double(1)/double(m_N)*1.0/(eta+exp(m_Gama*phi1));
-            if(P>thermal)
-            {
-                tinc->UpdateInclusionType(m_pIncType1);
-                tinc->UpdateInclusionTypeID(m_pIncType1->ITid);
+            if(Prob > thermal) {
+                (*it)->m_IncType  = m_pIncType1;
                 m_N1++;
                 m_N2--;
-                newEnergy = EE.SingleVertexEnergy(tinc->Getvertex());
-                for (std::vector<links *>::iterator it = Llist.begin() ; it != Llist.end(); ++it)
-                    newEnergy+=EE.TwoInclusionsInteractionEnergy(*it);
+                exchange_happend = true;
             }
         }
-        (*tot_Energy)+= (newEnergy - oldEnergy);
-        m_ActiveEnergy+= (newEnergy - oldEnergy);
-    }
+        if(exchange_happend){ // note, while the exchange has happend, energies are not updated. so old energy can be obtained.
+            
+            old_energy += tver->GetEnergy();
+            std::vector<links *> n_edges = tver->GetVLinkList();     // links that their interaction energies may change
+            
+            for (std::vector<links *>::iterator it = n_edges.begin() ; it != n_edges.end(); ++it){
+                old_energy += 2*((*it)->GetIntEnergy());
+            }
+            //--- now, lets update energy
+            new_energy += m_pState->GetEnergyCalculator()->SingleVertexEnergy(tver); //
+            for (std::vector<links *>::iterator it = n_edges.begin() ; it != n_edges.end(); ++it){
+                    new_energy += m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(*it);
+            }
+            //--- update the total elastic energy of the system
+            double T_en = m_pState->GetEnergyCalculator()->GetEnergy();
+            T_en += new_energy - old_energy;
+            m_pState->GetEnergyCalculator()->UpdateTotalEnergy(T_en);
+            m_ActiveEnergy += (new_energy - old_energy);
+            
+            m_NumberOfAttemptedMoves++;
+            m_AcceptedMoves++;
+            
+        } // if(exchange_happend)
+        else { // otherwise
+            m_NumberOfAttemptedMoves++;
+        }
+
+        
+    } //for (m_pSubInc.begin())
     
-
-    m_DeltaN = m_N1-m_N2;
-
+    
+    return true;
 }

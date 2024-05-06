@@ -13,37 +13,44 @@ AlexanderMoveByMetropolisAlgorithm::~AlexanderMoveByMetropolisAlgorithm(){
 bool AlexanderMoveByMetropolisAlgorithm::Initialize(State *pState){
     
     m_pState    = pState;
-    m_pBox      = (pState->m_pMesh)->m_pBox;
-    m_pminAngle = &(m_pState->m_MinFaceAngle);
-    m_pLmin2    = &(m_pState->m_MinVerticesDistanceSquare);
-    m_pLmax2    = &(m_pState->m_MaxLinkLengthSquare);
-    m_pBeta     = &(m_pState->m_Beta);
-    *m_RateOfVMovePerStep = 1;
+    m_pBox      = pState->GetMesh()->GetBox();
+  //  m_pminAngle = &(m_pState->m_MinFaceAngle);
+ //   m_pLmin2    = &(m_pState->m_MinVerticesDistanceSquare);
+  //  m_pLmax2    = &(m_pState->m_MaxLinkLengthSquare);
+  //  m_pBeta     = &(m_pState->m_Beta);
 
     
     return true;
 }
 bool AlexanderMoveByMetropolisAlgorithm::EvolveOneStep(int step){
  
-  //  for (int i=0;i<;i++) {
+    const std::vector<links *>& pEdges = m_pState->GetMesh()->GetRightL();
+
+    int no_edges = pEdges.size();
+    int no_steps = no_edges*m_NumberOfMovePerStep;
     
-    double dx;//=1-2*Random1.UniformRNG(1.0);            // Inside a cube with the side length of R
-    double dy;//=1-2*Random1.UniformRNG(1.0);
-    double dz;//=1-2*Random1.UniformRNG(1.0);
-    double thermal;//=Random1.UniformRNG(1.0);
-    vertex *pvertex;
-    EvolveOneVertex(step, pvertex, dx, dy, dz,thermal);
-   // }
+  for (int i = 0; i< no_steps;i++) {
+    
+      int r_lid = m_pState->GetRandomNumberGenerator()->IntRNG(no_edges);
+      links *p_link = pEdges[r_lid];
+
+      double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
+      if(FlipOneEdge(step, p_link,thermal)){
+          m_AcceptedMoves++;
+      }
+      m_NumberOfAttemptedMoves++;
+    }
+
     
     return true;
 }
-int AlexanderMoveByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pvertex, double dx, double dy, double dz,double temp){
+bool AlexanderMoveByMetropolisAlgorithm::FlipOneEdge(int step, links *p_link, double temp){
     int moveresult = 0;
     double old_energy = 0;
     double new_energy = 0;
 
 //---> first checking if all the distances will be fine if we move the vertex
-    if(!VertexMoveIsFine(pvertex,dx,dy,dz,*m_pLmin2,*m_pLmax2))
+    if(!EdgeCanBeFliped(p_link,*m_pLmin2,*m_pLmax2))
         return 0;
     
 //---> lets get some variables before moving
@@ -67,11 +74,7 @@ int AlexanderMoveByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pverte
     }*/
     //----
     //--- obtain vertices energy terms
-    old_energy=pvertex->GetEnergy();
-    std::vector <vertex *> vNeighbourV = pvertex->GetVNeighbourVertex();
-    for (std::vector<vertex *>::iterator it = vNeighbourV.begin() ; it != vNeighbourV.end(); ++it){
-        old_energy+=(*it)->GetEnergy();
-    }
+
     //-- obtain link interaction energies
     
     
@@ -123,13 +126,20 @@ double  AlexanderMoveByMetropolisAlgorithm::SystemEnergy()
 
 
 // finding the distance of the current vertex from the pv2; also considering the pbc conditions
-bool AlexanderMoveByMetropolisAlgorithm::CheckFacesAfterAVertexMove(double &minangle, vertex* p_vertex) {
-    std::vector<links*> linkList = p_vertex->GetVLinkList();
+bool AlexanderMoveByMetropolisAlgorithm::CheckFacesAfterFlip(double &minangle, links* p_links) {
+   
+    /*std::vector<links*> linkList = p_vertex->GetVLinkList();
     for (std::vector<links*>::iterator it = linkList.begin(); it != linkList.end(); ++it) {
         links* link = *it;
         if (!link->CheckFaceAngleWithMirrorFace(minangle) || !link->CheckFaceAngleWithNextEdgeFace(minangle)) {
             return false;
         }
-    }
+    }*/
+    return true;
+}
+bool AlexanderMoveByMetropolisAlgorithm::EdgeCanBeFliped(links *pedge, double mindist2, double maxdist2){
+    
+    
+    
     return true;
 }

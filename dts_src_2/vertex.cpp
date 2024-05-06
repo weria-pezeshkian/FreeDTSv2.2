@@ -21,7 +21,6 @@ vertex::vertex(MESH* pMesh, int id, double x, double y, double z) : m_pMesh(pMes
     m_Normal_Curvature = 0;
     m_VertexType = 0;
     m_VLength = 0;                       // length of the vertex
-    m_Lambda = 0;                   // line tension
     m_PrincipalCurvature_1 = 0;
     m_PrincipalCurvature_2 = 0;
     
@@ -42,7 +41,6 @@ vertex::vertex(MESH* pMesh, int id) : m_pMesh(pMesh) {
     m_Normal_Curvature = 0;
     m_VertexType = 0;
     m_VLength = 0;                       // length of the vertex
-    m_Lambda = 0;                   // line tension
     m_PrincipalCurvature_1 = 0;
     m_PrincipalCurvature_2 = 0;
 }

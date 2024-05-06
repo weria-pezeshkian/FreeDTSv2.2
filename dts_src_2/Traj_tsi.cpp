@@ -75,7 +75,7 @@ void Traj_tsi::WriteAFrame(int step ,  std::string filename){
     fprintf(output,"%s%20d\n",inc,size);
     format = "%10d%10d%10d%"+m_Precision+"lf%"+m_Precision+"lf\n";
     for (std::vector<inclusion *>::iterator it = pinc.begin() ; it != pinc.end(); ++it)
-        fprintf(output,format.c_str(),(*it)->GetID(),(*it)->GetInclusionTypeID(),((*it)->Getvertex())->GetVID(),((*it)->GetLDirection())(0),((*it)->GetLDirection())(1));
+        fprintf(output,format.c_str(),(*it)->GetID(),(*it)->GetInclusionType()->ITid,((*it)->Getvertex())->GetVID(),((*it)->GetLDirection())(0),((*it)->GetLDirection())(1));
  
     
     fclose(output);

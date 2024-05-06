@@ -14,8 +14,7 @@ for taraget CmdVolumeCouplingSecondOrder.
 
 class CmdVolumeCouplingSecondOrder : public AbstractVolumeCoupling {
 public:
-    CmdVolumeCouplingSecondOrder();
-    CmdVolumeCouplingSecondOrder(int eqsteps, double DeltaP,  double K, double targetV);
+    CmdVolumeCouplingSecondOrder(VAHGlobalMeshProperties *VHA, State* pstate, double DeltaP,  double K, double targetV);
     ~CmdVolumeCouplingSecondOrder();
 
 

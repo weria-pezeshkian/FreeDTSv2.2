@@ -1,7 +1,6 @@
 #if !defined(AFX_DynamicBox_H)
 #define AFX_DynamicBox_H
 #include <iostream>
-#include "Voxelization.h"
 // Define a base class with a virtual function
 /*
 =======================================================
@@ -14,20 +13,20 @@ This class is a base class for changing the box
 class AbstractDynamicBox {
 public:
     AbstractDynamicBox(){
-        
+        m_DR = 0.01;
     }
     virtual ~AbstractDynamicBox(){
         
     }
 
-    virtual bool MCMoveBoxChange(double dx, double* totalenergy, double temp, int step, Voxelization<vertex>* p_Allvoxel) = 0;
-    virtual void initialize() = 0;
-    virtual  bool GetCNTCondition() = 0;
-    virtual int GetTau() = 0;
-    virtual inline  std::string GetDerivedDefaultReadName()  {return "";}
-
+    virtual bool ChangeBoxSize(int step) = 0;
+    virtual void Initialize() = 0;
     
+    
+    virtual inline  std::string GetDerivedDefaultReadName()=0;
     inline static std::string GetBaseDefaultReadName()  {return "Dynamic_Box";}
+    
+    
     
     inline double GetDR()                               {return m_DR;}
     void UpdateDR(double dr){
@@ -35,8 +34,9 @@ public:
         return;
     }
 
-
-private:
+protected:
+    double m_NumberOfAttemptedMoves;
+    double m_AcceptedMoves;
     double m_DR;
     
 };
@@ -52,16 +52,10 @@ public:
 
     inline  std::string GetDerivedDefaultReadName()  {return "ConstantBox";}
 
-    bool GetCNTCondition(){
-        return false;
-    }
-    int GetTau(){
-        return 0;
-    }
-    void initialize(){
+    void Initialize(){
         return;
     }
-    bool MCMoveBoxChange(double dx, double * TotalEnergy, double temp, int step, Voxelization<vertex>* p_Allvoxel){
+    bool ChangeBoxSize(int step){
         return false;
     }
 

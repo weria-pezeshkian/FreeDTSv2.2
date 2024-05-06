@@ -14,13 +14,12 @@ This class is a Abstract class for curvature calculations.
 class State;
 class  AbstractSimulation {
 public:
-    AbstractSimulation(){
-        m_CenteringFrequently = 0;
-        m_Initial_Step = 1;
-        m_Final_Step = 10;
-        m_Beta = 1;
-        m_DBeta = 0;
+    AbstractSimulation() : m_CenteringFrequently(0), m_Initial_Step(1), m_Final_Step(10), m_Beta(1.0), m_DBeta (0.0) {
+
     }
+    /*AbstractSimulation(AbstractSimulation *pSim) : AbstractSimulation(pSim), m_CenteringFrequently(0), m_Initial_Step(1), m_Final_Step(10), m_Beta(1.0), m_DBeta (0.0) {
+
+    }*/
     virtual ~ AbstractSimulation(){
         
     }
@@ -59,6 +58,8 @@ private:
     int m_CenteringFrequently; // how often centering the system in the box
     int m_Initial_Step;
     int m_Final_Step;
+
+protected:
     double m_Beta;
     double m_DBeta;
 

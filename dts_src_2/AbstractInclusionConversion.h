@@ -15,19 +15,25 @@ class State;
 class  AbstractInclusionConversion {
 public:
     AbstractInclusionConversion(){
-        
+        m_NumberOfAttemptedMoves = 0;
+        m_AcceptedMoves = 0;
     }
     virtual ~ AbstractInclusionConversion(){
         
     }
-    virtual inline bool GetState()= 0;
     virtual void Initialize(State *pstate) = 0;
+    virtual bool Exchange(int step) = 0;
+
     virtual inline std::string GetDerivedDefaultReadName() = 0;
     
     inline static std::string GetBaseDefaultReadName() {return "InclusionConversion";}
 
     
-private:
+    
+    
+protected:
+    double m_NumberOfAttemptedMoves;
+    double m_AcceptedMoves;
     
 };
 //---- a class for no box change
@@ -39,15 +45,19 @@ public:
     ~NoInclusionConversion(){
         
     }
-    virtual inline std::string GetDerivedDefaultReadName() {return "NoInclusionConversion";}
-    inline bool GetState(){
-        return false;
-    }
+    inline std::string GetDerivedDefaultReadName() {return "NoInclusionConversion";}
+
 
     
     void Initialize(State *pstate){
         return;
     }
+    
+    bool Exchange(int step){
+        
+        return false;
+    }
+
 
 };
 #endif

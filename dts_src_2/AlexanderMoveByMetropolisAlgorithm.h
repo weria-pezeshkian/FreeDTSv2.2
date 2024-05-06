@@ -17,22 +17,22 @@ public:
 
     bool Initialize(State *pState);
     bool EvolveOneStep(int step);
-
-private:
-    int EvolveOneVertex(int step, vertex *pvertex, double dx, double dy, double dz, double temp);
-    bool VertexMoveIsFine(vertex* pvertex, double dx, double dy, double dz, double mindist2, double maxdist2);
-    bool CheckFacesAfterAVertexMove(double &minangle, vertex* p_vertex);
-    double SystemEnergy(); // For bug finding only; slow function (should be deleted in production code)
-
     inline  std::string GetDerivedDefaultReadName() {return "MetropolisAlgorithm";}
     inline static std::string GetDefaultReadName() {return "MetropolisAlgorithm";}
+    
+private:
+    bool FlipOneEdge(int step, links *pedge, double temp);
+    bool EdgeCanBeFliped(links *pedge, double mindist2, double maxdist2);
+    bool CheckFacesAfterFlip(double &minangle, links* edge);
+    double SystemEnergy(); // For bug finding only; slow function (should be deleted in production code)
+
+
     
 private:
     double *m_pLmin2;
     double *m_pLmax2;
     double *m_pminAngle;
     double *m_pBeta;
-    double *m_RateOfVMovePerStep;
     State *m_pState;
     Vec3D *m_pBox;
 };

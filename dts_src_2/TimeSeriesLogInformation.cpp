@@ -4,6 +4,7 @@
  Weria Pezeshkian (weria.pezeshkian@gmail.com)
  Copyright (c) Weria Pezeshkian
  */
+#include <iostream>
 #include "TimeSeriesLogInformation.h"
 #include "State.h"
 #include "Nfunction.h"

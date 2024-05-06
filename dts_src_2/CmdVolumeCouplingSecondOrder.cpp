@@ -3,24 +3,19 @@
 
 #include "CmdVolumeCouplingSecondOrder.h"
 #include "Nfunction.h"
-CmdVolumeCouplingSecondOrder::CmdVolumeCouplingSecondOrder(){
-
-}
-CmdVolumeCouplingSecondOrder::CmdVolumeCouplingSecondOrder(int eqsteps, double DeltaP,  double K, double targetV)
-{
+CmdVolumeCouplingSecondOrder::CmdVolumeCouplingSecondOrder(VAHGlobalMeshProperties *VHA, State* pstate, double DeltaP,  double K, double targetV): AbstractVolumeCoupling(VHA, pstate) {
     double pi = acos(-1);
      m_6SQPI = 1.0/(6.0*sqrt(pi));   /// 1/6pi^1/2
-    m_TotalVolume = 0;
-    m_TotalArea = 0;
-    m_NoEQStep = eqsteps;
+   // m_TotalVolume = 0;
+   // m_TotalArea = 0;
+   // m_NoEQStep = eqsteps;
     m_KV = K/2;
     m_TargetV = targetV;
     m_DeltaP  = DeltaP;
     
 }
 
-CmdVolumeCouplingSecondOrder::~CmdVolumeCouplingSecondOrder()
-{
+CmdVolumeCouplingSecondOrder::~CmdVolumeCouplingSecondOrder() {
     
 }
 
@@ -70,8 +65,6 @@ double CmdVolumeCouplingSecondOrder::SingleTriangleVolume(triangle *pt){
         {
             Nfunction f;
             std::string sms="---> Error, the system crossed the PBC while using volume coupling; use a large box .. ";
-            f.Write_One_LogMessage(sms);
-            std::cout<<sms<<std::endl;
             exit(0);
         }
     }

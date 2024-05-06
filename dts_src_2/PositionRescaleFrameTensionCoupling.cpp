@@ -4,8 +4,9 @@
 #include "PositionRescaleFrameTensionCoupling.h"
 #include "Nfunction.h"
 #include "vertex.h"
-#include "Curvature.h"
 #include "State.h"
+#include "Voxelization.h"
+
 
 /*
 ===============================================================================================================
@@ -17,44 +18,68 @@ This class changes the box in x and y direction to minimize the energy. It is ca
 The way it works is based on the changing the box in x and y direction by a small size of dr by calling "MCMoveBoxChange" function.
 =================================================================================================================
 */
-PositionRescaleFrameTensionCoupling::PositionRescaleFrameTensionCoupling()
-{
-    
-    
-}
-PositionRescaleFrameTensionCoupling::PositionRescaleFrameTensionCoupling(int tau, double f, State *pstate)
-{
-    m_SigmaP=f;
-    m_pState = pstate;
-    m_Tau = tau;
-   // m_R_Box=0.04;   // box change within this range
+PositionRescaleFrameTensionCoupling::PositionRescaleFrameTensionCoupling(int period, double sigma, State *pState){
+    m_SigmaP = sigma;
+    m_pState = pState;
+    m_Period = period;
 
 }
 PositionRescaleFrameTensionCoupling::~PositionRescaleFrameTensionCoupling()
 {
     
 }
-int PositionRescaleFrameTensionCoupling::GetTau() {
-    return m_Tau;
-}
-bool PositionRescaleFrameTensionCoupling::GetCNTCondition() {
-    return m_UpdateCNT;
-}
-void PositionRescaleFrameTensionCoupling::initialize()
+void PositionRescaleFrameTensionCoupling::Initialize()
 {
     std::cout<<"---> the algorithm for box change involves applying PositionRescaleFrameTensionCoupling. \n";
-    m_pEnergyCalculator = m_pState->GetEnergyCalculator();
-    m_pBox=(m_pState->m_pMesh)->m_pBox;
     
-    m_pMESH = m_pState->m_pMesh;
-    m_dr=0.0;
-    m_Lyx=(*m_pBox)(1)/(*m_pBox)(0);
-    m_pLmin2 = &(m_pState->m_MinVerticesDistanceSquare);
-    m_pLmax2 = &(m_pState->m_MaxLinkLengthSquare);
-    m_pminAngle = &(m_pState->m_MinFaceAngle);
-    m_step = 0;
-    m_Beta = m_pState->m_Beta;
+    m_pBox=(m_pState->GetMesh())->GetBox();
+   // m_pLmin2 = &(m_pState->m_MinVerticesDistanceSquare);
+   // m_pLmax2 = &(m_pState->m_MaxLinkLengthSquare);
+  //  m_pminAngle = &(m_pState->m_MinFaceAngle);
+   // m_Beta = m_pState->m_Beta;
 }
+bool PositionRescaleFrameTensionCoupling::ChangeBoxSize(int step){
+    
+//---> if does not match the preiod, return false
+    if(step%m_Period != 0)
+        return false;
+    
+    double dx = 0;
+    double dy = 0;
+
+//---> find the size of box change; isotropic method
+    dx=1-2*(m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
+    dx = m_DR*dx;
+    dy = dx*((*m_pBox)(1))/(*m_pBox)(0);
+
+
+//---> check if we do the move, the distance will be normal
+    if(!VertexMoveIsFine(dx, dy, *m_pLmin2, *m_pLmax2)){
+        return false;
+    }
+    
+//---> check the angles
+    
+    
+    //const std::vector<inclusion *>& pAllInclusion = m_pState->GetMesh()->GetInclusion();
+
+    
+    
+    double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
+
+    
+    return true;
+}
+bool PositionRescaleFrameTensionCoupling::VertexMoveIsFine(double dx,double dy, double mindist2, double maxdist2){
+    
+    
+    
+    return true;
+}
+
+
+
+/*
 bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * tot_Energy, double temp, int step, GenerateCNTCells *pGenCNT)
 {
 //==== some updates Aug. 2023
@@ -62,33 +87,10 @@ bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * to
     
 
     
-    m_UpdateCNT=true;   // should be set to true. true means do not update it.
-    m_pGenCNT = pGenCNT;
-    CheckCNTSize();      // CNT cell should not be smaller then 1.8 after the move; we use 1.8 so no need for frequent changes
 
-    m_step = step;
-    m_dr=dr;
-    m_drx=dr;
-    m_dry=m_Lyx*dr;
-    m_oldLx=(*m_pBox)(0);
-    m_oldLy=(*m_pBox)(1);
-    m_newLx=(*m_pBox)(0)+m_drx;
-    m_newLy=(*m_pBox)(1)+m_dry;
-    m_Lnox = m_newLx/m_oldLx;
-    m_Lnoy = m_newLy/m_oldLy;
-    double AreaRatio=(m_Lnox*m_Lnoy);
 
-   /* if(m_Lnox>1)
-    {
-        m_tmlarger++;
-        std::cout<<m_tmlarger/m_tmsmaller<<" accepted smaller\n";
-    }
-    else if(m_Lnox<1)
-    {
-        std::cout<<m_tmlarger/m_tmsmaller<<" accepted smaller\n";
-        m_tmsmaller++;
 
-    }*/
+
 
     
     if(CheckMinDistance()==false)
@@ -214,7 +216,7 @@ bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * to
         eG = m_pState->GetGlobalCurvature()->CalculateEnergyChange(-DeltaA,-DetaR);
     }
     
-    /*
+    
      ///=== maybe in future
      // harmonic ponettailas should not be done in x and y direction many problems appear so we assume this
      //==============
@@ -234,7 +236,7 @@ bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * to
         m_pSPBTG->CalculateEnergy(m_step);
         double e2 = m_pSPBTG->GetEnergy();
         harmonicde = e2-e1;
-    }*/
+    }
 
 
 
@@ -264,29 +266,14 @@ bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * to
       {
           RejectMove();
           m_Move=false;
-          // our ssumetion is the force is only in z
-          /* if(m_pSPBTG->GetState()==true)
-           {
-               for (std::vector<vertex *>::iterator it = m_ActiveV.begin() ; it != m_ActiveV.end(); ++it)
-               {
-                   double X = (*it)->GetVXPos();
-                   double Y = (*it)->GetVYPos();
-                   Vec3D dr(X-X/m_Lnox,Y-Y/m_Lnoy,0);
-                   m_pSPBTG->RejectMovingVertex((*it), dr);
-               }
-               m_pSPBTG->CalculateEnergy(m_step);
-           }*/
+
 
       }//    if(pow((AreaRatio),nv)*exp(-m_Beta*diff_energy)>temp )
     return m_Move;
 }
     
 
-/*
- ======================================================
- Checking for validity of the CNT Cells
- =========================================================
- */
+
 void PositionRescaleFrameTensionCoupling::CheckCNTSize()
 {
 
@@ -352,9 +339,7 @@ double PositionRescaleFrameTensionCoupling::DistanceSquardBetweenTwoVertices(ver
     double l2=dx*dx+dy*dy+dz*dz;
     return l2;
 }
-/*======================================================================
-function to check the angle between two faces of a link
- ======================================================================*/
+
 bool PositionRescaleFrameTensionCoupling::CheckFaceAngle()
 {
    for (std::vector<links *>::iterator it = (m_pMESH->m_pHL).begin() ; it != (m_pMESH->m_pHL).end(); ++it)
@@ -369,9 +354,6 @@ bool PositionRescaleFrameTensionCoupling::CheckFaceAngle()
     return true;
 }
 
-/*======================================================================
- This function makes a copy of vertices, links and trinagles incase of rejection. 
- ======================================================================*/
 void PositionRescaleFrameTensionCoupling::PerformMove()
 {
 //=== copy the objects to use them in case the move got rejected
@@ -420,13 +402,6 @@ void PositionRescaleFrameTensionCoupling::PerformMove()
         }
 }
 
-
-
-/*
- ======================================================
-Function to accept the move and update everything
- =========================================================
- */
 void PositionRescaleFrameTensionCoupling::AcceptMove()
 {
     // we need to resize the cnt cells;
@@ -500,11 +475,7 @@ bool   PositionRescaleFrameTensionCoupling::CheckFaceAngle(links * l)
     return true;
 }
 
-// since 2023
-/*======================================================================
- This function goes through CNT cells  checks the distance between vertices after the box change.
- It is very ineffiecnt, should be changed as soon as possible
- ======================================================================*/
+
 bool PositionRescaleFrameTensionCoupling::CheckMinDistance()
 {
     // Note: Function "DistanceSquardBetweenTwoVertices" uses rescaled distance so this somehow reperasent after move; yet the move has not been done
@@ -545,9 +516,7 @@ bool PositionRescaleFrameTensionCoupling::CheckMinDistance()
 
 return true;
 }
-/*======================================================================
- This function goes through all links  checks the distance between vertices after the box change.
- ======================================================================*/
+
 bool PositionRescaleFrameTensionCoupling::CheckMaxLinkLength()
 {
     Vec3D Box;
@@ -576,7 +545,7 @@ bool PositionRescaleFrameTensionCoupling::CheckMaxLinkLength()
     return true;
 }
 
-
+*/
 
 
 

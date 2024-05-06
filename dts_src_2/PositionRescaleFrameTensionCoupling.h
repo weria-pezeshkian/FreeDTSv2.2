@@ -14,75 +14,31 @@
 class State;
 class PositionRescaleFrameTensionCoupling : public AbstractDynamicBox {
 public:
-    PositionRescaleFrameTensionCoupling();
-    PositionRescaleFrameTensionCoupling(int tau, double f, State *st);
+    
+    PositionRescaleFrameTensionCoupling(int period, double , State *pState);
 	~PositionRescaleFrameTensionCoupling();
 
-    bool GetCNTCondition();
-    int GetTau();
-    void initialize();
-    bool MCMoveBoxChange(double dr, double * TotalEnergy, double temp, int step, Voxelization<vertex>* p_Allvoxel );
+    void Initialize();
+    bool ChangeBoxSize(int step);
 
-    inline  std::string GetDerivedDefaultReadName()  {return "PositionRescaleFrameTension";}
+    inline  std::string GetDerivedDefaultReadName()  {return "IsotropicFrameTension";}
+    inline  static std::string GetDefaultReadName()  {return "IsotropicFrameTension";}
 
 private:
+    
+    bool VertexMoveIsFine(double dx,double dy, double mindist2, double maxdist2);
+
 
 
     
-    //=== old functions
-    void CheckCNTSize();
-    double DistanceSquardBetweenTwoVertices(vertex *,vertex *,Vec3D );
-    bool CheckFaceAngle();
-    bool CheckMaxLinkLength();
-    void PerformMove();
-    void RejectMove();
-    void AcceptMove();
-    bool CheckFaceAngle(links * l);
 private:
-
     double m_SigmaP;
-    double m_dr;
-    double m_drx;
-    double m_dry;
-    double m_Lyx;
-    bool m_UpdateCNT;
-    bool m_Move;
-    double m_Beta; // 1/k_BT
-    double m_oldLx;
-    double m_oldLy;
-    double m_newLx;
-    double m_newLy;
-    int m_step;
-    double m_Lnox;
-    double m_Lnoy;
+    int m_Period;
+    Vec3D *m_pBox;
+    State *m_pState;
     double *m_pLmin2;
     double *m_pLmax2;
     double *m_pminAngle;
-    HarmonicPotentialBetweenTwoGroups *m_pSPBTG;
-    int m_Tau;
-
-
-private:
-    //=== update since 2023
-    bool CheckMinDistance();
-    
-    //=== updates aug 2023
-    private:
-    Energy *m_pEnergyCalculator;
-    State *m_pState;
-    Vec3D *m_pBox;
-    
-    //=== copy containeir
-    std::vector<triangle> m_ActiveT;
-    std::vector<vertex > m_ActiveV;
-    std::vector<links > m_SurfL;
-    std::vector<links > m_MSurfL;
-    std::vector<links > m_EdgeL;
-    MESH* m_pMESH;
-
-    
-    //double m_tmlarger;
-    //double m_tmsmaller;
 
 };
 

@@ -3,7 +3,7 @@
 #include "inclusion.h"
 #include "vertex.h"
 
-inclusion::inclusion(int id, const InclusionType& inctype) : InclusionType(inctype), m_ID(id) {
+inclusion::inclusion(int id,  InclusionType *inctype) : m_IncType(inctype), m_ID(id) {
 
 }
 inclusion::~inclusion() {

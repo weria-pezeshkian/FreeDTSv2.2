@@ -58,7 +58,8 @@ bool MC_Simulation::do_Simulation(){
    // m_pState->
 //--- before simualtion lets have a frame of the initial system
         m_pState->GetVisualization()->WriteAFrame(0);
-    
+    time_t startTime;
+    time(&startTime);
 for(int step = GetInitialStep(); step < GetFinalStep(); step++){
         
 //---> centering the simulation box
@@ -69,11 +70,11 @@ for(int step = GetInitialStep(); step < GetFinalStep(); step++){
 
 //---> Run standard Integrators
         //--- run the vertex position update
-        m_pState->GetMCAVertexMove()->EvolveOneStep(step); // we may need the final step as well to check if the update of move size should be done
+        m_pState->GetVertexPositionUpdate()->EvolveOneStep(step); // we may need the final step as well to check if the update of move size should be done
         //--- run the link flip update
-        m_pState->GetMCMoveLinkFlip()->EvolveOneStep(step);
+        m_pState->GetAlexanderMove()->EvolveOneStep(step);
         //--- run the inclusion update
-        m_pState->GetInclusionMCMove()->EvolveOneStep(step);
+        m_pState->GetInclusionPoseUpdate()->EvolveOneStep(step);
 
 //----> Run the supplementary integrators
        //--- update the box side
@@ -95,13 +96,19 @@ for(int step = GetInitialStep(); step < GetFinalStep(); step++){
     //--- write into time seri file, e.g., energy, volume ...
     m_pState->GetTimeSeriesDataOutput()->WriteTimeSeriesDataOutput(step);
     //--- write check point for the state
-    m_pState->GetRestart()->UpdateRestartState(step, m_pState->GetMCAVertexMove()->GetDR(), m_pState->GetDynamicBox()->GetDR());
+    m_pState->GetRestart()->UpdateRestartState(step, m_pState->GetVertexPositionUpdate()->GetDR(), m_pState->GetDynamicBox()->GetDR());
 
 //----> print info about the simulation, e.g., rate,
+    time_t currentTime;
+    time(&currentTime);
+    if (currentTime - startTime >= 30) {
         std::cout<<"Step = "<<step<<"/"<<GetFinalStep()<<std::flush;
         std::cout << std::fixed << std::setprecision(2);
+        std::cout<<"Rates: "<<std::flush;
+        std::cout<<"vertex move = "<<m_pState->GetVertexPositionUpdate()->GetAcceptanceRate(true)<<std::flush;
         std::cout << '\r';
         std::cout << "\033[K";
+    }
 
 } // for(int step=GetInitialStep(); step<GetFinalStep(); step++)
    

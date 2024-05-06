@@ -24,10 +24,11 @@ public:
     }
     virtual bool Initialize(State *pState) = 0;
     virtual bool EvolveOneStep(int step) = 0;
+    virtual inline std::string GetDerivedDefaultReadName() = 0;
 
+    
     inline std::string GetFreezGroupName()              {return m_FreezGroupName;}
     inline double GetDR()                               {return m_DR;}
-    virtual inline std::string GetDerivedDefaultReadName() = 0;
     
     inline static std::string GetBaseDefaultReadName() {return "VertexPositionIntegrator";}
     

@@ -3,22 +3,17 @@
 
 #include "Apply_Osmotic_Pressure.h"
 #include "Nfunction.h"
-Apply_Osmotic_Pressure::Apply_Osmotic_Pressure()
-{
-}
-Apply_Osmotic_Pressure::Apply_Osmotic_Pressure(int eqsteps, double gamma,  double P0)
-{
+
+Apply_Osmotic_Pressure::Apply_Osmotic_Pressure(VAHGlobalMeshProperties *VHA, State* pstate, double gamma,  double P0) :
+            AbstractVolumeCoupling(VHA, pstate) {
     double pi = acos(-1);
      m_6SQPI = 1.0/(6.0*sqrt(pi));   /// 1/6pi^1/2    
-    m_TotalVolume = 0;
-    m_TotalArea = 0;
-    m_NoEQStep = eqsteps;
+    //m_TotalVolume = 0;
+    //m_TotalArea = 0;
+    //m_NoEQStep = eqsteps;
     m_P0 = P0;
     m_Gamma  = gamma;
-    
-    
 
-    
 }
 
 Apply_Osmotic_Pressure::~Apply_Osmotic_Pressure()
@@ -90,8 +85,7 @@ double Apply_Osmotic_Pressure::SingleTriangleVolume(triangle *pt)
         {
             Nfunction f;
             std::string sms="---> Error, the system crossed the PBC while using volume coupling; use a large box .. ";
-            f.Write_One_LogMessage(sms);
-            std::cout<<sms<<std::endl;
+
             exit(0);
         }
     }
