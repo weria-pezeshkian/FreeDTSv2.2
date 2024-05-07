@@ -14,9 +14,10 @@ This class is a Abstract class for curvature calculations.
 class State;
 class  AbstractSimulation {
 public:
-    AbstractSimulation() : m_CenteringFrequently(0), m_Initial_Step(1), m_Final_Step(10), m_Beta(1.0), m_DBeta (0.0) {
-
+    AbstractSimulation() : m_CenteringFrequently(0), m_Initial_Step(1), m_Final_Step(10), m_Beta(1.0), m_DBeta (0.0),
+                           m_MinLength2(1),  m_MaxLength2(3), m_MinAngle(-5){
     }
+    
     /*AbstractSimulation(AbstractSimulation *pSim) : AbstractSimulation(pSim), m_CenteringFrequently(0), m_Initial_Step(1), m_Final_Step(10), m_Beta(1.0), m_DBeta (0.0) {
 
     }*/
@@ -30,6 +31,7 @@ public:
     
     virtual inline std::string GetDerivedDefaultReadName() = 0;
     inline static std::string GetBaseDefaultReadName() {return "Integrator_Type";}
+    
 protected:
     inline int GetBoxCentering()                        {return m_CenteringFrequently;}
     inline int GetFinalStep()                           {return m_Final_Step;}
@@ -62,7 +64,9 @@ private:
 protected:
     double m_Beta;
     double m_DBeta;
-
+    double m_MinLength2;
+    double m_MaxLength2;
+    double m_MinAngle;
     
 };
 #endif

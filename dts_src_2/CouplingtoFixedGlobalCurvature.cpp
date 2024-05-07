@@ -11,14 +11,11 @@
  E=k/(2A)*(sum(2h-gc0)av)^2
  E=k/(2Ah^2)*(DA-DA0)^2
  */
-CouplingtoFixedGlobalCurvature::CouplingtoFixedGlobalCurvature(double Gkappa, double GlobalC0)
-{
-    m_State = true;
-    m_K = Gkappa/2.0;
-    m_gC0 = GlobalC0;
-    m_TotalArea = 0;
-    m_TotalRCurvature = 0;
-    m_Energy = 0;
+CouplingtoFixedGlobalCurvature::CouplingtoFixedGlobalCurvature(VAHGlobalMeshProperties *VHA, State *pstate, double Gkappa, double GlobalC0) :
+                AbstractGlobalCurvature(VHA, pstate),
+                m_K(Gkappa/2.0),
+                m_gC0(GlobalC0) {
+
 }
 
 CouplingtoFixedGlobalCurvature::~CouplingtoFixedGlobalCurvature()
@@ -26,21 +23,9 @@ CouplingtoFixedGlobalCurvature::~CouplingtoFixedGlobalCurvature()
     
 }
 // A function to initialize total area, total curvature and energy asscoiated with the coupling
-void CouplingtoFixedGlobalCurvature::Initialize(std::vector<vertex *> &Ver)
-{
-    double ta = 0;
-    double tc=0;
-    for (std::vector<vertex *>::iterator it = Ver.begin() ; it != Ver.end(); ++it)
-    {
-        std::vector<double> Curve=(*it)->GetCurvature();
-        double a = (*it)->GetArea();
-        ta+=a;
-        tc+=(Curve.at(0)+Curve.at(1))*a;
-    }
-   m_TotalArea = ta;
-   m_TotalRCurvature = tc;
-    
-    double dh=(m_TotalRCurvature-m_gC0*m_TotalArea);
+void CouplingtoFixedGlobalCurvature::Initialize() {
+
+    double dh=(m_TotalCurvature-m_gC0*m_TotalArea);
     m_Energy =m_K/(m_TotalArea)*dh*dh;
 }
 // when a vertex moves or a link flips or any other changes, we can see the changes in the total area and total mean curavture:
@@ -48,7 +33,7 @@ void CouplingtoFixedGlobalCurvature::Initialize(std::vector<vertex *> &Ver)
 double CouplingtoFixedGlobalCurvature::CalculateEnergyChange(double DA, double DC)
 {
     double de=0;
-    double dh=(m_TotalRCurvature+DC-m_gC0*(m_TotalArea+DA));
+    double dh=(m_TotalCurvature+DC-m_gC0*(m_TotalArea+DA));
     double e= m_K/((m_TotalArea+DA))*dh*dh;  // new energy
     
     de=e-m_Energy;   // de = newenergy -oldenergy
@@ -61,8 +46,8 @@ void CouplingtoFixedGlobalCurvature::UpdateEnergyChange(double DA, double DC)
     double de=0;
     
     m_TotalArea+= DA;
-    m_TotalRCurvature+= DC;
-    double dh=(m_TotalRCurvature-m_gC0*m_TotalArea);
+    m_TotalCurvature+= DC;
+    double dh=(m_TotalCurvature-m_gC0*m_TotalArea);
     m_Energy= m_K*dh*dh/(m_TotalArea);
  
 }

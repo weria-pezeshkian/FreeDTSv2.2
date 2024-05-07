@@ -44,8 +44,6 @@ private:
     
 protected:
     State* m_pState;
-    
-private:
     double m_TotalVolume;
     double m_TotalArea;
     int m_TotalCurvature;    //  Delta A = h*m_TotalCurvature = h* Sum [2H_vA_v]

@@ -74,7 +74,11 @@ template<typename T>
 void KeepOneOccurrence(std::vector<T*> &vect);
 
 
-    
+private:
+bool do_Simulation(){
+    std::cout<<" ---> error, 0009989 this should have been called \n";
+    return false;
+}
     
 };
 #endif

@@ -4,44 +4,36 @@
 #include "EvolveVerticesByMetropolisAlgorithm.h"
 #include "State.h"
 
-EvolveVerticesByMetropolisAlgorithm::EvolveVerticesByMetropolisAlgorithm(){
-    m_NumberOfAttemptedMoves = 0;
-    m_AcceptedMoves = 0;
-
+EvolveVerticesByMetropolisAlgorithm::EvolveVerticesByMetropolisAlgorithm(State *pState) :
+                        m_pState(pState),
+                        MESH(*(pState->GetMesh())),
+                        AbstractSimulation(*(pState->GetSimulation())){
+ 
+                            m_NumberOfAttemptedMoves = 0;
+                            m_AcceptedMoves = 0;
 }
 EvolveVerticesByMetropolisAlgorithm::~EvolveVerticesByMetropolisAlgorithm(){
-    
+
 }
-bool EvolveVerticesByMetropolisAlgorithm::Initialize(State *pState){
-    
-    m_pState    = pState;
-    m_pBox      = pState->GetMesh()->m_pBox;
-   // m_pminAngle = &(m_pState->m_MinFaceAngle);
-   // m_pLmin2    = &(m_pState->m_MinVerticesDistanceSquare);
-   // m_pLmax2    = &(m_pState->m_MaxLinkLengthSquare);
-   // m_pBeta     = &(m_pState->m_Beta);
+void EvolveVerticesByMetropolisAlgorithm::Initialize(){
     
     m_NumberOfAttemptedMoves = 0;
     m_AcceptedMoves = 0;
 
-   // m_R_Vertex=0.05;   // Move Vertex  within a box with this size
-
-    return true;
+    return;
 }
 bool EvolveVerticesByMetropolisAlgorithm::EvolveOneStep(int step){
  
-    const std::vector<vertex *>& pSurfVertices = m_pState->GetMesh()->GetSurfV();
-    const std::vector<vertex *>& pEdgeVertices = m_pState->GetMesh()->GetSurfV();
 
-    int no_surf_v = pSurfVertices.size();
-    int no_steps_surf = no_surf_v*m_NumberOfMovePerStep_Surf;
-    int no_edge_v = pEdgeVertices.size();
+    int no_surf_v = m_pSurfV.size();
+    int no_edge_v = m_pEdgeV.size();
     int no_steps_edge = no_edge_v*m_NumberOfMovePerStep_Edge;
-    
+    int no_steps_surf = no_surf_v*m_NumberOfMovePerStep_Surf;
+
   for (int i = 0; i< no_steps_surf;i++) {
     
       int r_vid = m_pState->GetRandomNumberGenerator()->IntRNG(no_surf_v);
-      vertex *pvertex = pSurfVertices[r_vid];
+      vertex *pvertex = m_pSurfV[r_vid];
       if( m_FreezGroupName == pvertex->GetGroupName()){
           continue;
       }
@@ -63,7 +55,7 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneStep(int step){
     for (int i = 0; i< no_steps_edge;i++) {
       
         int r_vid = m_pState->GetRandomNumberGenerator()->IntRNG(no_edge_v);
-        vertex *pvertex = pEdgeVertices[r_vid];
+        vertex *pvertex = m_pEdgeV[r_vid];
         if( m_FreezGroupName == pvertex->GetGroupName()){
             continue;
         }
@@ -90,7 +82,7 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
     double new_energy = 0;
 
 //---> first checking if all the distances will be fine if we move the vertex
-    if(!VertexMoveIsFine(pvertex,dx,dy,dz,*m_pLmin2,*m_pLmax2))
+    if(!VertexMoveIsFine(pvertex,dx,dy,dz,m_MinLength2,m_MaxLength2))
         return 0;
     
 //---> lets get some variables before moving

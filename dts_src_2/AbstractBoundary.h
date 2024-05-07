@@ -19,7 +19,7 @@ public:
     virtual ~ AbstractBoundary(){
         
     }
-    virtual void Initialize();
+    virtual void Initialize() = 0;
     virtual bool MoveHappensWithinTheBoundary(double x, double y, double z, vertex* v) = 0;
 
     virtual inline std::string GetDerivedDefaultReadName() {return "";}

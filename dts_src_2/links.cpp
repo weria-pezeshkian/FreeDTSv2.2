@@ -1,9 +1,9 @@
 
 
 #include "links.h"
+#include "vertex.h"
 
-links::links(int id, vertex *v1, vertex *v2, triangle *t1)
-{
+links::links(int id, vertex *v1, vertex *v2, triangle *t1) {
     m_IntEnergy = 0;
     m_T1=t1;
     m_V1=v1;

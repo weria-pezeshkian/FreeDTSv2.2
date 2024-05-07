@@ -131,7 +131,8 @@ bool Three_Edge_Scission::MCScissionMove(int step)
         //- global curvature
         double vertex_area = 0;
         double vertex_Carea = 0;
-        if(m_pState->GetGlobalCurvature()->GetState()){
+        std::cout<<" threeedge should be fixed 1\n";
+       /* if(m_pState->GetGlobalCurvature()->GetState()){
             double a11= ((it->PT1).pv1)->GetArea();
             double a12= ((it->PT1).pv2)->GetArea();
             double a13= ((it->PT1).pv3)->GetArea();
@@ -146,7 +147,7 @@ bool Three_Edge_Scission::MCScissionMove(int step)
             double c23=(((it->PT2).pv3)->GetP1Curvature())+(((it->PT1).pv1)->GetP1Curvature());
             vertex_area=-(a11+a12+a13+a21+a22+a23);
             vertex_Carea=-(c11*a11+c12*a12+c13*a13+c21*a21+c22*a22+c23*a23);
-        }
+        }*/
 //----> end of: change in global variables should come in
 
 
@@ -208,7 +209,10 @@ bool Three_Edge_Scission::MCScissionMove(int step)
         
         //- global curvature
         double en_g_curve = 0;
-        if(m_pState->GetGlobalCurvature()->GetState()){
+        std::cout<<" threeedge should be fixed 2\n";
+
+      /*  if(m_pState->GetGlobalCurvature()->GetState()){
+
             double a11= ((it->PT1).pv1)->GetArea();
             double a12= ((it->PT1).pv2)->GetArea();
             double a13= ((it->PT1).pv3)->GetArea();
@@ -227,7 +231,7 @@ bool Three_Edge_Scission::MCScissionMove(int step)
             vertex_Carea+=(c11*a11+c12*a12+c13*a13+c21*a21+c22*a22+c23*a23);
             en_g_curve = m_pState->GetGlobalCurvature()->CalculateEnergyChange(vertex_area,vertex_Carea);
 
-        }
+        }*/
             //--- change int energies of global
             double de_volume = 0;
             double de_global_area = 0;

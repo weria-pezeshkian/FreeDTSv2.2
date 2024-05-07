@@ -3,17 +3,17 @@
 
 
 #include "SimDef.h"
-#include "vertex.h"
-#include "triangle.h"
-#include "links.h"
+#include "MESH.h"
 #include "Vec3D.h"
 #include "AbstractVertexPositionIntegrator.h"
+#include "AbstractSimulation.h"
+
 class State;
-class EvolveVerticesByMetropolisAlgorithm : public AbstractVertexPositionIntegrator {
+class EvolveVerticesByMetropolisAlgorithm : public AbstractVertexPositionIntegrator, public MESH, public AbstractSimulation {
 public:
-    EvolveVerticesByMetropolisAlgorithm();
+    EvolveVerticesByMetropolisAlgorithm(State *pState);
     ~EvolveVerticesByMetropolisAlgorithm();
-    bool Initialize(State *pState);
+    void Initialize();
     bool EvolveOneStep(int step);
 
 private:
@@ -24,17 +24,15 @@ private:
     inline static std::string GetDefaultReadName() {return "MetropolisAlgorithm";}
     
     double  SystemEnergy();  // it is for bug finding only; slow function, this is for development time, should be deleted
-private:
-    double *m_pLmin2;
-    double *m_pLmax2;
-    double *m_pminAngle;
-    double *m_pBeta;
     State *m_pState;
-    Vec3D *m_pBox;
     
 
     
-
+private:
+    bool do_Simulation(){
+        std::cout<<" ---> error, 999o1o this should have been called \n";
+        return false;
+    }
 
 };
 

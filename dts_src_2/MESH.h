@@ -30,12 +30,8 @@ public:
     inline std::vector<inclusion*>  GetInclusion()      const       {return m_pInclusion;}
     std::map<std::string, std::vector<vertex*> > GetGroups()  const  {return m_Groups;}
 
-    
-    
+
     inline Vec3D                   *GetBox()            const      {return m_pBox;}
-    inline double                   GetMinLength()      const      {return m_MinLength;}
-    inline double                   GetMaxLength()      const      {return m_MaxLength;}
-    inline double                   GetMinAngle()       const      {return m_MinAngle;}
     inline const bool               GetHasCrossedPBC()  const      {return m_MeshCrossedPBC;}
     std::vector <InclusionType*>    GetInclusionType()     const {return m_pInclusionType;}
     
@@ -62,47 +58,11 @@ public:
     bool EdgeV2SurfV(vertex* v);
 //----
     bool UpdateGroupFromIndexFile(std::string &indexfilename);
-
-
-public:
-    void  CenterMesh();    // this function centers the mesh inside the box. For broken systems it may not work nicely
+    void CenterMesh();    // this function centers the mesh inside the box. For broken systems it may not work nicely
     void GenerateMesh(MeshBluePrint meshblueprint);
     MeshBluePrint Convert_Mesh_2_BluePrint(MESH *mesh);
-
-    
-    
-    std::vector <InclusionType> m_InclusionType;
     std::vector <InclusionType*> m_pInclusionType;
-    
-
-    
-    
-
-    std::map<std::string, std::vector<vertex*> > m_Groups;
-
-private:
-//========== this variables should be fully hidden from anything =======================
-    std::vector<vertex>         m_Vertex;                           //                ||
-    std::vector<triangle>       m_Triangle;                           //              ||
-    std::vector<links>          m_Links;                           //                 ||
-    std::vector<inclusion>      m_Inclusion;                           //             ||
-    Vec3D                       m_Box;                           //                   ||
-    std::vector<triangle>       m_GhostT; // Some trinagles for initial storing       ||
-    std::vector<links>          m_GhostL;                           //                ||
-    std::vector<vertex>         m_GhostV;                           //                ||
-    double                      m_MinLength;                        //                ||
-    double                      m_MaxLength;                        //                ||
-    double                      m_MinAngle;                         //                ||
-//======================================================================================
-
-
-//-- this variable need to be added and centerlized here
-    double  m_TotalArea;
-    double m_TotalVolume;
-    double m_TotalCurvature;   // not sure about this, as this is more of a curvature class
-    bool m_MeshCrossedPBC;
-    
-    
+    std::vector <InclusionType> m_InclusionType;
     
 protected:
     std::vector<vertex*>        m_pActiveV; // all the active vertices edge + surf
@@ -118,6 +78,23 @@ protected:
     std::vector<links*>          m_pGhostL;
     std::vector<vertex*>         m_pGhostV;
     Vec3D                       *m_pBox;
+    std::map<std::string, std::vector<vertex*> > m_Groups;
+
+
+    
+private:
+    
+    bool m_MeshCrossedPBC;
+//========== this variables should be fully hidden from anything =======================
+    std::vector<vertex>         m_Vertex;                           //                ||
+    std::vector<triangle>       m_Triangle;                           //              ||
+    std::vector<links>          m_Links;                           //                 ||
+    std::vector<inclusion>      m_Inclusion;                           //             ||
+    Vec3D                       m_Box;                           //                   ||
+    std::vector<triangle>       m_GhostT; // Some trinagles for initial storing       ||
+    std::vector<links>          m_GhostL;                           //                ||
+    std::vector<vertex>         m_GhostV;                           //                ||
+//======================================================================================
 
 };
 

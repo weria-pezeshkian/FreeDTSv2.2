@@ -14,14 +14,21 @@ This class is a base class for changing the box
 */
 class AbstractOpenEdgeEvolution {
 public:
-    AbstractOpenEdgeEvolution();
-    virtual ~AbstractOpenEdgeEvolution();
-    virtual void MC_Move(RNG* rng, double lmin, double lmax, double maxangle) = 0;
+    AbstractOpenEdgeEvolution(){
+        
+    }
+    virtual ~AbstractOpenEdgeEvolution(){
+        
+    }
+    virtual bool Move(int step) = 0;
     virtual void Initialize() = 0;
-    virtual inline int GetRate(){ return 0;}
     
     virtual inline std::string GetDerivedDefaultReadName() = 0;
     inline static std::string GetBaseDefaultReadName() {return "OpenEdgeEvolution";}
+    
+protected:
+    double m_NumberOfAttemptedMoves;
+    double m_AcceptedMoves;
 
 };
 //---- a class for no edge change
@@ -37,11 +44,10 @@ public:
     void Initialize(){
         return;
     }
-    void MC_Move(RNG* rng, double lmin, double lmax, double maxangle){
-        return;
+    bool Move(int step){
+        return false;
     }
-    inline int GetRate() {return 0;}
-    virtual inline std::string GetDerivedDefaultReadName()  {return "NoEvolution";}
+    inline std::string GetDerivedDefaultReadName()  {return "NoEvolution";}
 
 
 };

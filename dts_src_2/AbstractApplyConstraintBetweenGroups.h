@@ -20,9 +20,10 @@ public:
     virtual ~ AbstractApplyConstraintBetweenGroups(){
         
     }
-    virtual inline bool GetState()= 0;
-    virtual void Initialize() = 0;
-
+    virtual bool Initialize() = 0;
+    virtual inline double GetEnergy()   = 0;
+    virtual inline double GetDistance() = 0;
+    
     virtual inline std::string GetDerivedDefaultReadName() {return "";}
     inline static std::string GetBaseDefaultReadName() {return "ConstraintBetweenGroups";}
 
@@ -40,14 +41,9 @@ public:
         
     }
     inline std::string GetDerivedDefaultReadName() {return "NoConstraint";}
-    inline bool GetState(){
-        return false;
-    }
-
-    
-    void Initialize(){
-        return;
-    }
+    bool Initialize(){return true;}
+    inline double GetEnergy()   {return 0;}
+    inline double GetDistance()  {return 0;}
 
 };
 #endif

@@ -20,14 +20,14 @@ State::State(std::vector<std::string> argument) :
       m_pVAHCalculator(new VAHGlobalMeshProperties(this)),
       m_pVolumeCoupling(new NoCoupling(m_pVAHCalculator,this)),
       m_pCoupleGlobalCurvature(new NoGlobalCurvature(m_pVAHCalculator,this)),
-      m_pTotalAreaCoupling(new NoTotalAreaCoupling(m_pVAHCalculator, this)),
+      m_pTotalAreaCoupling(new NoTotalAreaCoupling(m_pVAHCalculator)),
       m_pForceonVerticesfromInclusions(new NoForce),  // Initialize ForceonVerticesfromInclusions
       m_pExternalFieldOnVectorFields(new NoExternalField),  // Initialize ExternalFieldOnVectorFields
       m_pApplyConstraintBetweenGroups(new NoConstraint),  // Initialize ApplyConstraintBetweenGroups
       m_pBoundary(new PBCBoundary),  // Initialize Boundary
 
       //---- Initialize integrators
-      m_pVertexPositionIntegrator(new EvolveVerticesByMetropolisAlgorithm),  // Initialize VertexPositionIntegrator
+      m_pVertexPositionIntegrator(new EvolveVerticesByMetropolisAlgorithm(this)),  // Initialize VertexPositionIntegrator
       m_pAlexanderMove(new AlexanderMoveByMetropolisAlgorithm),  // Initialize AlexanderMove
       m_pInclusionPoseIntegrator(new InclusionPoseUpdateByMetropolisAlgorithm),  // Initialize InclusionPoseIntegrator
      
@@ -348,17 +348,13 @@ bool State::ReadInputFile(std::string file)
         {
             // OpenEdgeEvolution =  EvolutionWithConstantVertex PT_steps
             std::string type;
-            int period = 0;
-            input >> str >> type >> period;
+            input >> str >> type;
             getline(input,rest);
-            if (type == "EvolutionWithConstantVertex") {
-                
-                m_pOpenEdgeEvolution = new OpenEdgeEvolutionWithConstantVertex(period, this);
-            }
-            else if (type == "EvolutionWithConstantVertex_B") {
-                
-                std::cout<<"---> warning: this algorithm for edge treatment has errors. It is up to you to use it \n";
-                m_pOpenEdgeEvolution = new OpenEdgeEvolutionWithConstantVertex_B(period, this);
+            if (type == m_pOpenEdgeEvolution->GetDerivedDefaultReadName()) { // "EvolutionWithConstantVertex"
+                int period = 0;
+                double rate = 0;
+                input >>  period>> rate;
+                m_pOpenEdgeEvolution = new OpenEdgeEvolutionWithConstantVertex(period, rate, this);
             }
             else {
                 
@@ -371,7 +367,7 @@ bool State::ReadInputFile(std::string file)
             double k,gc0;
             input>>str>>type>>k>>gc0;
             if(type == "CoupledToHarmonicPotential") {
-                m_pCoupleGlobalCurvature = new CouplingtoFixedGlobalCurvature(k,gc0);
+                m_pCoupleGlobalCurvature = new CouplingtoFixedGlobalCurvature(m_pVAHCalculator,this,k,gc0);
             }
             else {
                 std::cout<<"---> error: this algorithm for global curvature is unknown \n";
@@ -402,13 +398,12 @@ bool State::ReadInputFile(std::string file)
         else if(firstword == "TotalAreaCoupling"){
             
             std::string type;
-            int eq_steps;
-            double gamma , k0;
             input>>str>>type;
 
             if(type=="CouplingTotalAreaToHarmonicPotential"){
-                input>>eq_steps>>gamma>>k0;
-                m_pTotalAreaCoupling = new CouplingTotalAreaToHarmonicPotential(eq_steps,gamma,k0);
+                double gamma , k0;
+                input>>gamma>>k0;
+                m_pTotalAreaCoupling = new CouplingTotalAreaToHarmonicPotential(m_pVAHCalculator,this,gamma,k0);
             }
             getline(input,rest);
         }
@@ -418,10 +413,10 @@ bool State::ReadInputFile(std::string file)
             input >> str >> type;
             if(type == "HarmonicPotentialBetweenTwoGroups"){
                 // ConstraintBetweenGroups  = HarmonicPotentialBetweenTwoGroups 10 0.1 2000 Group1 Group2 0 1 1
-                double k,dx,rate,nx,ny,nz;
-                std::string g1,g2;
-                input>>k>>dx>>rate>>g1>>g2>>nx>>ny>>nz;
-                m_pApplyConstraintBetweenGroups = new HarmonicPotentialBetweenTwoGroups(k, dx,rate,g1,g2,nx,ny,nz);
+                double k,l0,nx,ny,nz;
+                std::string g1name,g2name;
+                input>>k>>l0>>g1name>>g2name>>nx>>ny>>nz;
+                m_pApplyConstraintBetweenGroups = new HarmonicPotentialBetweenTwoGroups(this, k, l0, g1name, g2name, nx, ny, nz);
             }
             else{
                 std::cout<<" unknown type of ConstraintBetweenGroups "<<std::endl;
@@ -676,7 +671,7 @@ bool State::Initialize(){
         m_pCurvatureCalculations->Initialize(this);
 
 //----> set some easy access for integrators
-        m_pVertexPositionIntegrator->Initialize(this);
+        m_pVertexPositionIntegrator->Initialize();
         m_pAlexanderMove->Initialize(this);
         m_pInclusionPoseIntegrator->Initialize(this);
     

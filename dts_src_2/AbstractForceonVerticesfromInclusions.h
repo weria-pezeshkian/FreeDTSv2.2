@@ -31,8 +31,12 @@ private:
 //---- a class for no box change
 class NoForce : public AbstractForceonVerticesfromInclusions {
 public:
-    NoForce();
-    ~NoForce();
+    NoForce(){
+        
+    }
+    ~NoForce(){
+        
+    }
     
     virtual inline std::string GetDerivedDefaultReadName()  {return "NoForce";}
 

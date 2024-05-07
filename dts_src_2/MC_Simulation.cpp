@@ -82,7 +82,7 @@ for(int step = GetInitialStep(); step < GetFinalStep(); step++){
        //--- update the mesh topology
        //m_pState->GetDynamicTopology()->MCMove();
         //--- update edge of mesh open edge
-        // m_pState->GetOpenEdgeEvolution()->MC_Move();
+        // m_pState->GetOpenEdgeEvolution()->Move(step);
         //---- convert inclusions
         //m_pState->GetInclusionConversion()->ActiveExchange();
     

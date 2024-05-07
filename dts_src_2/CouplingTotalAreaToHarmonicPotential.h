@@ -12,19 +12,17 @@
 #include "AbstractTotalAreaCoupling.h"
 class CouplingTotalAreaToHarmonicPotential : public  AbstractTotalAreaCoupling {
 public:
-    CouplingTotalAreaToHarmonicPotential(int eqsteps, double gamma,  double P0);
+    CouplingTotalAreaToHarmonicPotential(VAHGlobalMeshProperties *VHA, State *pstate, double gamma,  double K0);
     ~CouplingTotalAreaToHarmonicPotential();
 
 
 
-       inline double GetTotalArea()                  {return m_TotalArea;}
-       inline bool GetState()                        {return m_State;}
     
 
 
 public:
     void Initialize(std::vector<triangle *> &pTriangle);   ///
-    double CalculateEnergyChange(int step, double oldarea,  double newarea);
+    double CalculateEnergyChange(double oldarea,  double newarea);
     void UpdateArea(double oldarea, double newarea);
 
     inline  std::string GetDerivedDefaultReadName()  {return "HarmonicPotential";}
@@ -37,7 +35,6 @@ private:
     double m_K0;
     double m_A0;
     double m_NT;  // number of the triangles in the system
-    bool m_State;
     double m_Gamma;
     double m_6SQPI;   /// 1/6pi^1/2
 

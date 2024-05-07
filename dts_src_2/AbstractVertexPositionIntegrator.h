@@ -22,7 +22,7 @@ public:
     virtual ~ AbstractVertexPositionIntegrator(){
         
     }
-    virtual bool Initialize(State *pState) = 0;
+    virtual void Initialize() = 0;
     virtual bool EvolveOneStep(int step) = 0;
     virtual inline std::string GetDerivedDefaultReadName() = 0;
 

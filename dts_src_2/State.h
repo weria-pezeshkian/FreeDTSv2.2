@@ -86,7 +86,6 @@
 //-- open edge treatment
 #include "AbstractOpenEdgeEvolution.h"
 #include "OpenEdgeEvolutionWithConstantVertex.h"
-#include "OpenEdgeEvolutionWithConstantVertex_B.h"
 //-- volume coupling
 #include "AbstractVolumeCoupling.h"
 #include "Apply_Osmotic_Pressure.h"

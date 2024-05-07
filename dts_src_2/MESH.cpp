@@ -5,15 +5,11 @@
  Copyright (c) Weria Pezeshkian
 MESH class for quick access 
  */
-MESH::MESH() : m_MeshCrossedPBC(false)
-{
-    m_MinLength = 1;
-    m_MaxLength = 3;
-    m_MinAngle = -0.5;;
+MESH::MESH() : m_MeshCrossedPBC(false) {
+
     m_pEdgeV.clear();
 }
-MESH::~MESH()
-{
+MESH::~MESH() {
     
 }
 void MESH::RemoveFromLinkList(links* z, std::vector<links*> &vect){
@@ -132,7 +128,7 @@ void MESH::GenerateMesh(MeshBluePrint meshblueprint)
             std::cout<<"----> Error: Inclusion vertex id or type id is out of range "<<std::endl;
             exit(0);
         }
-        inclusion Tinc(it->id, m_InclusionType[it->tid]);
+        inclusion Tinc(it->id, &(m_InclusionType[it->tid]));
         Tinc.Updatevertex(&(m_Vertex.at(it->vid)));
         Vec3D D(it->x,it->y,0);
         Tinc.UpdateLocalDirection(D);
@@ -364,7 +360,7 @@ MeshBluePrint MESH::Convert_Mesh_2_BluePrint(MESH *mesh)
         tim.x = ((*it)->GetLDirection())(0);
         tim.y = ((*it)->GetLDirection())(1);
         tim.vid = (*it)->Getvertex()->GetVID();
-        tim.tid = (*it)->ITid;
+        tim.tid = (*it)->GetInclusionType()->ITid;
         tim.id = (*it)->GetID();
         binclusion.push_back(tim);
 

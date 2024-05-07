@@ -37,7 +37,9 @@ class RNG {
     
 public:
     RNG(int seed);
-    ~RNG();
+    ~RNG(){
+        
+    }
 
     double UniformRNG(double A);
     bool BinRNG();

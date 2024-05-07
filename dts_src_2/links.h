@@ -10,7 +10,7 @@
  Copyright (c) Weria Pezeshkian
 link object (edge):
  */
-
+class vertex;
 class links
 {
 public:
