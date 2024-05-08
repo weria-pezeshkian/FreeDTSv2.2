@@ -24,10 +24,10 @@ public:
     void Initialize(std::vector<triangle *> &pTriangle);   ///
     double CalculateEnergyChange(double oldarea,  double newarea);
     void UpdateArea(double oldarea, double newarea);
-
     inline  std::string GetDerivedDefaultReadName()  {return "HarmonicPotential";}
     inline static std::string GetDefaultReadName() {return "HarmonicPotential";}
-    
+    std::string CurrentState();
+
 private:
     double AreaofTrianglesAroundVertex(vertex * pVeretx);   ///
     double m_TotalArea;

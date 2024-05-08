@@ -453,3 +453,9 @@ double Energy::Geo_Theta(vertex *v1, vertex *v2) {
 
     return theta;
 }
+std::string Energy::CurrentState(){
+    
+    std::string state = AbstractEnergy::GetBaseDefaultReadName() + " = " + GetDerivedDefaultReadName();
+    
+    return state;
+}

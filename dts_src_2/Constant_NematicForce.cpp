@@ -93,5 +93,9 @@ Vec3D Constant_NematicForce::ActiveNematicForce_1(vertex *v2, vertex *v1) // giv
 
     return f;
 }
-
+std::string Constant_NematicForce::CurrentState(){
+    
+    std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+    return state;
+}
 

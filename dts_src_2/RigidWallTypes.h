@@ -22,7 +22,8 @@ public:
 
     void Initialize();
     bool MoveHappensWithinTheBoundary(double x, double y, double z, vertex* v);
-    
+    std::string CurrentState();
+
 private:
     State* m_pState;
     double m_HalfThickness;

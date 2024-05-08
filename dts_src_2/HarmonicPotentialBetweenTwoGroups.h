@@ -26,7 +26,7 @@ public:
     
     inline  std::string GetDerivedDefaultReadName() {return "HarmonicPotentialBetweenTwoGroups";}
     inline static std::string GetDefaultReadName() {return "HarmonicPotentialBetweenTwoGroups";}
-
+    std::string CurrentState();
     //=====
 private:  
     Vec3D COMVertexGroup(std::vector<vertex *>);

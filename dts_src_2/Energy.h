@@ -36,7 +36,8 @@ public:
 private:
     double SurfVertexBendingAndStretchingEnergy(vertex * pver);
     double EdgeVertexBendingAndStretchingEnergy(vertex * pver);
-    
+    std::string CurrentState();
+
     // types of interactions
     double Geo_Theta(vertex *v1, vertex *v2);  // Calculate the angle between two vectors after parallel transport
     double F10(vertex *v1, vertex *v2,std::vector<double>);

@@ -15,7 +15,8 @@ public:
     ~ConstantExternalField();
 
     double GetCouplingEnergy(vertex *pvertex);
-    
+    std::string CurrentState();
+
     inline  std::string GetDerivedDefaultReadName()  {return "ConstantExternalField";}
     inline static std::string GetDefaultReadName() {return "ConstantExternalField";}
     

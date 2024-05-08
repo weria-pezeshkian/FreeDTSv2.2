@@ -1,10 +1,11 @@
 
 #include "VAHGlobalMeshProperties.h"
 #include "State.h"
-VAHGlobalMeshProperties::VAHGlobalMeshProperties(State* pState) : m_pState(pState) {
-    m_TotalVolume = 0.0;
-    m_TotalArea = 0.0;
-    m_TotalCurvature = 0.0;
+VAHGlobalMeshProperties::VAHGlobalMeshProperties(State* pState) : m_pState(pState),
+                                                                  m_TotalVolume(0.0),
+                                                                  m_TotalArea(0.0),
+                                                                  m_TotalCurvature(0.0) {
+
 }
 VAHGlobalMeshProperties::~VAHGlobalMeshProperties() {
     

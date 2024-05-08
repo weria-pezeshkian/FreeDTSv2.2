@@ -24,6 +24,7 @@ public:
     bool OpenFolder();
     inline  std::string GetDerivedDefaultReadName()  {return "VTUFileFormat";}
      inline  static std::string GetDefaultReadName()   {return "VTUFileFormat";}
+    std::string CurrentState();
 
     
 private:

@@ -28,8 +28,9 @@ public:
     void WriteAFrame(int step, std::string filename);
     bool OpenFolder();
     
-    inline  std::string GetDerivedDefaultReadName()  {return "OutPutTRJ_TSI";}
-    static inline  std::string GetDefaultReadName()  {return "OutPutTRJ_TSI";}
+    inline  std::string GetDerivedDefaultReadName()  {return "TSI";}
+    static inline  std::string GetDefaultReadName()  {return "TSI";}
+    std::string CurrentState();
 
 private:
     // Private member variables

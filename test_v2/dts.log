@@ -1,0 +1,22 @@
+../dts_src_2/DTS   -in   in.dts   -top   top.top   -e   20   
+;--------- this part can be used as an input.dts file ---------------------------------  
+Set_Steps  = 1 20
+;-- abstract classes
+Integrator_Type = MC_Simulation
+Boundary = PBC
+VertexPositionIntegrator = MetropolisAlgorithm
+AlexanderMove = MetropolisAlgorithm
+InclusionPoseIntegrator = MetropolisAlgorithm
+NonbinaryTrajectory = TSI
+BinaryTrajectory = NoFile
+VisualizationFormat = VTUFileFormat
+CurvatureMethod = ShapeOperator_1
+EnergyMethod = FreeDTS1.0_FF
+ConstraintBetweenGroups = NoConstraint
+InclusionInducedForceOnVertex = NoForce
+ExternalFieldOnVectorFields = NoExternalField
+InclusionConversion = NoInclusionConversion
+Dynamic_Box = ConstantBox
+DynamicTopology = ConstantTopology
+OpenEdgeEvolution = NoEvolution
+;------------------------------------------  

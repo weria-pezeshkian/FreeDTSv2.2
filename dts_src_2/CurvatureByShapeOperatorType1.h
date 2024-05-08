@@ -39,7 +39,8 @@ public:
 
     inline  std::string GetDerivedDefaultReadName()  {return "ShapeOperator_1";}
     inline static std::string GetDefaultReadName()   {return "ShapeOperator_1";}
-    
+    std::string CurrentState();
+
 private:
     Tensor2 Householder(Vec3D N);
     Vec3D Calculate_Vertex_Normal(vertex *p, double &area);

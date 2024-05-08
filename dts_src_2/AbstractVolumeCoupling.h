@@ -28,7 +28,7 @@ public:
     virtual double GetEnergyChange(int s, double oa, double ov, double na, double nv) = 0;
     virtual void UpdateArea_Volume(double oa, double ov, double na, double nv) = 0;
     virtual inline std::string GetDerivedDefaultReadName() = 0;
-    
+    virtual std::string CurrentState() = 0;
     inline static std::string GetBaseDefaultReadName() {return "VolumeCoupling";}
 
 };
@@ -53,7 +53,11 @@ public:
     double  Energy(double volume, double area, double a)        {return 0;}
     void    UpdateArea_Volume(double oa, double ov, double na, double nv) {return ;}
     double  SingleTriangleVolume(triangle * ptriangle)          {return 0;}
-
+    std::string CurrentState(){
+        
+        std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+        return state;
+    }
 
 
 };

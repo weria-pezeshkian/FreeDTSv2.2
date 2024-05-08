@@ -720,7 +720,11 @@ void Three_Edge_Scission::KeepOneOccurrence(std::vector<T*> &vec){
     std::sort(vec.begin(), vec.end()); // Sort the vector
     vec.erase(std::unique(vec.begin(), vec.end()), vec.end()); // Remove duplicates
 }
-
+std::string Three_Edge_Scission::CurrentState(){
+    
+    std::string state = AbstractDynamicTopology::GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+    return state;
+}
 
 
 

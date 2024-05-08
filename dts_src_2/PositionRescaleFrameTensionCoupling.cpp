@@ -546,7 +546,11 @@ bool PositionRescaleFrameTensionCoupling::CheckMaxLinkLength()
 }
 
 */
-
+std::string PositionRescaleFrameTensionCoupling::CurrentState(){
+    
+    std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+    return state;
+}
 
 
 

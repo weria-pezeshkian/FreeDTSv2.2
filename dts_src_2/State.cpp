@@ -8,7 +8,13 @@ State::State(){
     
 }
 State::State(std::vector<std::string> argument) :
+
+      m_NumberOfErrors(0),
+      m_NumberOfWarnings(0),
       //============ Initialization of all files
+// make voxels
+      m_pVoxelization(new Voxelization<vertex>()),
+      m_pSimulation(new MC_Simulation(this)),
       m_pTimeSeriesDataOutput(new TimeSeriesDataOutput(this)),  // Initialize TimeSeriesDataOutput
       m_pTimeSeriesLogInformation(new TimeSeriesLogInformation(this)),  // Initialize TimeSeriesLogInformation
       m_pRestart(new Restart(this)),  // Initialize Restart
@@ -26,11 +32,6 @@ State::State(std::vector<std::string> argument) :
       m_pApplyConstraintBetweenGroups(new NoConstraint),  // Initialize ApplyConstraintBetweenGroups
       m_pBoundary(new PBCBoundary),  // Initialize Boundary
 
-      //---- Initialize integrators
-      m_pVertexPositionIntegrator(new EvolveVerticesByMetropolisAlgorithm(this)),  // Initialize VertexPositionIntegrator
-      m_pAlexanderMove(new AlexanderMoveByMetropolisAlgorithm),  // Initialize AlexanderMove
-      m_pInclusionPoseIntegrator(new InclusionPoseUpdateByMetropolisAlgorithm),  // Initialize InclusionPoseIntegrator
-     
       //---- Initialize supplementary integrators
       m_pDynamicBox(new NoBoxChange),  // Initialize DynamicBox
       m_pDynamicTopology(new ConstantTopology),  // Initialize DynamicTopology
@@ -42,7 +43,7 @@ State::State(std::vector<std::string> argument) :
       m_RandomNumberGenerator(new RNG(1234)),  // Initialize RandomNumberGenerator
       m_pEnergyCalculator(new Energy(this)),  // Initialize EnergyCalculator
 
-      m_pSimulation(new MC_Simulation(this)),  // Initialize Simulation
+        // Initialize Simulation
       m_pParallel_Replica(new ParallelReplicaData(false)),
 
      //--- Local state member variables
@@ -56,18 +57,28 @@ State::State(std::vector<std::string> argument) :
       m_RestartFileName(""),  // Set RestartFileName
       m_MinFaceAngle(-0.5),  // Set MinFaceAngle
       m_MinVerticesDistanceSquare(1.0),  // Set MinVerticesDistanceSquare
-      m_MaxLinkLengthSquare(3.0)  // Set MaxLinkLengthSquare
+      m_MaxLinkLengthSquare(3.0)  // Set MaxLinkLengthSquare*/
 
 { // start of the "class State" constructor
     
+    
+    //---- Initialize integrators
     m_pMesh = &m_Mesh;
+    m_pVertexPositionIntegrator = new EvolveVerticesByMetropolisAlgorithm(this);
+    m_pAlexanderMove            = new AlexanderMoveByMetropolisAlgorithm;         // Initialize AlexanderMove
+    m_pInclusionPoseIntegrator  = new InclusionPoseUpdateByMetropolisAlgorithm;  // Initialize InclusionPoseIntegrator
 
 //-- Find input files name (input.tsi, top.top||top.tsi, index.inx, restart.res)
-        if (!ExploreArguments(argument)) {
+    if (!ExploreArguments(argument)) {
             exit(0);
      }
-        ReadInputFile(m_InputFileName);  // Reading input file, i.e., file.dts
-        ExploreArguments(argument);      // Update last state
+     if (!ReadInputFile(m_InputFileName)) {
+            exit(0);
+     }
+     else{
+         
+         ExploreArguments(argument);      // Update last state
+     }
 }
 State::~State()
 {
@@ -96,6 +107,7 @@ State::~State()
     delete m_pEnergyCalculator;
     delete m_pSimulation;
     delete m_pParallel_Replica;
+    delete m_pVoxelization;
 }
 bool State::ExploreArguments(std::vector<std::string> &argument){
     /*
@@ -144,7 +156,7 @@ bool State::ExploreArguments(std::vector<std::string> &argument){
         const std::string& flag = argument[i];
         
         if (flag == HELP_FLAG || flag == LONG_HELP_FLAG) {
-            HelpMessage(); // write a help message
+            Nfunction::HelpMessage(); // write a help message
             return false;
         }
         else if(flag == INPUT_FLAG) {
@@ -215,16 +227,11 @@ bool State::ReadInputFile(std::string file)
             break;
         
         
-        if(firstword == "Initial_Step")
+        if(firstword == "Set_Steps")
         {
-            int ini;
-            input>>str>>ini;
+            int ini,fi;
+            input>>str>>ini>>fi;
             m_pSimulation->UpdateInitialStep(ini);
-            getline(input,rest);
-        }
-        else if(firstword == "Final_Step")
-        {
-            int fi;
             m_pSimulation->UpdateFinalStep(fi);
             getline(input,rest);
         }
@@ -235,8 +242,7 @@ bool State::ReadInputFile(std::string file)
             m_pSimulation->SetCentering(rate);
             getline(input,rest);
         }
-        else if(firstword == "Simulation")
-        {
+        else if(firstword == AbstractSimulation::GetBaseDefaultReadName()) { // "Integrator_Type"
             std::string type;
             input >> str >> type;
             if(type=="MC"){
@@ -252,8 +258,8 @@ bool State::ReadInputFile(std::string file)
             // Check if the correct number of moves is provided
             const int expectedMoves = 5;
             if (data.size() != expectedMoves + 1) { // +1 to account for the first element is just = sign
-                std::cout << "---> error: the defined MC moves does not cover all the moves. It should be " << expectedMoves << " numbers" << std::endl;
-                exit(0);
+                std::cout << "---> error: the provided number of MC moves does not cover all the moves. It should be " << expectedMoves << " numbers" << std::endl;
+                return false;
             }
             m_pVertexPositionIntegrator->SetMoveRate(Nfunction::String_to_Double(data[1]), Nfunction::String_to_Double(data[2]));
             m_pAlexanderMove->SetMoveRate(Nfunction::String_to_Double(data[3]));
@@ -302,7 +308,7 @@ bool State::ReadInputFile(std::string file)
         {
             std::string type;
             input >> str >> type;
-            if(type == "Constant_NematicForce"){
+            if(type == Constant_NematicForce::GetDefaultReadName()){  // Constant_NematicForce
                 double f0; //(d,p,n)
                 input>>str>>f0;
                 m_pForceonVerticesfromInclusions = new Constant_NematicForce(f0);
@@ -312,7 +318,7 @@ bool State::ReadInputFile(std::string file)
             }
             getline(input,rest);
         }
-        else if(firstword == m_pDynamicBox->GetBaseDefaultReadName())
+        else if(firstword == AbstractDynamicBox::GetBaseDefaultReadName())
         {
             
             std::string type;
@@ -331,7 +337,6 @@ bool State::ReadInputFile(std::string file)
         }
         else if(firstword == "Dynamic_Topology")
         {
-            
             std::string type;
             int period = 0;
 
@@ -344,13 +349,13 @@ bool State::ReadInputFile(std::string file)
             // Consume remaining input line
             getline(input, rest);
         }
-        else if(firstword == "OpenEdgeEvolution")
-        {
-            // OpenEdgeEvolution =  EvolutionWithConstantVertex PT_steps
+        else if(firstword == AbstractOpenEdgeEvolution::GetBaseDefaultReadName()){ // "OpenEdgeEvolution"
+            
+            // OpenEdgeEvolution =  EvolutionWithConstantVertex period rate
             std::string type;
             input >> str >> type;
             getline(input,rest);
-            if (type == m_pOpenEdgeEvolution->GetDerivedDefaultReadName()) { // "EvolutionWithConstantVertex"
+            if (type == OpenEdgeEvolutionWithConstantVertex::GetDefaultReadName()) { // "EvolutionWithConstantVertex"
                 int period = 0;
                 double rate = 0;
                 input >>  period>> rate;
@@ -424,26 +429,20 @@ bool State::ReadInputFile(std::string file)
             getline(input,rest);
 
         }
-        else if(firstword == "TotalAreaCoupling"){
-            std::string type;
-            input>>str>>type;
-            if(type == "Spherical"){
-                //m_pBoundary
-            }
-        }
         else if(firstword == "MinfaceAngle")
         {
-            input>>str>>m_MinFaceAngle;
+            double min_angle;
+            input>>str>>min_angle;
+            m_pSimulation->SetMinAngle(min_angle);
             getline(input,rest);
         }
-        else if(firstword == "OutPutEnergy_periodic")
-        {
+        else if(firstword == "TimeSeriesData_Period") { // TimeSeriesData
             int period;
             input>>str>>period;
             m_pTimeSeriesDataOutput->UpdatePeriod(period);
             getline(input,rest);
         }
-        else if(firstword == "Restart_periodic")
+        else if(firstword == "Restart_Period")
         {
             int period;
             input>>str>>period;
@@ -497,7 +496,7 @@ bool State::ReadInputFile(std::string file)
             }
             m_pEnergyCalculator->SetSizeCoupling (a,A01,c,A02);
         }
-        else if(firstword == "Display_periodic")
+        else if(firstword == "Display_Period")
         {
             int period;
             input>>str>>period;
@@ -515,17 +514,25 @@ bool State::ReadInputFile(std::string file)
             input>>str>>m_GeneralOutputFilename;
             getline(input,rest);
         }
-        else if(firstword == "Min_Max_LinkLenghtsSquare")
+        else if(firstword == "Min_Max_Lenghts")
         {
-            input>>str>>m_MinVerticesDistanceSquare>>m_MaxLinkLengthSquare;
+            double min,max;
+            input>>str>>min>>max;
+            m_pSimulation->SetMinMaxLength(min, max);
+
+
             getline(input,rest);
         }
-        else if(firstword == Traj_tsi::GetDefaultReadName()){ // "OutPutTRJ_TSI"
+        else if(firstword == AbstractNonbinaryTrajectory::GetBaseDefaultReadName()) {
             
-            int period;
-            std::string tsiPrecision, tsiFolder_name;
-            input>>str>>period>>tsiPrecision>>tsiFolder_name;
-            m_pNonbinaryTrajectory  = new Traj_tsi(this, period, tsiFolder_name, tsiPrecision );
+            std::string type;
+            input>>str>>type;
+            if(type == Traj_tsi::GetDefaultReadName()){ // "TSI"
+                int period;
+                std::string tsiPrecision, tsiFolder_name;
+                input>>str>>period>>tsiPrecision>>tsiFolder_name;
+                m_pNonbinaryTrajectory  = new Traj_tsi(this, period, tsiFolder_name, tsiPrecision );
+            }
         }
         else if(firstword == "Temprature"){
             
@@ -557,10 +564,8 @@ bool State::ReadInputFile(std::string file)
         {
             break;
         }
-        else
-        {
-            if(firstword.at(0)!=';')
-            {
+        else {
+            if(firstword.at(0)!=';') {
                 std::cout<<"Error: bad keyword in the input file *** "<<firstword<<" ***\n";
                 return false;
             }
@@ -628,59 +633,68 @@ bool State::Initialize(){
                 m_pDynamicBox->UpdateDR(r_box);
                 m_pSimulation->UpdateInitialStep(step+1);
                 //----- open log file
-                m_pTimeSeriesLogInformation->OpenFile(false);
+                if(!m_pTimeSeriesLogInformation->OpenFile(false)){
+                    m_NumberOfErrors++;
+                }
+                if(!m_pTimeSeriesDataOutput->OpenFile(false)){
+                    m_NumberOfErrors++;
+                }
                 //---- open the binar trajectory
-                m_pBinaryTrajectory->OpenFile(false, 'w');
+                if(!m_pBinaryTrajectory->OpenFile(false, 'w')){
+                    m_NumberOfErrors++;
+                }
             }
             else{
                 // If failed to read restart file, generate MeshBluePrint from input topology file
-                std::cout << "---> Note: Failed to read restart file, using topology file" << std::endl;
+                std::cout << "---> Warning: Failed to read restart file, will use topology file" << std::endl;
+                m_NumberOfWarnings++;
             }
         }
         if(!restartReadSuccess){ // this for also a situation where m_RestartFileName is empty
             mesh_blueprint = Create_BluePrint.MashBluePrintFromInput_Top(m_InputFileName, m_TopologyFile);
             
-            //----- open log file
-            m_pTimeSeriesLogInformation->OpenFile(false);
-            
-            // Open binary trajectory file for writing
-            m_pBinaryTrajectory->OpenFile(true, 'w');
-
+            //----- open time series files
+            if(!m_pTimeSeriesLogInformation->OpenFile(true)){
+                m_NumberOfErrors++;
+            }
+            if(!m_pTimeSeriesDataOutput->OpenFile(true)){
+                m_NumberOfErrors++;
+            }
+            //---- open the binar trajectory
+            if(!m_pBinaryTrajectory->OpenFile(true, 'w')){
+                m_NumberOfErrors++;
+            }
             // Open folder for non-binary trajectory
-            m_pNonbinaryTrajectory->OpenFolder();
-            
+            if(! m_pNonbinaryTrajectory->OpenFolder()){
+                m_NumberOfErrors++;
+            }
             // open folder for Visualization
             if(m_pVisualizationFile->GetDerivedDefaultReadName()=="VTUFileFormat"){
-               m_pVisualizationFile->OpenFolder();
+                if(!m_pVisualizationFile->OpenFolder()){
+                    m_NumberOfErrors++;
+                }
             }
 
         }
 
         // Generate mesh from the mesh blueprint
         m_Mesh.GenerateMesh(mesh_blueprint);
-    
-
+        m_pVoxelization->SetBox(m_pMesh->GetBox());
 
         // Update group from index file
         m_pMesh->UpdateGroupFromIndexFile(m_IndexFileName);
-    
 //============ activate of all inputs and data structures
         m_pRestart->SetRestartFileName();
-    
 //----> calaculate curvature for all vertices
         m_pCurvatureCalculations->Initialize(this);
-
 //----> set some easy access for integrators
         m_pVertexPositionIntegrator->Initialize();
         m_pAlexanderMove->Initialize(this);
         m_pInclusionPoseIntegrator->Initialize(this);
-    
 //----> boundry of the simulations
         m_pBoundary->Initialize();
-    
 //-----> box change
     m_pDynamicBox->Initialize();
-    
 //----> energy class
     //---> to get interaction energies
      m_pEnergyCalculator->Initialize(m_InputFileName);
@@ -688,26 +702,33 @@ bool State::Initialize(){
      m_pEnergyCalculator->CalculateAllLocalEnergy();
     
 //----> inclsuion exchange, active inclsuion exchange
-    //m_pInclusionConversion
-   
-    /*
-    //---- Initialize constraint components
-     m_pVolumeCoupling
-    m_pCoupleGlobalCurvature
-    m_pTotalAreaCoupling               
-    m_pForceonVerticesfromInclusions
-    m_pApplyConstraintBetweenGroups
+    m_pInclusionConversion->Initialize(this);
+    m_pDynamicTopology->Initialize();
+    m_pOpenEdgeEvolution->Initialize();
+    
+    // m_pTotalAreaCoupling->
+    // m_pVolumeCoupling->
+    
+    m_pCoupleGlobalCurvature->Initialize();
+   // m_pForceonVerticesfromInclusions this does not have one
+    m_pApplyConstraintBetweenGroups->Initialize();
+    m_pSimulation->Initialize();
 
-   
-    // Initialize supplementary integrators
-    m_pDynamicTopology                  = new ConstantTopology;
-    m_pOpenEdgeEvolution                = new NoEvolution;
-    m_pInclusionConversion              = new NoInclusionConversion;
     
-    */
-    
-        m_pSimulation->Initialize();
-    
+//--- now that the system is ready for simulation, we first write the State into the log file and make one vis 
+    m_pTimeSeriesLogInformation->WriteStartingState();
+    m_pVisualizationFile->WriteAFrame(-m_pVisualizationFile->GetPeriod());
+
+    if(m_NumberOfErrors!=0){
+        std::cout<<" There were "<<m_NumberOfErrors<<" errors in the input files "<<std::endl;
+        exit(0);
+    }
+    if(m_NumberOfWarnings!=0){
+        std::cout<<" There were "<<m_NumberOfWarnings<<" warning in the input files "<<std::endl;
+    }
+    else{
+        std::cout<<" All input files are valid, and the State has been successfully initialized! "<<std::endl;
+    }
     return true;
 }
 bool State::ReadInclusionType(std::ifstream& input) {

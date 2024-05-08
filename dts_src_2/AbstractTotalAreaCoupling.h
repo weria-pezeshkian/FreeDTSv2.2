@@ -23,7 +23,7 @@ public:
     virtual  void UpdateArea(double oldarea, double newarea) = 0;
     virtual  double CalculateEnergyChange(double oldarea,  double newarea) = 0;
     virtual inline std::string GetDerivedDefaultReadName() = 0;
-    
+    virtual std::string CurrentState() = 0;
     inline static std::string GetBaseDefaultReadName() {return "TotalAreaCoupling";}
 
 };
@@ -46,7 +46,11 @@ public:
     double CalculateEnergyChange(double oldarea,  double newarea){
         return 0;
     }
-    
+    std::string CurrentState(){
+        
+        std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+        return state;
+    }
 };
 
 #endif

@@ -21,7 +21,7 @@ public:
     }
     virtual void Initialize() = 0;
     virtual bool MoveHappensWithinTheBoundary(double x, double y, double z, vertex* v) = 0;
-
+    virtual std::string CurrentState() = 0;
     virtual inline std::string GetDerivedDefaultReadName() {return "";}
     inline static std::string GetBaseDefaultReadName() {return "Boundary";}
     
@@ -45,7 +45,11 @@ public:
     bool MoveHappensWithinTheBoundary(double x, double y, double z, vertex* v){
         return true;
     }
-    
+    std::string CurrentState(){
+        
+        std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+        return state;
+    }
 };
 
 #endif

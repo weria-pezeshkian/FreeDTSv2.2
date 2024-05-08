@@ -43,3 +43,8 @@ bool TwoFlatParallelWall::MoveHappensWithinTheBoundary(double dx, double dy, dou
 
     return true;
 }
+std::string TwoFlatParallelWall::CurrentState(){
+    
+    std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+    return state;
+}

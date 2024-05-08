@@ -907,3 +907,8 @@ bool OpenEdgeEvolutionWithConstantVertex::Linkisvalid(vertex *v1, double lmin, d
     return true;
     
 }
+std::string OpenEdgeEvolutionWithConstantVertex::CurrentState(){
+    
+    std::string state = AbstractOpenEdgeEvolution::GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+    return state;
+}

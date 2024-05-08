@@ -160,7 +160,7 @@ inline AbstractBinaryTrajectory      *GetBinaryTrajectory()                     
 inline AbstractEnergy               *GetEnergyCalculator()                          {return m_pEnergyCalculator;}
 inline AbstractCurvature            *GetCurvatureCalculator()                          {return m_pCurvatureCalculations;}
 //----
-inline AbstractApplyConstraintBetweenGroups *Get2GroupHarmonic()                    {return m_pApplyConstraintBetweenGroups;}
+inline AbstractApplyConstraintBetweenGroups *GetApplyConstraintBetweenGroups()                    {return m_pApplyConstraintBetweenGroups;}
 
 //---- algorithm mangments
 inline AbstractTotalAreaCoupling        *GetTotalAreaCoupling()                         {return m_pTotalAreaCoupling;}
@@ -252,8 +252,9 @@ private:
     std::string     m_RestartFileName; // name of the topology file, *.top, *.dat *.tsi *.bts
     bool m_Targeted_State; // Only relavant for Parallel Tempering by 2022; Which state carries the target temparature
     int m_Total_no_Threads;       // Total no of Threads
+    int m_NumberOfErrors;
+    int m_NumberOfWarnings;
 
-    
     
     //--- system variables
         double m_MinVerticesDistanceSquare; //  minimum distance allowed between two vertices  (smaller will results in error)

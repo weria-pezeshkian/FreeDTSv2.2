@@ -8,9 +8,7 @@ EvolveVerticesByMetropolisAlgorithm::EvolveVerticesByMetropolisAlgorithm(State *
                         m_pState(pState),
                         MESH(*(pState->GetMesh())),
                         AbstractSimulation(*(pState->GetSimulation())){
- 
-                            m_NumberOfAttemptedMoves = 0;
-                            m_AcceptedMoves = 0;
+
 }
 EvolveVerticesByMetropolisAlgorithm::~EvolveVerticesByMetropolisAlgorithm(){
 
@@ -219,4 +217,9 @@ double  EvolveVerticesByMetropolisAlgorithm::SystemEnergy()
     return en;
      */
     return 0;
+}
+std::string EvolveVerticesByMetropolisAlgorithm::CurrentState(){
+    
+    std::string state = AbstractVertexPositionIntegrator::GetBaseDefaultReadName() +" = "+ GetDerivedDefaultReadName();
+    return state;
 }

@@ -22,7 +22,7 @@ public:
         
     }
     virtual double GetCouplingEnergy(vertex *pvertex) = 0;
-    
+    virtual std::string CurrentState() = 0;
     virtual inline std::string GetDerivedDefaultReadName() = 0;
     inline static std::string GetBaseDefaultReadName() {return "ExternalFieldOnVectorFields";}
 
@@ -42,6 +42,11 @@ public:
     inline std::string GetDerivedDefaultReadName()  {return "NoExternalField";};
     double GetCouplingEnergy(vertex *pvertex){
         return 0;
+    }
+    std::string CurrentState(){
+        
+        std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+        return state;
     }
 };
 #endif

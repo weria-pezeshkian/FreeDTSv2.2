@@ -37,7 +37,7 @@ public:
     bool Exchange(int step);
     inline  std::string GetDerivedDefaultReadName()  {return "ActiveTwoStateInclusion";}
     inline static std::string GetDefaultReadName() {return "ActiveTwoStateInclusion";}
-
+    std::string CurrentState();
     
     
 private:

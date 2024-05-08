@@ -34,12 +34,23 @@ Job::Job(const std::vector<std::string> &argument) {
         std::cout << "--> unrecognized executable name ---> " << ex_name << " :( " << " it should be " << EXE_NAME << std::endl;
         exit(0);
     }
-
 #ifndef _OPENMP
     // Perform a normal simulation on a single CPU if OpenMP is not enabled
+#if DEBUG_MODE == Enabled
+    std::cout<<" Job started  \n";
+#endif
     State T_state(argument);
+#if DEBUG_MODE == Enabled
+    std::cout<<" stated created  \n";
+#endif
     T_state.Initialize();
+#if DEBUG_MODE == Enabled
+    std::cout<<" state ini  \n";
+#endif
     T_state.GetSimulation()->do_Simulation();
+#if DEBUG_MODE == Enabled
+    std::cout<<" sim is done  \n";
+#endif
 #else
 //---> constract an State object
     State T_state(argument);

@@ -31,6 +31,7 @@ public:
     bool EvolveOneStep(int step);
     inline std::string GetDerivedDefaultReadName() { return "MetropolisAlgorithm"; }
     inline static std::string GetDefaultReadName() { return "MetropolisAlgorithm"; }
+    std::string CurrentState();
 
 private:
     State *m_pState; ///< Pointer to the simulation state.

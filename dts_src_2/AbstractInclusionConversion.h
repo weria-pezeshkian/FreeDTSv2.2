@@ -23,7 +23,7 @@ public:
     }
     virtual void Initialize(State *pstate) = 0;
     virtual bool Exchange(int step) = 0;
-
+    virtual std::string CurrentState() = 0;
     virtual inline std::string GetDerivedDefaultReadName() = 0;
     
     inline static std::string GetBaseDefaultReadName() {return "InclusionConversion";}
@@ -57,7 +57,11 @@ public:
         
         return false;
     }
-
+    std::string CurrentState(){
+        
+        std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+        return state;
+    }
 
 };
 #endif

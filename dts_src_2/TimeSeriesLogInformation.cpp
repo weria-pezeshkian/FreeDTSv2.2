@@ -7,12 +7,8 @@
 #include <iostream>
 #include "TimeSeriesLogInformation.h"
 #include "State.h"
-#include "Nfunction.h"
 #include "SimDef.h"
 
-TimeSeriesLogInformation::TimeSeriesLogInformation(){
-
-}
 TimeSeriesLogInformation::TimeSeriesLogInformation(State *pState){
     m_pState = pState;
 }
@@ -47,8 +43,6 @@ bool TimeSeriesLogInformation::OpenFile(bool clearfile){
         return false;
     }
     
-    WriteStateInfo();
-
     return true;
 }
 bool TimeSeriesLogInformation::FlushLogFile(){ // the energy file should be flushed first
@@ -57,7 +51,7 @@ bool TimeSeriesLogInformation::FlushLogFile(){ // the energy file should be flus
 
     return true;
 }
-void TimeSeriesLogInformation::WriteStateInfo(){
+void TimeSeriesLogInformation::WriteStartingState(){
     
     std::vector<std::string> argument = m_pState->GetCommandLineArgument();
     for (std::vector<std::string>::iterator it = argument.begin() ; it != argument.end(); ++it){
@@ -65,24 +59,35 @@ void TimeSeriesLogInformation::WriteStateInfo(){
     }
     m_TimeSeriesFile<<std::endl;
     m_TimeSeriesFile<<";--------- this part can be used as an input.dts file ---------------------------------  "<<std::endl;
-    /* m_TimeSeriesFile<<"Integrator = "<<m_Integrator<<std::endl;
-     m_TimeSeriesFile<<"MC_Moves = "<<(m_MCMove.VertexMove)<<"  "<<(m_MCMove.LinkFlip)<<"  "<<m_MCMove.EdgeVertexMove<<"  "<<(m_MCMove.InclusionMove_Angle)<<"  "<<(m_MCMove.InclusionMove_Kawasaki)<<std::endl;
-     m_TimeSeriesFile<<"Initial_Step = "<<m_Initial_Step<<std::endl;
-     m_TimeSeriesFile<<"Final_Step = "<<m_Final_Step<<std::endl;
-     m_TimeSeriesFile<<"MinfaceAngle = "<<m_MinFaceAngle<<std::endl;
-     m_TimeSeriesFile<<"OutPutEnergy_periodic = "<<m_OutPutEnergy_periodic<<std::endl;
-     m_TimeSeriesFile<<"Restart_periodic = "<<m_RESTART.restartPeriod<<std::endl;
-     m_TimeSeriesFile<<"TopologyFile = "<<m_TopologyFile<<std::endl;
-     m_TimeSeriesFile<<"Seed = "<<m_Seed<<std::endl;
-     m_TimeSeriesFile<<"Kappa = "<<m_inc_ForceField.m_BendingRigidity<<"  "<<m_inc_ForceField.m_GaussianRigidity<<std::endl;
-     m_TimeSeriesFile<<"Display_periodic = "<<m_Display_periodic<<std::endl;
-     m_TimeSeriesFile<<"CNTCELL = "<<m_CNTCELL(0)<<" "<<m_CNTCELL(1)<<" "<<m_CNTCELL(2)<<" "<<std::endl;
-     m_TimeSeriesFile<<"GeneralOutputFilename = "<<m_GeneralOutputFilename<<std::endl;
-     m_TimeSeriesFile<<"Min_Max_LinkLenghtsSquare = "<<m_MinVerticesDistanceSquare<<"  "<<m_MaxLinkLengthSquare<<std::endl;
-     m_TimeSeriesFile<<"OutPutTRJ_TSI = "<<(m_TRJTSI.tsiPeriod)<<"  "<<(m_TRJTSI.tsiPrecision)<<"  "<<(m_TRJTSI.tsiFolder_name)<<"  "<<std::endl;
-     m_TimeSeriesFile<<"OutPutTRJ_BTS = "<<(m_TRJBTS.btsPeriod)<<"  "<<(m_TRJBTS.btsPrecision)<<"  "<<(m_TRJBTS.btsFile_name)<<"  "<<std::endl;
-    std::string state = "off";
-    */
+    m_TimeSeriesFile<<"Set_Steps  = "<<m_pState->GetSimulation()->GetInitialStep()<<" "<<m_pState->GetSimulation()->GetFinalStep()<<std::endl;
+
+    
+    m_TimeSeriesFile<<";-- abstract classes"<<std::endl;
+    m_TimeSeriesFile<<m_pState->GetSimulation()->CurrentState()<<std::endl;
+    m_TimeSeriesFile<<m_pState->GetBoundary()->CurrentState()<<std::endl;
+    
+    m_TimeSeriesFile<<m_pState->GetVertexPositionUpdate()->CurrentState()<<std::endl;
+    m_TimeSeriesFile<<m_pState->GetAlexanderMove()->CurrentState()<<std::endl;
+    m_TimeSeriesFile<<m_pState->GetInclusionPoseUpdate()->CurrentState()<<std::endl;
+    
+    m_TimeSeriesFile<<m_pState->GetNonbinaryTrajectory()->CurrentState()<<std::endl;
+    m_TimeSeriesFile<<m_pState->GetBinaryTrajectory()->CurrentState()<<std::endl;
+    m_TimeSeriesFile<<m_pState->GetVisualization()->CurrentState()<<std::endl;
+
+    m_TimeSeriesFile<<m_pState->GetCurvatureCalculator()->CurrentState()<<std::endl;
+    m_TimeSeriesFile<<m_pState->GetEnergyCalculator()->CurrentState()<<std::endl;
+    
+    m_TimeSeriesFile<<m_pState->GetApplyConstraintBetweenGroups()->CurrentState()<<std::endl;
+    m_TimeSeriesFile<<m_pState->GetForceonVerticesfromInclusions()->CurrentState()<<std::endl;
+    m_TimeSeriesFile<<m_pState->GetExternalFieldOnVectorFields()->CurrentState()<<std::endl;
+    m_TimeSeriesFile<<m_pState->GetInclusionConversion()->CurrentState()<<std::endl;
+
+    m_TimeSeriesFile<<m_pState->GetDynamicBox()->CurrentState()<<std::endl;
+    m_TimeSeriesFile<<m_pState->GetDynamicTopology()->CurrentState()<<std::endl;
+    m_TimeSeriesFile<<m_pState->GetOpenEdgeEvolution()->CurrentState()<<std::endl;
+
+
     m_TimeSeriesFile<<";------------------------------------------  "<<std::endl;
 
 }
+

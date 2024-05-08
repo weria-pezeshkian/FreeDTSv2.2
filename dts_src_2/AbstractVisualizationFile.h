@@ -12,7 +12,7 @@
 class  AbstractVisualizationFile {
 public:
     AbstractVisualizationFile(){
-        
+        m_Period = 10;
     }
     virtual ~ AbstractVisualizationFile(){
         
@@ -20,8 +20,8 @@ public:
     virtual bool WriteAFrame(int step) = 0;
     virtual bool OpenFolder() = 0;
     virtual inline  std::string GetDerivedDefaultReadName()  {return "";}
-    
-    inline const int GetPeriod()  {return m_Period;}
+    virtual std::string CurrentState() = 0;
+    inline int GetPeriod()  {return m_Period;}
     inline static std::string GetBaseDefaultReadName()  {return "VisualizationFormat";}
     
 

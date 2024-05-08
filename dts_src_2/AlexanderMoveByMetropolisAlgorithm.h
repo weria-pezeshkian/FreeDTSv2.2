@@ -25,7 +25,7 @@ private:
     bool EdgeCanBeFliped(links *pedge, double mindist2, double maxdist2);
     bool CheckFacesAfterFlip(double &minangle, links* edge);
     double SystemEnergy(); // For bug finding only; slow function (should be deleted in production code)
-
+    std::string CurrentState();
 
     
 private:

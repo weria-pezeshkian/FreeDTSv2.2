@@ -22,7 +22,7 @@ public:
     }
     virtual bool Move(int step) = 0;
     virtual void Initialize() = 0;
-    
+    virtual std::string CurrentState() = 0;
     virtual inline std::string GetDerivedDefaultReadName() = 0;
     inline static std::string GetBaseDefaultReadName() {return "OpenEdgeEvolution";}
     
@@ -48,7 +48,11 @@ public:
         return false;
     }
     inline std::string GetDerivedDefaultReadName()  {return "NoEvolution";}
-
+    std::string CurrentState(){
+        
+        std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+        return state;
+    }
 
 };
 

@@ -1,6 +1,8 @@
 #if !defined(AFX_AbstractSimulation_H)
 #define AFX_AbstractSimulation_H
 #include <iostream>
+#include <string>
+#include "SimDef.h"
 
 // Define a Abstract class with a virtual function and some main function
 /*
@@ -24,17 +26,18 @@ public:
     virtual ~ AbstractSimulation(){
         
     }
+    
+
+    
     virtual void Initialize() = 0;
     virtual bool do_Simulation() = 0;
     
     inline int GetInitialStep()                         {return m_Initial_Step;}
-    
-    virtual inline std::string GetDerivedDefaultReadName() = 0;
-    inline static std::string GetBaseDefaultReadName() {return "Integrator_Type";}
-    
-protected:
-    inline int GetBoxCentering()                        {return m_CenteringFrequently;}
     inline int GetFinalStep()                           {return m_Final_Step;}
+    virtual std::string CurrentState() = 0;
+    virtual inline std::string GetDerivedDefaultReadName() = 0;
+    inline static std::string GetBaseDefaultReadName() {return "Integrator_Type";}    
+    inline int GetBoxCentering()                        {return m_CenteringFrequently;}
     inline int GetBeta()                                {return m_Beta;}
 
 
@@ -56,6 +59,16 @@ public:
         m_DBeta = dbeta;
         return;
     }
+    void SetMinAngle(double min_angle){
+        m_MinAngle = min_angle;
+        return;
+    }
+    void SetMinMaxLength(double min_l, double max_l){
+        m_MinLength2 = min_l;
+        m_MaxLength2 = max_l;
+        return;
+    }
+
 private:
     int m_CenteringFrequently; // how often centering the system in the box
     int m_Initial_Step;

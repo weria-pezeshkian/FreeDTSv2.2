@@ -116,4 +116,8 @@ void Apply_Osmotic_Pressure::UpdateArea_Volume(double oldarea, double oldvolume,
     m_TotalVolume+=newvolume-oldvolume;
     m_TotalArea+=newarea-oldarea;
 }
-
+std::string Apply_Osmotic_Pressure::CurrentState(){
+    
+    std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+    return state;
+}

@@ -54,7 +54,7 @@ Voxelization(){ // Use Type here
     m_Ly = 1;
     m_Lz = 1;
 }
-Voxelization(Vec3D pBox) { // Use Type here
+Voxelization(Vec3D *pBox) { // Use Type here
         // Initialize the box object
         m_pBox = pBox;
         m_Lx = 1;
@@ -92,9 +92,16 @@ void UpdateVoxelSize(double lx, double ly, double lz) {
     m_Lz = lz;
     return;
 }
+void SetBox(Vec3D *pBox) {
+    m_pBox = pBox;
+    return;
+}
 //----> Important and detailed function
 bool Voxelize(std::vector<Type *> all_pObjects) {
-        
+#if DEBUG_MODE == Enabled
+    std::cout<<" We are in the Voxelize function \n";
+#endif
+    
     //---> make m_AllVoxel empty
             if (m_AllVoxel != nullptr) {
                 for (int i = 0; i < m_Nx; ++i) {
@@ -109,6 +116,9 @@ bool Voxelize(std::vector<Type *> all_pObjects) {
                 delete[] m_AllVoxel;
                 m_AllVoxel = nullptr;
             }
+#if DEBUG_MODE == Enabled
+    std::cout<<" all voxels has been emptied \n";
+#endif
         //--->find the appropriate voxel size and number of voxels
         m_Nx=int((*m_pBox)(0)/m_Lx);
         m_Ny=int((*m_pBox)(1)/m_Ly);
@@ -129,6 +139,9 @@ bool Voxelize(std::vector<Type *> all_pObjects) {
                 }
             }
         }
+#if DEBUG_MODE == Enabled
+    std::cout<<" we created new voxels \n";
+#endif
         //--> Update voxel neighbours
         //----> making m_AllVoxel an m_AllVoxel[m_Nx][m_Ny][m_Nz] and create all the cells
         for (int i = 0; i < m_Nx; ++i) {
@@ -141,6 +154,9 @@ bool Voxelize(std::vector<Type *> all_pObjects) {
                 }
             }
         }
+#if DEBUG_MODE == Enabled
+    std::cout<<" voxel nieghbours has been set \n";
+#endif
         //--->allocate the objects to the voxels
         for (typename std::vector<Type *>::iterator it = all_pObjects.begin(); it != all_pObjects.end(); ++it) {
             double x = (*it)->GetXPos(); // Retrieve X position of each object
@@ -154,7 +170,9 @@ bool Voxelize(std::vector<Type *> all_pObjects) {
             (m_AllVoxel[nx][ny][nz])->AddtoContentList(*it);
             (*it)->UpdateVoxel(pVoxel);
         }
-
+#if DEBUG_MODE == Enabled
+    std::cout<<" vertices are added to voxels \n";
+#endif
         return true; // Placeholder
 }
 //----> Important and detailed function

@@ -44,7 +44,7 @@ public:
     void Initialize();
     void UpdateEnergyChange(double delta_area, double delta_curvature);
     double CalculateEnergyChange(double delta_area, double delta_curvature);
-    
+    std::string CurrentState();
     inline  std::string GetDerivedDefaultReadName()  {return "FixedGlobalCurvature";}
     inline static std::string GetDefaultReadName() {return "FixedGlobalCurvature";}
 

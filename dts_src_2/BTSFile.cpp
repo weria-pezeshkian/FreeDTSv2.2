@@ -163,4 +163,8 @@ if(m_File.is_open() && !m_File.eof() )
 }
     return blueprint;
 }
-
+std::string BTSFile::CurrentState(){
+    
+    std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+    return state;
+}

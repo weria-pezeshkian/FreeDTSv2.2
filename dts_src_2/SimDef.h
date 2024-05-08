@@ -93,7 +93,7 @@
 
 // Testing and debugging modes
 #define TEST_MODE Disabled  // Test mode status
-#define DEBUG_MODE Disabled  // Debug mode status
+#define DEBUG_MODE Enabled  // Debug mode status
 
 // Random number generator configuration
 #define RNGTYPE UNIFROMTYPE0  // Random number generator type

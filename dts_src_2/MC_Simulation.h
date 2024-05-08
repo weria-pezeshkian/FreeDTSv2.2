@@ -46,7 +46,7 @@ public:
 public:
     void Initialize();
     bool do_Simulation();
-    
+    std::string CurrentState();
     inline  std::string GetDerivedDefaultReadName() {return "MC_Simulation";}
     inline static std::string GetDefaultReadName() {return "MC_Simulation";}
 

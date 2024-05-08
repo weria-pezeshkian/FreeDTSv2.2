@@ -143,3 +143,8 @@ bool AlexanderMoveByMetropolisAlgorithm::EdgeCanBeFliped(links *pedge, double mi
     
     return true;
 }
+std::string AlexanderMoveByMetropolisAlgorithm::CurrentState(){
+    
+    std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+    return state;
+}

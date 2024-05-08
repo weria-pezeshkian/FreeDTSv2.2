@@ -24,6 +24,7 @@ public:
     
     inline  std::string GetDerivedDefaultReadName() {return "OutPutTRJ_BTS";}
     inline static std::string GetDefaultReadName() {return "OutPutTRJ_BTS";}
+    std::string CurrentState();
 
 private:
     int m_Step;

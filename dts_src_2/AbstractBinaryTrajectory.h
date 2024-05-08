@@ -21,6 +21,7 @@ public:
     }
     virtual bool OpenFile(bool clear, char rw) = 0;
     virtual void WriteAFrame(int &step) = 0;
+    virtual std::string CurrentState() = 0;
     virtual inline std::string GetDerivedDefaultReadName() {return "";}
     inline static std::string GetBaseDefaultReadName() {return "BinaryTrajectory";}
 
@@ -46,6 +47,10 @@ public:
     void WriteAFrame(int &step){
         return;
     }
-
+    std::string CurrentState(){
+        
+        std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+        return state;
+    }
 };
 #endif

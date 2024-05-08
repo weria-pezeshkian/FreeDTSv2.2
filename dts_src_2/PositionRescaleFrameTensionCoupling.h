@@ -23,6 +23,7 @@ public:
 
     inline  std::string GetDerivedDefaultReadName()  {return "IsotropicFrameTension";}
     inline  static std::string GetDefaultReadName()  {return "IsotropicFrameTension";}
+    std::string CurrentState();
 
 private:
     

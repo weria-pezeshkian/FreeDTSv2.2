@@ -23,7 +23,7 @@ public:
     virtual  void Initialize() = 0;
     virtual  void UpdateEnergyChange(double delta_area, double delta_curvature) = 0;
     virtual  double CalculateEnergyChange(double delta_area, double delta_curvature) = 0;
-    
+    virtual std::string CurrentState() = 0;
     virtual inline std::string GetDerivedDefaultReadName() = 0;
     inline static std::string GetBaseDefaultReadName() {return "GlobalCurvature";}
 
@@ -40,7 +40,11 @@ public:
     void Initialize(){return;}
     void UpdateEnergyChange(double delta_area, double delta_curvature){return;}
     double CalculateEnergyChange(double delta_area, double delta_curvature){return 0;}
-    
+    std::string CurrentState(){
+        
+        std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+        return state;
+    }
 };
 
 #endif

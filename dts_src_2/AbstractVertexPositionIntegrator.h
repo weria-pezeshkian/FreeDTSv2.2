@@ -25,6 +25,7 @@ public:
     virtual void Initialize() = 0;
     virtual bool EvolveOneStep(int step) = 0;
     virtual inline std::string GetDerivedDefaultReadName() = 0;
+    virtual std::string CurrentState() = 0;
 
     
     inline std::string GetFreezGroupName()              {return m_FreezGroupName;}

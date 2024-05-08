@@ -43,10 +43,11 @@ void WritevtuFiles::WriteInclusion(std::string id, const std::vector<vertex *>  
 bool WritevtuFiles::WriteAFrame(int step){
     
 
-    if(m_Period == 0 && step%m_Period != 0){
+    if(m_Period == 0 || step%m_Period != 0){
         return false;
     }
-    std::string Filename = "./"+m_FolderName+"/conf"+Nfunction::Int_to_String(step)+".vtu";
+    int file_index = step/m_Period;
+    std::string Filename = "./"+m_FolderName+"/conf"+Nfunction::Int_to_String(file_index)+".vtu";
     std::ofstream Output;
     Output.open(Filename.c_str());
     
@@ -176,4 +177,9 @@ bool WritevtuFiles::WriteAFrame(int step){
     Output.close();
 
     return true;
+}
+std::string WritevtuFiles::CurrentState(){
+    
+    std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+    return state;
 }

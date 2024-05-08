@@ -1,0 +1,23 @@
+Integrator_Type                 = MC
+MC_Moves                        = 1 1 1 1 1
+Initial_Step                    = 1
+Final_Step                      = 1000
+Display_Period                  = 10
+TimeSeriesData_Period           = 100
+Restart_Period                  = 10000
+Kappa                           = 10 0  0 
+NonbinaryTrajectory             = TSI  10  10  TrjTSI
+GeneralOutputFilename           = output
+Min_Max_Lenghts                 = 1  3
+INCLUSION
+Define 2 Inclusions
+SRotation   Type   K   KG  KP  KL  C0     C0P  C0L
+1 	    Pro1   20  0   0   0   0.0	 0   0    10   2  2  0.4
+2           Pro2   20  0   0   0   0.0   0   0    20   2  2  0.4
+GenerateInclusions
+Selection_Type Random
+TypeID     1  2    
+Density    0.3  0.0  
+Inclusion-Inclusion-Int
+1    1    1   2  1   -1
+

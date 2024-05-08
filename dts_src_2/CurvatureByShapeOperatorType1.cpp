@@ -262,6 +262,11 @@ Vec3D CurvatureByShapeOperatorType1::Calculate_Vertex_Normal(vertex *pvertex, do
     
     return Normal;
 }
+std::string CurvatureByShapeOperatorType1::CurrentState(){
+    
+    std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+    return state;
+}
 
 
 

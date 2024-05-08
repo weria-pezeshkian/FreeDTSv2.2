@@ -21,6 +21,7 @@ public:
         
     }
     virtual  bool Initialize(State *) = 0;
+    virtual std::string CurrentState() = 0;
     virtual  bool UpdateSurfVertexCurvature(vertex *pvertex) = 0;
     virtual  bool UpdateEdgeVertexCurvature(vertex *pvertex) = 0;
     virtual  bool UpdateVertexCurvature(vertex *pvertex) = 0;

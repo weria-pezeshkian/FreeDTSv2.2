@@ -105,4 +105,8 @@ void CmdVolumeCouplingSecondOrder::UpdateArea_Volume(double oldarea, double oldv
     m_TotalVolume+=newvolume-oldvolume;
     m_TotalArea+=newarea-oldarea;
 }
-
+std::string CmdVolumeCouplingSecondOrder::CurrentState(){
+    
+    std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+    return state;
+}

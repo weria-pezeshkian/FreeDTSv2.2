@@ -8,6 +8,7 @@
 #include <string.h>
 #include "MC_Simulation.h"
 #include "State.h"
+#include "SimDef.h"
 /*
  List of skipped function due to lack of clarity based on current state of the code
  They need to be finished before calling this a new version.
@@ -37,13 +38,16 @@ void MC_Simulation::Initialize(){
     return;
 }
 bool MC_Simulation::do_Simulation(){
-    
-//--- before doing anything lets have a frame of the initial system
-       m_pState->GetVisualization()->WriteAFrame(-1);
+#if DEBUG_MODE == Enabled
+    std::cout<<" do_Simulation function is starting  \n";
+#endif
     
 //---> Voxelize the mesh for the first time; this should be done before any calculation
-        m_pState->GetVoxelization()->Voxelize(m_pState->GetMesh()->GetActiveV());
-    
+    m_pState->GetVoxelization(); //->Voxelize(m_pState->GetMesh()->GetActiveV());
+#if DEBUG_MODE == Enabled
+    std::cout<<" system has been voxelaized  \n";
+#endif
+
 //----> checking if the mesh is good, within the bond of the simulation type. For here, it should be within
         //CheckMesh();
     
@@ -60,7 +64,7 @@ bool MC_Simulation::do_Simulation(){
         m_pState->GetVisualization()->WriteAFrame(0);
     time_t startTime;
     time(&startTime);
-for(int step = GetInitialStep(); step < GetFinalStep(); step++){
+for(int step = GetInitialStep(); step <= GetFinalStep(); step++){
         
 //---> centering the simulation box
     if(GetBoxCentering()!=0 && step%GetBoxCentering()==0){
@@ -120,6 +124,11 @@ for(int step = GetInitialStep(); step < GetFinalStep(); step++){
       //  }
         
     return true;
+}
+std::string MC_Simulation::CurrentState(){
+    
+    std::string state = GetBaseDefaultReadName() +" = "+ GetDerivedDefaultReadName();
+    return state;
 }
 
 

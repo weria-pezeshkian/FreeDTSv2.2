@@ -65,7 +65,11 @@ bool InclusionPoseUpdateByMetropolisAlgorithm::RotationMove(int step, inclusion 
   
     return true;
 }
-
+std::string InclusionPoseUpdateByMetropolisAlgorithm::CurrentState(){
+    
+    std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+    return state;
+}
 
 
 

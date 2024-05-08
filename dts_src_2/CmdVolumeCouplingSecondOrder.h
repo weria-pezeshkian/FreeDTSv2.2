@@ -21,7 +21,7 @@ public:
        inline double GetTotalVolume()                  {return m_TotalVolume;}
        inline double GetTotalArea()                  {return m_TotalArea;}
        inline bool GetState()                   {return true;}
-    
+    std::string CurrentState();
     inline  std::string GetDerivedDefaultReadName()  {return "SecondOrder";}
     inline static std::string GetDefaultReadName() {return "SecondOrder";}
 

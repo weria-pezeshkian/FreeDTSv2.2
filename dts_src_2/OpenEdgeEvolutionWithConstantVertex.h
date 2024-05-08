@@ -35,7 +35,8 @@ public:
 public:
     void Initialize();
     bool Move(int step);
-    
+    std::string CurrentState();
+
     
     inline  std::string GetDerivedDefaultReadName() {return "EvolutionWithConstantVertex";}
     inline static std::string GetDefaultReadName() {return "EvolutionWithConstantVertex";}

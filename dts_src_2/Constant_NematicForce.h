@@ -14,7 +14,7 @@ public:
     Constant_NematicForce(double f0);
     ~Constant_NematicForce();
     double Energy_of_Force(vertex *p, Vec3D dx);
-
+    std::string CurrentState();
     inline  std::string GetDerivedDefaultReadName()  {return "Constant_NematicForce";}
     inline static std::string GetDefaultReadName() {return "Constant_NematicForce";}
     

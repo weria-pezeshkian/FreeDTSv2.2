@@ -123,3 +123,10 @@ bool HarmonicPotentialBetweenTwoGroups::Initialize() {
     
     return true;
 }
+std::string HarmonicPotentialBetweenTwoGroups::CurrentState(){
+        std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName() + " "+ Nfunction::D2S(2*m_K)+" "+Nfunction::D2S(m_L0);
+        state = state +" "+ m_Group1Name +" "+ m_Group2Name +" "+Nfunction::D2S(m_Direction(0))+" "+Nfunction::D2S(m_Direction(1));
+        state = state +" "+Nfunction::D2S(m_Direction(2));
+        return state;
+}
+

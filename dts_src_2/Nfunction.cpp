@@ -16,7 +16,11 @@ std::string Nfunction::Int_to_String(double ConInt) {
     S_mediate << ConInt;
     return S_mediate.str();
 }
-
+std::string Nfunction::D2S(double ConInt) {
+    std::ostringstream S_mediate;
+    S_mediate << ConInt;
+    return S_mediate.str();
+}
 int Nfunction::String_to_Int(const std::string& ConInt) {
     return std::atoi(ConInt.c_str());
 }

@@ -55,4 +55,9 @@ double CouplingTotalAreaToHarmonicPotential::AreaofTrianglesAroundVertex(vertex 
 
     return A;
 }
+std::string CouplingTotalAreaToHarmonicPotential::CurrentState(){
+    
+    std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+    return state;
+}
 

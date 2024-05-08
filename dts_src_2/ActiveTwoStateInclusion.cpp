@@ -46,6 +46,11 @@ void ActiveTwoStateInclusion::Initialize(State *pstate) {
 ActiveTwoStateInclusion::~ActiveTwoStateInclusion() {
     
 }
+std::string ActiveTwoStateInclusion::CurrentState(){
+    
+    std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+    return state;
+}
 bool ActiveTwoStateInclusion::Exchange(int step){
  
     

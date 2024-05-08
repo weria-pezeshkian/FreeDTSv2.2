@@ -8,6 +8,7 @@ class Nfunction {
 public:
     // Conversion functions
     static std::string Int_to_String(double value);
+    static std::string D2S(double value);
     static int String_to_Int(const std::string& str);
     static double String_to_Double(const std::string& str);
     // String manipulation functions

@@ -41,3 +41,8 @@ double ConstantExternalField::GetCouplingEnergy(vertex *pvertex) {
     // Note: The negative sign indicates that the field tends to minimize the angle with the field direction
     return -m_FieldStrength * Cangle * Cangle;
 }
+std::string ConstantExternalField::CurrentState(){
+    
+    std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+    return state;
+}

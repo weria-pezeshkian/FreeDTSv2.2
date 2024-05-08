@@ -21,7 +21,8 @@ public:
 
     virtual bool ChangeBoxSize(int step) = 0;
     virtual void Initialize() = 0;
-    
+    virtual std::string CurrentState() = 0;
+
     
     virtual inline  std::string GetDerivedDefaultReadName()=0;
     inline static std::string GetBaseDefaultReadName()  {return "Dynamic_Box";}
@@ -58,7 +59,11 @@ public:
     bool ChangeBoxSize(int step){
         return false;
     }
-
+    std::string CurrentState(){
+        
+        std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+        return state;
+    }
 };
 
 #endif

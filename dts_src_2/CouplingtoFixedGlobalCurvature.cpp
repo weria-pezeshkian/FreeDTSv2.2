@@ -51,3 +51,8 @@ void CouplingtoFixedGlobalCurvature::UpdateEnergyChange(double DA, double DC)
     m_Energy= m_K*dh*dh/(m_TotalArea);
  
 }
+std::string CouplingtoFixedGlobalCurvature::CurrentState(){
+    
+    std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+    return state;
+}

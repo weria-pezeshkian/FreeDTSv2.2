@@ -8,6 +8,9 @@
 Traj_tsi::Traj_tsi(State *pstate){
 
     m_Period = 1000;
+    m_Folder_name = "TrajTSI";
+    m_pState = pstate;
+    m_Precision = Nfunction::Int_to_String(18)+"."+Nfunction::Int_to_String(10);
 }
 Traj_tsi::Traj_tsi(State *pstate, int period, std::string tsiFolder_name, std::string tsiPrecision){
     
@@ -306,3 +309,8 @@ MeshBluePrint Traj_tsi::ReadTSI2(std::string filename, std::vector<InclusionType
 }
 
 */
+std::string Traj_tsi::CurrentState(){
+    
+    std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+    return state;
+}

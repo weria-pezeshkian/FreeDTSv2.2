@@ -23,13 +23,13 @@ class State;
 
 class TimeSeriesLogInformation {
 public:
-    TimeSeriesLogInformation();
     TimeSeriesLogInformation(State* pstate);
     ~TimeSeriesLogInformation();
 
 public:
     bool OpenFile(bool clear);
     bool FlushLogFile(); // The energy file should be flushed first
+    void WriteStartingState();
 
 //----  Overload the << operator to write to the file
     template <typename T>
@@ -43,8 +43,8 @@ public:
     }
     
     bool WriteAStringIntoFile(std::string &str);
+
 private:
-    void WriteStateInfo();
     State *m_pState;
     std::ofstream m_TimeSeriesFile;  // Member variable to hold the file stream
 };

@@ -15,6 +15,7 @@ public:
     ~EvolveVerticesByMetropolisAlgorithm();
     void Initialize();
     bool EvolveOneStep(int step);
+    std::string CurrentState();
 
 private:
     bool EvolveOneVertex(int step, vertex *pvertex, double dx, double dy, double dz,double temp);
@@ -22,7 +23,7 @@ private:
     bool CheckFacesAfterAVertexMove(double &minangle, vertex* p_vertex);
     inline  std::string GetDerivedDefaultReadName() {return "MetropolisAlgorithm";}
     inline static std::string GetDefaultReadName() {return "MetropolisAlgorithm";}
-    
+
     double  SystemEnergy();  // it is for bug finding only; slow function, this is for development time, should be deleted
     State *m_pState;
     

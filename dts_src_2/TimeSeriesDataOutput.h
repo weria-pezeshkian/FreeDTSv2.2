@@ -26,6 +26,8 @@ public:
     
     inline int GetPeriodic() const { return m_Periodic; }
 
+    inline static std::string GetDefaultReadName() {return "TimeSeriesData";}
+
 public:
     bool WriteTimeSeriesDataOutput(int step);
     bool OpenFile(bool clearfile);

@@ -24,9 +24,9 @@ public:
     virtual inline double GetEnergy()   = 0;
     virtual inline double GetDistance() = 0;
     
-    virtual inline std::string GetDerivedDefaultReadName() {return "";}
+    virtual inline std::string GetDerivedDefaultReadName() = 0;
+    virtual std::string CurrentState() = 0;
     inline static std::string GetBaseDefaultReadName() {return "ConstraintBetweenGroups";}
-
     
 private:
     
@@ -44,6 +44,11 @@ public:
     bool Initialize(){return true;}
     inline double GetEnergy()   {return 0;}
     inline double GetDistance()  {return 0;}
+    std::string CurrentState(){
+        
+        std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+        return state;
+    }
 
 };
 #endif

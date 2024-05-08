@@ -39,6 +39,7 @@ public:
     ~Three_Edge_Scission();
     void Initialize();
     bool MCMove(int step);
+    std::string CurrentState();
 
     inline  std::string GetDerivedDefaultReadName() {return "Three_Edge_Scission";}
     inline static std::string GetDefaultReadName() {return "Three_Edge_Scission";}
