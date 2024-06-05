@@ -1,54 +1,69 @@
 #if !defined(AFX_AbstractApplyConstraintBetweenGroups_H)
 #define AFX_AbstractApplyConstraintBetweenGroups_H
-#include <iostream>
 
-// Define a Abstract class with a virtual function and some main function
+#include <iostream>
+#include <string>
+
+// Define an abstract class with virtual functions and some main functions
 /*
 =======================================================
- developed 2024 by Weria
+ Developed 2024 by Weria Pezeshkian
  Weria Pezeshkian (weria.pezeshkian@gmail.com)
  Copyright (c) Weria Pezeshkian
-This class is a Abstract class for Applying Constraint Between Groups
+ This class is an abstract class for applying constraints between groups.
 ========================================================
 */
-class State;
-class  AbstractApplyConstraintBetweenGroups {
+
+class State;  // Forward declaration of State class
+
+class AbstractApplyConstraintBetweenGroups {
 public:
-    AbstractApplyConstraintBetweenGroups(){
-        
-    }
-    virtual ~ AbstractApplyConstraintBetweenGroups(){
-        
+    AbstractApplyConstraintBetweenGroups() {}
+    virtual ~AbstractApplyConstraintBetweenGroups() {}
+
+    inline double GetEnergy(){
+        return m_Energy;
     }
     virtual bool Initialize() = 0;
-    virtual inline double GetEnergy()   = 0;
-    virtual inline double GetDistance() = 0;
-    
-    virtual inline std::string GetDerivedDefaultReadName() = 0;
+    virtual double CalculateEnergyChange(vertex* p_vertex, Vec3D Dx) = 0;
+    virtual void AcceptMove() = 0;
+
+    virtual std::string GetDerivedDefaultReadName() = 0;
     virtual std::string CurrentState() = 0;
-    inline static std::string GetBaseDefaultReadName() {return "ConstraintBetweenGroups";}
-    
-private:
-    
-};
-//---- a class for no constraint
-class NoConstraint : public AbstractApplyConstraintBetweenGroups {
-public:
-    NoConstraint(){
-        
-    }
-    ~NoConstraint(){
-        
-    }
-    inline std::string GetDerivedDefaultReadName() {return "NoConstraint";}
-    bool Initialize(){return true;}
-    inline double GetEnergy()   {return 0;}
-    inline double GetDistance()  {return 0;}
-    std::string CurrentState(){
-        
-        std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
-        return state;
+
+    static std::string GetBaseDefaultReadName() {
+        return "ConstraintBetweenGroups";
     }
 
+protected:
+    double m_Energy;
 };
-#endif
+
+// Class for no constraint
+class NoConstraint : public AbstractApplyConstraintBetweenGroups {
+public:
+    NoConstraint() {}
+    ~NoConstraint() {}
+
+    std::string GetDerivedDefaultReadName() {
+        return "No";
+    }
+
+    bool Initialize() {
+        return true;
+    }
+
+    double CalculateEnergyChange(vertex* p_vertex, Vec3D Dx) {
+        return 0.0;
+    }
+
+    void AcceptMove() {
+        // No action needed for NoConstraint
+    }
+
+    std::string CurrentState() {
+        return GetBaseDefaultReadName() + " = " + GetDerivedDefaultReadName();
+    }
+};
+
+#endif // !defined(AFX_AbstractApplyConstraintBetweenGroups_H)

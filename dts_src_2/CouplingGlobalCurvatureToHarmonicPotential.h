@@ -1,7 +1,7 @@
-#if !defined(AFX_CouplingtoFixedGlobalCurvature_H_334B21B8_C13C_2248_BF23_124095086255__INCLUDED_)
-#define AFX_CouplingtoFixedGlobalCurvature_H_334B21B8_C13C_2248_BF23_124095086255__INCLUDED_
+#if !defined(AFX_CouplingGlobalCurvatureToHarmonicPotential_H_334B21B8_C13C_2248_BF23_124095086255__INCLUDED_)
+#define AFX_CouplingGlobalCurvatureToHarmonicPotential_H_334B21B8_C13C_2248_BF23_124095086255__INCLUDED_
 /*
- * CouplingtoFixedGlobalCurvature:
+ * CouplingGlobalCurvatureToHarmonicPotential:
  * Author: Weria Pezeshkian (weria.pezeshkian@gmail.com)
  * Copyright (c) Weria Pezeshkian
  *
@@ -32,25 +32,30 @@
 #include "links.h"
 #include "AbstractGlobalCurvature.h"
 
-class CouplingtoFixedGlobalCurvature : public  AbstractGlobalCurvature {
+class State;
+class CouplingGlobalCurvatureToHarmonicPotential : public  AbstractGlobalCurvature {
     
 public:
-    CouplingtoFixedGlobalCurvature(VAHGlobalMeshProperties *VHA, State *pstate, double Gkappa, double GlobalC0);
-    ~CouplingtoFixedGlobalCurvature();
+    CouplingGlobalCurvatureToHarmonicPotential(VAHGlobalMeshProperties *VHA,  double Gkappa, double GlobalC0);
+    ~CouplingGlobalCurvatureToHarmonicPotential();
 
        inline double GetEnergy()                        {return m_Energy;} // Only part of energy asscoiated with this class
     
 public:
-    void Initialize();
+    void Initialize(State* pState);
+    double GetCouplingEnergy();
+
+    
     void UpdateEnergyChange(double delta_area, double delta_curvature);
     double CalculateEnergyChange(double delta_area, double delta_curvature);
     std::string CurrentState();
-    inline  std::string GetDerivedDefaultReadName()  {return "FixedGlobalCurvature";}
-    inline static std::string GetDefaultReadName() {return "FixedGlobalCurvature";}
+    inline  std::string GetDerivedDefaultReadName()  {return "HarmonicPotential";}
+    inline static std::string GetDefaultReadName() {return "HarmonicPotential";}
 
 private:
     double m_K;        // energy coupling constant (in the constructor it will be devided by 2)
     double m_gC0;    // Global curvature
+    State *m_pState;
 };
 
 

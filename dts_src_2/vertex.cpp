@@ -53,6 +53,14 @@ void vertex::UpdateGroupName(std::string group_name){
     
     return;
 }
+void vertex::PositionPlus(double dx, double dy, double dz){
+   
+    UpdateVXPos(m_X + dx);
+    UpdateVYPos(m_Y + dy);
+    UpdateVZPos(m_Z + dz);
+
+    return;
+}
 void vertex::UpdateBox(Vec3D *pbox){
     m_pBox=pbox;
     return;
@@ -243,15 +251,14 @@ bool vertex::SetCopy(){
     m_OldVLinkList = m_VLinkList;
     m_OldVNeighbourVertex = m_VNeighbourVertex;
     
-   // links * m_OldpEdgeLink;
-    //links * m_OldpPrecedingEdgeLink;// preceding link at the edge
-    //inclusion *m_OldpInclusion;                    // pointer to an inclusion that the vertex hold (could be empty)
-    //bool m_OldOwnInclusion;                        // to check if the vertex own any inclusion
-    //CNTCell * m_OldCNTCell;                        // a unitcell that the vertex belong to at any point of the simulation, it will be chnage during a simulation
-    //m_OldGroup = m_Group;            // Id of a group that the vertex belong too
-    //std::string m_OldGroupName;
-    // m_OldLambda;                   // line tension
-
+    m_OldpEdgeLink = m_pEdgeLink;
+    m_OldpPrecedingEdgeLink = m_pPrecedingEdgeLink;
+    
+    
+    m_OldOwnInclusion = m_OwnInclusion;
+    if(m_OldOwnInclusion)
+        m_OldpInclusion = m_pInclusion;
+    
     return true;
 }
 bool vertex::Reverse2PreviousCopy(){  // reverse the edge to the value set at the time of MakeCopy()
@@ -265,14 +272,22 @@ bool vertex::Reverse2PreviousCopy(){  // reverse the edge to the value set at th
     m_T_Local_2_Global = m_OldT_Local_2_Global ;         //  Local to global transformation matrix
     m_T_Global_2_Local = m_OldT_Global_2_Local ;        //  global to local transformation matrix
     m_pVoxel = m_OldpVoxel ;
-    m_Geodesic_Curvature = m_OldGeodesic_Curvature ;          // Edge Vertex Curvature
-    m_Normal_Curvature = m_OldNormal_Curvature ;          // Edge Vertex Curvature
-    m_VLength = m_OldVLength ;                       // length of the vertex
-    m_VertexType = m_OldVertexType ;                   // 0 surface vertex; 1 edge vertex;
+
     m_VertexType = m_OldVertexType;                   // 0 surface vertex; 1 edge vertex;
     m_VTraingleList = m_OldVTraingleList;
     m_VLinkList = m_OldVLinkList ;
     m_VNeighbourVertex = m_OldVNeighbourVertex;
+    
+    
+    m_pEdgeLink = m_OldpEdgeLink;
+    m_pPrecedingEdgeLink = m_OldpPrecedingEdgeLink;
+    m_Geodesic_Curvature = m_OldGeodesic_Curvature ;          // Edge Vertex Curvature
+    m_Normal_Curvature = m_OldNormal_Curvature ;          // Edge Vertex Curvature
+    m_VLength = m_OldVLength ;                       // length of the vertex
+
+    m_OldOwnInclusion =  m_OwnInclusion;
+    if(m_OwnInclusion)
+    m_pInclusion = m_OldpInclusion;
     
     return true;
 }

@@ -59,7 +59,6 @@ bool links::SetCopy(){           // Copies the key ellements into the old type
     m_OldV1 = m_V1;
     m_OldV2 = m_V2;
     m_OldV3 = m_V3;
-    m_Oldmirorlink = m_mirorlink;
     m_Oldneighborlink1 = m_neighborlink1;
     m_Oldneighborlink2  = m_neighborlink2;
     m_Oldmirorflag = m_mirorflag;
@@ -71,6 +70,11 @@ bool links::SetCopy(){           // Copies the key ellements into the old type
     m_OldEdgeVector = m_EdgeVector;
     m_OldEdgeSize = m_EdgeSize;
     m_OldLinkType = m_LinkType;
+    
+    if(m_mirorflag){
+        m_Oldmirorlink = m_mirorlink;
+    }
+
 
     return true;
 }
@@ -80,7 +84,6 @@ bool links::Reverse2PreviousCopy(){           // reverse to the last copy and pa
     m_V1 = m_OldV1;
     m_V2 = m_OldV2;
     m_V3 = m_OldV3;
-    m_mirorlink = m_Oldmirorlink;
     m_neighborlink1 = m_Oldneighborlink1;
     m_neighborlink2 = m_Oldneighborlink2;
     m_mirorflag = m_Oldmirorflag;
@@ -94,9 +97,12 @@ bool links::Reverse2PreviousCopy(){           // reverse to the last copy and pa
     m_LinkType = m_OldLinkType;
     
     //---- update some for mirror
-    m_mirorlink->PutShapeOperator(m_Be,m_He);
-    m_mirorlink->UpdateIntEnergy(m_IntEnergy);
-    m_mirorlink->PutNormal(m_Normal);
+    if(m_mirorflag){
+        m_mirorlink = m_Oldmirorlink;
+        m_mirorlink->PutShapeOperator(m_Be,m_He);
+        m_mirorlink->UpdateIntEnergy(m_IntEnergy);
+        m_mirorlink->PutNormal(m_Normal);
+    }
 
     return true;
 }
@@ -358,7 +364,7 @@ bool links::CheckFaceAngleWithMirrorFace(double &minangle) {
     if (!m_mirorflag) {
         return true;
     }
-    // Calculate normal vectors of the faces
+    // get normal vectors of the faces
     Vec3D n1 = m_T1->GetNormalVector();
     Vec3D n2 = m_mirorlink->GetTriangle()->GetNormalVector();
     

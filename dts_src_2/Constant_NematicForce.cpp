@@ -1,14 +1,12 @@
 #include "Constant_NematicForce.h"
 
 
-Constant_NematicForce::Constant_NematicForce(double f0)
-{
-    m_F0 =f0;
+Constant_NematicForce::Constant_NematicForce(double f0) {
+    m_F0 = f0;
     m_ActiveEnergy = 0;
 
 }
-Constant_NematicForce::~Constant_NematicForce()
-{
+Constant_NematicForce::~Constant_NematicForce() {
     
 }
 double Constant_NematicForce::Energy_of_Force(vertex *pv, Vec3D dx)

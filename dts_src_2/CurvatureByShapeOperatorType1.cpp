@@ -3,13 +3,13 @@
 
 #include "CurvatureByShapeOperatorType1.h"
 #include "Tensor2.h"
-CurvatureByShapeOperatorType1::CurvatureByShapeOperatorType1(){
+CurvatureByShapeOperatorType1::CurvatureByShapeOperatorType1(State *pState) : m_pState(pState) {
     
 }
 CurvatureByShapeOperatorType1::~CurvatureByShapeOperatorType1(){
 
 }
-bool CurvatureByShapeOperatorType1::Initialize(State *pState){
+bool CurvatureByShapeOperatorType1::Initialize(){
  /*
   Curvature Calculation Initialization:
 
@@ -24,7 +24,6 @@ bool CurvatureByShapeOperatorType1::Initialize(State *pState){
     To compute the curvature of any vertex accurately, we must first compute the area and normal vectors of all vertices, along with the properties of all edges within a single ring (excluding the ring perimeter).
   */
 
-        m_pState = pState;
         m_pBox = m_pState->GetMesh()->GetBox();
     
     // update all the triangles area and normal;

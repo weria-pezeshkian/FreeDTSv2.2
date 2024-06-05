@@ -51,7 +51,14 @@ and false if the periodic condition is not met or if there is an error writing t
         m_TimeSeriesFile<<(*(m_pState->GetMesh()->GetBox()))(1)<<"  ";
         m_TimeSeriesFile<<(*(m_pState->GetMesh()->GetBox()))(2)<<"  ";
     }
-
+    if (m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()) {
+        m_TimeSeriesFile << m_pState->GetVAHGlobalMeshProperties()->GetTotalVolume()<<"  ";
+        m_TimeSeriesFile << m_pState->GetVAHGlobalMeshProperties()->GetTotalArea()<<"  ";
+        m_TimeSeriesFile << m_pState->GetVAHGlobalMeshProperties()->GetTotalMeanCurvature() <<"  ";
+    }
+    if (m_pState->GetApplyConstraintBetweenGroups()->GetDerivedDefaultReadName() != "No") {
+        m_TimeSeriesFile << m_pState->GetApplyConstraintBetweenGroups()->GetEnergy()<<"  ";
+    }
     m_TimeSeriesFile<<std::endl;
     
     return true;
@@ -88,6 +95,13 @@ bool TimeSeriesDataOutput::OpenFile(bool clearfile) {
         m_TimeSeriesFile << " ## mcstep  energy ";
         if (m_pState->GetDynamicBox()->GetDerivedDefaultReadName() != "ConstantBox") {
             m_TimeSeriesFile << " Lx  Ly  Lz ";
+        }
+        if (m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()) {
+            m_TimeSeriesFile << " Volume  Area  TotalCurvature ";
+
+        }
+        if (m_pState->GetApplyConstraintBetweenGroups()->GetDerivedDefaultReadName() != "No") {
+            m_TimeSeriesFile << " Constraint_energy ";
         }
         m_TimeSeriesFile << std::endl;
     }

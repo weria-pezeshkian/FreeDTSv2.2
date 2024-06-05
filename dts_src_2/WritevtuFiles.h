@@ -16,6 +16,7 @@ class State;
 class WritevtuFiles : public AbstractVisualizationFile {
 public:
     
+      WritevtuFiles(State* pState, int period, std::string foldername);
 	  WritevtuFiles(State* pState);
 	 ~WritevtuFiles();
 public:

@@ -14,15 +14,11 @@ public:
     HarmonicPotentialBetweenTwoGroups(State* pState, double K, double l0, std::string group1,std::string group2,double nx,double ny,double nz);
     ~HarmonicPotentialBetweenTwoGroups();
 
-    inline double GetEnergy()                           {return m_Energy;}
-    inline double GetDistance()                         {return m_Dist;}
-
 public:
     
     bool Initialize();
-    void CalculateEnergy(int step);
-    void MovingVertex(vertex* v, Vec3D Dx);
-    void RejectMovingVertex(vertex* v, Vec3D Dx);
+    double CalculateEnergyChange(vertex* p_vertex, Vec3D Dx);
+    void AcceptMove();
     
     inline  std::string GetDerivedDefaultReadName() {return "HarmonicPotentialBetweenTwoGroups";}
     inline static std::string GetDefaultReadName() {return "HarmonicPotentialBetweenTwoGroups";}
@@ -30,6 +26,7 @@ public:
     //=====
 private:  
     Vec3D COMVertexGroup(std::vector<vertex *>);
+    bool DistanceCheck(); // Checks if the distance between the centers of geomtry (COG) of two groups exceeds half the box size in any specified direction.
     
     
 private:
@@ -38,16 +35,16 @@ private:
     std::string m_Group2Name;
     std::vector<vertex *> m_pGroup1;
     std::vector<vertex *> m_pGroup2;
+    double m_G1Size;
+    double m_G2Size;
     Vec3D m_Direction;
     double m_L0;
     Vec3D m_Group1COG;
     Vec3D m_Group2COG;
-    double m_Energy;
-
-
-    double m_Dist;
-
-    
+    Vec3D m_T_Group1COG;  // a temparpty copy of m_Group1COG before accepting the move
+    Vec3D m_T_Group2COG;
+    double m_DE;
+    State *m_pState;
 
 
 

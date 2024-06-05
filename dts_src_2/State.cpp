@@ -23,9 +23,9 @@ State::State(std::vector<std::string> argument) :
       m_pBinaryTrajectory(new NoFile),  // Initialize BinaryTrajectory
 
       //---- Initialize constraint components
-      m_pVAHCalculator(new VAHGlobalMeshProperties(this)),
-      m_pVolumeCoupling(new NoCoupling(m_pVAHCalculator,this)),
-      m_pCoupleGlobalCurvature(new NoGlobalCurvature(m_pVAHCalculator,this)),
+      m_pVAHCalculator(new VAHGlobalMeshProperties),
+      m_pVolumeCoupling(new NoCoupling(m_pVAHCalculator)),
+      m_pCoupleGlobalCurvature(new NoGlobalCurvature(m_pVAHCalculator)),
       m_pTotalAreaCoupling(new NoTotalAreaCoupling(m_pVAHCalculator)),
       m_pForceonVerticesfromInclusions(new NoForce),  // Initialize ForceonVerticesfromInclusions
       m_pExternalFieldOnVectorFields(new NoExternalField),  // Initialize ExternalFieldOnVectorFields
@@ -39,7 +39,7 @@ State::State(std::vector<std::string> argument) :
       m_pInclusionConversion(new NoInclusionConversion),  // Initialize InclusionConversion
 
       //--- Initialize accessory objects
-      m_pCurvatureCalculations(new CurvatureByShapeOperatorType1),  // Initialize CurvatureCalculations
+      m_pCurvatureCalculations(new CurvatureByShapeOperatorType1(this)),  // Initialize CurvatureCalculations
       m_RandomNumberGenerator(new RNG(1234)),  // Initialize RandomNumberGenerator
       m_pEnergyCalculator(new Energy(this)),  // Initialize EnergyCalculator
 
@@ -235,6 +235,28 @@ bool State::ReadInputFile(std::string file)
             m_pSimulation->UpdateFinalStep(fi);
             getline(input,rest);
         }
+        else if(firstword == AbstractVisualizationFile::GetBaseDefaultReadName())
+        {
+            std::string type;
+            input>>str>>type;
+            if(type == WritevtuFiles::GetDefaultReadName()){  // VTUFileFormat
+                double period;
+                input >> period;
+                m_pVisualizationFile = new WritevtuFiles(this, period, type);
+                getline(input,rest);
+            }
+        }
+        else if(firstword == AbstractVertexPositionIntegrator::GetBaseDefaultReadName())
+        {
+            std::string type;
+            input>>str>>type;
+            if(type == EvolveVerticesByMetropolisAlgorithm::GetDefaultReadName()){  // VTUFileFormat
+                int rate_surf,rate_edge,dr;
+                input >> rate_surf >> rate_edge >> dr;
+                m_pVertexPositionIntegrator = new EvolveVerticesByMetropolisAlgorithm(this, rate_surf, rate_edge, dr);
+                getline(input,rest);
+            }
+        }
         else if(firstword == "Box_Centering_F")
         {
             double rate;
@@ -371,8 +393,10 @@ bool State::ReadInputFile(std::string file)
             std::string type;
             double k,gc0;
             input>>str>>type>>k>>gc0;
-            if(type == "CoupledToHarmonicPotential") {
-                m_pCoupleGlobalCurvature = new CouplingtoFixedGlobalCurvature(m_pVAHCalculator,this,k,gc0);
+            if(type == CouplingGlobalCurvatureToHarmonicPotential::GetDefaultReadName()) {
+                m_pCoupleGlobalCurvature = new CouplingGlobalCurvatureToHarmonicPotential(m_pVAHCalculator,k,gc0);
+            }
+            else if(type == "No") {
             }
             else {
                 std::cout<<"---> error: this algorithm for global curvature is unknown \n";
@@ -389,14 +413,20 @@ bool State::ReadInputFile(std::string file)
             if(type == "SecondOrderCoupling"){
                 double dp,k,vt;
                 input>>dp>>k>>vt;
-                m_pVolumeCoupling = new CmdVolumeCouplingSecondOrder(m_pVAHCalculator, this, dp,  k, vt);
+                m_pVolumeCoupling = new VolumeCouplingSecondOrder(m_pVAHCalculator, dp,  k, vt);
 
             }
             else if(type == "Osmotic_Pressure"){
                 double gamma,P0;
                 input>>gamma>>P0;
-                m_pVolumeCoupling = new Apply_Osmotic_Pressure(m_pVAHCalculator, this, gamma, P0 );
+                m_pVolumeCoupling = new Apply_Osmotic_Pressure(m_pVAHCalculator, gamma, P0 );
 
+            }
+            else if(type == "No"){
+
+            }
+            else {
+                std::cout<<"---> error: unknown volume coupling type "<<type<<"\n";
             }
             getline(input,rest);
         }
@@ -405,10 +435,10 @@ bool State::ReadInputFile(std::string file)
             std::string type;
             input>>str>>type;
 
-            if(type=="CouplingTotalAreaToHarmonicPotential"){
+            if(type ==  CouplingTotalAreaToHarmonicPotential::GetDefaultReadName()){
                 double gamma , k0;
-                input>>gamma>>k0;
-                m_pTotalAreaCoupling = new CouplingTotalAreaToHarmonicPotential(m_pVAHCalculator,this,gamma,k0);
+                input>>k0>>gamma;
+                m_pTotalAreaCoupling = new CouplingTotalAreaToHarmonicPotential(m_pVAHCalculator,k0,gamma);
             }
             getline(input,rest);
         }
@@ -495,13 +525,6 @@ bool State::ReadInputFile(std::string file)
                 exit(0);
             }
             m_pEnergyCalculator->SetSizeCoupling (a,A01,c,A02);
-        }
-        else if(firstword == "Display_Period")
-        {
-            int period;
-            input>>str>>period;
-            m_pVisualizationFile->SetPeriod(period);
-            getline(input,rest);
         }
         else if(firstword == "Voxel_Size"){
             double lx,ly,lz;
@@ -686,7 +709,7 @@ bool State::Initialize(){
 //============ activate of all inputs and data structures
         m_pRestart->SetRestartFileName();
 //----> calaculate curvature for all vertices
-        m_pCurvatureCalculations->Initialize(this);
+        m_pCurvatureCalculations->Initialize();
 //----> set some easy access for integrators
         m_pVertexPositionIntegrator->Initialize();
         m_pAlexanderMove->Initialize(this);
@@ -699,17 +722,17 @@ bool State::Initialize(){
     //---> to get interaction energies
      m_pEnergyCalculator->Initialize(m_InputFileName);
     //---> to update each vertex and edge energy. Up to now May 2024, edge energy is not zero when both vertices has inclusions
-     m_pEnergyCalculator->CalculateAllLocalEnergy();
+    m_pEnergyCalculator->UpdateTotalEnergy(m_pEnergyCalculator->CalculateAllLocalEnergy());
     
 //----> inclsuion exchange, active inclsuion exchange
     m_pInclusionConversion->Initialize(this);
     m_pDynamicTopology->Initialize();
     m_pOpenEdgeEvolution->Initialize();
     
-    // m_pTotalAreaCoupling->
-    // m_pVolumeCoupling->
-    
-    m_pCoupleGlobalCurvature->Initialize();
+     m_pTotalAreaCoupling->Initialize(this);
+     m_pVolumeCoupling->Initialize(this);
+    m_pCoupleGlobalCurvature->Initialize(this);
+    m_pVAHCalculator->Initialize(this);
    // m_pForceonVerticesfromInclusions this does not have one
     m_pApplyConstraintBetweenGroups->Initialize();
     m_pSimulation->Initialize();

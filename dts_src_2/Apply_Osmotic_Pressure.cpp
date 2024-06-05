@@ -1,18 +1,31 @@
-
-
-
 #include "Apply_Osmotic_Pressure.h"
+#include "State.h"
 #include "Nfunction.h"
+/*
+ 
+ Delta E_osmos = -RT[c_in*V_ini*Log (V/V_ini) - c_out * (V-V_ini)]
+ 
+ Delta E_osmos = -m_P0*(m_V0*log(1+dv/m_TotalVolume)-dv);
+ 
+ m_V0 = m_6SQPI*sqrt(A0*A0*A0);
+ A0 = no_T*(minT area)*(1+2*gamma)^2
 
-Apply_Osmotic_Pressure::Apply_Osmotic_Pressure(VAHGlobalMeshProperties *VHA, State* pstate, double gamma,  double P0) :
-            AbstractVolumeCoupling(VHA, pstate) {
-    double pi = acos(-1);
-     m_6SQPI = 1.0/(6.0*sqrt(pi));   /// 1/6pi^1/2    
-    //m_TotalVolume = 0;
-    //m_TotalArea = 0;
-    //m_NoEQStep = eqsteps;
+ 
+ */
+
+Apply_Osmotic_Pressure::Apply_Osmotic_Pressure(VAHGlobalMeshProperties *VHA,  double gamma,  double P0) :
+ AbstractVolumeCoupling(VHA) {
+     
     m_P0 = P0;
     m_Gamma  = gamma;
+     
+     double pi = acos(-1);
+     m_6SQPI = 1.0/(6.0*sqrt(pi));
+     
+     if(m_Gamma<0 || m_Gamma>1) {
+         std::cout<<"---> error for Osmotic Pressure; gamma is bad; make sure you know what are you doing \n";
+         exit(0);
+     }
 
 }
 
@@ -20,104 +33,78 @@ Apply_Osmotic_Pressure::~Apply_Osmotic_Pressure()
 {
     
 }
-
-
-double Apply_Osmotic_Pressure::VolumeofTrianglesAroundVertex(vertex *pv)
-{
-    double vol=0;
-    
-    
-    std::vector <triangle *> pvT=pv->GetVTraingleList();
-
-    
-    for (std::vector<triangle *>::iterator it = pvT.begin() ; it != pvT.end(); ++it)
-    {
-        
-        vol+=SingleTriangleVolume(*it);
-        
+void Apply_Osmotic_Pressure::Initialize(State* pstate){
+    m_pState = pstate;
+    m_TotalVolume = 0;
+    m_TotalArea = 0;
+    m_CalculatedGlobalVariable = true;
+    std::vector<triangle *> all_tri = m_pState->GetMesh()->GetActiveT();
+    for (std::vector<triangle *>::iterator it = all_tri.begin() ; it != all_tri.end(); ++it) {
+        m_TotalVolume += CalculateSingleTriangleVolume(*it);
+        m_TotalArea += (*it)->GetArea();
     }
     
-    return vol;
-}
-//==========================================================
-void Apply_Osmotic_Pressure::Initialize(std::vector<triangle *> pTriangle)
-{
-    double V=0.0;
-    double A=0.0;
+    double l2 = 1+2*m_Gamma;
+    double A0 = double(all_tri.size())*sqrt(3)/4.0*l2; /// a_t = sqrt(3)/4.0*l^2 ;; l=sqrt(1-3)
 
-    for (std::vector<triangle *>::iterator it = pTriangle.begin() ; it != pTriangle.end(); ++it)
-    {
-        V+=SingleTriangleVolume(*it);
-        A+=(*it)->GetArea();
+    m_V0 = m_6SQPI*sqrt(A0*A0*A0);
+
+    return;
+}/*
+void Apply_Osmotic_Pressure::CalculateVolumeOfAVertexRing(vertex *p_vertex, double &vol, double &area) {
+    vol = 0.0;
+    area = 0.0;
+    const std::vector<triangle *>& ring_triangles = p_vertex->GetVTraingleList();
+    for (std::vector<triangle *>::const_iterator it = ring_triangles.begin() ; it != ring_triangles.end(); ++it){
+        vol+=CalculateSingleTriangleVolume(*it);
+        area += (*it)->GetArea();
+
     }
-    m_TotalVolume = V;
-    m_TotalArea = A;
-   double A0 = double(pTriangle.size())*3.0*sqrt(3)/4.0; /// a_t = sqrt(3)/4.0*l^2 ;; l=sqrt(1-3)
-
-   m_V0 = m_6SQPI*sqrt(A0*A0*A0);
-   
-   //   std::cout<<"V0 "<<m_V0<<"  "<<V<< "\n";
-     //       std::cout<<"V0 "<<A0<<"  "<<A<< "\n";
-            
-
-
+    return;
 }
-double Apply_Osmotic_Pressure::SingleTriangleVolume(triangle *pt)
-{
-    double vol=0;
+void Apply_Osmotic_Pressure::CalculateVolumeofALinkTriangles(links *p_link, double &vol, double &area) {
+    vol = 0.0;
+    area = 0.0;
     
-    vertex* pv= pt->GetV1();
-    double area= pt->GetArea();
-    Vec3D Norm=pt->GetNormalVector();
+    vol += CalculateSingleTriangleVolume(p_link->GetTriangle());
+    area += p_link->GetTriangle()->GetArea();
     
-    Vec3D R (pv->GetVXPos(),pv->GetVYPos(),pv->GetVZPos());
-    
-    // If the system is PBC broken, then the volume will be wrong .....
-    {
-        vertex* pv2= pt->GetV2();
-        Vec3D R2 (pv2->GetVXPos(),pv2->GetVYPos(),pv2->GetVZPos());
-        R2=R2-R;
-        vertex* pv3= pt->GetV3();
-        Vec3D R3 (pv3->GetVXPos(),pv3->GetVYPos(),pv3->GetVZPos());
-        R3=R3-R;
-        
-        if(R2.dot(R2,R2)>4 || R3.dot(R3,R3)>4)
-        {
-            Nfunction f;
-            std::string sms="---> Error, the system crossed the PBC while using volume coupling; use a large box .. ";
+    vol += CalculateSingleTriangleVolume(p_link->GetMirrorLink()->GetTriangle());
+    area += p_link->GetMirrorLink()->GetTriangle()->GetArea();
 
-            exit(0);
-        }
+    return;
+}
+double Apply_Osmotic_Pressure::CalculateSingleTriangleVolume(triangle *pTriangle){
+    
+    if(m_pState->GetMesh()->GetHasCrossedPBC()){
+        *(m_pState->GetTimeSeriesLog()) << "---> the system has crossed the PBC while volume is being calculated.";
+        *(m_pState->GetTimeSeriesLog()) << " SOLUTION: Restart the simulation and center the system. Also, activate the command for centering the box.";
+
+         exit(0);
     }
     
-    vol=area*(R.dot(Norm,R))/3.0;
-    
-    
-    return vol;
+    double T_area = pTriangle->GetArea();
+    Vec3D Normal_v = pTriangle->GetNormalVector();
+    Vec3D Pos = pTriangle->GetV1()->GetPos();
+
+    // Compute triangle volume
+    return T_area * (Pos.dot(Normal_v, Pos)) / 3.0;
+}*/
+double Apply_Osmotic_Pressure::GetEnergyChange(double oldarea, double oldvolume, double newarea, double newvolume){
+
+    double dv =  newvolume - oldvolume;
+    return -m_P0*(m_V0*log(1+dv/m_TotalVolume)-dv);
 }
-
-double Apply_Osmotic_Pressure::GetEnergyChange(int step, double oa, double oldvolume, double na, double newvolume)
-{
-
-    double alpha=1;
-    if(step<m_NoEQStep)
-        alpha= double(step)/double(m_NoEQStep);
-        
-
-	double dv =  newvolume - oldvolume;
-       double DE = -alpha*m_P0*(m_V0*log(1+dv/m_TotalVolume)-dv);
-         //    double DE = -alpha*m_P0*dv;
-      // std::cout<<DE<<"\n";
-
-    return DE;
-}
-void Apply_Osmotic_Pressure::UpdateArea_Volume(double oldarea, double oldvolume, double newarea, double newvolume)
-{
-    m_TotalVolume+=newvolume-oldvolume;
-    m_TotalArea+=newarea-oldarea;
+void Apply_Osmotic_Pressure::UpdateArea_Volume(double oldarea, double oldvolume, double newarea, double newvolume) {
+    m_TotalVolume += newvolume-oldvolume;
+    m_TotalArea += newarea-oldarea;
 }
 std::string Apply_Osmotic_Pressure::CurrentState(){
     
     std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+    state += " " + Nfunction::D2S(m_P0) + " " + Nfunction::D2S(m_Gamma);
     return state;
+}
+double Apply_Osmotic_Pressure::GetCouplingEnergy(){
+    return Energy(m_TotalVolume, m_TotalArea);
 }

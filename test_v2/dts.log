@@ -4,12 +4,12 @@ Set_Steps  = 1 20
 ;-- abstract classes
 Integrator_Type = MC_Simulation
 Boundary = PBC
-VertexPositionIntegrator = MetropolisAlgorithm
+VertexPositionIntegrator = MetropolisAlgorithm 1 1 0.05
 AlexanderMove = MetropolisAlgorithm
 InclusionPoseIntegrator = MetropolisAlgorithm
 NonbinaryTrajectory = TSI
 BinaryTrajectory = NoFile
-VisualizationFormat = VTUFileFormat
+VisualizationFormat = VTUFileFormat VTU_Frames 10
 CurvatureMethod = ShapeOperator_1
 EnergyMethod = FreeDTS1.0_FF
 ConstraintBetweenGroups = NoConstraint

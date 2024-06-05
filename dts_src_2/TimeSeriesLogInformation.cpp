@@ -54,6 +54,7 @@ bool TimeSeriesLogInformation::FlushLogFile(){ // the energy file should be flus
 void TimeSeriesLogInformation::WriteStartingState(){
     
     std::vector<std::string> argument = m_pState->GetCommandLineArgument();
+    m_TimeSeriesFile<<";--------- this state is initiated by this command ---------------------------------  "<<std::endl;
     for (std::vector<std::string>::iterator it = argument.begin() ; it != argument.end(); ++it){
         m_TimeSeriesFile<<(*it)<<"   ";
     }

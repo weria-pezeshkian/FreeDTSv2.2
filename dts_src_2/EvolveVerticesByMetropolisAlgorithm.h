@@ -12,17 +12,19 @@ class State;
 class EvolveVerticesByMetropolisAlgorithm : public AbstractVertexPositionIntegrator, public MESH, public AbstractSimulation {
 public:
     EvolveVerticesByMetropolisAlgorithm(State *pState);
+    EvolveVerticesByMetropolisAlgorithm(State *pState, double rate_surf, double rate_edge, double dr);
     ~EvolveVerticesByMetropolisAlgorithm();
     void Initialize();
     bool EvolveOneStep(int step);
     std::string CurrentState();
+    inline  std::string GetDerivedDefaultReadName() {return "MetropolisAlgorithm";}
+    inline static std::string GetDefaultReadName() {return "MetropolisAlgorithm";}
 
 private:
     bool EvolveOneVertex(int step, vertex *pvertex, double dx, double dy, double dz,double temp);
     bool VertexMoveIsFine(vertex* pvertex, double dx,double dy, double dz,  double mindist2, double maxdist2);
-    bool CheckFacesAfterAVertexMove(double &minangle, vertex* p_vertex);
-    inline  std::string GetDerivedDefaultReadName() {return "MetropolisAlgorithm";}
-    inline static std::string GetDefaultReadName() {return "MetropolisAlgorithm";}
+    bool CheckFacesAfterAVertexMove(vertex* p_vertex);
+    std::vector<links*> GetEdgesWithInteractionChange(vertex* p_vertex);
 
     double  SystemEnergy();  // it is for bug finding only; slow function, this is for development time, should be deleted
     State *m_pState;

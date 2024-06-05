@@ -3,12 +3,18 @@
 #include "State.h"
 #include "WritevtuFiles.h"
 
-
+WritevtuFiles::WritevtuFiles(State* pState, int period, std::string foldername){
+    m_pState = pState;
+    m_pBox = (pState->GetMesh())->GetBox();
+    m_FolderName = foldername;
+    m_Period = period;
+}
 WritevtuFiles::WritevtuFiles(State* pState){
     
     m_pState = pState;
     m_pBox = (pState->GetMesh())->GetBox();
     m_FolderName = "VTU_Frames";
+    m_Period = 10;
 }
 WritevtuFiles::~WritevtuFiles(){
     
@@ -180,6 +186,6 @@ bool WritevtuFiles::WriteAFrame(int step){
 }
 std::string WritevtuFiles::CurrentState(){
     
-    std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+    std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName() +" "+m_FolderName+" "+ Nfunction::D2S(m_Period);
     return state;
 }

@@ -100,6 +100,19 @@ bool links::Reverse2PreviousCopy(){           // reverse to the last copy and pa
 
     return true;
 }
+bool links::Copy_InteractionEnergy(){
+    m_OldIntEnergy = m_IntEnergy;
+    return true;
+}
+bool links::Reverse_InteractionEnergy(){
+    
+    m_IntEnergy = m_OldIntEnergy;
+    if(m_mirorflag){
+        m_mirorlink->UpdateIntEnergy(m_IntEnergy);
+    }
+    
+    return true;
+}
 void links::UpdateNeighborLink1(links* v){
     m_neighborlink1=v;
 }

@@ -50,14 +50,7 @@ bool MC_Simulation::do_Simulation(){
 
 //----> checking if the mesh is good, within the bond of the simulation type. For here, it should be within
         //CheckMesh();
-    
-//---> Update curvature and energy of the system
-    //-- update system curvature
-    // m_pState->GetCurvatureCalculator()->UpdateSystemCurvature()
-    //-- update system energy
-    // m_pState->GetEnergyCalculator()->UpdateSystemEnergy()
-    
-
+ 
    // open input files (except bts as it has opened before)
    // m_pState->
 //--- before simualtion lets have a frame of the initial system
@@ -116,12 +109,14 @@ for(int step = GetInitialStep(); step <= GetFinalStep(); step++){
 
 } // for(int step=GetInitialStep(); step<GetFinalStep(); step++)
    
-    
-//---> check energy to see if there is any energy leak in the calculations
-       //if(!energygood(totalenergy)){
-            //std::cout<<"  energy is ... "<<std::endl;
-         //  return false;
-      //  }
+
+    m_pState->GetCurvatureCalculator()->Initialize();
+    double temenergy = m_pState->GetEnergyCalculator()->CalculateAllLocalEnergy();
+    double energy_leak = temenergy-m_pState->GetEnergyCalculator()->GetEnergy();
+    if(fabs(energy_leak) > 0.0001){
+        
+        std::cout<<"---> possible source of code error: energy leak... "<<energy_leak<<" with "<<temenergy<<"  "<<m_pState->GetEnergyCalculator()->GetEnergy()<<"\n";
+    }
         
     return true;
 }

@@ -28,11 +28,11 @@ class State;
 class CurvatureByShapeOperatorType1 : public AbstractCurvature{
 public:
     
-    CurvatureByShapeOperatorType1();
+    CurvatureByShapeOperatorType1(State* pstate);
 	 ~CurvatureByShapeOperatorType1();
 
 public:
-    bool Initialize(State* pstate);
+    bool Initialize();
     bool UpdateSurfVertexCurvature(vertex *p);
     bool UpdateEdgeVertexCurvature(vertex *p);
     bool UpdateVertexCurvature(vertex *p);

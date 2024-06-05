@@ -2,6 +2,7 @@
 #define AFX_AbstractTotalAreaCoupling_H
 #include <iostream>
 #include "VAHGlobalMeshProperties.h"
+
 // Define a base class with a virtual function
 /*
 =======================================================
@@ -19,15 +20,19 @@ public:
     virtual ~ AbstractTotalAreaCoupling(){
         
     }
-    virtual  void Initialize(std::vector<triangle *> &pTriangle) = 0;
-    virtual  void UpdateArea(double oldarea, double newarea) = 0;
+    virtual  void Initialize(State *pstate) = 0;
+    virtual  void UpdateTotalArea(double oldarea, double newarea) = 0;
     virtual  double CalculateEnergyChange(double oldarea,  double newarea) = 0;
-    virtual inline std::string GetDerivedDefaultReadName() = 0;
+    virtual double GetCouplingEnergy() = 0;
+    virtual double CalculateAreaofALinkTriangles(links *p_link) = 0;
+    virtual double CalculateAreaOfAVertexRing(vertex * pVeretx) = 0 ;
     virtual std::string CurrentState() = 0;
+    virtual inline std::string GetDerivedDefaultReadName() = 0;
+    
     inline static std::string GetBaseDefaultReadName() {return "TotalAreaCoupling";}
 
 };
-//---- a class for no box change
+//---- default value for no coupling to area change. 
 class NoTotalAreaCoupling : public  AbstractTotalAreaCoupling {
 public:
     NoTotalAreaCoupling(VAHGlobalMeshProperties *VHA) : AbstractTotalAreaCoupling(VHA) {
@@ -36,20 +41,33 @@ public:
     ~NoTotalAreaCoupling(){
         
     }
-    virtual inline std::string GetDerivedDefaultReadName()  {return "NoTotalAreaCoupling";}
+    inline std::string GetDerivedDefaultReadName()  {return "NoCoupling";}
+    inline std::string GetDefaultReadName()  {return "NoCoupling";}
+    std::string CurrentState(){
+        
+        std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+        return state;
+    }
     
-    void Initialize(std::vector<triangle *> &pTriangle){
-    return;}
-    void UpdateArea(double oldarea, double newarea){
+    
+    
+    void Initialize(State *pstate){
         return;
     }
     double CalculateEnergyChange(double oldarea,  double newarea){
         return 0;
     }
-    std::string CurrentState(){
-        
-        std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
-        return state;
+    void UpdateTotalArea(double oldarea, double newarea){
+        return;
+    }
+    double GetCouplingEnergy(){
+        return 0;
+    }
+    double CalculateAreaofALinkTriangles(links *p_link){
+        return 0;
+    }
+    double CalculateAreaOfAVertexRing(vertex * pVeretx){
+        return 0;
     }
 };
 

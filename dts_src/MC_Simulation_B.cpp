@@ -80,6 +80,7 @@ bool Targeted_State = pState->m_Targeted_State;
     
     //========= VTU files at the begining. In case there will be some error later, so we can see how the file looklike.
         WritevtuFiles VTU(pState);
+    
         std::string file="conf-1.vtu";
         VTU.Writevtu((m_pMESH->m_pActiveV),(m_pMESH->m_pActiveT),(m_pMESH->m_pHL),file);
     
@@ -155,8 +156,11 @@ std::cout<<"----> We printed our first configuration into a vtu file "<<std::end
     
     //========= write a vtu file after the update of the curvature and etc...
     // ===== this becames important for when the inclusion has local orinatation and it will differ from conf-1
+    if(Targeted_State==true)
+    {
     std::string file0="conf0.vtu";
     VTU.Writevtu((m_pMESH->m_pActiveV),(m_pMESH->m_pActiveT),(m_pMESH->m_pHL),file0);
+    }
 //=====================================================================================
 //=====================================================================================
 //================================ MC_Simulation_B Starts ================================

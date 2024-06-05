@@ -25,9 +25,10 @@ triangle::triangle(int id) {
 triangle::~triangle() {
     
 }
-void triangle::UpdateRepresentation(bool z) {
+void triangle::UpdateRepresentation(bool rep) {
     
-    m_Representation = z;
+    m_Representation = rep;
+    return;
 }
 void triangle::UpdateVolume(double vol){
     m_Volume = vol;
@@ -39,7 +40,30 @@ void triangle::UpdateNormal_Area(Vec3D& norm, double& area){
     m_Area = area;
     return;
 }
+void triangle::Copy(){
+    
+    m_oldV1 = m_V1;
+    m_oldV2 = m_V2;
+    m_oldV3 = m_V3;
+    m_oldAreaVector = m_AreaVector;
+    m_oldNormal = m_Normal;
+    m_oldArea = m_Area;
+    m_oldVolume = m_Volume;
 
+    return;
+}
+void triangle::Reverse2PreviousCopy(){
+    
+    m_V1 = m_oldV1;
+    m_V2 = m_oldV2;
+    m_V3 = m_oldV3;
+    m_AreaVector = m_oldAreaVector;
+    m_Normal = m_oldNormal;
+    m_Area = m_oldArea;
+    m_Volume = m_oldVolume;
+    
+    return;
+}
 void triangle::UpdateNormal_Area(Vec3D *pBox) // normal vector update
 {
 Vec3D Box=(*pBox);

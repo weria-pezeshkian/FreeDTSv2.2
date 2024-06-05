@@ -9,10 +9,9 @@
  * Developed in 2024 by Weria Pezeshkian (weria.pezeshkian@gmail.com)
  * Copyright (c) Weria Pezeshkian
  */
-
 class  AbstractGlobalCurvature  : public VAHGlobalMeshProperties {
 public:
-    AbstractGlobalCurvature(VAHGlobalMeshProperties *VHA, State *pstate) : VAHGlobalMeshProperties(pstate), m_Energy(0) {
+    AbstractGlobalCurvature(VAHGlobalMeshProperties *VHA) : VAHGlobalMeshProperties(*VHA), m_Energy(0) {
         
     }
     virtual ~ AbstractGlobalCurvature(){
@@ -20,7 +19,11 @@ public:
     }
     inline double GetEnergy()  {return m_Energy;}
     
-    virtual  void Initialize() = 0;
+    virtual  void Initialize(State* pState) = 0;
+    virtual double GetCouplingEnergy() = 0;
+
+    
+    
     virtual  void UpdateEnergyChange(double delta_area, double delta_curvature) = 0;
     virtual  double CalculateEnergyChange(double delta_area, double delta_curvature) = 0;
     virtual std::string CurrentState() = 0;
@@ -34,12 +37,14 @@ protected:
 //---- a class for no box change
 class NoGlobalCurvature : public  AbstractGlobalCurvature {
 public:
-    NoGlobalCurvature(VAHGlobalMeshProperties *VHA, State *pstate) : AbstractGlobalCurvature(VHA, pstate) {}
+    NoGlobalCurvature(VAHGlobalMeshProperties *VHA) : AbstractGlobalCurvature(VHA) {}
     ~NoGlobalCurvature(){ }
-    inline std::string GetDerivedDefaultReadName()  {return "NoGlobalCurvature";}
-    void Initialize(){return;}
+    inline std::string GetDerivedDefaultReadName()  {return "No";}
+    void Initialize(State *pstate){return;}
     void UpdateEnergyChange(double delta_area, double delta_curvature){return;}
     double CalculateEnergyChange(double delta_area, double delta_curvature){return 0;}
+    double GetCouplingEnergy() {return 0;}
+
     std::string CurrentState(){
         
         std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();

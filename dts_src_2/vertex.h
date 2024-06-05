@@ -60,6 +60,9 @@ public:
         inline double GetGeodesicCurvature()        {return m_Geodesic_Curvature;}// surface curvature
         inline double GetNormalCurvature()          {return m_Normal_Curvature;}// surface curvature
         inline double GetLength()                   {return m_VLength;}// surface curvature
+        inline links* GetPrecedingEdgeLink()        {return m_pPrecedingEdgeLink;}// preceding link at the edge
+
+    
 
 public:
     
@@ -69,6 +72,7 @@ public:
   void UpdateVXPos(double x);    // a function for update the x position of a vertex
   void UpdateVYPos(double y);   // a function for update the y position of a vertex
   void UpdateVZPos(double z);   // a function for updates the z position of a vertex
+  void PositionPlus(double dx, double dy, double dz);   // a function to increase the positions by dx, dt, dz
   void UpdateP1Curvature(double p1_curvature);
   void UpdateP2Curvature(double p2_curvature);
   void UpdateGroupName(std::string z); // A vertex can only have one group name, is different from group id

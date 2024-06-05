@@ -88,7 +88,8 @@ public:
 public:
     bool SetCopy();            // Copies the key ellements into the old type
     bool Reverse2PreviousCopy();  // reverse the edge to the value set at the time of MakeCopy()
-
+    bool Copy_InteractionEnergy();            // Copies the key ellements into the old type
+    bool Reverse_InteractionEnergy();            // Copies the key ellements into the old type
     // this are old value of the key variables we need this for the copying
 private:
     triangle *m_OldT1;     //

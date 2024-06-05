@@ -1,65 +1,88 @@
 #if !defined(AFX_AbstractVolumeCoupling_H)
 #define AFX_AbstractVolumeCoupling_H
+
 #include <iostream>
 #include "VAHGlobalMeshProperties.h"
 
-// Define a base class with a virtual function
 /*
 =======================================================
- developed 2024 by Weria
- Weria Pezeshkian (weria.pezeshkian@gmail.com)
- Copyright (c) Weria Pezeshkian
-This class is a base class for changing the box
-========================================================
+Developed 2024 by Weria Pezeshkian
+Weria Pezeshkian (weria.pezeshkian@gmail.com)
+Copyright (c) Weria Pezeshkian
+
+This abstract base class defines the interface for volume coupling mechanisms
+in a simulation environment. The primary purpose of this class is to couple
+the system's energy to a volume constraint, allowing for dynamic adjustments
+based on predefined parameters. Derived classes must implement the specific
+details of these coupling mechanisms.
+=======================================================
 */
 class AbstractVolumeCoupling : public VAHGlobalMeshProperties {
 public:
-    AbstractVolumeCoupling(VAHGlobalMeshProperties *VHA, State* pstate) : VAHGlobalMeshProperties(pstate) {
-    }
-    virtual ~AbstractVolumeCoupling(){
-        
+    // Constructor that initializes the base class with global mesh properties
+    AbstractVolumeCoupling(VAHGlobalMeshProperties *VHA) : VAHGlobalMeshProperties(*VHA) {
     }
 
-    virtual inline bool GetState()= 0;
-    virtual inline double GetTotalVolume() = 0;
-    virtual inline double GetTotalArea() = 0;
-    virtual void Initialize(std::vector<triangle *> pTriangle) = 0;
-    virtual double SingleTriangleVolume(triangle * ptriangle) = 0;
-    virtual double GetEnergyChange(int s, double oa, double ov, double na, double nv) = 0;
-    virtual void UpdateArea_Volume(double oa, double ov, double na, double nv) = 0;
-    virtual inline std::string GetDerivedDefaultReadName() = 0;
+    // Virtual destructor to ensure proper cleanup of derived class objects
+    virtual ~AbstractVolumeCoupling() {
+    }
+
+    // Pure virtual methods that must be implemented by derived classes
+
+    // Initialize the volume coupling parameters and state
+    virtual void Initialize(State* pState) = 0;
+
+    // Retrieve the current state of the volume coupling as a string
     virtual std::string CurrentState() = 0;
-    inline static std::string GetBaseDefaultReadName() {return "VolumeCoupling";}
 
+    // Calculate the volume and area associated with a vertex ring
+   // virtual void CalculateVolumeOfAVertexRing(vertex *pVertex, double &vol, double &area) = 0;
+
+    // Calculate the volume and area associated with link triangles
+  //  virtual void CalculateVolumeofALinkTriangles(links *p_link, double &vol, double &area) = 0;
+
+    // Calculate the energy contribution from the volume coupling
+    virtual double GetCouplingEnergy() = 0;
+
+    // Calculate the change in energy due to changes in area and volume
+    virtual double GetEnergyChange(double oldarea, double oldvolume, double newarea, double newvolume) = 0;
+
+    // Update the total area and volume based on changes
+    virtual void UpdateArea_Volume(double oldarea, double oldvolume, double newarea, double newvolume) = 0;
+
+    // Retrieve the default name of the derived class for logging or identification purposes
+    virtual inline std::string GetDerivedDefaultReadName() = 0;
+
+    // Retrieve the base class default name for logging or identification purposes
+    inline static std::string GetBaseDefaultReadName() { return "VolumeCoupling"; }
 };
-//---- a class for no box change
+
+// Class representing no volume coupling, used as a default or placeholder
 class NoCoupling : public AbstractVolumeCoupling {
 public:
-   // NoCoupling(VAHGlobalMeshProperties *VHA, State* pstate) : AbstractVolumeCoupling(VHA, pstate) {
-        NoCoupling(VAHGlobalMeshProperties *VHA, State* pstate) : AbstractVolumeCoupling(VHA, pstate) {
-    }
-    ~NoCoupling(){
-        
-    }
-    inline bool GetState()                   {return false;}
-    inline double GetTotalVolume()                  {return 0;}
-    inline double GetTotalArea()                  {return 0;}
-    virtual inline std::string GetDerivedDefaultReadName()  {return "NoCoupling";}
-
-    
-    void    Initialize(std::vector<triangle *> pTriangle)       {return;}
-    double  VolumeofTrianglesAroundVertex(vertex * pVeretx)     {return 0;}
-    double  GetEnergyChange(int s, double oa, double ov, double na, double nv) {return 0;}
-    double  Energy(double volume, double area, double a)        {return 0;}
-    void    UpdateArea_Volume(double oa, double ov, double na, double nv) {return ;}
-    double  SingleTriangleVolume(triangle * ptriangle)          {return 0;}
-    std::string CurrentState(){
-        
-        std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
-        return state;
+    // Constructor that initializes the base class with global mesh properties
+    NoCoupling(VAHGlobalMeshProperties *VHA) : AbstractVolumeCoupling(VHA) {
     }
 
+    // Destructor
+    ~NoCoupling() {
+    }
 
+    // Return the derived class name for identification purposes
+    virtual inline std::string GetDerivedDefaultReadName() { return "NoCoupling"; }
+
+    // Implementations of the virtual methods with no operation (no coupling)
+    void Initialize(State* pState) { return; }
+  //  void CalculateVolumeOfAVertexRing(vertex *pVertex, double &vol, double &area) { return; }
+  //  void CalculateVolumeofALinkTriangles(links *p_link, double &vol, double &area) { return; }
+    double GetCouplingEnergy() { return 0; }
+    double GetEnergyChange(double oldarea, double oldvolume, double newarea, double newvolume) { return 0; }
+    void UpdateArea_Volume(double oldarea, double oldvolume, double newarea, double newvolume) { return; }
+
+    // Retrieve the current state as a string
+    std::string CurrentState() {
+        return GetBaseDefaultReadName() + " = " + this->GetDerivedDefaultReadName();
+    }
 };
 
 #endif

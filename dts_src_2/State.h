@@ -89,10 +89,10 @@
 //-- volume coupling
 #include "AbstractVolumeCoupling.h"
 #include "Apply_Osmotic_Pressure.h"
-#include "CmdVolumeCouplingSecondOrder.h"
+#include "VolumeCouplingSecondOrder.h"
 //-- global curvature
 #include "AbstractGlobalCurvature.h"
-#include "CouplingtoFixedGlobalCurvature.h"
+#include "CouplingGlobalCurvatureToHarmonicPotential.h"
 //--- total area coupling
 #include "AbstractTotalAreaCoupling.h"
 #include "CouplingTotalAreaToHarmonicPotential.h"
@@ -168,6 +168,7 @@ inline AbstractVolumeCoupling           *GetVolumeCoupling()                    
 inline AbstractGlobalCurvature          *GetGlobalCurvature()                           {return m_pCoupleGlobalCurvature;}
 inline AbstractForceonVerticesfromInclusions *GetForceonVerticesfromInclusions()    {return m_pForceonVerticesfromInclusions;}
 inline AbstractExternalFieldOnVectorFields *GetExternalFieldOnVectorFields()        {return m_pExternalFieldOnVectorFields;}
+inline VAHGlobalMeshProperties              *GetVAHGlobalMeshProperties()        {return m_pVAHCalculator;}
 
 //---- supplementary integrators
 inline AbstractDynamicBox               *GetDynamicBox()                                {return m_pDynamicBox;}

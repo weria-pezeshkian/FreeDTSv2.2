@@ -17,12 +17,8 @@ class State;
 class  AbstractSimulation {
 public:
     AbstractSimulation() : m_CenteringFrequently(0), m_Initial_Step(1), m_Final_Step(10), m_Beta(1.0), m_DBeta (0.0),
-                           m_MinLength2(1),  m_MaxLength2(3), m_MinAngle(-5){
+                           m_MinLength2(1),  m_MaxLength2(3), m_MinAngle(-0.5){
     }
-    
-    /*AbstractSimulation(AbstractSimulation *pSim) : AbstractSimulation(pSim), m_CenteringFrequently(0), m_Initial_Step(1), m_Final_Step(10), m_Beta(1.0), m_DBeta (0.0) {
-
-    }*/
     virtual ~ AbstractSimulation(){
         
     }

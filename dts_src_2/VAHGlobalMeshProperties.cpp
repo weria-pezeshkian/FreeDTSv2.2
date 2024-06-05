@@ -1,7 +1,10 @@
 
 #include "VAHGlobalMeshProperties.h"
+#include "vertex.h"
+#include "triangle.h"
+#include "links.h"
 #include "State.h"
-VAHGlobalMeshProperties::VAHGlobalMeshProperties(State* pState) : m_pState(pState),
+VAHGlobalMeshProperties::VAHGlobalMeshProperties() : 
                                                                   m_TotalVolume(0.0),
                                                                   m_TotalArea(0.0),
                                                                   m_TotalCurvature(0.0) {
@@ -10,57 +13,39 @@ VAHGlobalMeshProperties::VAHGlobalMeshProperties(State* pState) : m_pState(pStat
 VAHGlobalMeshProperties::~VAHGlobalMeshProperties() {
     
 }
-void VAHGlobalMeshProperties::CalculateRingVolumeOfVertex(vertex *pv, double &vol, double &area)
-{
+void VAHGlobalMeshProperties::Initialize(State* pState){
+    m_pState = pState;
+    return;
+}
+void VAHGlobalMeshProperties::CalculateAVertexRingContributionToGlobalVariables(vertex *p_vertex, double &vol, double &area, double& curvature){
+    
     vol = 0.0;
     area = 0.0;
-    const std::vector<triangle *>& ring_triangles = pv->GetVTraingleList();
+    curvature = 0.0;
+    double C = p_vertex->GetP1Curvature() + p_vertex->GetP2Curvature();
+    curvature = C * (p_vertex->GetArea());
+    
+    const std::vector<triangle *>& ring_triangles = p_vertex->GetVTraingleList();
     for (std::vector<triangle *>::const_iterator it = ring_triangles.begin() ; it != ring_triangles.end(); ++it){
         vol+=CalculateSingleTriangleVolume(*it);
         area += (*it)->GetArea();
-
     }
-    return;
-}
-void VAHGlobalMeshProperties::CalculateRingCurvatureOfVertex(vertex *pv, double &curve, double &area)
-{
-    curve = 0.0;
-    area = 0.0;
-    const std::vector<vertex *>& ring_vertices = pv->GetVNeighbourVertex();
-    for (std::vector<vertex *>::const_iterator it = ring_vertices.begin() ; it != ring_vertices.end(); ++it){
-        curve +=(*it)->GetArea() * ((*it)->GetP1Curvature() + (*it)->GetP2Curvature());
-        area += (*it)->GetArea();
-
-    }
-    return;
-}
-//==========================================================
-void VAHGlobalMeshProperties::Initialize() {
     
-    m_TotalVolume = 0.0;
-    m_TotalArea = 0.0;
-    m_TotalCurvature = 0.0;
-
-    // Get references to mesh components
-    const std::vector<triangle *>& pAllTriangles = m_pState->GetMesh()->GetActiveT();
-    const std::vector<vertex *>& pAllVertices = m_pState->GetMesh()->GetSurfV();
-
-    // Iterate over triangles and vertices
-    for (std::vector<triangle *>::const_iterator it = pAllTriangles.begin(); it != pAllTriangles.end(); ++it) {
-        m_TotalVolume += CalculateSingleTriangleVolume(*it);
-        m_TotalArea += (*it)->GetArea();
+    const std::vector<vertex *>& ring_vertex = p_vertex->GetVNeighbourVertex();
+    for (std::vector<vertex *>::const_iterator it = ring_vertex.begin() ; it != ring_vertex.end(); ++it){
+         C = (*it)->GetP1Curvature() + (*it)->GetP2Curvature();
+        double A = (*it)->GetArea();
+        curvature += C * A;
     }
-    for (std::vector<vertex *>::const_iterator it = pAllVertices.begin(); it != pAllVertices.end(); ++it) {
-        m_TotalCurvature += (*it)->GetArea() * ((*it)->GetP1Curvature() + (*it)->GetP2Curvature());
-    }
+
     
     return;
 }
-double VAHGlobalMeshProperties::CalculateSingleTriangleVolume(triangle *pTriangle) {
-   
+double VAHGlobalMeshProperties::CalculateSingleTriangleVolume(triangle *pTriangle){
+    
     if(m_pState->GetMesh()->GetHasCrossedPBC()){
-        *(m_pState->GetTimeSeriesLog()) << "---> the system has crossed the PBC while asking for volume coupling.";
-        *(m_pState->GetTimeSeriesLog()) << " SOLUTION:Restart the simulation and center the system. Also, activate the command for centering the box.";
+        *(m_pState->GetTimeSeriesLog()) << "---> the system has crossed the PBC while volume is being calculated.";
+        *(m_pState->GetTimeSeriesLog()) << " SOLUTION: Restart the simulation and center the system. Also, activate the command for centering the box.";
 
          exit(0);
     }
@@ -72,78 +57,32 @@ double VAHGlobalMeshProperties::CalculateSingleTriangleVolume(triangle *pTriangl
     // Compute triangle volume
     return T_area * (Pos.dot(Normal_v, Pos)) / 3.0;
 }
-/*
-void triangle::CalculateTriangleNormal_Area(Vec3D *pBox) // normal vector update
-{
-Vec3D Box=(*pBox);
-    m_Area=0.0;
-    double x1=m_V1->GetVXPos();
-    double y1=m_V1->GetVYPos();
-    double z1=m_V1->GetVZPos();
-    double x2=m_V2->GetVXPos();
-    double y2=m_V2->GetVYPos();
-    double z2=m_V2->GetVZPos();
-    double x3=m_V3->GetVXPos();
-    double y3=m_V3->GetVYPos();
-    double z3=m_V3->GetVZPos();
+
+void VAHGlobalMeshProperties::CalculateALinkTrianglesContributionToGlobalVariables(links *p_link, double &vol, double &area, double& curvature) {
+    vol = 0.0;
+    area = 0.0;
+        
+    vol += CalculateSingleTriangleVolume(p_link->GetTriangle());
+    area += p_link->GetTriangle()->GetArea();
+    
+    vol += CalculateSingleTriangleVolume(p_link->GetMirrorLink()->GetTriangle());
+    area += p_link->GetMirrorLink()->GetTriangle()->GetArea();
+    
+    vertex *v1 = p_link->GetV1();
+    vertex *v2 = p_link->GetV2();
+    vertex *v3 = p_link->GetV3();
+    vertex *v4 = p_link->GetMirrorLink()->GetV3();
+
+    double C1 = v1->GetP1Curvature() + v1->GetP2Curvature();
+    double C2 = v2->GetP1Curvature() + v2->GetP2Curvature();
+    double C3 = v3->GetP1Curvature() + v3->GetP2Curvature();
+    double C4 = v4->GetP1Curvature() + v4->GetP2Curvature();
+    double A1 = v1->GetArea();
+    double A2 = v2->GetArea();
+    double A3 = v3->GetArea();
+    double A4 = v4->GetArea();
+    curvature = C1*A1 + C2*A2 + C3*A3 + C4*A4;
     
 
-    
-    double dx1=x2-x1;
-    if(fabs(dx1)>Box(0)/2.0)
-    {
-        if(dx1<0)
-        dx1=Box(0)+dx1;
-        else if(dx1>0)
-        dx1=dx1-Box(0);
-    }
-    double dy1=y2-y1;
-    if(fabs(dy1)>Box(1)/2.0)
-    {
-        if(dy1<0)
-        dy1=Box(1)+dy1;
-        else if(dy1>0)
-        dy1=dy1-Box(1);
-    }
-    double dz1=z2-z1;
-    if(fabs(dz1)>Box(2)/2.0)
-    {
-        if(dz1<0)
-        dz1=Box(2)+dz1;
-        else if(dz1>0)
-        dz1=dz1-Box(2);
-    }
-    double dx2=x3-x1;
-    if(fabs(dx2)>Box(0)/2.0)
-    {
-        if(dx2<0)
-        dx2=Box(0)+dx2;
-        else if(dx2>0)
-        dx2=dx2-Box(0);
-    }
-    double dy2=y3-y1;
-    if(fabs(dy2)>Box(1)/2.0)
-    {
-        if(dy2<0)
-        dy2=Box(1)+dy2;
-        else if(dy2>0)
-        dy2=dy2-Box(1);
-    }
-    double dz2=z3-z1;
-    if(fabs(dz2)>Box(2)/2.0)
-    {
-        if(dz2<0)
-        dz2=Box(2)+dz2;
-        else if(dz2>0)
-        dz2=dz2-Box(2);
-    }
-    Vec3D v1(dx1,dy1,dz1);
-    Vec3D v2(dx2,dy2,dz2);
-    m_Normal=v1*v2;
-    m_AreaVector=m_Normal;
-    m_Area=m_Normal.norm();
-    m_Normal=m_Normal*(1.0/m_Area);
-    m_Area=0.5*m_Area;
-
+    return;
 }
-*/
