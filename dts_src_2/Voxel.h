@@ -36,13 +36,11 @@
     - The Voxel class assumes ownership of the objects added to its content list. Ensure proper memory management when removing objects.
 */
 template<typename Type>
-class Voxel : public Voxelization<Type> {
+class Voxel  {
 public:
-    Voxel(int id, int n, int m, int k) {
-        m_X_index = n;                                          //   -------
-        m_Y_index = m;                                          //     | |
-        m_Z_index = k;                                          //   -------
-        m_ID=id;
+    Voxel(int id, int n, int m, int k, int &nx, int &ny, int &nz)
+        : m_ID(id), m_X_index(n), m_Y_index(m), m_Z_index(k),
+          m_Nx(nx), m_Ny(ny), m_Nz(nz) {
         m_NeighbouringVoxel[1][1][1] = this;
     }
     ~Voxel(){
@@ -58,6 +56,9 @@ public:
     inline int                GetXIndex()                { return m_X_index; } // x index,  m_X_index*m_Vox_Lx 
     inline int                GetYIndex()                { return m_Y_index; } //
     inline int                GetZIndex()                { return m_Z_index; } //
+    inline int GetXSideVoxel(double Lx)     const { return Lx/double(m_Nx); }
+    inline int GetYSideVoxel(double Ly)     const { return Ly/double(m_Ny); }
+    inline int GetZSideVoxel(double Lz)     const { return Lz/double(m_Nz); }
     inline std::vector<Type*> GetContentObjects()        { return m_List; }    //all the objects, e.g., vertices in the voxel
 
 public:
@@ -98,7 +99,9 @@ private:
     int m_Y_index;
     int m_Z_index;
     Voxel *m_NeighbouringVoxel[3][3][3];
-    
+    int &m_Nx; // Number of the voxels in the x direction
+    int &m_Ny; // Number of the voxels in the y direction
+    int &m_Nz; // Number of the voxels in the z direction
 
 
 };

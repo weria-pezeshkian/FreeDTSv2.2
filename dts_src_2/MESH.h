@@ -22,8 +22,8 @@ public:
     inline std::vector<vertex*>     GetActiveV()        const       {return m_pActiveV;}
     inline std::vector<triangle*>   GetActiveT()        const       {return m_pActiveT;}
     inline std::vector<links*>      GetActiveL()        const       {return m_pActiveL;}
-    inline std::vector<vertex*>     GetSurfV()        const         {return m_pSurfV;}
-    inline std::vector<vertex*>     GetEdgeV()        const         {return m_pEdgeV;}
+    inline std::vector<vertex*>&           GetSurfV()                 {return m_pSurfV;}
+    inline std::vector<vertex*>&           GetEdgeV()                 {return m_pEdgeV;}
     inline std::vector<links*>      GetEdgeL()          const       {return m_pEdgeL;}
     inline std::vector<links*>      GetRightL()         const       {return m_pHL;}
     inline std::vector<links*>      GetLeftL()          const       {return m_pMHL;}
@@ -31,9 +31,9 @@ public:
     std::map<std::string, std::vector<vertex*> > GetGroups()  const  {return m_Groups;}
 
 
-    inline Vec3D                   *GetBox()            const      {return m_pBox;}
-    inline const bool               GetHasCrossedPBC()  const      {return m_MeshCrossedPBC;}
-    std::vector <InclusionType*>    GetInclusionType()     const {return m_pInclusionType;}
+    inline Vec3D                   *GetBox()                        {return m_pBox;}
+    inline const bool               GetHasCrossedPBC()  const       {return m_MeshCrossedPBC;}
+    std::vector <InclusionType*>    GetInclusionType()     const    {return m_pInclusionType;}
     
     
     

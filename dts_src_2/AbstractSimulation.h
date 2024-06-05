@@ -34,8 +34,11 @@ public:
     virtual inline std::string GetDerivedDefaultReadName() = 0;
     inline static std::string GetBaseDefaultReadName() {return "Integrator_Type";}    
     inline int GetBoxCentering()                        {return m_CenteringFrequently;}
-    inline int GetBeta()                                {return m_Beta;}
-
+    inline double& GetBeta()                                 {return m_Beta;}
+    inline double& GetDBeta()                                {return m_DBeta;}
+    inline double& GetMinL2()                                 {return m_MinLength2;}
+    inline double& GetMaxL2()                                {return m_MaxLength2;}
+    inline double& GetMinAngle()                                {return m_MinAngle;}
 
 public:
     void SetCentering(int centering){

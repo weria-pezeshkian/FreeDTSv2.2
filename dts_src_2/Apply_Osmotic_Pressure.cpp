@@ -108,3 +108,7 @@ std::string Apply_Osmotic_Pressure::CurrentState(){
 double Apply_Osmotic_Pressure::GetCouplingEnergy(){
     return Energy(m_TotalVolume, m_TotalArea);
 }
+double Apply_Osmotic_Pressure::Energy(double volume, double area){
+    std::cout<<" this function has not been completed 234 \n";
+    return 0;
+}

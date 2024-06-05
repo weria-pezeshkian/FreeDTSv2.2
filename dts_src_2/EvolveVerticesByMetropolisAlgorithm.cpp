@@ -4,30 +4,40 @@
 #include "EvolveVerticesByMetropolisAlgorithm.h"
 #include "State.h"
 
-EvolveVerticesByMetropolisAlgorithm::EvolveVerticesByMetropolisAlgorithm(State *pState) :
-                        m_pState(pState),
-                        MESH(*(pState->GetMesh())),
-                        AbstractSimulation(*(pState->GetSimulation())){
-                            
-                            m_NumberOfMovePerStep_Surf = 1.0;
-                            m_NumberOfMovePerStep_Edge = 1.0;
-                            m_DR = 0.05;
-
-}
-EvolveVerticesByMetropolisAlgorithm::EvolveVerticesByMetropolisAlgorithm(State *pState, double rate_surf, double rate_edge, double dr) :
-                                        m_pState(pState),
-                                        MESH(*(pState->GetMesh())),
-                                        AbstractSimulation(*(pState->GetSimulation())) {
-    
-                                            m_NumberOfMovePerStep_Surf = rate_surf;
-                                            m_NumberOfMovePerStep_Edge = rate_edge;
-                                            m_DR = dr;
-}
+EvolveVerticesByMetropolisAlgorithm::EvolveVerticesByMetropolisAlgorithm(State *pState)
+    : m_pState(pState),
+      m_pSurfV(pState->GetMesh()->GetSurfV()),
+      m_pEdgeV(pState->GetMesh()->GetEdgeV()),
+      m_Beta(pState->GetSimulation()->GetBeta()),
+      m_DBeta(pState->GetSimulation()->GetBeta()),
+      m_MinLength2(pState->GetSimulation()->GetMinL2()),
+      m_MaxLength2(pState->GetSimulation()->GetMaxL2()),
+      m_MinAngle(pState->GetSimulation()->GetMinAngle()){
+          
+          m_NumberOfMovePerStep_Surf = 1.0;
+          m_NumberOfMovePerStep_Edge = 1.0;
+          m_DR = 0.05;
+          
+      }
+EvolveVerticesByMetropolisAlgorithm::EvolveVerticesByMetropolisAlgorithm(State *pState, double rate_surf, double rate_edge, double dr)
+    : m_pState(pState),
+      m_pSurfV(pState->GetMesh()->GetSurfV()),
+      m_pEdgeV(pState->GetMesh()->GetEdgeV()),
+      m_Beta(pState->GetSimulation()->GetBeta()),
+      m_DBeta(pState->GetSimulation()->GetBeta()),
+      m_MinLength2(pState->GetSimulation()->GetMinL2()),
+      m_MaxLength2(pState->GetSimulation()->GetMaxL2()),
+      m_MinAngle(pState->GetSimulation()->GetMinAngle()) {
+          
+          m_NumberOfMovePerStep_Surf = rate_surf;
+          m_NumberOfMovePerStep_Edge = rate_edge;
+          m_DR = dr;
+      }
 EvolveVerticesByMetropolisAlgorithm::~EvolveVerticesByMetropolisAlgorithm(){
 
 }
 void EvolveVerticesByMetropolisAlgorithm::Initialize(){
-    
+    m_pBox = m_pState->GetMesh()->GetBox();
     m_NumberOfAttemptedMoves = 0;
     m_AcceptedMoves = 0;
 
@@ -35,7 +45,6 @@ void EvolveVerticesByMetropolisAlgorithm::Initialize(){
 }
 bool EvolveVerticesByMetropolisAlgorithm::EvolveOneStep(int step){
  
-
     int no_surf_v = m_pSurfV.size();
     int no_edge_v = m_pEdgeV.size();
     int no_steps_edge = no_edge_v*m_NumberOfMovePerStep_Edge;
@@ -95,7 +104,6 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
 //---> first checking if all the distances will be fine if we move the vertex
     if(!VertexMoveIsFine(pvertex,dx,dy,dz,m_MinLength2,m_MaxLength2))  // this function could get a booling varaible to say, it crossed the voxel
         return 0;
-    
 //---> lets get global variables before moving
     //--- obtain vertices energy terms
     old_energy = pvertex->GetEnergy();
@@ -117,11 +125,12 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
      double new_Tvolume = 0;
      double new_Tarea = 0;
      double new_Tcurvature = 0;
+
 //--->
     if(m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()){
         m_pState->GetVAHGlobalMeshProperties()->CalculateAVertexRingContributionToGlobalVariables(pvertex, old_Tvolume, old_Tarea, old_Tcurvature);
     }
-    
+
 //----> Move the vertex;
         pvertex->PositionPlus(dx,dy,dz);
     //--- update triangles normal
@@ -159,11 +168,7 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
         (*it)->SetCopy();
         (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(*it);
     }
-    
-    
 
-
-    
     //---> calculate new energies
     new_energy = (m_pState->GetEnergyCalculator())->SingleVertexEnergy(pvertex);
 
@@ -171,7 +176,7 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
         new_energy += (m_pState->GetEnergyCalculator())->SingleVertexEnergy(*it);
     }
     
-    //---> ApplyConstraintBetweenGroups
+    //---> get energy for ApplyConstraintBetweenGroups
     Vec3D Dx(dx,dy,dz);
     double dE_Cgroup = m_pState->GetApplyConstraintBetweenGroups()->CalculateEnergyChange(pvertex, Dx);
     
@@ -182,7 +187,7 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
     if(m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()){
         m_pState->GetVAHGlobalMeshProperties()->CalculateAVertexRingContributionToGlobalVariables(pvertex, new_Tvolume, new_Tarea, new_Tcurvature);
     }
-    
+    //---> energy change of global variables
     double dE_volume =  m_pState->GetVolumeCoupling()->GetEnergyChange(old_Tarea, old_Tvolume, new_Tarea, new_Tvolume);
     double dE_t_area = m_pState->GetTotalAreaCoupling()->CalculateEnergyChange(old_Tarea, new_Tarea);
     double dE_g_curv = m_pState->GetGlobalCurvature()->CalculateEnergyChange(new_Tarea-old_Tarea, new_Tcurvature-old_Tcurvature);
@@ -193,7 +198,7 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
     double tot_diff_energy = diff_energy + dE_Cgroup + dE_force_from_inc + dE_volume + dE_t_area + dE_g_curv ;
 
     //---> accept or reject the move
-    if(tot_diff_energy <= 0 || exp(-m_Beta * tot_diff_energy) > temp ) {
+    if(tot_diff_energy <= 0 || exp(-m_Beta * tot_diff_energy + m_DBeta) > temp ) {
 
         // move is accepted
         (m_pState->GetEnergyCalculator())->AddToTotalEnergy(diff_energy);
@@ -253,19 +258,18 @@ bool EvolveVerticesByMetropolisAlgorithm::VertexMoveIsFine(vertex* pvertex, doub
             if(dist2<mindist2 || dist2>maxdist2)
             return false;
     }
-      
 //---> now check it within the voxel cells
 //---> lets get the object voxel, note: the voxel could be different from the associated one as it is moving
-
         //-- obtain the object (vertex) new cell id, with respect to the current cell
-        int i = int(new_x/pvertex->GetVoxel()->GetXSideVoxel())-pvertex->GetVoxel()->GetXIndex();
-        int j = int(new_y/pvertex->GetVoxel()->GetYSideVoxel())-pvertex->GetVoxel()->GetYIndex();
-        int k = int(new_z/pvertex->GetVoxel()->GetZSideVoxel())-pvertex->GetVoxel()->GetZIndex();
+        int i = int(new_x/pvertex->GetVoxel()->GetXSideVoxel((*m_pBox)(0)))-pvertex->GetVoxel()->GetXIndex();
+        int j = int(new_y/pvertex->GetVoxel()->GetYSideVoxel((*m_pBox)(1)))-pvertex->GetVoxel()->GetYIndex();
+        int k = int(new_z/pvertex->GetVoxel()->GetZSideVoxel((*m_pBox)(2)))-pvertex->GetVoxel()->GetZIndex();
         //-- check if it has moved too far
         if(i > 1 || i < -1 || j > 1 || j < -1 || k > 1 || k < -1) {
             std::cout << " ---> warning: the object might moved more than one voxel " << std::endl;
             return false;
         }
+
         Voxel<vertex>* new_pvox = pvertex->GetVoxel()->GetANeighbourCell(i, j, k);
     
         for(int n=-1;n<2;n++)
@@ -280,8 +284,6 @@ bool EvolveVerticesByMetropolisAlgorithm::VertexMoveIsFine(vertex* pvertex, doub
                 
             }
         } ///   for(int s=-1;s<2;s++){
-        
- 
     return true;
 }
 // finding the distance of the current vertex from the pv2; also considering the pbc conditions
@@ -346,7 +348,7 @@ std::string EvolveVerticesByMetropolisAlgorithm::CurrentState(){
     state = state +" "+ Nfunction::D2S(m_DR);
     return state;
 }
-std::vector<links*> GetEdgesWithInteractionChange(vertex* p_vertex){
+std::vector<links*> EvolveVerticesByMetropolisAlgorithm::GetEdgesWithInteractionChange(vertex* p_vertex){
     
     std::vector<links*> edge_with_interaction_change;
     std::vector<links *> all_temlinks;
@@ -424,3 +426,5 @@ std::vector<links*> GetEdgesWithInteractionChange(vertex* p_vertex){
     return edge_with_interaction_change;
 }
 */
+
+

@@ -54,6 +54,17 @@ void links::UpdateMirrorLink(links* v){
     m_mirorlink=v;
     return;
 }
+bool links::Copy_InteractionEnergy(){
+    
+    m_OldIntEnergy = m_IntEnergy;
+    return true;
+}
+bool links::Reverse_InteractionEnergy(){
+    
+    m_IntEnergy = m_OldIntEnergy;
+    m_mirorlink->UpdateIntEnergy(m_IntEnergy);
+    return true;
+}
 bool links::SetCopy(){           // Copies the key ellements into the old type
     m_OldT1 = m_T1;     //
     m_OldV1 = m_V1;

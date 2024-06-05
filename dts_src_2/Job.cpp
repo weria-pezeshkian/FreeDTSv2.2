@@ -176,6 +176,10 @@ Job::Job(const std::vector<std::string> &argument) {
 }  // end of Parallel_Tempering
 
 #endif
+#if DEBUG_MODE == Enabled
+std::cout<<" End of Job class \n";
+#endif
+
 }
 Job::~Job() {
     

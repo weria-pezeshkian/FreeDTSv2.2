@@ -43,7 +43,7 @@ bool MC_Simulation::do_Simulation(){
 #endif
     
 //---> Voxelize the mesh for the first time; this should be done before any calculation
-    m_pState->GetVoxelization(); //->Voxelize(m_pState->GetMesh()->GetActiveV());
+    m_pState->GetVoxelization()->Voxelize(m_pState->GetMesh()->GetActiveV());
 #if DEBUG_MODE == Enabled
     std::cout<<" system has been voxelaized  \n";
 #endif

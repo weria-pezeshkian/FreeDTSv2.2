@@ -295,9 +295,9 @@ bool vertex::Reverse2PreviousCopy(){  // reverse the edge to the value set at th
 bool vertex::CheckVoxel(){
     
 //-- obtain the object (vertex)  cell id, with respect to the current cell
-        int i = int((m_X)/m_pVoxel->GetXSideVoxel())-m_pVoxel->GetXIndex();
-        int j = int((m_Y)/m_pVoxel->GetYSideVoxel())-m_pVoxel->GetYIndex();
-        int k = int((m_Z)/m_pVoxel->GetZSideVoxel())-m_pVoxel->GetZIndex();
+        int i = int((m_X)/m_pVoxel->GetXSideVoxel((*m_pBox)(0)))-m_pVoxel->GetXIndex();
+        int j = int((m_Y)/m_pVoxel->GetYSideVoxel((*m_pBox)(1)))-m_pVoxel->GetYIndex();
+        int k = int((m_Z)/m_pVoxel->GetZSideVoxel((*m_pBox)(2)))-m_pVoxel->GetZIndex();
         //-- check if it has moved too far
         if(i!=0 || j!=0 || k!=0) {
             return false;
@@ -307,9 +307,9 @@ bool vertex::CheckVoxel(){
 }
 bool vertex::UpdateVoxelAfterAVertexMove(){
     
-    int i = int(m_X/m_pVoxel->GetXSideVoxel())-m_pVoxel->GetXIndex();
-    int j = int(m_Y/m_pVoxel->GetYSideVoxel())-m_pVoxel->GetYIndex();
-    int k = int(m_Z/m_pVoxel->GetZSideVoxel())-m_pVoxel->GetZIndex();
+    int i = int(m_X/m_pVoxel->GetXSideVoxel((*m_pBox)(0)))-m_pVoxel->GetXIndex();
+    int j = int(m_Y/m_pVoxel->GetYSideVoxel((*m_pBox)(1)))-m_pVoxel->GetYIndex();
+    int k = int(m_Z/m_pVoxel->GetZSideVoxel((*m_pBox)(2)))-m_pVoxel->GetZIndex();
     //-- check if it has moved too far
     if(i==0 && j==0 && k==0){
         return true;

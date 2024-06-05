@@ -250,7 +250,7 @@ bool State::ReadInputFile(std::string file)
         {
             std::string type;
             input>>str>>type;
-            if(type == EvolveVerticesByMetropolisAlgorithm::GetDefaultReadName()){  // VTUFileFormat
+            if(type == EvolveVerticesByMetropolisAlgorithm::GetDefaultReadName()){  // EvolveVerticesByMetropolisAlgorithm
                 int rate_surf,rate_edge,dr;
                 input >> rate_surf >> rate_edge >> dr;
                 m_pVertexPositionIntegrator = new EvolveVerticesByMetropolisAlgorithm(this, rate_surf, rate_edge, dr);

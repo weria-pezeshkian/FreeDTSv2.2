@@ -123,6 +123,7 @@ bool Voxelize(std::vector<Type *> all_pObjects) {
         m_Nx=int((*m_pBox)(0)/m_Lx);
         m_Ny=int((*m_pBox)(1)/m_Ly);
         m_Nz=int((*m_pBox)(2)/m_Lz);
+    std::cout<<m_Nx<<"  "<<m_Ny<<"  "<<m_Nz<<" number of voxels\n";
         double Lx = (*m_pBox)(0)/double(m_Nx);
         double Ly = (*m_pBox)(1)/double(m_Ny);
         double Lz = (*m_pBox)(2)/double(m_Nz);
@@ -134,7 +135,7 @@ bool Voxelize(std::vector<Type *> all_pObjects) {
             for (int j = 0; j < m_Ny; ++j) {
                 m_AllVoxel[i][j] = new Voxel<Type>*[m_Nz];
                 for (int k = 0; k < m_Nz; ++k) {
-                    m_AllVoxel[i][j][k] = new Voxel<Type>(voxel_id,i,j,k);
+                    m_AllVoxel[i][j][k] = new Voxel<Type>(voxel_id,i,j,k, m_Nx, m_Ny, m_Nz);
                     voxel_id++;
                 }
             }
@@ -149,8 +150,9 @@ bool Voxelize(std::vector<Type *> all_pObjects) {
                 for (int k = 0; k < m_Nz; ++k) {
                     for (int n = -1; n <=1; ++n)
                     for (int m = -1; m <= 1; ++m)
-                    for (int p = -1; p <= 1; ++p)
-                    (m_AllVoxel[i][j][k])->SetANeighbourCell(n,m,p, m_AllVoxel[(i+n)%m_Nx][(j+m)%m_Ny][(k+p)%m_Nz]);
+                    for (int p = -1; p <= 1; ++p){
+                        (m_AllVoxel[i][j][k])->SetANeighbourCell(n,m,p, m_AllVoxel[(i+n+m_Nx)%m_Nx][(j+m+m_Ny)%m_Ny][(k+p+m_Nz)%m_Nz]);
+                    }
                 }
             }
         }

@@ -1,6 +1,7 @@
-../dts_src_2/DTS   -in   in.dts   -top   top.top   -e   20   
+;--------- this state is initiated by this command ---------------------------------  
+../dts_src_2/DTS   -in   in.dts   -top   top.top   -e   1000   
 ;--------- this part can be used as an input.dts file ---------------------------------  
-Set_Steps  = 1 20
+Set_Steps  = 1 1000
 ;-- abstract classes
 Integrator_Type = MC_Simulation
 Boundary = PBC
@@ -12,8 +13,8 @@ BinaryTrajectory = NoFile
 VisualizationFormat = VTUFileFormat VTU_Frames 10
 CurvatureMethod = ShapeOperator_1
 EnergyMethod = FreeDTS1.0_FF
-ConstraintBetweenGroups = NoConstraint
-InclusionInducedForceOnVertex = NoForce
+ConstraintBetweenGroups = No
+InclusionInducedForceOnVertex = No
 ExternalFieldOnVectorFields = NoExternalField
 InclusionConversion = NoInclusionConversion
 Dynamic_Box = ConstantBox

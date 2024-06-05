@@ -9,7 +9,7 @@
 #include "AbstractSimulation.h"
 
 class State;
-class EvolveVerticesByMetropolisAlgorithm : public AbstractVertexPositionIntegrator, public MESH, public AbstractSimulation {
+class EvolveVerticesByMetropolisAlgorithm : public AbstractVertexPositionIntegrator {
 public:
     EvolveVerticesByMetropolisAlgorithm(State *pState);
     EvolveVerticesByMetropolisAlgorithm(State *pState, double rate_surf, double rate_edge, double dr);
@@ -29,7 +29,16 @@ private:
     double  SystemEnergy();  // it is for bug finding only; slow function, this is for development time, should be deleted
     State *m_pState;
     
-
+private:
+    std::vector<vertex*>&        m_pSurfV;
+    std::vector<vertex*>&       m_pEdgeV;
+    Vec3D *m_pBox;
+    
+    double &m_Beta;
+    double &m_DBeta;
+    double &m_MinLength2;
+    double &m_MaxLength2;
+    double &m_MinAngle;
     
 private:
     bool do_Simulation(){
@@ -39,5 +48,5 @@ private:
 
 };
 
-
+//, public MESH, public AbstractSimulation
 #endif
