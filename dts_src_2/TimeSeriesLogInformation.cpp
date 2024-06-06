@@ -60,9 +60,6 @@ void TimeSeriesLogInformation::WriteStartingState(){
     }
     m_TimeSeriesFile<<std::endl;
     m_TimeSeriesFile<<";--------- this part can be used as an input.dts file ---------------------------------  "<<std::endl;
-    m_TimeSeriesFile<<"Set_Steps  = "<<m_pState->GetSimulation()->GetInitialStep()<<" "<<m_pState->GetSimulation()->GetFinalStep()<<std::endl;
-
-    
     m_TimeSeriesFile<<";-- abstract classes"<<std::endl;
     m_TimeSeriesFile<<m_pState->GetSimulation()->CurrentState()<<std::endl;
     m_TimeSeriesFile<<m_pState->GetBoundary()->CurrentState()<<std::endl;

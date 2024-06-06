@@ -70,6 +70,7 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneStep(int step){
           m_AcceptedMoves++;
       }
       m_NumberOfAttemptedMoves++;
+      break;
     }
     
     for (int i = 0; i< no_steps_edge;i++) {
@@ -110,7 +111,7 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
     const std::vector<vertex *>& vNeighbourV = pvertex->GetVNeighbourVertex();
     for (std::vector<vertex *>::const_iterator it = vNeighbourV.begin() ; it != vNeighbourV.end(); ++it){
         
-        old_energy+=(*it)->GetEnergy();
+        old_energy += (*it)->GetEnergy();
     }
     // find the links in which there interaction energy changes
     std::vector<links*> Affected_links = GetEdgesWithInteractionChange(pvertex);
@@ -175,7 +176,10 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
     for (std::vector<vertex *>::const_iterator it = vNeighbourV.begin() ; it != vNeighbourV.end(); ++it){
         new_energy += (m_pState->GetEnergyCalculator())->SingleVertexEnergy(*it);
     }
-    
+    //-- interaction energy should be calculated here
+    for (std::vector<links *>::iterator it = Affected_links.begin() ; it != Affected_links.end(); ++it){
+        new_energy += (m_pState->GetEnergyCalculator())->TwoInclusionsInteractionEnergy(*it);
+    }
     //---> get energy for ApplyConstraintBetweenGroups
     Vec3D Dx(dx,dy,dz);
     double dE_Cgroup = m_pState->GetApplyConstraintBetweenGroups()->CalculateEnergyChange(pvertex, Dx);
@@ -199,7 +203,7 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
 
     //---> accept or reject the move
     if(tot_diff_energy <= 0 || exp(-m_Beta * tot_diff_energy + m_DBeta) > temp ) {
-
+        std::cout<<"accepted \n";
         // move is accepted
         (m_pState->GetEnergyCalculator())->AddToTotalEnergy(diff_energy);
         //---> if vertex is out of the voxel, update its voxel
@@ -217,6 +221,8 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
         }
     }
     else {
+        std::cout<<"rejected \n";
+
 //---> reverse the changes that has been made to the system
         //---> reverse the triangles
         for (std::vector<triangle *>::iterator it = N_triangles.begin() ; it != N_triangles.end(); ++it){
@@ -239,7 +245,6 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
             (*it)->Reverse2PreviousCopy();
         }
      }
-
     return true;
 }
 //---> this does not check the angle of the faces. Because this should be done after the move:

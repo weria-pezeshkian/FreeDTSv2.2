@@ -225,9 +225,23 @@ bool State::ReadInputFile(std::string file)
         input>>firstword;
         if(input.eof())
             break;
-        
-        
-        if(firstword == "Set_Steps")
+//-- simulation (Integrator) block
+        if(firstword == AbstractSimulation::GetBaseDefaultReadName()) { // "Integrator_Type"
+            std::string type;
+            input >> str >> type;
+            if(type=="MC"){
+                m_pSimulation = new MC_Simulation(this);
+            }
+            getline(input,rest);
+        }
+        else if(firstword == "Box_Centering_F")
+        {
+            double rate;
+            input>>str>>rate;
+            m_pSimulation->SetCentering(rate);
+            getline(input,rest);
+        }
+        else if(firstword == "Set_Steps")
         {
             int ini,fi;
             input>>str>>ini>>fi;
@@ -235,16 +249,40 @@ bool State::ReadInputFile(std::string file)
             m_pSimulation->UpdateFinalStep(fi);
             getline(input,rest);
         }
+        else if(firstword == "MinfaceAngle")
+        {
+            double min_angle;
+            input>>str>>min_angle;
+            m_pSimulation->SetMinAngle(min_angle);
+            getline(input,rest);
+        }
+        else if(firstword == "Min_Max_Lenghts")
+        {
+            double min,max;
+            input>>str>>min>>max;
+            m_pSimulation->SetMinMaxLength(min, max);
+
+
+            getline(input,rest);
+        }
+        else if(firstword == "Temprature"){
+            
+            double beta,delta_beta;
+            input>>str>>beta>>delta_beta;
+            m_pSimulation->SetBeta(beta,delta_beta);
+
+        }
+//---- end of simulation class block
         else if(firstword == AbstractVisualizationFile::GetBaseDefaultReadName())
         {
             std::string type;
             input>>str>>type;
             if(type == WritevtuFiles::GetDefaultReadName()){  // VTUFileFormat
                 double period;
-                input >> period;
+                input >> type>> period;
                 m_pVisualizationFile = new WritevtuFiles(this, period, type);
-                getline(input,rest);
             }
+            getline(input,rest);
         }
         else if(firstword == AbstractVertexPositionIntegrator::GetBaseDefaultReadName())
         {
@@ -256,21 +294,6 @@ bool State::ReadInputFile(std::string file)
                 m_pVertexPositionIntegrator = new EvolveVerticesByMetropolisAlgorithm(this, rate_surf, rate_edge, dr);
                 getline(input,rest);
             }
-        }
-        else if(firstword == "Box_Centering_F")
-        {
-            double rate;
-            input>>str>>rate;
-            m_pSimulation->SetCentering(rate);
-            getline(input,rest);
-        }
-        else if(firstword == AbstractSimulation::GetBaseDefaultReadName()) { // "Integrator_Type"
-            std::string type;
-            input >> str >> type;
-            if(type=="MC"){
-                m_pSimulation = new MC_Simulation(this);
-            }
-            getline(input,rest);
         }
         else if(firstword == "MC_Moves")
         {
@@ -459,13 +482,6 @@ bool State::ReadInputFile(std::string file)
             getline(input,rest);
 
         }
-        else if(firstword == "MinfaceAngle")
-        {
-            double min_angle;
-            input>>str>>min_angle;
-            m_pSimulation->SetMinAngle(min_angle);
-            getline(input,rest);
-        }
         else if(firstword == "TimeSeriesData_Period") { // TimeSeriesData
             int period;
             input>>str>>period;
@@ -537,15 +553,6 @@ bool State::ReadInputFile(std::string file)
             input>>str>>m_GeneralOutputFilename;
             getline(input,rest);
         }
-        else if(firstword == "Min_Max_Lenghts")
-        {
-            double min,max;
-            input>>str>>min>>max;
-            m_pSimulation->SetMinMaxLength(min, max);
-
-
-            getline(input,rest);
-        }
         else if(firstword == AbstractNonbinaryTrajectory::GetBaseDefaultReadName()) {
             
             std::string type;
@@ -556,13 +563,6 @@ bool State::ReadInputFile(std::string file)
                 input>>str>>period>>tsiPrecision>>tsiFolder_name;
                 m_pNonbinaryTrajectory  = new Traj_tsi(this, period, tsiFolder_name, tsiPrecision );
             }
-        }
-        else if(firstword == "Temprature"){
-            
-            double beta,delta_beta;
-            input>>str>>beta>>delta_beta;
-            m_pSimulation->SetBeta(beta,delta_beta);
-
         }
         else if(firstword == "Parallel_Tempering")
         {

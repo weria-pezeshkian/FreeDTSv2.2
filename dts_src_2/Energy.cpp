@@ -82,13 +82,11 @@ double Energy::SurfVertexBendingAndStretchingEnergy(vertex * p_vertex){
             double Cn = c1*Cos*Cos + c2*Sin*Sin;
             double Delta_Cp = (Cp-cp10);
             double Delta_Cn=(Cn-cn20);
-            en += (k1*Delta_Cp*Delta_Cp + k2*Delta_Cn*Delta_Cn)*area;
-            
-            return en;
+            en += (k1*Delta_Cp*Delta_Cp + k2*Delta_Cn*Delta_Cn)*area;            
         }
     }
     
-    return 0;
+    return en;
 }
 double Energy::EdgeVertexBendingAndStretchingEnergy(vertex *p_vertex)
 {
@@ -456,6 +454,9 @@ double Energy::Geo_Theta(vertex *v1, vertex *v2) {
 std::string Energy::CurrentState(){
     
     std::string state = AbstractEnergy::GetBaseDefaultReadName() + " = " + GetDerivedDefaultReadName();
-    
+    state = state + "\n Kappa = "+Nfunction::D2S(2*m_kappa)+" "+Nfunction::D2S(m_kappa_G)+" "+Nfunction::D2S(m_SCurvature0);
+    state = state + "\n Edge_Parameters = "+Nfunction::D2S(m_Lambda)+" "+Nfunction::D2S(m_Kappa_Geo)+" "+Nfunction::D2S(m_Kappa_Norm);
+    state = state + "\n VertexArea = "+Nfunction::D2S(m_Ka)+" "+Nfunction::D2S(m_Area0)+" "+Nfunction::D2S(m_Kl)+" "+Nfunction::D2S(m_l0);
+
     return state;
 }

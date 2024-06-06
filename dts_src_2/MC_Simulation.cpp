@@ -123,6 +123,12 @@ for(int step = GetInitialStep(); step <= GetFinalStep(); step++){
 std::string MC_Simulation::CurrentState(){
     
     std::string state = GetBaseDefaultReadName() +" = "+ GetDerivedDefaultReadName();
+    state = state + "\n Min_Max_Lenghts = "+Nfunction::D2S(m_MinLength2)+" "+Nfunction::D2S(m_MaxLength2);
+    state = state + "\n MinfaceAngle = "+Nfunction::D2S(m_MinAngle);
+    state = state + "\n Temprature = "+Nfunction::D2S(m_Beta)+" "+Nfunction::D2S(m_DBeta);
+    state = state + "\n Box_Centering_F = "+Nfunction::D2S(m_CenteringFrequently);
+    state = state + "\n Set_Steps = "+Nfunction::D2S(m_Initial_Step)+" "+Nfunction::D2S(m_Final_Step);
+    
     return state;
 }
 

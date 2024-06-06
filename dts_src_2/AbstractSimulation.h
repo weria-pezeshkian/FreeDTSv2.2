@@ -69,9 +69,7 @@ public:
     }
 
 private:
-    int m_CenteringFrequently; // how often centering the system in the box
-    int m_Initial_Step;
-    int m_Final_Step;
+
 
 protected:
     double m_Beta;
@@ -79,6 +77,8 @@ protected:
     double m_MinLength2;
     double m_MaxLength2;
     double m_MinAngle;
-    
+    int m_CenteringFrequently; // how often centering the system in the box
+    int m_Initial_Step;
+    int m_Final_Step;
 };
 #endif

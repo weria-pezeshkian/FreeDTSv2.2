@@ -25,7 +25,7 @@
  * Edge Shape operators get update in the links class.
  */
 class State;
-class CurvatureByShapeOperatorType1 : public AbstractCurvature{
+class CurvatureByShapeOperatorType1 : public AbstractCurvature {
 public:
     
     CurvatureByShapeOperatorType1(State* pstate);

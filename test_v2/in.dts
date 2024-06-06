@@ -1,0 +1,3 @@
+Kappa = 100 0 0
+VertexArea = 10 0.7 0 0
+VisualizationFormat = VTUFileFormat VTU_F 100
