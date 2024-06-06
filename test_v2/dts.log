@@ -1,7 +1,7 @@
 ;--------- this state is initiated by this command ---------------------------------  
-../dts_src_2/DTS   -in   in.dts   -top   top.top   -e   1000   
+../dts_src_2/DTS   -in   in.dts   -top   top.top   -e   100   
 ;--------- this part can be used as an input.dts file ---------------------------------  
-Set_Steps  = 1 1000
+Set_Steps  = 1 100
 ;-- abstract classes
 Integrator_Type = MC_Simulation
 Boundary = PBC

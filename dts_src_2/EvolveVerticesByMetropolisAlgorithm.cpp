@@ -250,6 +250,22 @@ bool EvolveVerticesByMetropolisAlgorithm::VertexMoveIsFine(vertex* pvertex, doub
         double new_x = pvertex->GetXPos() + dx;
         double new_y = pvertex->GetYPos() + dy;
         double new_z = pvertex->GetZPos() + dz;
+        //-- if the adding crosses the box
+        if (new_x >= (*m_pBox)(0)) {
+            new_x = new_x - (*m_pBox)(0);
+        } else if (new_x < 0) {
+            new_x = new_x + (*m_pBox)(0);
+        }
+        if (new_y >= (*m_pBox)(1)) {
+            new_y = new_y - (*m_pBox)(1);
+        } else if (new_y < 0) {
+            new_y = new_y + (*m_pBox)(1);
+        }
+        if (new_z >= (*m_pBox)(2)) {
+            new_z = new_z - (*m_pBox)(2);
+        } else if (new_z < 0) {
+            new_z = new_z + (*m_pBox)(2);
+        }
     
 //--->  let check the distances with the nighbours
     std::vector <vertex *> npvertex = pvertex->GetVNeighbourVertex();
@@ -261,12 +277,32 @@ bool EvolveVerticesByMetropolisAlgorithm::VertexMoveIsFine(vertex* pvertex, doub
 //---> now check it within the voxel cells
 //---> lets get the object voxel, note: the voxel could be different from the associated one as it is moving
         //-- obtain the object (vertex) new cell id, with respect to the current cell
-        int i = int(new_x/pvertex->GetVoxel()->GetXSideVoxel((*m_pBox)(0)))-pvertex->GetVoxel()->GetXIndex();
-        int j = int(new_y/pvertex->GetVoxel()->GetYSideVoxel((*m_pBox)(1)))-pvertex->GetVoxel()->GetYIndex();
-        int k = int(new_z/pvertex->GetVoxel()->GetZSideVoxel((*m_pBox)(2)))-pvertex->GetVoxel()->GetZIndex();
+        int NoX = pvertex->GetVoxel()->GetXNoVoxel();
+        int NoY = pvertex->GetVoxel()->GetYNoVoxel();
+        int NoZ = pvertex->GetVoxel()->GetZNoVoxel();
+    
+        int new_nx = int(new_x/pvertex->GetVoxel()->GetXSideVoxel((*m_pBox)(0)));
+        int new_ny = int(new_y/pvertex->GetVoxel()->GetYSideVoxel((*m_pBox)(1)));
+        int new_nz = int(new_z/pvertex->GetVoxel()->GetZSideVoxel((*m_pBox)(2)));
+    
+        int old_nx = pvertex->GetVoxel()->GetXIndex();
+        int old_ny = pvertex->GetVoxel()->GetYIndex();
+        int old_nz = pvertex->GetVoxel()->GetZIndex();
+    
+        int i = Voxel<int>::Convert2LocalVoxelIndex(new_nx, old_nx, NoX);
+        int j = Voxel<int>::Convert2LocalVoxelIndex(new_ny, old_ny, NoY);
+        int k = Voxel<int>::Convert2LocalVoxelIndex(new_nz, old_nz, NoZ);
+
+    
         //-- check if it has moved too far
         if(i > 1 || i < -1 || j > 1 || j < -1 || k > 1 || k < -1) {
             std::cout << " ---> warning: the object might moved more than one voxel " << std::endl;
+            
+#if DEBUG_MODE == Enabled
+std::cout << i<<" "<<j<<"  "<<k<<"  local "<< std::endl;
+std::cout << int(new_x/pvertex->GetVoxel()->GetXSideVoxel((*m_pBox)(0)))<<" "<<int(new_y/pvertex->GetVoxel()->GetYSideVoxel((*m_pBox)(1)))<<"  "<<int(new_z/pvertex->GetVoxel()->GetZSideVoxel((*m_pBox)(2)))<<"  new voxel "<< std::endl;
+std::cout << pvertex->GetVoxel()->GetXIndex()<<" "<<pvertex->GetVoxel()->GetYIndex()<<"  "<<pvertex->GetVoxel()->GetZIndex()<<" old voxel"<< std::endl;
+#endif
             return false;
         }
 
@@ -387,6 +423,7 @@ std::vector<links*> EvolveVerticesByMetropolisAlgorithm::GetEdgesWithInteraction
     
     return edge_with_interaction_change;
 }
+
 /*
 std::vector<links*> GetEdgesWithInteractionChange(vertex* p_vertex){
     

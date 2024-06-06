@@ -44,11 +44,6 @@ public:
         m_NeighbouringVoxel[1][1][1] = this;
     }
     ~Voxel(){
-        for (int i = 0; i < 3; ++i) {
-        for (int j = 0; j < 3; ++j) {
-        for (int k = 0; k < 3; ++k) {
-            delete m_NeighbouringVoxel[i][j][k];
-        }}}
         m_List.clear();
     }// ~Voxel()
 
@@ -56,9 +51,12 @@ public:
     inline int                GetXIndex()                { return m_X_index; } // x index,  m_X_index*m_Vox_Lx 
     inline int                GetYIndex()                { return m_Y_index; } //
     inline int                GetZIndex()                { return m_Z_index; } //
-    inline int GetXSideVoxel(double Lx)     const { return Lx/double(m_Nx); }
-    inline int GetYSideVoxel(double Ly)     const { return Ly/double(m_Ny); }
-    inline int GetZSideVoxel(double Lz)     const { return Lz/double(m_Nz); }
+    inline double GetXSideVoxel(double Lx)     const { return Lx/double(m_Nx); }
+    inline double GetYSideVoxel(double Ly)     const { return Ly/double(m_Ny); }
+    inline double GetZSideVoxel(double Lz)     const { return Lz/double(m_Nz); }
+    inline const int GetXNoVoxel()                   const { return m_Nx; }
+    inline const int GetYNoVoxel()                   const { return m_Ny; }
+    inline const int GetZNoVoxel()                   const { return m_Nz; }
     inline std::vector<Type*> GetContentObjects()        { return m_List; }    //all the objects, e.g., vertices in the voxel
 
 public:
@@ -91,6 +89,23 @@ public:
             std::cout<<" ---> error: such indices are not permitted "<<std::endl;
         
         return m_NeighbouringVoxel[i+1][j+1][k+1];
+    }
+    static int Convert2LocalVoxelIndex(int new_index, int old_index, int No_index){
+
+        if(new_index == old_index){
+            return 0;
+        }
+        else if( (old_index + 1 + No_index) % No_index == new_index){
+            return 1;
+        }
+        else if( (old_index - 1 + No_index) % No_index == new_index){
+            return -1;
+        }
+        else {
+            std::cout << " ---> error. the object has moved  out of neighbouring voxel " << std::endl;
+            std::cout <<"new_id: " <<new_index <<" old_id: "<< old_index<<" no-voxel: "<<No_index<< std::endl;
+        }
+        return 0;
     }
 private:
   int m_ID;

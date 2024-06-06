@@ -28,7 +28,7 @@ private:
 
     double  SystemEnergy();  // it is for bug finding only; slow function, this is for development time, should be deleted
     State *m_pState;
-    
+  //  int Convert2LocalVoxelIndex(int new_index, int old_index, int No_index);
 private:
     std::vector<vertex*>&        m_pSurfV;
     std::vector<vertex*>&       m_pEdgeV;

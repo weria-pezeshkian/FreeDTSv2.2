@@ -307,9 +307,23 @@ bool vertex::CheckVoxel(){
 }
 bool vertex::UpdateVoxelAfterAVertexMove(){
     
-    int i = int(m_X/m_pVoxel->GetXSideVoxel((*m_pBox)(0)))-m_pVoxel->GetXIndex();
-    int j = int(m_Y/m_pVoxel->GetYSideVoxel((*m_pBox)(1)))-m_pVoxel->GetYIndex();
-    int k = int(m_Z/m_pVoxel->GetZSideVoxel((*m_pBox)(2)))-m_pVoxel->GetZIndex();
+    int NoX = m_pVoxel->GetXNoVoxel();
+    int NoY = m_pVoxel->GetYNoVoxel();
+    int NoZ = m_pVoxel->GetZNoVoxel();
+
+    int new_nx = int(m_X/m_pVoxel->GetXSideVoxel((*m_pBox)(0)));
+    int new_ny = int(m_Y/m_pVoxel->GetYSideVoxel((*m_pBox)(1)));
+    int new_nz = int(m_Z/m_pVoxel->GetZSideVoxel((*m_pBox)(2)));
+    int old_nx = m_pVoxel->GetXIndex();
+    int old_ny = m_pVoxel->GetYIndex();
+    int old_nz = m_pVoxel->GetZIndex();
+
+    int i = Voxel<int>::Convert2LocalVoxelIndex(new_nx, old_nx, NoX);
+    int j = Voxel<int>::Convert2LocalVoxelIndex(new_ny, old_ny, NoY);
+    int k = Voxel<int>::Convert2LocalVoxelIndex(new_nz, old_nz, NoZ);
+    
+    
+    
     //-- check if it has moved too far
     if(i==0 && j==0 && k==0){
         return true;
