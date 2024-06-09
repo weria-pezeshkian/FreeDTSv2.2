@@ -40,6 +40,7 @@ public:
     ~RNG(){
         
     }
+    void Initialize();
 
     double UniformRNG(double A);
     bool BinRNG();

@@ -40,6 +40,24 @@ void triangle::UpdateNormal_Area(Vec3D& norm, double& area){
     m_Area = area;
     return;
 }
+void triangle::ConstantMesh_Copy(){
+
+    m_oldAreaVector = m_AreaVector;
+    m_oldNormal = m_Normal;
+    m_oldArea = m_Area;
+    m_oldVolume = m_Volume;
+    
+    return;
+}
+void triangle::ReverseConstantMesh_Copy(){
+
+    m_AreaVector = m_oldAreaVector;
+    m_Normal = m_oldNormal;
+    m_Area = m_oldArea;
+    m_Volume = m_oldVolume;
+    
+    return;
+}
 void triangle::Copy(){
     
     m_oldV1 = m_V1;

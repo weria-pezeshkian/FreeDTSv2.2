@@ -9,9 +9,9 @@
  * Developed in 2024 by Weria Pezeshkian (weria.pezeshkian@gmail.com)
  * Copyright (c) Weria Pezeshkian
  */
-class  AbstractGlobalCurvature  : public VAHGlobalMeshProperties {
+class  AbstractGlobalCurvature  {
 public:
-    AbstractGlobalCurvature(VAHGlobalMeshProperties *VHA) : VAHGlobalMeshProperties(*VHA), m_Energy(0) {
+    AbstractGlobalCurvature(VAHGlobalMeshProperties *pVHA) : m_pVAH(pVHA), m_TotalCurvature(pVHA->m_TotalCurvature), m_TotalArea(pVHA->m_TotalArea),  m_CalculatedGlobalVariable(pVHA->m_CalculatedGlobalVariable), m_Energy(0) {
         
     }
     virtual ~ AbstractGlobalCurvature(){
@@ -31,6 +31,11 @@ public:
     inline static std::string GetBaseDefaultReadName() {return "GlobalCurvature";}
 
 protected:
+    VAHGlobalMeshProperties *m_pVAH;
+    double &m_TotalArea;
+    double &m_TotalCurvature; // Delta A = h * m_TotalCurvature = h * Sum [2H_v * A_v]
+    bool &m_CalculatedGlobalVariable;
+    
     double m_Energy;
 
 };

@@ -189,7 +189,8 @@ inline std::vector <std::string> GetCommandLineArgument()                       
 inline std::string               GetRunTag()                                    {return m_GeneralOutputFilename;}
 inline int                       GetThreads_Number()                                {return m_Total_no_Threads;}
 inline ParallelReplicaData       *GetParallelReplicaData()                           {return m_pParallel_Replica;}
-    
+std::string CurrentState();
+
 static void HelpMessage();              // writes a help message
 bool Initialize(); // makes all the objects ready for simulations, it will open the files ...
 

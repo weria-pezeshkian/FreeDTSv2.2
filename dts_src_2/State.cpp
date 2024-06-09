@@ -54,18 +54,14 @@ State::State(std::vector<std::string> argument) :
       m_GeneralOutputFilename("dts"),  // Set GeneralOutputFilename
       m_Total_no_Threads(1),  // Set Total_no_Threads
       m_Targeted_State(true),  // Set Targeted_State
-      m_RestartFileName(""),  // Set RestartFileName
-      m_MinFaceAngle(-0.5),  // Set MinFaceAngle
-      m_MinVerticesDistanceSquare(1.0),  // Set MinVerticesDistanceSquare
-      m_MaxLinkLengthSquare(3.0)  // Set MaxLinkLengthSquare*/
-
+      m_RestartFileName("")  // Set RestartFileName
 { // start of the "class State" constructor
     
     
     //---- Initialize integrators
     m_pMesh = &m_Mesh;
     m_pVertexPositionIntegrator = new EvolveVerticesByMetropolisAlgorithm(this);
-    m_pAlexanderMove            = new AlexanderMoveByMetropolisAlgorithm;         // Initialize AlexanderMove
+    m_pAlexanderMove            = new AlexanderMoveByMetropolisAlgorithm(this);         // Initialize AlexanderMove
     m_pInclusionPoseIntegrator  = new InclusionPoseUpdateByMetropolisAlgorithm;  // Initialize InclusionPoseIntegrator
 
 //-- Find input files name (input.tsi, top.top||top.tsi, index.inx, restart.res)
@@ -206,30 +202,82 @@ bool State::ExploreArguments(std::vector<std::string> &argument){
 }
 bool State::ReadInputFile(std::string file)
 {
-    // enforcing correct file extension:  check simdef file for value of InExt
+    /**
+     * @brief Reads and parses the input file for the State class, configuring various simulation parameters.
+     *
+     * This function reads an input file specified by the `file` parameter, which is expected to contain a variety
+     * of simulation parameters and settings. The file format is assumed to follow a specific structure, where each
+     * line starts with a keyword that determines the type of data or configuration being set. The function handles
+     * various keywords to initialize different aspects of the simulation, such as simulation types, boundary conditions,
+     * integrators, and other parameters.
+     *
+     * The function performs the following main steps:
+     *
+     * 1. **File Extension Check**:
+     *    - Checks if the provided file name has the correct extension. If not, appends the expected extension.
+     *
+     * 2. **File Existence Check**:
+     *    - Verifies if the file exists. If not, outputs an error message and returns `false`.
+     *
+     * 3. **File Opening**:
+     *    - Opens the file for reading. If the file cannot be opened, outputs an error message and returns `false`.
+     *
+     * 4. **Reading and Parsing the File**:
+     *    - Reads the file line by line, using the first word of each line (keyword) to determine the type of data
+     *      and performs the appropriate configuration.
+     *    - For each recognized keyword, extracts the relevant parameters and initializes or updates the corresponding
+     *      class members or settings.
+     *    - Handles various types of configuration blocks, such as:
+     *      - Simulation settings (e.g., Integrator type, steps, temperature).
+     *      - Visualization settings.
+     *      - Integrator settings for vertex positions.
+     *      - Force fields and constraints.
+     *      - Boundary conditions.
+     *      - Topology and dynamic box settings.
+     *      - Various other simulation parameters (e.g., curvature, volume constraints, area coupling).
+     *
+     * 5. **Inclusion Handling**:
+     *    - Calls the `ReadInclusionType` function to handle inclusion types specified in the file.
+     *
+     * 6. **File Closing**:
+     *    - Closes the input file.
+     *
+     * 7. **Return Value**:
+     *    - Returns `true` if the file is successfully read and parsed without errors.
+     *    - Returns `false` if any errors occur during the reading or parsing process.
+     *
+     * @param file The name of the input file to be read.
+     * @return `true` if the file is successfully read and parsed, `false` otherwise.
+     */
     std::string ext = file.substr(file.find_last_of(".") + 1);
-    if(ext!=InExt)
-    file = file + "." + InExt;
-    if (Nfunction::FileExist(file)!=true)
-    {
-        std::cout<<"----> Error: the input file with the name "<<file<< " does not exist "<<std::endl;
+    std::string filename = (ext != InExt) ? file + "." + InExt : file;
+
+    if (!Nfunction::FileExist(filename)) {
+        std::cerr << "----> Error: the input file with the name " << filename << " does not exist" << std::endl;
         return false;
     }
 
-    std::ifstream input;
-    input.open(file.c_str());
-    std::string firstword,rest,str;
+    std::ifstream input(filename);
+    if (!input) {
+        std::cerr << "----> Error: failed to open the input file " << filename << std::endl;
+        return false;
+    }
 
-    while (true)
-    {
-        input>>firstword;
-        if(input.eof())
-            break;
+    
+std::string firstword, rest, str, type;
+while (input >> firstword) {
+    if (input.eof()) break;
+
+//-- State class variable
+        if(firstword == "Run_Tag")
+        {
+            input>>str>>m_GeneralOutputFilename;
+            getline(input,rest);
+        }
 //-- simulation (Integrator) block
-        if(firstword == AbstractSimulation::GetBaseDefaultReadName()) { // "Integrator_Type"
-            std::string type;
+        else if(firstword == AbstractSimulation::GetBaseDefaultReadName()) { // "Integrator_Type"
             input >> str >> type;
-            if(type=="MC"){
+            if(type == MC_Simulation::GetDefaultReadName()){
                 m_pSimulation = new MC_Simulation(this);
             }
             getline(input,rest);
@@ -273,9 +321,8 @@ bool State::ReadInputFile(std::string file)
 
         }
 //---- end of simulation class block
-        else if(firstword == AbstractVisualizationFile::GetBaseDefaultReadName())
-        {
-            std::string type;
+//---- Visualization file
+        else if(firstword == AbstractVisualizationFile::GetBaseDefaultReadName()) {
             input>>str>>type;
             if(type == WritevtuFiles::GetDefaultReadName()){  // VTUFileFormat
                 double period;
@@ -284,17 +331,119 @@ bool State::ReadInputFile(std::string file)
             }
             getline(input,rest);
         }
-        else if(firstword == AbstractVertexPositionIntegrator::GetBaseDefaultReadName())
-        {
-            std::string type;
+//---- End Visualization file
+//---- position update
+        else if(firstword == AbstractVertexPositionIntegrator::GetBaseDefaultReadName()) {
             input>>str>>type;
             if(type == EvolveVerticesByMetropolisAlgorithm::GetDefaultReadName()){  // EvolveVerticesByMetropolisAlgorithm
-                int rate_surf,rate_edge,dr;
+                double rate_surf,rate_edge,dr;
                 input >> rate_surf >> rate_edge >> dr;
                 m_pVertexPositionIntegrator = new EvolveVerticesByMetropolisAlgorithm(this, rate_surf, rate_edge, dr);
-                getline(input,rest);
             }
+            else{
+                std::cout<<"---> error: unknown method for vertex move "<<type<<"\n";
+                m_NumberOfErrors++;
+                return false;
+            }
+            getline(input,rest);
         }
+//---- end //
+//---- AlexanderMove
+        else if(firstword == AbstractAlexanderMove::GetBaseDefaultReadName()) {
+                input>>str>>type;
+                if(type == AlexanderMoveByMetropolisAlgorithm::GetDefaultReadName()){  // MetropolisAlgorithm
+                    double rate;
+                    input >> rate;
+                    m_pAlexanderMove = new AlexanderMoveByMetropolisAlgorithm(this, rate);
+                }
+                else{
+                    std::cout<<"---> error: unknown method for Alexander move "<<type<<"\n";
+                    m_NumberOfErrors++;
+                    return false;
+                }
+            getline(input,rest);
+        }
+//---- end //
+//---- Volume_Constraint data
+        else if(firstword == AbstractVolumeCoupling::GetBaseDefaultReadName())   { // Volume_Constraint
+            
+            input >> str >> type;
+            if(type == VolumeCouplingSecondOrder::GetDefaultReadName()) { // SecondOrderCoupling
+                
+                double dp,k,vt;
+                input>>dp>>k>>vt;
+                m_pVolumeCoupling = new VolumeCouplingSecondOrder(m_pVAHCalculator, dp,  k, vt);
+            }
+            else if(type == Apply_Osmotic_Pressure::GetDefaultReadName()){ // Osmotic_Pressure
+                double gamma,P0;
+                input>>gamma>>P0;
+                m_pVolumeCoupling = new Apply_Osmotic_Pressure(m_pVAHCalculator, gamma, P0 );
+            }
+            else if(type == "No"){
+            }
+            else {
+                std::cout<<"---> error: unknown volume coupling type "<<type<<"\n";
+                m_NumberOfErrors++;
+                return false;
+            }
+            getline(input,rest);
+        }
+//---- end Volume_Constraint
+//---- global curvature
+        else if(firstword == "GlobalCurvature")
+        {
+            double k,gc0;
+            input>>str>>type>>k>>gc0;
+            if(type == CouplingGlobalCurvatureToHarmonicPotential::GetDefaultReadName()) {
+                m_pCoupleGlobalCurvature = new CouplingGlobalCurvatureToHarmonicPotential(m_pVAHCalculator,k,gc0);
+            }
+            else if(type == "No") {
+            }
+            else {
+                std::cout<<"---> error: unknown for global curvature: "<< type<<"\n";
+                m_NumberOfErrors++;
+                return false;
+            }
+            getline(input,rest);
+            
+        }
+// -- global area coupling
+        else if(firstword == "TotalAreaCoupling"){
+            
+            input>>str>>type;
+
+            if(type ==  CouplingTotalAreaToHarmonicPotential::GetDefaultReadName()){
+                double gamma , k0;
+                input>>k0>>gamma;
+                m_pTotalAreaCoupling = new CouplingTotalAreaToHarmonicPotential(m_pVAHCalculator,k0,gamma);
+            }
+            else if(type == "No") {
+            }
+            else {
+                std::cout<<"---> error: unknown method for global curvature: "<<type<<" \n";
+                m_NumberOfErrors++;
+                return false;
+            }
+            getline(input,rest);
+        }
+//ConstraintBetweenGroups
+        else if(firstword == "ConstraintBetweenGroups")
+        {
+            input >> str >> type;
+            if(type == "HarmonicPotentialBetweenTwoGroups"){
+                // ConstraintBetweenGroups  = HarmonicPotentialBetweenTwoGroups 10 0.1 2000 Group1 Group2 0 1 1
+                double k,l0,nx,ny,nz;
+                std::string g1name,g2name;
+                input>>k>>l0>>g1name>>g2name>>nx>>ny>>nz;
+                m_pApplyConstraintBetweenGroups = new HarmonicPotentialBetweenTwoGroups(this, k, l0, g1name, g2name, nx, ny, nz);
+            }
+            else{
+                std::cout<<" unknown type of ConstraintBetweenGroups "<<std::endl;
+            }
+            getline(input,rest);
+
+        }
+//end of ConstraintBetweenGroups
         else if(firstword == "MC_Moves")
         {
             getline(input, str);
@@ -319,7 +468,6 @@ bool State::ReadInputFile(std::string file)
         }
         else if(firstword=="InclusionConversion")
         {
-            std::string type;
             input >> str >> type;
             if(type == "ActiveTwoStateInclusion"){
                 std::string inctype1, inctype2;
@@ -336,7 +484,6 @@ bool State::ReadInputFile(std::string file)
         }
         else if(firstword == AbstractBoundary::GetBaseDefaultReadName()) // " Boundary "
         {
-            std::string type;
             input >> str >> type;
             if(type == TwoFlatParallelWall::GetDefaultReadName()){   // " "TwoFlatParallelWall" "
                 double thickness;
@@ -351,7 +498,6 @@ bool State::ReadInputFile(std::string file)
         }
         else if(firstword == "ForceFromInclusions")
         {
-            std::string type;
             input >> str >> type;
             if(type == Constant_NematicForce::GetDefaultReadName()){  // Constant_NematicForce
                 double f0; //(d,p,n)
@@ -366,7 +512,6 @@ bool State::ReadInputFile(std::string file)
         else if(firstword == AbstractDynamicBox::GetBaseDefaultReadName())
         {
             
-            std::string type;
             int period = 0;
             double force = 0;
 
@@ -382,7 +527,6 @@ bool State::ReadInputFile(std::string file)
         }
         else if(firstword == "Dynamic_Topology")
         {
-            std::string type;
             int period = 0;
 
             input >> str >> type >> period;
@@ -397,7 +541,6 @@ bool State::ReadInputFile(std::string file)
         else if(firstword == AbstractOpenEdgeEvolution::GetBaseDefaultReadName()){ // "OpenEdgeEvolution"
             
             // OpenEdgeEvolution =  EvolutionWithConstantVertex period rate
-            std::string type;
             input >> str >> type;
             getline(input,rest);
             if (type == OpenEdgeEvolutionWithConstantVertex::GetDefaultReadName()) { // "EvolutionWithConstantVertex"
@@ -410,77 +553,6 @@ bool State::ReadInputFile(std::string file)
                 
                 std::cout<<"---> error: unknown Open Edge Evolution type: "<<type<<"\n";
             }
-        }
-        else if(firstword == "GlobalCurvature")
-        {
-            std::string type;
-            double k,gc0;
-            input>>str>>type>>k>>gc0;
-            if(type == CouplingGlobalCurvatureToHarmonicPotential::GetDefaultReadName()) {
-                m_pCoupleGlobalCurvature = new CouplingGlobalCurvatureToHarmonicPotential(m_pVAHCalculator,k,gc0);
-            }
-            else if(type == "No") {
-            }
-            else {
-                std::cout<<"---> error: this algorithm for global curvature is unknown \n";
-                std::cout<<"----------- no global curvature coupling with be applied \n";
-            }
-            getline(input,rest);
-            
-        }
-        else if(firstword == "Volume_Constraint")
-        {
-            
-            std::string type;
-            input >> str >> type;
-            if(type == "SecondOrderCoupling"){
-                double dp,k,vt;
-                input>>dp>>k>>vt;
-                m_pVolumeCoupling = new VolumeCouplingSecondOrder(m_pVAHCalculator, dp,  k, vt);
-
-            }
-            else if(type == "Osmotic_Pressure"){
-                double gamma,P0;
-                input>>gamma>>P0;
-                m_pVolumeCoupling = new Apply_Osmotic_Pressure(m_pVAHCalculator, gamma, P0 );
-
-            }
-            else if(type == "No"){
-
-            }
-            else {
-                std::cout<<"---> error: unknown volume coupling type "<<type<<"\n";
-            }
-            getline(input,rest);
-        }
-        else if(firstword == "TotalAreaCoupling"){
-            
-            std::string type;
-            input>>str>>type;
-
-            if(type ==  CouplingTotalAreaToHarmonicPotential::GetDefaultReadName()){
-                double gamma , k0;
-                input>>k0>>gamma;
-                m_pTotalAreaCoupling = new CouplingTotalAreaToHarmonicPotential(m_pVAHCalculator,k0,gamma);
-            }
-            getline(input,rest);
-        }
-        else if(firstword == "ConstraintBetweenGroups")
-        {
-            std::string type;
-            input >> str >> type;
-            if(type == "HarmonicPotentialBetweenTwoGroups"){
-                // ConstraintBetweenGroups  = HarmonicPotentialBetweenTwoGroups 10 0.1 2000 Group1 Group2 0 1 1
-                double k,l0,nx,ny,nz;
-                std::string g1name,g2name;
-                input>>k>>l0>>g1name>>g2name>>nx>>ny>>nz;
-                m_pApplyConstraintBetweenGroups = new HarmonicPotentialBetweenTwoGroups(this, k, l0, g1name, g2name, nx, ny, nz);
-            }
-            else{
-                std::cout<<" unknown type of ConstraintBetweenGroups "<<std::endl;
-            }
-            getline(input,rest);
-
         }
         else if(firstword == "TimeSeriesData_Period") { // TimeSeriesData
             int period;
@@ -522,13 +594,6 @@ bool State::ReadInputFile(std::string file)
             //=== send it to force field class
             getline(input,rest);
         }
-        else if(firstword == "ConstantField") {
-            double k,x,y,z;
-            input>>str>>k>>x>>y>>z;
-            m_pExternalFieldOnVectorFields = new ConstantExternalField(k,x,y,z);
-            getline(input,rest);
-
-        }
         else if(firstword == "VertexArea")
         {
             double a,b,c,d;
@@ -542,20 +607,21 @@ bool State::ReadInputFile(std::string file)
             }
             m_pEnergyCalculator->SetSizeCoupling (a,A01,c,A02);
         }
+        else if(firstword == "ConstantField") {
+            double k,x,y,z;
+            input>>str>>k>>x>>y>>z;
+            m_pExternalFieldOnVectorFields = new ConstantExternalField(k,x,y,z);
+            getline(input,rest);
+
+        }
         else if(firstword == "Voxel_Size"){
             double lx,ly,lz;
             input>>str>>lx>>ly>>lz;
             m_pVoxelization->UpdateVoxelSize(lx, ly,  lz);
             getline(input,rest);
         }
-        else if(firstword == "GeneralOutputFilename")
-        {
-            input>>str>>m_GeneralOutputFilename;
-            getline(input,rest);
-        }
         else if(firstword == AbstractNonbinaryTrajectory::GetBaseDefaultReadName()) {
             
-            std::string type;
             input>>str>>type;
             if(type == Traj_tsi::GetDefaultReadName()){ // "TSI"
                 int period;
@@ -700,6 +766,7 @@ bool State::Initialize(){
 
         }
 
+    m_RandomNumberGenerator->Initialize();
         // Generate mesh from the mesh blueprint
         m_Mesh.GenerateMesh(mesh_blueprint);
         m_pVoxelization->SetBox(m_pMesh->GetBox());
@@ -712,7 +779,7 @@ bool State::Initialize(){
         m_pCurvatureCalculations->Initialize();
 //----> set some easy access for integrators
         m_pVertexPositionIntegrator->Initialize();
-        m_pAlexanderMove->Initialize(this);
+        m_pAlexanderMove->Initialize();
         m_pInclusionPoseIntegrator->Initialize(this);
 //----> boundry of the simulations
         m_pBoundary->Initialize();
@@ -804,5 +871,10 @@ bool State::ReadInclusionType(std::ifstream& input) {
     }
 
     return true;
+}
+std::string State::CurrentState(){
+
+    std::string state = " Run_Tag = "+ m_GeneralOutputFilename;
+    return state;
 }
 

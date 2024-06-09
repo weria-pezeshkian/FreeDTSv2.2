@@ -12,9 +12,9 @@
 This class is a base class for global Curvature and how energy should change
 ========================================================
 */
-class  AbstractTotalAreaCoupling : public VAHGlobalMeshProperties {
+class  AbstractTotalAreaCoupling  {
 public:
-    AbstractTotalAreaCoupling(VAHGlobalMeshProperties *VHA) : VAHGlobalMeshProperties(*VHA) {
+    AbstractTotalAreaCoupling(VAHGlobalMeshProperties *pVHA) : m_pVAH(pVHA),  m_TotalArea(pVHA->m_TotalArea),  m_CalculatedGlobalVariable(pVHA->m_CalculatedGlobalVariable) {
         
     }
     virtual ~ AbstractTotalAreaCoupling(){
@@ -30,7 +30,10 @@ public:
     virtual inline std::string GetDerivedDefaultReadName() = 0;
     
     inline static std::string GetBaseDefaultReadName() {return "TotalAreaCoupling";}
-
+protected:
+    VAHGlobalMeshProperties *m_pVAH;
+    double &m_TotalArea;
+    bool &m_CalculatedGlobalVariable;
 };
 //---- default value for no coupling to area change. 
 class NoTotalAreaCoupling : public  AbstractTotalAreaCoupling {

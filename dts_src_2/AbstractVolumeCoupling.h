@@ -17,10 +17,10 @@ based on predefined parameters. Derived classes must implement the specific
 details of these coupling mechanisms.
 =======================================================
 */
-class AbstractVolumeCoupling : public VAHGlobalMeshProperties {
+class AbstractVolumeCoupling  {
 public:
     // Constructor that initializes the base class with global mesh properties
-    AbstractVolumeCoupling(VAHGlobalMeshProperties *VHA) : VAHGlobalMeshProperties(*VHA) {
+    AbstractVolumeCoupling(VAHGlobalMeshProperties *pVHA) : m_pVAH(pVHA), m_TotalVolume(pVHA->m_TotalVolume), m_TotalArea(pVHA->m_TotalArea),  m_CalculatedGlobalVariable(pVHA->m_CalculatedGlobalVariable) {
     }
 
     // Virtual destructor to ensure proper cleanup of derived class objects
@@ -55,6 +55,13 @@ public:
 
     // Retrieve the base class default name for logging or identification purposes
     inline static std::string GetBaseDefaultReadName() { return "VolumeCoupling"; }
+
+protected:
+    VAHGlobalMeshProperties *m_pVAH;
+    
+    double &m_TotalVolume;
+    double &m_TotalArea;
+    bool &m_CalculatedGlobalVariable;
 };
 
 // Class representing no volume coupling, used as a default or placeholder
@@ -69,7 +76,7 @@ public:
     }
 
     // Return the derived class name for identification purposes
-    virtual inline std::string GetDerivedDefaultReadName() { return "NoCoupling"; }
+    virtual inline std::string GetDerivedDefaultReadName() { return "No"; }
 
     // Implementations of the virtual methods with no operation (no coupling)
     void Initialize(State* pState) { return; }

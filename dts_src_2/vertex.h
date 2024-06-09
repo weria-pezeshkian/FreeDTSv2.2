@@ -68,6 +68,10 @@ public:
     
     bool SetCopy();            // Copies the key ellements into the old type
     bool Reverse2PreviousCopy();  // reverse the edge to the value set at the time of MakeCopy()
+    
+    void ConstantMesh_Copy();
+    void ReverseConstantMesh_Copy();
+    
   // A set of functions to update vertex variables
   void UpdateVXPos(double x);    // a function for update the x position of a vertex
   void UpdateVYPos(double y);   // a function for update the y position of a vertex

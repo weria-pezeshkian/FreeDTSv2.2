@@ -27,8 +27,8 @@
  Copyright (c) Weria Pezeshkian
  MC simulation class, runs mc simulation if it is defined in the input file.
  */
-MC_Simulation::MC_Simulation(State *pState){
-    m_pState = pState;
+MC_Simulation::MC_Simulation(State *pState) : m_pState(pState) {
+
 }
 MC_Simulation::~MC_Simulation(){
     
@@ -55,8 +55,8 @@ bool MC_Simulation::do_Simulation(){
    // m_pState->
 //--- before simualtion lets have a frame of the initial system
         m_pState->GetVisualization()->WriteAFrame(0);
-    time_t startTime;
-    time(&startTime);
+   // time_t startTime;
+   // time(&startTime);
 for(int step = GetInitialStep(); step <= GetFinalStep(); step++){
         
 //---> centering the simulation box
@@ -96,13 +96,14 @@ for(int step = GetInitialStep(); step <= GetFinalStep(); step++){
     m_pState->GetRestart()->UpdateRestartState(step, m_pState->GetVertexPositionUpdate()->GetDR(), m_pState->GetDynamicBox()->GetDR());
 
 //----> print info about the simulation, e.g., rate,
-    time_t currentTime;
-    time(&currentTime);
-    if (currentTime - startTime >= 30) {
+   // time_t currentTime;
+   // time(&currentTime);
+    if (step%50 == 0) {
         std::cout<<"Step = "<<step<<"/"<<GetFinalStep()<<std::flush;
         std::cout << std::fixed << std::setprecision(2);
         std::cout<<"Rates: "<<std::flush;
-        std::cout<<"vertex move = "<<m_pState->GetVertexPositionUpdate()->GetAcceptanceRate(true)<<std::flush;
+        std::cout<<" vertex move = "<<m_pState->GetVertexPositionUpdate()->GetAcceptanceRate(true)<<std::flush;
+        std::cout<<" alexander move = "<<m_pState->GetAlexanderMove()->GetAcceptanceRate(true)<<std::flush;
         std::cout << '\r';
         std::cout << "\033[K";
     }

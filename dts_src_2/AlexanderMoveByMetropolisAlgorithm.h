@@ -12,29 +12,36 @@ class State;
 
 class AlexanderMoveByMetropolisAlgorithm : public AbstractAlexanderMove {
 public:
-    AlexanderMoveByMetropolisAlgorithm();
+    AlexanderMoveByMetropolisAlgorithm(State *pState);
+    AlexanderMoveByMetropolisAlgorithm(State *pState, double rate);
     ~AlexanderMoveByMetropolisAlgorithm();
 
-    bool Initialize(State *pState);
+    bool Initialize();
     bool EvolveOneStep(int step);
     inline  std::string GetDerivedDefaultReadName() {return "MetropolisAlgorithm";}
     inline static std::string GetDefaultReadName() {return "MetropolisAlgorithm";}
     
 private:
     bool FlipOneEdge(int step, links *pedge, double temp);
-    bool EdgeCanBeFliped(links *pedge, double mindist2, double maxdist2);
-    bool CheckFacesAfterFlip(double &minangle, links* edge);
+    bool EdgeCanBeFliped(links *pedge);
+    std::vector<links*> GetEdgesWithInteractionChange(links *p_edge);
+    bool CheckFacesAfterFlip(links* pedge);
     double SystemEnergy(); // For bug finding only; slow function (should be deleted in production code)
     std::string CurrentState();
 
     
 private:
-    double *m_pLmin2;
-    double *m_pLmax2;
-    double *m_pminAngle;
-    double *m_pBeta;
     State *m_pState;
-    Vec3D *m_pBox;
+
+    std::vector<links*>&   m_pSurfL;
+    Vec3D *m_pBox;    
+    double &m_Beta;
+    double &m_DBeta;
+    double &m_MinLength2;
+    double &m_MaxLength2;
+    double &m_MinAngle;
+    
+    
 };
 
 #endif // ALEXANDER_MOVE_BY_METROPOLIS_ALGORITHM_H

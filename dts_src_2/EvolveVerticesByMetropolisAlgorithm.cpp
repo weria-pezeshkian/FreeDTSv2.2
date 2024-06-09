@@ -70,7 +70,6 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneStep(int step){
           m_AcceptedMoves++;
       }
       m_NumberOfAttemptedMoves++;
-      break;
     }
     
     for (int i = 0; i< no_steps_edge;i++) {
@@ -105,10 +104,10 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
 //---> first checking if all the distances will be fine if we move the vertex
     if(!VertexMoveIsFine(pvertex,dx,dy,dz,m_MinLength2,m_MaxLength2))  // this function could get a booling varaible to say, it crossed the voxel
         return 0;
-//---> lets get global variables before moving
+
     //--- obtain vertices energy terms
     old_energy = pvertex->GetEnergy();
-    const std::vector<vertex *>& vNeighbourV = pvertex->GetVNeighbourVertex();
+    const std::vector<vertex *>& vNeighbourV = pvertex->GetVNeighbourVertex();  
     for (std::vector<vertex *>::const_iterator it = vNeighbourV.begin() ; it != vNeighbourV.end(); ++it){
         
         old_energy += (*it)->GetEnergy();
@@ -133,6 +132,7 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
     }
 
 //----> Move the vertex;
+        pvertex->SetCopy();
         pvertex->PositionPlus(dx,dy,dz);
     //--- update triangles normal
     std::vector<triangle *> N_triangles = pvertex->GetVTraingleList();
@@ -146,10 +146,11 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
         for (std::vector<triangle *>::iterator it = N_triangles.begin() ; it != N_triangles.end(); ++it){
             (*it)->Reverse2PreviousCopy();
         }
+        pvertex->PositionPlus(-dx,-dy,-dz);
         return false;
     }
 //---->
-    //--> clauclate edge shape operator;
+    //--> calculate edge shape operator;
     const std::vector<links *>& v_NLinks = pvertex->GetVLinkList();
     for (std::vector<links *>::const_iterator it = v_NLinks.begin() ; it != v_NLinks.end(); ++it){
         
@@ -163,7 +164,6 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
     }
 
     // --> calculate vertex shape operator
-    pvertex->SetCopy();
     (m_pState->GetCurvatureCalculator())->UpdateVertexCurvature(pvertex);
     for (std::vector<vertex *>::const_iterator it = vNeighbourV.begin() ; it != vNeighbourV.end(); ++it){
         (*it)->SetCopy();
@@ -203,7 +203,6 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
 
     //---> accept or reject the move
     if(tot_diff_energy <= 0 || exp(-m_Beta * tot_diff_energy + m_DBeta) > temp ) {
-        std::cout<<"accepted \n";
         // move is accepted
         (m_pState->GetEnergyCalculator())->AddToTotalEnergy(diff_energy);
         //---> if vertex is out of the voxel, update its voxel
@@ -221,12 +220,10 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
         }
     }
     else {
-        std::cout<<"rejected \n";
 
 //---> reverse the changes that has been made to the system
         //---> reverse the triangles
         for (std::vector<triangle *>::iterator it = N_triangles.begin() ; it != N_triangles.end(); ++it){
-            
             (*it)->Reverse2PreviousCopy();
         }
         //---> reverse the links

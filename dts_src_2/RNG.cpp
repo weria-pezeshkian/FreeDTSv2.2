@@ -1,6 +1,8 @@
 #include "RNG.h"
 
 RNG::RNG(int seed) : m_Seed(seed) {
+}
+void RNG::Initialize(){
     // Initialize random number generator based on RNGTYPE
 #if RNGTYPE == UNIFROMTYPE1
     std::default_random_engine generator(m_Seed);
@@ -9,7 +11,6 @@ RNG::RNG(int seed) : m_Seed(seed) {
     srand(m_Seed);
 #endif
 }
-
 double RNG::UniformRNG(double A) {
 #if RNGTYPE == UNIFROMTYPE1
     return A * (m_distribution(m_generator));

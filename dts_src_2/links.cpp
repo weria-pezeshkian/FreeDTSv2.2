@@ -10,7 +10,7 @@ links::links(int id, vertex *v1, vertex *v2, triangle *t1) {
     m_V2=v2;
     m_SimTimeStep=-1;
     m_ID=id;
-    m_LinkSide = 0;
+  //  m_LinkSide = 0;
     m_mirorflag=false;
     m_Show=true;
     m_EdgeSize = 0;
@@ -20,7 +20,7 @@ links::links(int id)
 {
     m_IntEnergy = 0;
     m_ID=id;
-    m_LinkSide = 0;
+  //  m_LinkSide = 0;
     m_mirorflag=false;
     m_Show=true;
     m_SimTimeStep=-1;
@@ -65,6 +65,44 @@ bool links::Reverse_InteractionEnergy(){
     m_mirorlink->UpdateIntEnergy(m_IntEnergy);
     return true;
 }
+void links::UpdateEdgeVector(Vec3D e_vector, double size){
+    m_EdgeVector = e_vector;
+    m_EdgeSize = size;
+    
+    return;
+}
+void links::ConstantMesh_Copy(){
+   
+   // m_OldLinkSide = m_LinkSide;
+    m_OldNormal = m_Normal;
+    m_OldBe = m_Be;
+    m_OldHe = m_He;
+    m_OldIntEnergy = m_IntEnergy;
+    m_OldEdgeVector = m_EdgeVector;
+    m_OldEdgeSize = m_EdgeSize;
+        
+    return;
+}
+void links::ReverseConstantMesh_Copy(){
+    
+    m_Be = m_OldBe;
+    m_He = m_OldHe;
+    m_IntEnergy = m_OldIntEnergy;
+    m_Normal = m_OldNormal;
+
+    m_EdgeVector = m_OldEdgeVector;
+    m_EdgeSize = m_OldEdgeSize;
+    
+    //---- update some for mirror
+    if(m_mirorflag){
+        m_mirorlink->PutShapeOperator(m_Be,m_He);
+        m_mirorlink->UpdateIntEnergy(m_IntEnergy);
+        m_mirorlink->PutNormal(m_Normal);
+        m_mirorlink->UpdateEdgeVector(m_EdgeVector, m_EdgeSize);
+    }
+    
+    return;
+}
 bool links::SetCopy(){           // Copies the key ellements into the old type
     m_OldT1 = m_T1;     //
     m_OldV1 = m_V1;
@@ -73,7 +111,7 @@ bool links::SetCopy(){           // Copies the key ellements into the old type
     m_Oldneighborlink1 = m_neighborlink1;
     m_Oldneighborlink2  = m_neighborlink2;
     m_Oldmirorflag = m_mirorflag;
-    m_OldLinkSide = m_LinkSide;
+//    m_OldLinkSide = m_LinkSide;
     m_OldNormal = m_Normal;
     m_OldBe = m_Be;
     m_OldHe = m_He;
@@ -98,7 +136,7 @@ bool links::Reverse2PreviousCopy(){           // reverse to the last copy and pa
     m_neighborlink1 = m_Oldneighborlink1;
     m_neighborlink2 = m_Oldneighborlink2;
     m_mirorflag = m_Oldmirorflag;
-    m_LinkSide = m_OldLinkSide;
+  //  m_LinkSide = m_OldLinkSide;
     m_Normal = m_OldNormal;
     m_Be = m_OldBe;
     m_He = m_OldHe;
@@ -113,6 +151,7 @@ bool links::Reverse2PreviousCopy(){           // reverse to the last copy and pa
         m_mirorlink->PutShapeOperator(m_Be,m_He);
         m_mirorlink->UpdateIntEnergy(m_IntEnergy);
         m_mirorlink->PutNormal(m_Normal);
+        m_mirorlink->UpdateEdgeVector(m_EdgeVector, m_EdgeSize);
     }
 
     return true;
@@ -170,8 +209,8 @@ void links::UpdateIntEnergy(double en)
 void links::UpdateShapeOperator(Vec3D *pBox)
 {
     UpdateEdgeVector(pBox);
-   if(this->GetMirrorFlag()==true)
-   {
+   if(m_mirorflag) {
+       
        Vec3D Re = m_EdgeVector;
        Re=Re*(1.0/m_EdgeSize);
        Vec3D Be=m_Normal*Re;
@@ -286,10 +325,184 @@ void links::PutEdgeVector(Vec3D v, double l)
     m_EdgeSize   = l;
     m_EdgeVector = v;
 }
+bool links::Reverse_Flip(links *p_edge){
+    /** Sine 2024
+     * @brief Reverse the action of Flip(links *pedge) function.
+     *
+     *
+     * @param p_edge A pointer to the edge to be flipped.
+     * @return true if the reverse was successfully flipped, false otherwise.
+     */
+    // Check if the edge has a mirror link; if not, it is an edge link and cannot be flipped
+    if (!p_edge->GetMirrorFlag()) {
+        std::cerr << "Error (developer): An edge link without a mirror never been fliped to be reversed.\n";
+        return false;
+    }
+    
+    // Get the mirror edge and neighboring links
+    links *p_medge = p_edge->GetMirrorLink(); // Mirror link
+    links *l2 = p_edge->GetNeighborLink1();
+    links *l3 = p_edge->GetNeighborLink2();
+    links *l4 = p_medge->GetNeighborLink1();
+    links *l1 = p_medge->GetNeighborLink2();
+
+    // Get the triangles associated with the edge and its mirror
+    triangle *t1 = p_edge->GetTriangle();
+    triangle *t2 = p_medge->GetTriangle();
+
+    // Get the vertices involved in the flip
+    vertex *v4 = p_edge->GetV1();
+    vertex *v3 = p_edge->GetV2();
+    vertex *v1 = p_edge->GetV3();
+    vertex *v2 = p_medge->GetV3();
+    
+    // Update the vertices of the edge and its mirror
+    p_edge->UpdateV(v1, v2, v3);
+    p_medge->UpdateV(v2, v1, v4);
+    
+    // Update the triangles with the new vertices
+    t1->UpdateVertex(v1, v2, v3);
+    t2->UpdateVertex(v2, v1, v4);
+
+    // Update neighbor relationships for the vertices
+    v1->AddtoNeighbourVertex(v2);
+    v2->AddtoNeighbourVertex(v1);
+    v3->RemoveFromNeighbourVertex(v4);
+    v4->RemoveFromNeighbourVertex(v3);
+
+    // Update the link lists for the vertices
+    v1->AddtoLinkList(p_edge);
+    v2->AddtoLinkList(p_medge);
+    v3->RemoveFromLinkList(p_medge);
+    v4->RemoveFromLinkList(p_edge);
+
+    // Update the triangle lists for the vertices
+    v3->RemoveFromTraingleList(t2);
+    v4->RemoveFromTraingleList(t1);
+    v1->AddtoTraingleList(t2);
+    v2->AddtoTraingleList(t1);
+    
+    // Update neighbor links for the edge and its mirror
+    p_edge->UpdateNeighborLink1(l1);
+    p_edge->UpdateNeighborLink2(l2);
+    p_medge->UpdateNeighborLink1(l3);
+    p_medge->UpdateNeighborLink2(l4);
+
+    // Update the third vertex of the neighboring links
+    l1->UpdateV3(v1);
+    l2->UpdateV3(v2);
+    l3->UpdateV3(v2);
+    l4->UpdateV3(v1);
+
+    // Update neighbor links for the neighboring links
+    l1->UpdateNeighborLink1(l2);
+    l1->UpdateNeighborLink2(p_edge);
+    l2->UpdateNeighborLink1(p_edge);
+    l2->UpdateNeighborLink2(l1);
+    l3->UpdateNeighborLink1(l4);
+    l3->UpdateNeighborLink2(p_medge);
+    l4->UpdateNeighborLink1(p_medge);
+    l4->UpdateNeighborLink2(l3);
+
+    // Update the triangles associated with the neighboring links
+    l1->UpdateTriangle(t1);
+    l3->UpdateTriangle(t2);
+
+    return true;
+}
+bool links::Flip(links *p_edge) {
+    /** Sine 2024
+     * @brief Flips the specified edge in the mesh.
+     *
+     * This function flips the given edge by updating the associated vertices,
+     * links, and triangles. If the edge does not have a mirror link (indicating
+     * it is an edge link), the function will return false as flipping is not possible.
+     *
+     * @param p_edge A pointer to the edge to be flipped.
+     * @return true if the edge was successfully flipped, false otherwise.
+     */
+    
+    // Check if the edge has a mirror link; if not, it is an edge link and cannot be flipped
+    if (!p_edge->GetMirrorFlag()) {
+        std::cerr << "Error (developer): An edge link without a mirror cannot be flipped.\n";
+        return false;
+    }
+
+    // Get the mirror edge and neighboring links
+    links *p_medge = p_edge->GetMirrorLink(); // Mirror link
+    links *l1 = p_edge->GetNeighborLink1();
+    links *l2 = p_edge->GetNeighborLink2();
+    links *l3 = p_medge->GetNeighborLink1();
+    links *l4 = p_medge->GetNeighborLink2();
+
+    // Get the triangles associated with the edge and its mirror
+    triangle *t1 = p_edge->GetTriangle();
+    triangle *t2 = p_medge->GetTriangle();
+
+    // Get the vertices involved in the flip
+    vertex *v1 = p_edge->GetV1();
+    vertex *v2 = p_edge->GetV2();
+    vertex *v3 = p_edge->GetV3();
+    vertex *v4 = p_medge->GetV3();
+
+    // Update the vertices of the edge and its mirror
+    p_edge->UpdateV(v4, v3, v1);
+    p_medge->UpdateV(v3, v4, v2);
+
+    // Update the triangles with the new vertices
+    t1->UpdateVertex(v4, v3, v1);
+    t2->UpdateVertex(v3, v4, v2);
+
+    // Update neighbor relationships for the vertices
+    v1->RemoveFromNeighbourVertex(v2);
+    v2->RemoveFromNeighbourVertex(v1);
+    v4->AddtoNeighbourVertex(v3);
+    v3->AddtoNeighbourVertex(v4);
+
+    // Update the link lists for the vertices
+    v1->RemoveFromLinkList(p_edge);
+    v2->RemoveFromLinkList(p_medge);
+    v4->AddtoLinkList(p_edge);
+    v3->AddtoLinkList(p_medge);
+
+    // Update the triangle lists for the vertices
+    v1->RemoveFromTraingleList(t2);
+    v2->RemoveFromTraingleList(t1);
+    v3->AddtoTraingleList(t2);
+    v4->AddtoTraingleList(t1);
+
+    // Update neighbor links for the edge and its mirror
+    p_edge->UpdateNeighborLink1(l2);
+    p_edge->UpdateNeighborLink2(l3);
+    p_medge->UpdateNeighborLink1(l4);
+    p_medge->UpdateNeighborLink2(l1);
+
+    // Update the third vertex of the neighboring links
+    l1->UpdateV3(v4);
+    l2->UpdateV3(v4);
+    l3->UpdateV3(v3);
+    l4->UpdateV3(v3);
+
+    // Update neighbor links for the neighboring links
+    l1->UpdateNeighborLink1(p_medge);
+    l1->UpdateNeighborLink2(l4);
+    l2->UpdateNeighborLink1(l3);
+    l2->UpdateNeighborLink2(p_edge);
+    l3->UpdateNeighborLink1(p_edge);
+    l3->UpdateNeighborLink2(l2);
+    l4->UpdateNeighborLink1(l1);
+    l4->UpdateNeighborLink2(p_medge);
+
+    // Update the triangles associated with the neighboring links
+    l1->UpdateTriangle(t2);
+    l3->UpdateTriangle(t1);
+
+    return true;
+}
 void links::Flip()
 {
     
-   if(this->GetMirrorFlag()==true){
+   if(m_mirorflag){
     
     triangle *T2 = m_mirorlink->GetTriangle();
     vertex  *V4 = m_mirorlink->GetV3();
@@ -297,8 +510,8 @@ void links::Flip()
     vertex  *v2 = m_V2;
     vertex  *v3 = m_V3;
     vertex  *v4 = V4;
-    links *l1=this->GetNeighborLink1();
-    links *l2=this->GetNeighborLink2();
+    links *l1=m_neighborlink1;
+    links *l2=m_neighborlink2;
     links *l3=m_mirorlink->GetNeighborLink1();
     links *l4=m_mirorlink->GetNeighborLink2();
 

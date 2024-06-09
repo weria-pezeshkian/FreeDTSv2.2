@@ -43,7 +43,8 @@ public:
     // Copy and reverse state
     void Copy();
     void Reverse2PreviousCopy();
-
+    void ConstantMesh_Copy();
+    void ReverseConstantMesh_Copy();
 private:
     // Original state members
     int m_ID;

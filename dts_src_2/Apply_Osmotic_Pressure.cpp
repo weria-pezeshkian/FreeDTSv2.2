@@ -40,7 +40,7 @@ void Apply_Osmotic_Pressure::Initialize(State* pstate){
     m_CalculatedGlobalVariable = true;
     std::vector<triangle *> all_tri = m_pState->GetMesh()->GetActiveT();
     for (std::vector<triangle *>::iterator it = all_tri.begin() ; it != all_tri.end(); ++it) {
-        m_TotalVolume += CalculateSingleTriangleVolume(*it);
+        m_TotalVolume += m_pVAH->CalculateSingleTriangleVolume(*it);
         m_TotalArea += (*it)->GetArea();
     }
     

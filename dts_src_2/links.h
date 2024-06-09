@@ -34,7 +34,7 @@ public:
     	inline Vec3D GetBe()                     const     	{return m_Be;}
     	inline double GetHe()                    const      {return m_He;}
         inline int GetSimTimeStep()              const      {return m_SimTimeStep;}
-        inline int GetLinkSide()                 const      {return m_LinkSide;}
+      //  inline double GetLinkSide()                 const      {return m_LinkSide;}
         inline double GetIntEnergy()             const      {return m_IntEnergy;}
         inline double GetEdgeSize()              const      {return m_EdgeSize;}
         inline Vec3D GetEdgeVector()             const      {return m_EdgeVector;}
@@ -51,7 +51,12 @@ public:
     void PutNormal(Vec3D);
     void UpdateShapeOperator(Vec3D *);
     void PutShapeOperator(Vec3D Be,double He);
+    void UpdateLinkSide(double l_side);
+    void UpdateEdgeVector(Vec3D e_vector, double size);
     void Flip();
+    bool Flip(links *pedge);
+    bool Reverse_Flip(links *pedge);
+
     void UpdateMirrorFlag(bool v);
     void UpdateSimTimeStep(int v);
     void UpdateIntEnergy(double en);
@@ -72,7 +77,7 @@ private:
     links   *m_neighborlink2; /// the link is 1->2   this is 3->1
     bool m_Show;
     bool m_mirorflag;
-    int m_LinkSide;
+  //  int m_LinkSide;
     Vec3D m_Normal;    // average of the two trinagule normal for edge links, it is
     Vec3D m_Be;
     double m_He;
@@ -90,6 +95,10 @@ public:
     bool Reverse2PreviousCopy();  // reverse the edge to the value set at the time of MakeCopy()
     bool Copy_InteractionEnergy();            // Copies the key ellements into the old type
     bool Reverse_InteractionEnergy();            // Copies the key ellements into the old type
+    
+    void ConstantMesh_Copy();
+    void ReverseConstantMesh_Copy();
+    
     // this are old value of the key variables we need this for the copying
 private:
     triangle *m_OldT1;     //

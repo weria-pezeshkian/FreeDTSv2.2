@@ -230,7 +230,46 @@ void vertex::UpdateVoxel(Voxel<vertex> * pVoxel){
     m_pVoxel = pVoxel;
     return;
 }
+void vertex::ConstantMesh_Copy(){
 
+    m_OldpVoxel = m_pVoxel;
+
+    m_OldArea = m_Area;
+    m_OldNormal = m_Normal;
+    m_OldEnergy = m_Energy;
+    m_OldT_Local_2_Global = m_T_Local_2_Global;         //  Local to global transformation matrix
+    m_OldT_Global_2_Local = m_T_Global_2_Local;        //  global to local transformation matrix
+                      // length of the vertex
+    if(m_VertexType==1){
+        m_OldpEdgeLink = m_pEdgeLink;
+        m_OldpPrecedingEdgeLink = m_pPrecedingEdgeLink;
+        m_OldGeodesic_Curvature = m_Geodesic_Curvature;          // Edge Vertex Curvature
+        m_OldNormal_Curvature = m_Normal_Curvature;          // Edge Vertex Curvature
+        m_OldVLength = m_VLength;
+    }
+ 
+    return;
+}
+void vertex::ReverseConstantMesh_Copy(){
+    
+    m_pVoxel = m_OldpVoxel ;
+
+    m_Area = m_OldArea ;
+    m_Normal = m_OldNormal ;
+    m_Energy = m_OldEnergy ;
+    m_T_Local_2_Global = m_OldT_Local_2_Global ;         //  Local to global transformation matrix
+    m_T_Global_2_Local = m_OldT_Global_2_Local ;        //  global to local transformation matrix
+
+    if(m_VertexType==1){
+        m_pEdgeLink = m_OldpEdgeLink;
+        m_pPrecedingEdgeLink = m_OldpPrecedingEdgeLink;
+        m_Geodesic_Curvature = m_OldGeodesic_Curvature ;          // Edge Vertex Curvature
+        m_Normal_Curvature = m_OldNormal_Curvature ;          // Edge Vertex Curvature
+        m_VLength = m_OldVLength ;                       // length of the vertex
+    }
+
+    return;
+}
 bool vertex::SetCopy(){
     
     m_OldX = m_X;
@@ -251,12 +290,14 @@ bool vertex::SetCopy(){
     m_OldVLinkList = m_VLinkList;
     m_OldVNeighbourVertex = m_VNeighbourVertex;
     
-    m_OldpEdgeLink = m_pEdgeLink;
-    m_OldpPrecedingEdgeLink = m_pPrecedingEdgeLink;
+    if(m_VertexType==1){
+        m_OldpEdgeLink = m_pEdgeLink;
+        m_OldpPrecedingEdgeLink = m_pPrecedingEdgeLink;
+    }
     
     
     m_OldOwnInclusion = m_OwnInclusion;
-    if(m_OldOwnInclusion)
+    if(m_OwnInclusion)
         m_OldpInclusion = m_pInclusion;
     
     return true;
@@ -278,15 +319,18 @@ bool vertex::Reverse2PreviousCopy(){  // reverse the edge to the value set at th
     m_VLinkList = m_OldVLinkList ;
     m_VNeighbourVertex = m_OldVNeighbourVertex;
     
+    if(m_VertexType==1){
+        m_pEdgeLink = m_OldpEdgeLink;
+        m_pPrecedingEdgeLink = m_OldpPrecedingEdgeLink;
+    }
     
-    m_pEdgeLink = m_OldpEdgeLink;
-    m_pPrecedingEdgeLink = m_OldpPrecedingEdgeLink;
     m_Geodesic_Curvature = m_OldGeodesic_Curvature ;          // Edge Vertex Curvature
     m_Normal_Curvature = m_OldNormal_Curvature ;          // Edge Vertex Curvature
     m_VLength = m_OldVLength ;                       // length of the vertex
 
-    m_OldOwnInclusion =  m_OwnInclusion;
-    if(m_OwnInclusion)
+    m_OwnInclusion = m_OldOwnInclusion;
+    
+    if(m_OldOwnInclusion)
     m_pInclusion = m_OldpInclusion;
     
     return true;
