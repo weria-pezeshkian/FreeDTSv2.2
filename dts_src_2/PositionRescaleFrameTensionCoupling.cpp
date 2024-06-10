@@ -18,542 +18,446 @@ This class changes the box in x and y direction to minimize the energy. It is ca
 The way it works is based on the changing the box in x and y direction by a small size of dr by calling "MCMoveBoxChange" function.
 =================================================================================================================
 */
-PositionRescaleFrameTensionCoupling::PositionRescaleFrameTensionCoupling(int period, double sigma, State *pState){
-    m_SigmaP = sigma;
-    m_pState = pState;
-    m_Period = period;
+PositionRescaleFrameTensionCoupling::PositionRescaleFrameTensionCoupling(int period, double sigma, std::string direction, State *pState)  :
+        m_pState(pState),
+        m_pActiveV(pState->GetMesh()->GetActiveV()),
+        m_pActiveT(pState->GetMesh()->GetActiveT()),
+        m_pRightL(pState->GetMesh()->GetEdgeL()),
+        m_pEdgeL(pState->GetMesh()->GetRightL()),
+        m_Beta(pState->GetSimulation()->GetBeta()),
+        m_DBeta(pState->GetSimulation()->GetBeta()),
+        m_MinLength2(pState->GetSimulation()->GetMinL2()),
+        m_MaxLength2(pState->GetSimulation()->GetMaxL2()),
+        m_MinAngle(pState->GetSimulation()->GetMinAngle()),
+        m_Type (direction){
+            
+            m_SigmaP = sigma;
+            m_Period = period;
+            //-- convert the type string into the direction vector
+            SetDirection(m_Type);
 
 }
-PositionRescaleFrameTensionCoupling::~PositionRescaleFrameTensionCoupling()
-{
+PositionRescaleFrameTensionCoupling::~PositionRescaleFrameTensionCoupling() {
     
 }
-void PositionRescaleFrameTensionCoupling::Initialize()
-{
-    std::cout<<"---> the algorithm for box change involves applying PositionRescaleFrameTensionCoupling. \n";
+void PositionRescaleFrameTensionCoupling::Initialize() {
     
+    std::cout<<"---> the algorithm for box change involves applying: "<< GetDefaultReadName()<<" \n";
     m_pBox=(m_pState->GetMesh())->GetBox();
-   // m_pLmin2 = &(m_pState->m_MinVerticesDistanceSquare);
-   // m_pLmax2 = &(m_pState->m_MaxLinkLengthSquare);
-  //  m_pminAngle = &(m_pState->m_MinFaceAngle);
-   // m_Beta = m_pState->m_Beta;
 }
 bool PositionRescaleFrameTensionCoupling::ChangeBoxSize(int step){
     
 //---> if does not match the preiod, return false
     if(step%m_Period != 0)
         return false;
-    
-    double dx = 0;
-    double dy = 0;
-
-//---> find the size of box change; isotropic method
-    dx=1-2*(m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
-    dx = m_DR*dx;
-    dy = dx*((*m_pBox)(1))/(*m_pBox)(0);
-
-
-//---> check if we do the move, the distance will be normal
-    if(!VertexMoveIsFine(dx, dy, *m_pLmin2, *m_pLmax2)){
-        return false;
+    //--- first check if the voxel size is fine
+    double voxel_lx = m_pState->GetVoxelization()->GetXSideVoxel();
+    double voxel_ly = m_pState->GetVoxelization()->GetXSideVoxel();
+    double voxel_lz = m_pState->GetVoxelization()->GetXSideVoxel();
+    if(voxel_lx < 1.05 || voxel_ly < 1.05 || voxel_lz < 1.05){
+        m_pState->GetVoxelization()->UpdateVoxelSize(1.2, 1.2, 1.2);
+        m_pState->GetVoxelization()->Voxelize(m_pActiveV);
     }
     
-//---> check the angles
+//---> find the size of box change; isotropic method (here all the other methods can be performed)
+    double dx = 1 - 2 * (m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
+    dx *= m_DR;
+    double dy = dx*((*m_pBox)(1))/(*m_pBox)(0);
+    double dz = dx*((*m_pBox)(2))/(*m_pBox)(0);
     
-    
-    //const std::vector<inclusion *>& pAllInclusion = m_pState->GetMesh()->GetInclusion();
-
-    
-    
+    double lx = 1 + m_Direction(0)*dx/(*m_pBox)(0);
+    double ly = 1 + m_Direction(0)*dy/(*m_pBox)(1);
+    double lz = 1 + m_Direction(0)*dz/(*m_pBox)(2);
     double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
 
     
+    if(AnAtemptToChangeBox(lx, ly, lz, thermal)){
+        m_AcceptedMoves++;
+    }
+    m_NumberOfAttemptedMoves++;
+    
     return true;
 }
-bool PositionRescaleFrameTensionCoupling::VertexMoveIsFine(double dx,double dy, double mindist2, double maxdist2){
-    
-    
-    
-    return true;
-}
+bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double ly, double lz, double temp){
 
-
-
-/*
-bool PositionRescaleFrameTensionCoupling::MCMoveBoxChange(double dr, double * tot_Energy, double temp, int step, GenerateCNTCells *pGenCNT)
-{
-//==== some updates Aug. 2023
-//==========================
-    
-
-    
-
-
-
-
-
-    
-    if(CheckMinDistance()==false)
-        return false;
-    
-    if(CheckMaxLinkLength()==false)
-        return false;
-    
-
-    
-    // === when is coupled to Fixed global curvature; before performing the move we need to calculate the area and total curvature
-    // === before any move should be done
-    double DetaR = 0;
-    double DeltaA = 0;
-    if(m_pState->GetGlobalCurvature()->GetState()==true)
-    {
-        for (std::vector<vertex *>::iterator it = (m_pMESH->m_pActiveV).begin() ; it != (m_pMESH->m_pActiveV).end(); ++it)
-        {
-            std::vector<double> C=(*it)->GetCurvature();
-            double area = (*it)->GetArea();
-            DeltaA+=area;
-            DetaR+=(C.at(0)+C.at(1))*area;
-
-        }
-    }
-
-    
-    
-     // we do this before performing the move so that the force is correct
-     double dE_nematic_force = 0;
-     if((m_pState->m_pConstant_NematicForce)->m_F0!=0)
-     {
-        for (std::vector<vertex *>::iterator it = (m_pMESH->m_pActiveV).begin() ; it != (m_pMESH->m_pActiveV).end(); ++it)
-        {
-            double x_o = (*it)->GetVXPos();
-            double y_o = (*it)->GetVYPos();
-            double x_n = m_Lnox*x_o;
-            double y_n = m_Lnoy*y_o;
-            Vec3D dx(x_n-x_o,y_n-y_o,0);
-            dE_nematic_force+= (m_pState->m_pConstant_NematicForce)->Energy_of_Force(*it, dx);
-        }
-     }
-
-    
-    // by calling "PerformMove" now the move is performed:
-    // box changed; vertices, triangles and links are coppied and the vertices positions are updated (rescaled in x and y)
-    PerformMove();
-
-    if(CheckFaceAngle()==false)
-    {
-        RejectMove();
-        m_Move=false;
+//---> check if we do the move, the distance will be normal
+    if(!VertexMoveIsFine(lx, ly, lz)){
         return false;
     }
+    
+    //---> get the energies
+    double old_energy = m_pState->GetEnergyCalculator()->GetEnergy();
+    double new_energy = 0;
+    
+    // Obtain and sum the initial global variables that might change
+    double old_Tvolume = 0.0, old_Tarea = 0.0, old_Tcurvature = 0.0;
+    double new_Tvolume = 0.0, new_Tarea = 0.0, new_Tcurvature = 0.0;
+//--->
+    if(m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()){
 
-    // we updated the trinagle area and normal
-    for (std::vector<triangle *>::iterator it = (m_pMESH->m_pActiveT).begin() ; it != (m_pMESH->m_pActiveT).end(); ++it)
-            (*it)->UpdateNormal_Area(m_pBox);
-
-    // we updated the surface links normal and shape operator
-    for (std::vector<links *>::iterator it = (m_pMESH->m_pHL).begin() ; it != (m_pMESH->m_pHL).end(); ++it)
-        {
-            (*it)->UpdateNormal();
-            (*it)->UpdateShapeOperator(m_pBox);
-        }
-
-    // updating the edge links; they do not have a shape operator
-    for (std::vector<links *>::iterator it = (m_pMESH->m_pEdgeL).begin() ; it != (m_pMESH->m_pEdgeL).end(); ++it)
-    {
-            (*it)->UpdateEdgeVector(m_pBox);
+        old_Tvolume =  m_pState->GetVAHGlobalMeshProperties()->GetTotalVolume();
+        old_Tarea =  m_pState->GetVAHGlobalMeshProperties()->GetTotalArea();
+        old_Tcurvature =  m_pState->GetVAHGlobalMeshProperties()->GetTotalMeanCurvature();
     }
 
-    //== updating the surface curvature
-    for (std::vector<vertex *>::iterator it = (m_pMESH->m_pActiveV).begin() ; it != (m_pMESH->m_pActiveV).end(); ++it)
-    {
-        if((*it)->m_VertexType==0)
-        (m_pState->CurvatureCalculator())->SurfVertexCurvature(*it);
-        else if((*it)->m_VertexType==1)
-        (m_pState->CurvatureCalculator())->EdgeVertexCurvature(*it);
-        else
-        std::cout<<" error202--> vertex type is unknown "<<std::endl;
-    }
-    
-    //== this is for applying constant area which is not recomended and might be removed in future
-    double DE_totA = 0;
-    double newarea_FixedTotArea = 0;
-    double oldarea_FixedTotArea = 0;
-    if((m_pState->GetTotalAreaCoupling())->GetState()==true)
-    {
-        oldarea_FixedTotArea = (m_pState->GetTotalAreaCoupling())->GetTotalArea();
-        for (std::vector<triangle *>::iterator it = (m_pMESH->m_pActiveT).begin() ; it != (m_pMESH->m_pActiveT).end(); ++it)
-            newarea_FixedTotArea+=(*it)->GetArea();
-
-        DE_totA =(m_pState->GetTotalAreaCoupling())->CalculateEnergyChange(m_step,oldarea_FixedTotArea,newarea_FixedTotArea);
-    }
-    //=== previous might be removed in future
-    
-    // energy old and new
-    double DE=0;        // total energy change
-    double DEArea=0;    // energy contribuion from projected area change
-    
-    double oldEnergy = (*tot_Energy);
-    double newEnergy = m_pEnergyCalculator->TotalEnergy((m_pMESH->m_pSurfV), (m_pMESH->m_pHL));
-    newEnergy+= m_pEnergyCalculator->TotalEnergy((m_pMESH->m_pEdgeV), (m_pMESH->m_pEdgeL));
-    
-    DE= newEnergy-oldEnergy+DE_totA;
-
-    //=== energy change of constant projected area
-    DEArea = -m_SigmaP*(m_newLx*m_newLy-m_oldLx*m_oldLy);
-    //=== energy of changes in gloabal curvature due to CouplingtoFixedGlobalCurvature
-    //=== the value of DeltaA and DetaR were computed before now we subtract new area
-    double eG = 0;
-    if(m_pState->GetGlobalCurvature()->GetState()==true)
-    {
-        for (std::vector<vertex *>::iterator it = (m_pMESH->m_pActiveV).begin() ; it != (m_pMESH->m_pActiveV).end(); ++it)
-        {
-            std::vector<double> C=(*it)->GetCurvature();
-            double area = (*it)->GetArea();
-            DeltaA-=area;
-            DetaR-=(C.at(0)+C.at(1))*area;
-        }
-
-        eG = m_pState->GetGlobalCurvature()->CalculateEnergyChange(-DeltaA,-DetaR);
-    }
-    
-    
-     ///=== maybe in future
-     // harmonic ponettailas should not be done in x and y direction many problems appear so we assume this
-     //==============
-    if(m_pSPBTG->GetState()==true)
-    {
-     double harmonicde=0;
-
-        m_pSPBTG->CalculateEnergy(m_step);
-        double e1 = m_pSPBTG->GetEnergy();
-        for (std::vector<vertex *>::iterator it = m_ActiveV.begin() ; it != m_ActiveV.end(); ++it)
-        {
-            double x = (*it)->GetVXPos();
-            double y = (*it)->GetVYPos();
-            Vec3D dr(m_Lnox*x-x,m_Lnoy*y-y,0);
-            m_pSPBTG->MovingVertex((*it), dr);
-        }
-        m_pSPBTG->CalculateEnergy(m_step);
-        double e2 = m_pSPBTG->GetEnergy();
-        harmonicde = e2-e1;
-    }
-
-
-
-
-
-    double diff_energy = (DE+DEArea+eG);
-    int nv = (m_pMESH->m_pActiveV).size();
-    
-        //if(nv*log(AreaRatio)-m_Beta*diff_energy>log(temp) )
-        if(pow((AreaRatio),nv)*exp(-m_Beta*(diff_energy+dE_nematic_force))>temp )
-       {
-        if(m_pState->GetGlobalCurvature()->GetState()==true)
-            m_pState->GetGlobalCurvature()->UpdateEnergyChange(-DeltaA,-DetaR);
-         
-         (*tot_Energy)=(*tot_Energy)+DE;  // we only add DE because this is only elastic energy
-         (m_pState->m_pConstant_NematicForce)->m_ActiveEnergy+=dE_nematic_force;
-         // Update area for the constant area system
-         if((m_pState->GetTotalAreaCoupling())->GetState()==true)
-         (m_pState->GetTotalAreaCoupling())->UpdateArea(oldarea_FixedTotArea,newarea_FixedTotArea);
-
-         m_Move=true;
-           
-
-
-      }
-      else
-      {
-          RejectMove();
-          m_Move=false;
-
-
-      }//    if(pow((AreaRatio),nv)*exp(-m_Beta*diff_energy)>temp )
-    return m_Move;
-}
-    
-
-
-void PositionRescaleFrameTensionCoupling::CheckCNTSize()
-{
-
-    m_pAllCNT = m_pGenCNT->GetAllCNTCells();
-    Nfunction f;
-    CNTCell*  TemCNT=m_pAllCNT.at(0);
-    Vec3D cntlength=TemCNT->GetCNTSidemax()-TemCNT->GetCNTSidemin();
-
-    if(cntlength(1)<1.8 || cntlength(0)<1.8)
-    {
-        m_UpdateCNT=false;
-        m_Move=false;
-        std::string sms=" CNT cell is small. C_Y= "+f.Int_to_String(cntlength(1))+" and C_X= "+f.Int_to_String(cntlength(0))+".  it is re-generated at step "+f.Int_to_String(m_step);
-        f.Write_One_LogMessage(sms);
+    //---> for now, only active nematic force: ForceonVerticesfromInclusions
+    // if we do this here, the force is from inital configuration
+    // while if we do it after the move, it will be from final configurations
+    double dE_force_from_inc = 0;
+    for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it){
+        double x = (*it)->GetVXPos();
+        double y = (*it)->GetVYPos();
+        double z = (*it)->GetVYPos();
+        double dx = x * (lx - 1);
+        double dy = y * (ly - 1);
+        double dz = z * (lz - 1);
         
+        Vec3D DX(dx,dy, dz);
+        dE_force_from_inc  += m_pState->GetForceonVerticesfromInclusions()->Energy_of_Force( *it, DX);
     }
-    else
-    {
-        m_UpdateCNT=true;
-    }
-
-}
-double PositionRescaleFrameTensionCoupling::DistanceSquardBetweenTwoVertices(vertex * v1,vertex * v2,Vec3D Box)
-{
-    double x2=v2->GetVXPos();
-    double y2=v2->GetVYPos();
-    double z2=v2->GetVZPos();
-    double x1=v1->GetVXPos();
-    double y1=v1->GetVYPos();
-    double z1=v1->GetVZPos();
-	x2=m_Lnox*x2;
-	x1=m_Lnox*x1;
-	y2=m_Lnoy*y2;
-	y1=m_Lnoy*y1;
-
-
-    double dx=x2-x1;
-    double dy=y2-y1;
-    double dz=z2-z1;
     
-    
-    if(fabs(dx)>Box(0)/2.0)
-    {
-        if(dx<0)
-            dx=Box(0)+dx;
-        else if(dx>0)
-            dx=dx-Box(0);
+    (*m_pBox)(0) *= lx;
+    (*m_pBox)(1) *= ly;
+    (*m_pBox)(2) *= lz;
+    for (std::vector<vertex*>::iterator it =  m_pActiveV.begin(); it != m_pActiveV.end(); ++it) {
+        (*it)->ConstantMesh_Copy();
+        (*it)->ScalePos(lx,ly,lz);
     }
-    if(fabs(dy)>Box(1)/2.0)
-    {
-        if(dy<0)
-            dy=Box(1)+dy;
-        else if(dy>0)
-            dy=dy-Box(1);
+    //-- Update geometry
+    for (std::vector<triangle *>::iterator it = m_pActiveT.begin() ; it != m_pActiveT.end(); ++it){
+        (*it)->ConstantMesh_Copy();
+        (*it)->UpdateNormal_Area(m_pBox);
     }
-    if(fabs(dz)>Box(2)/2.0)
-    {
-        if(dz<0)
-            dz=Box(2)+dz;
-        else if(dz>0)
-            dz=dz-Box(2);
-    }
-    double l2=dx*dx+dy*dy+dz*dz;
-    return l2;
-}
 
-bool PositionRescaleFrameTensionCoupling::CheckFaceAngle()
-{
-   for (std::vector<links *>::iterator it = (m_pMESH->m_pHL).begin() ; it != (m_pMESH->m_pHL).end(); ++it)
-    {
-        if (CheckFaceAngle((*it))==false)
-        {
-            m_Move=false;
+    if(!CheckFaces()){
+        for (std::vector<vertex*>::iterator it =  m_pActiveV.begin(); it != m_pActiveV.end(); ++it) {
+            (*it)->ScalePos(1.0/lx,1.0/ly,1.0/lz);
+        }
+        for (std::vector<triangle *>::iterator it = m_pActiveT.begin() ; it != m_pActiveT.end(); ++it){
+            (*it)->ReverseConstantMesh_Copy();
+        }
+        return false;
+    }
+    //--- lets now do the move
+    for (std::vector<links *>::iterator it = m_pRightL.begin() ; it != m_pRightL.end(); ++it){
+        
+        (*it)->ConstantMesh_Copy();
+        (*it)->UpdateNormal();
+        (*it)->UpdateShapeOperator(m_pBox);
+    }
+    for (std::vector<links *>::iterator it = m_pEdgeL.begin() ; it != m_pEdgeL.end(); ++it){
+        
+        (*it)->ConstantMesh_Copy();
+        (*it)->UpdateNormal();
+        (*it)->UpdateShapeOperator(m_pBox);
+    }
+    for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it){
+        (*it)->ConstantMesh_Copy();
+        (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(*it);
+    }
+//--- calculate new energies
+    for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it) {
+        new_energy += (m_pState->GetEnergyCalculator())->SingleVertexEnergy(*it);
+    }
+    for (std::vector<links *>::iterator it = m_pRightL.begin() ; it != m_pRightL.end(); ++it) {
+        new_energy += (m_pState->GetEnergyCalculator())->TwoInclusionsInteractionEnergy(*it);
+    }
+    for (std::vector<links *>::iterator it = m_pEdgeL.begin() ; it != m_pEdgeL.end(); ++it) {
+        new_energy += (m_pState->GetEnergyCalculator())->TwoInclusionsInteractionEnergy(*it);
+    }
+    
+    //-- more to energies
+    //---> get energy for ApplyConstraintBetweenGroups
+    double dE_Cgroup = m_pState->GetApplyConstraintBetweenGroups()->CalculateEnergyChange(lx, ly, lz);
+
+
+//---> new global variables
+    if(m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()){
+        std::cout<<" error-->this function has not been completed \n";
+        m_pState->GetVAHGlobalMeshProperties()->CalculateBoxRescalingToGlobalVariables(lx, ly, lz, new_Tvolume, new_Tarea, new_Tcurvature);
+    }
+    
+    //---> energy change of global variables
+    double dE_volume =  m_pState->GetVolumeCoupling()->GetEnergyChange(old_Tarea, old_Tvolume, new_Tarea, new_Tvolume);
+    double dE_t_area = m_pState->GetTotalAreaCoupling()->CalculateEnergyChange(old_Tarea, new_Tarea);
+    double dE_g_curv = m_pState->GetGlobalCurvature()->CalculateEnergyChange(new_Tarea-old_Tarea, new_Tcurvature-old_Tcurvature);
+    
+    //--> only elatsic energy
+    double diff_energy = new_energy - old_energy;
+    //--> sum of all the energies
+    double tot_diff_energy = diff_energy + dE_Cgroup + dE_force_from_inc + dE_volume + dE_t_area + dE_g_curv ;
+    
+    //---> accept or reject the move
+    if(tot_diff_energy <= 0 || exp(-m_Beta * tot_diff_energy + m_DBeta) > temp ) {
+        // move is accepted
+        (m_pState->GetEnergyCalculator())->AddToTotalEnergy(diff_energy);
+        
+        //---> ApplyConstraintBetweenGroups
+         m_pState->GetApplyConstraintBetweenGroups()->AcceptMove();
+        
+        //---> global variables
+        if(m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()){
+             m_pState->GetVolumeCoupling()->UpdateArea_Volume(old_Tarea, old_Tvolume, new_Tarea, new_Tvolume);
+            m_pState->GetTotalAreaCoupling()->UpdateTotalArea(old_Tarea, new_Tarea);
+            m_pState->GetGlobalCurvature()->UpdateEnergyChange(new_Tarea-old_Tarea, new_Tcurvature-old_Tcurvature);
+        }
+        return true;
+    }
+    else {
+//---> reverse the changes that has been made to the system
+        //---> reverse the triangles
+        for (std::vector<triangle *>::iterator it = m_pActiveT.begin() ; it != m_pActiveT.end(); ++it){
+            (*it)->ReverseConstantMesh_Copy();
+        }
+        for (std::vector<links *>::iterator it = m_pRightL.begin() ; it != m_pRightL.end(); ++it){
+            (*it)->ReverseConstantMesh_Copy();
+        }
+        for (std::vector<links *>::iterator it = m_pEdgeL.begin() ; it != m_pEdgeL.end(); ++it){
+            (*it)->ReverseConstantMesh_Copy();
+        }
+        for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it){
+            (*it)->ReverseConstantMesh_Copy();
+        }
+        return false;
+     }
+    
+
+    
+    return true;
+}
+bool PositionRescaleFrameTensionCoupling::VertexMoveIsFine(double lx,double ly, double lz){
+    
+    if(!CheckLinkLength(lx, ly, lz)){
+        return false;
+    }
+    
+    //--- if the Stretching is positive, so the distances should be fine
+    if(lx>=1 && ly>=1 && lz>=1)
+        return true;
+    
+    //--- checking the distance between each pair
+    Voxel<vertex>  ****voxels = m_pState->GetVoxelization()->GetAllVoxel();
+    int Nx = m_pState->GetVoxelization()->GetXVoxelNumber();
+    int Ny = m_pState->GetVoxelization()->GetYVoxelNumber();
+    int Nz = m_pState->GetVoxelization()->GetZVoxelNumber();
+
+    for (int i = 0; i < Nx; ++i) {
+    for (int j = 0; j < Ny; ++j) {
+    for (int k = 0; k < Nz; ++k) {
+        
+        std::vector<vertex*> voxel_ver = (voxels[i][j][k])->GetContentObjects();
+            
+        //--- check distances within the same voxel
+        for (std::vector<vertex*>::iterator it1 = voxel_ver.begin(); it1 != voxel_ver.end(); ++it1) {
+            for (std::vector<vertex*>::iterator it2 = it1 + 1; it2 != voxel_ver.end(); ++it2) {
+                    double l2 = StretchedDistanceSquardBetweenTwoVertices(*it1, *it2, lx, ly, lz);
+                    if (l2 < m_MinLength2) {
+                        return false;
+                    }
+                }
+        }
+        // check distances of vertex from neighbouring voxels
+            for (int n = 0; n < 2; ++n)
+            for (int m = 0; m < 2; ++m)
+            for (int s = 0; s < 2; ++s)
+              if(n != 0 || m != 0 || s!=0) {
+                    std::vector<vertex*> voxel_ver2 = (voxels[i][j][k])->GetANeighbourCell(n,m,s)->GetContentObjects();
+
+                    for (std::vector<vertex *>::iterator it1 = voxel_ver.begin() ; it1 != voxel_ver.end(); ++it1) {
+                        for (std::vector<vertex *>::iterator it2 = voxel_ver2.begin() ; it2 != voxel_ver2.end(); ++it2) {
+                            if(it1 != it2){
+                                double l2 = StretchedDistanceSquardBetweenTwoVertices(*it1, *it2, lx, ly, lz);
+                                if (l2 < m_MinLength2) {
+                                    return false;
+                                }
+                        }//  if(it1 != it2){
+                    }
+                }
+            }// for (int s = 0; s < 2; ++s) {
+    }
+    }
+    }
+    
+    return true;
+}
+bool PositionRescaleFrameTensionCoupling::CheckLinkLength(double lx,double ly, double lz){
+    /**
+     * Checks if the length of links in the mesh is within acceptable bounds after rescaling.
+     *
+     * This function iterates through all links in the edge and right link lists of the mesh,
+     * calculating their squared distances after rescaling. If any link's length squared is
+     * outside the acceptable range, the function returns false.
+     *
+     * @param lx Scaling factor for the x-axis.
+     * @param ly Scaling factor for the y-axis.
+     * @param lz Scaling factor for the z-axis.
+     * @return True if all links are within the acceptable length range, false otherwise.
+     */
+    
+    for (std::vector<links *>::iterator it = m_pEdgeL.begin(); it != m_pEdgeL.end(); ++it) {
+        double l2 = StretchedDistanceSquardBetweenTwoVertices((*it)->GetV1(), (*it)->GetV2(), lx, ly, lz);
+        if (l2 < m_MinLength2 || l2 > m_MaxLength2) {
             return false;
         }
     }
-    
+
+    for (std::vector<links *>::iterator it = m_pRightL.begin(); it != m_pRightL.end(); ++it) {
+        double l2 = StretchedDistanceSquardBetweenTwoVertices((*it)->GetV1(), (*it)->GetV2(), lx, ly, lz);
+        if (l2 < m_MinLength2 || l2 > m_MaxLength2) {
+            return false;
+        }
+    }
+
     return true;
 }
-
-void PositionRescaleFrameTensionCoupling::PerformMove()
-{
-//=== copy the objects to use them in case the move got rejected
-    m_ActiveV.clear();
-    m_SurfL.clear();
-    m_MSurfL.clear();
-    m_ActiveT.clear();
-    m_EdgeL.clear();
+double PositionRescaleFrameTensionCoupling::StretchedDistanceSquardBetweenTwoVertices(vertex * v1,vertex * v2, double lx, double ly, double lz){
+    /**
+     * Calculates the squared stretched distance between two vertices.
+     *
+     * This function computes the squared distance between two vertices (v1 and v2)
+     * after applying a stretching factor along each axis (lx, ly, lz). The stretching
+     * factors allow for scaling the distance calculation to account for non-uniform
+     * scaling of the simulation box dimensions. The function also ensures that the
+     * distance respects periodic boundary conditions, wrapping around the box if
+     * necessary.
+     *
+     * @param v1 Pointer to the first vertex.
+     * @param v2 Pointer to the second vertex.
+     * @param lx Scaling factor for the x-axis.
+     * @param ly Scaling factor for the y-axis.
+     * @param lz Scaling factor for the z-axis.
+     * @return The squared distance between the two vertices after scaling and
+     *         considering periodic boundary conditions.
+     */
+    // Calculate the initial distance components between the two vertices
+    double dx = v2->GetVXPos() - v1->GetVXPos();
+    double dy = v2->GetVYPos() - v1->GetVYPos();
+    double dz = v2->GetVZPos() - v1->GetVZPos();
     
-    for (std::vector<links *>::iterator it = (m_pMESH->m_pHL).begin() ; it != (m_pMESH->m_pHL).end(); ++it)
-    {
-        m_SurfL.push_back(*(*it));
+    // Apply the stretching factors to each component
+    dx *= lx;
+    dy *= ly;
+    dz *= lz;
 
-    }
-    for (std::vector<links *>::iterator it = (m_pMESH->m_pMHL).begin() ; it != (m_pMESH->m_pMHL).end(); ++it)
-    {
-        m_MSurfL.push_back(*(*it));
-    }
-    for (std::vector<links *>::iterator it = (m_pMESH->m_pEdgeL).begin() ; it != (m_pMESH->m_pEdgeL).end(); ++it)
-    {
-        m_EdgeL.push_back(*(*it));
-    }
+    // Calculate the dimensions of the scaled simulation box
+    double Lx = lx * (*m_pBox)(0);
+    double Ly = ly * (*m_pBox)(1);
+    double Lz = lz * (*m_pBox)(2);
 
-    for (std::vector<triangle *>::iterator it = (m_pMESH->m_pActiveT).begin() ; it != (m_pMESH->m_pActiveT).end(); ++it)
-    {
-        m_ActiveT.push_back(*(*it));
+    // Apply periodic boundary conditions for the x-axis
+    if(fabs(dx) > Lx / 2.0) {
+        if(dx < 0)
+            dx = Lx + dx;
+        else
+            dx = dx - Lx;
     }
-
-    for (std::vector<vertex *>::iterator it = (m_pMESH->m_pActiveV).begin() ; it != (m_pMESH->m_pActiveV).end(); ++it)
-    {
-        m_ActiveV.push_back(*(*it));
+    // Apply periodic boundary conditions for the y-axis
+    if(fabs(dy) > Ly / 2.0) {
+        if(dy < 0)
+            dy = Ly + dy;
+        else
+            dy = dy - Ly;
     }
-
-    //=== perform the move: first update the box and then update the positions; geometric varialbes are updated elsewhere
-        (*m_pBox)(0)=m_newLx;
-        (*m_pBox)(1)=m_newLy;
-
-        //=== update the position of all vertices now: the move has been performed
-        for (std::vector<vertex *>::iterator it = (m_pMESH->m_pActiveV).begin() ; it != (m_pMESH->m_pActiveV).end(); ++it)
-        {
-            double x = (*it)->GetVXPos();
-            (*it)->UpdateVXPos(m_Lnox*x);
-            double y = (*it)->GetVYPos();
-            (*it)->UpdateVYPos(m_Lnoy*y);
-            
-        }
+    // Apply periodic boundary conditions for the z-axis
+    if(fabs(dz) > Lz / 2.0) {
+        if(dz < 0)
+            dz = Lz + dz;
+        else
+            dz = dz - Lz;
+    }
+    // Return the squared distance after scaling and applying periodic boundary conditions
+    return dx * dx + dy * dy + dz * dz;
 }
+bool PositionRescaleFrameTensionCoupling::CheckFaceAngleOfOneLink(links* p_edge) {
+    
+    // Function to check if the angle between the normal vectors of the faces sharing the given edge
+    // is above a minimum threshold defined by m_MinAngle.
+    
+    // Retrieve the normal vector of the triangle associated with the edge.
+    Vec3D n1 = p_edge->GetTriangle()->GetNormalVector();
 
-void PositionRescaleFrameTensionCoupling::AcceptMove()
-{
-    // we need to resize the cnt cells;
-    for (std::vector<CNTCell *>::iterator it = m_pAllCNT.begin() ; it != m_pAllCNT.end(); ++it)
-    {
-        Vec3D side1=(*it)->GetCNTSidemax();
-        Vec3D side2=(*it)->GetCNTSidemin();
-        side1(0)=side1(0)*m_Lnox;
-        side1(1)=side1(1)*m_Lnoy;
-        side2(0)=side2(0)*m_Lnox;
-        side2(1)=side2(1)*m_Lnoy;
-        (*it)->UpdateCNTSidemax(side1);
-        (*it)->UpdateCNTSidemin(side2);
-        
-    }
+    // Retrieve the normal vector of the triangle associated with the mirror edge.
+    Vec3D n2 = p_edge->GetMirrorLink()->GetTriangle()->GetNormalVector();
 
-}
-
-void PositionRescaleFrameTensionCoupling::RejectMove()
-{
-    //=== return the box to its orginal position
-    (*m_pBox)(0)=(*m_pBox)(0)-m_drx;
-    (*m_pBox)(1)=(*m_pBox)(1)-m_dry;
-	
-    //=== all the vertices also get updated to what they were
-        int i=0;
-        for (std::vector<vertex *>::iterator it = (m_pMESH->m_pActiveV).begin() ; it != (m_pMESH->m_pActiveV).end(); ++it)
-        {
-                *(*it)=m_ActiveV[i];
-                i++;
-        }
-    //=== all the surf links and their mirros
-        i=0;
-        for (std::vector<links *>::iterator it = (m_pMESH->m_pHL).begin() ; it != (m_pMESH->m_pHL).end(); ++it)
-        {
-            *(*it)=m_SurfL[i];
-            i++;
-        }
-        i=0;
-        for (std::vector<links *>::iterator it = (m_pMESH->m_pMHL).begin() ; it != (m_pMESH->m_pMHL).end(); ++it)
-        {
-            *(*it)=m_MSurfL[i];
-            i++;
-        }
-    //=== all the edge links
-
-        i=0;
-        for (std::vector<links *>::iterator it = (m_pMESH->m_pEdgeL).begin() ; it != (m_pMESH->m_pEdgeL).end(); ++it)
-        {
-            *(*it)=m_EdgeL[i];
-            i++;
-        }
-    //=== all the triangles
-        i=0;
-        for (std::vector<triangle *>::iterator it = (m_pMESH->m_pActiveT).begin() ; it != (m_pMESH->m_pActiveT).end(); ++it)
-        {
-            *(*it)=m_ActiveT[i];
-            i++;
-        }
-}
-
-bool   PositionRescaleFrameTensionCoupling::CheckFaceAngle(links * l)
-{
-
-    Vec3D n=(l->GetTriangle())->GetNormalVector();
-    Vec3D n3=((l->GetMirrorLink())->GetTriangle())->GetNormalVector();
-
-    if(n.dot(n,n3)<(*m_pminAngle))
+    // Check if the dot product of the two normal vectors is less than the minimum allowed angle.
+    // If it is, return false indicating that the face angle condition is not satisfied.
+    if (n1.dot(n1, n2) < m_MinAngle) {
         return false;
+    }
 
+    // If the angle condition is satisfied, return true.
     return true;
 }
 
-
-bool PositionRescaleFrameTensionCoupling::CheckMinDistance()
-{
-    // Note: Function "DistanceSquardBetweenTwoVertices" uses rescaled distance so this somehow reperasent after move; yet the move has not been done
-    // This could also be more optimised, we are using CNT cells maybe just direct commparation works
-    Vec3D Box;
-    Box(0)=m_newLx;
-    Box(1)=m_newLy;
-    Box(2)=(*m_pBox)(2);
-
+bool PositionRescaleFrameTensionCoupling::CheckFaces() {
+    // Function to check if the angle between the faces of all links in the m_pRightL list
+    // satisfies the minimum angle condition.
     
-    for (std::vector<CNTCell *>::iterator it = m_pAllCNT.begin() ; it != m_pAllCNT.end(); ++it)
-    {
-        std::vector <vertex *> pver=(*it)->GetVertexList();
-        for (int i=0;i<pver.size();i++)
-            for (int j=i+1;j<pver.size();j++)
-            {
-                double l2=DistanceSquardBetweenTwoVertices(pver[i],pver[j],Box);
-                if(l2<(*m_pLmin2))
-                    return false;
-            }
-
-        std::vector <CNTCell *> Nib=(*it)->GetVNeighbourCNTCell();
-        for (std::vector<CNTCell *>::iterator it2 = Nib.begin() ; it2 != Nib.end(); ++it2)
-        {
-            std::vector <vertex *> pverN=(*it2)->GetVertexList();
-            
-            for (std::vector<vertex *>::iterator itv1 = pver.begin() ; itv1 != pver.end(); ++itv1)
-            for (std::vector<vertex *>::iterator itv2 = pverN.begin() ; itv2 != pverN.end(); ++itv2)
-            {
-                    
-                    double l2=DistanceSquardBetweenTwoVertices(*itv1,*itv2,Box);
-                    if(l2<(*m_pLmin2))
-                        return false;
-            }
-            
+    // Iterate through all links in the m_pRightL vector.
+    for (std::vector<links*>::iterator it = m_pRightL.begin(); it != m_pRightL.end(); ++it) {
+        // For each link, check if the face angle condition is satisfied using CheckFaceAngleOfOneLink function.
+        // If any link does not satisfy the condition, return false.
+        if (!CheckFaceAngleOfOneLink(*it)) {
+            return false;
         }
     }
 
-return true;
-}
-
-bool PositionRescaleFrameTensionCoupling::CheckMaxLinkLength()
-{
-    Vec3D Box;
-    Box(0)=m_newLx;
-    Box(1)=m_newLy;
-    Box(2)=(*m_pBox)(2);
-
-    for (std::vector<links *>::iterator it = (m_pMESH->m_pHL).begin() ; it != (m_pMESH->m_pHL).end(); ++it)
-    {
-        vertex *v1= (*it)->GetV1();
-        vertex *v2= (*it)->GetV2();
-                    double l2=DistanceSquardBetweenTwoVertices(v1,v2,Box);
-                    if(l2>(*m_pLmax2))
-                    return false;
-    }
-    for (std::vector<links *>::iterator it = (m_pMESH->m_pEdgeL).begin() ; it != (m_pMESH->m_pEdgeL).end(); ++it)
-    {
-
-        vertex *v1= (*it)->GetV1();
-        vertex *v2= (*it)->GetV2();
-
-                    double l2=DistanceSquardBetweenTwoVertices(v1,v2,Box);
-                    if(l2>(*m_pLmax2))
-                    return false;
-    }
+    // If all links satisfy the face angle condition, return true.
     return true;
 }
+void PositionRescaleFrameTensionCoupling::SetDirection(std::string direction){
+    
+    if(direction == "XYZ"){
+        m_Direction(0) = 1;
+        m_Direction(1) = 1;
+        m_Direction(2) = 1;
 
-*/
+    }
+    else if(direction == "XY"){
+        m_Direction(0) = 1;
+        m_Direction(1) = 1;
+        m_Direction(2) = 0;
+
+    }
+    else if(direction == "XZ"){
+        m_Direction(0) = 1;
+        m_Direction(1) = 0;
+        m_Direction(2) = 1;
+
+    }
+    else if(direction == "YZ"){
+        m_Direction(0) = 0;
+        m_Direction(1) = 1;
+        m_Direction(2) = 1;
+
+    }
+    else if(direction == "X"){
+        m_Direction(0) = 1;
+        m_Direction(1) = 0;
+        m_Direction(2) = 0;
+    }
+    else if(direction == "Y"){
+        m_Direction(0) = 0;
+        m_Direction(1) = 1;
+        m_Direction(2) = 0;
+    }
+    else if(direction == "Z"){
+        m_Direction(0) = 0;
+        m_Direction(1) = 0;
+        m_Direction(2) = 1;
+    }
+    else{
+        std::cout<<"---> error: direction of the box change is unknown \n";
+    }
+    
+    return;
+}
 std::string PositionRescaleFrameTensionCoupling::CurrentState(){
     
     std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+    state = state +" "+ Nfunction::D2S(m_Period)+" "+Nfunction::D2S(m_SigmaP)+" "+  m_Type;
     return state;
 }
-
-
-
 
 
 

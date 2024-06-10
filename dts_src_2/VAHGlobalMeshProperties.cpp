@@ -86,3 +86,11 @@ void VAHGlobalMeshProperties::CalculateALinkTrianglesContributionToGlobalVariabl
 
     return;
 }
+void VAHGlobalMeshProperties::CalculateBoxRescalingToGlobalVariables(double lx, double ly, double lz, double& vol, double& area, double& curvature){
+    
+    vol = 0;
+    area = 0;
+    curvature = 0;
+    
+    return;
+}

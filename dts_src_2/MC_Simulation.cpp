@@ -75,7 +75,7 @@ for(int step = GetInitialStep(); step <= GetFinalStep(); step++){
 
 //----> Run the supplementary integrators
        //--- update the box side
-       //m_pState->GetDynamicBox()->MCMoveBoxChange(); // we may need the final step as well to check if the update of move size should be done
+         m_pState->GetDynamicBox()->ChangeBoxSize(step); // we may need the final step as well to check if the update of move size should be done
        //--- update the mesh topology
        //m_pState->GetDynamicTopology()->MCMove();
         //--- update edge of mesh open edge

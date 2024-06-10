@@ -18,8 +18,9 @@ public:
     
     bool Initialize();
     double CalculateEnergyChange(vertex* p_vertex, Vec3D Dx);
+    double CalculateEnergyChange(double lx, double ly, double z);
     void AcceptMove();
-    
+
     inline  std::string GetDerivedDefaultReadName() {return "HarmonicPotentialBetweenTwoGroups";}
     inline static std::string GetDefaultReadName() {return "HarmonicPotentialBetweenTwoGroups";}
     std::string CurrentState();

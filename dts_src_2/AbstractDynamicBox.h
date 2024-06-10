@@ -51,7 +51,8 @@ public:
         
     }
 
-    inline  std::string GetDerivedDefaultReadName()  {return "ConstantBox";}
+    inline  std::string GetDerivedDefaultReadName()  {return "No";}
+    inline  static std::string GetDefaultReadName()  {return "No";}
 
     void Initialize(){
         return;

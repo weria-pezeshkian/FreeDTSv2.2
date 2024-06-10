@@ -123,6 +123,25 @@ double HarmonicPotentialBetweenTwoGroups::CalculateEnergyChange(vertex* p_vertex
     
     return m_DE;
 }
+double HarmonicPotentialBetweenTwoGroups::CalculateEnergyChange(double lx, double ly, double lz) {
+
+    m_T_Group1COG(0) = m_Group1COG(0)*(lx);
+    m_T_Group1COG(1) = m_Group1COG(1)*(ly);
+    m_T_Group1COG(2) = m_Group1COG(2)*(lz);
+
+    m_T_Group2COG(0) = m_Group2COG(0)*(lx);
+    m_T_Group2COG(1) = m_Group2COG(1)*(ly);
+    m_T_Group2COG(2) = m_Group2COG(2)*(lz);
+    
+    if(!DistanceCheck()){
+        exit(EXIT_FAILURE);
+    }
+    
+    double dist = m_Direction.dot(m_Direction,m_T_Group2COG - m_T_Group1COG);
+    m_DE = m_K*(dist-m_L0)*(dist-m_L0) - m_Energy;
+    
+    return m_DE;
+}
 void HarmonicPotentialBetweenTwoGroups::AcceptMove()
 {
     m_Group1COG = m_T_Group1COG;

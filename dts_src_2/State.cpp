@@ -426,6 +426,31 @@ while (input >> firstword) {
             }
             getline(input,rest);
         }
+// dynamic box
+        else if(firstword == AbstractDynamicBox::GetBaseDefaultReadName()){
+            int period = 0;
+            double force = 0;
+            std::string direction;
+            input >> str >> type ;
+
+            if (type == PositionRescaleFrameTensionCoupling::GetDefaultReadName()) {
+                    
+                input >> period >> force >> direction;
+                m_pDynamicBox = new PositionRescaleFrameTensionCoupling(period, force, direction, this);
+            }
+            else if(type == "No") {
+                    
+            }
+            else{
+                std::cout<<"--> error: unknown dynamic box method: "<<type<<std::endl;
+                m_NumberOfErrors++;
+                return false;
+
+            }
+            // Consume remaining input line
+            getline(input, rest);
+        }
+// end dynamic box
 //ConstraintBetweenGroups
         else if(firstword == "ConstraintBetweenGroups")
         {
@@ -508,22 +533,6 @@ while (input >> firstword) {
                 std::cout<<" unknown ForceFromInclusions method "<<std::endl;
             }
             getline(input,rest);
-        }
-        else if(firstword == AbstractDynamicBox::GetBaseDefaultReadName())
-        {
-            
-            int period = 0;
-            double force = 0;
-
-            input >> str >> type ;
-
-            if (type == PositionRescaleFrameTensionCoupling::GetDefaultReadName()) {
-                
-                input >> period >> force;
-                m_pDynamicBox = new PositionRescaleFrameTensionCoupling(period, force, this);
-            }
-            // Consume remaining input line
-            getline(input, rest);
         }
         else if(firstword == "Dynamic_Topology")
         {

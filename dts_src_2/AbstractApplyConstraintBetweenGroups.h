@@ -26,6 +26,7 @@ public:
     }
     virtual bool Initialize() = 0;
     virtual double CalculateEnergyChange(vertex* p_vertex, Vec3D Dx) = 0;
+    virtual double CalculateEnergyChange(double lx, double ly, double z) = 0;
     virtual void AcceptMove() = 0;
 
     virtual std::string GetDerivedDefaultReadName() = 0;
@@ -56,8 +57,13 @@ public:
     double CalculateEnergyChange(vertex* p_vertex, Vec3D Dx) {
         return 0.0;
     }
-
+    double CalculateEnergyChange(double lx, double ly, double z){
+        return 0.0;
+    }
     void AcceptMove() {
+        // No action needed for NoConstraint
+    }
+    void AcceptMove(double lx, double ly, double z){
         // No action needed for NoConstraint
     }
 

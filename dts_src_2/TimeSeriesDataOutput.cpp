@@ -46,7 +46,7 @@ and false if the periodic condition is not met or if there is an error writing t
     m_TimeSeriesFile<<step<<"   "<<m_pState->GetEnergyCalculator()->GetEnergy()<<"   ";
 
 //--->write box side length
-    if(m_pState->GetDynamicBox()->GetDerivedDefaultReadName()!= "ConstantBox" ){
+    if(m_pState->GetDynamicBox()->GetDerivedDefaultReadName()!= NoBoxChange::GetDefaultReadName() ){
         m_TimeSeriesFile<<(*(m_pState->GetMesh()->GetBox()))(0)<<"  ";
         m_TimeSeriesFile<<(*(m_pState->GetMesh()->GetBox()))(1)<<"  ";
         m_TimeSeriesFile<<(*(m_pState->GetMesh()->GetBox()))(2)<<"  ";
@@ -93,7 +93,7 @@ bool TimeSeriesDataOutput::OpenFile(bool clearfile) {
         }
         // Write the header if it's not a restart
         m_TimeSeriesFile << " ## mcstep  energy ";
-        if (m_pState->GetDynamicBox()->GetDerivedDefaultReadName() != "ConstantBox") {
+        if (m_pState->GetDynamicBox()->GetDerivedDefaultReadName() != NoBoxChange::GetDefaultReadName()) {
             m_TimeSeriesFile << " Lx  Ly  Lz ";
         }
         if (m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()) {

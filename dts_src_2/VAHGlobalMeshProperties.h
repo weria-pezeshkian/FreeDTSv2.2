@@ -38,6 +38,7 @@ public:
     // Public methods for calculating contributions to global variables
     void CalculateAVertexRingContributionToGlobalVariables(vertex* p_vertex, double& vol, double& area, double& curvature);
     void CalculateALinkTrianglesContributionToGlobalVariables(links* p_link, double& vol, double& area, double& curvature);
+    void CalculateBoxRescalingToGlobalVariables(double lx, double ly, double lz, double& vol, double& area, double& curvature);
     void Initialize(State* pState);
 
     // Method to update the calculation status of global variables

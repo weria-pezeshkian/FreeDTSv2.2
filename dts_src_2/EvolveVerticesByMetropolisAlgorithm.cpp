@@ -131,6 +131,10 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
         m_pState->GetVAHGlobalMeshProperties()->CalculateAVertexRingContributionToGlobalVariables(pvertex, old_Tvolume, old_Tarea, old_Tcurvature);
     }
 
+    //---> for now, only active nematic force: ForceonVerticesfromInclusions
+    Vec3D Dx(dx,dy,dz);
+    double dE_force_from_inc  = m_pState->GetForceonVerticesfromInclusions()->Energy_of_Force(pvertex, Dx);
+    
 //----> Move the vertex;
         pvertex->SetCopy();
         pvertex->PositionPlus(dx,dy,dz);
@@ -181,11 +185,9 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
         new_energy += (m_pState->GetEnergyCalculator())->TwoInclusionsInteractionEnergy(*it);
     }
     //---> get energy for ApplyConstraintBetweenGroups
-    Vec3D Dx(dx,dy,dz);
     double dE_Cgroup = m_pState->GetApplyConstraintBetweenGroups()->CalculateEnergyChange(pvertex, Dx);
     
-    //---> for now, only active nematic force: ForceonVerticesfromInclusions
-    double dE_force_from_inc  = m_pState->GetForceonVerticesfromInclusions()->Energy_of_Force(pvertex, Dx);
+ 
     
 //---> new global variables
     if(m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()){
@@ -218,6 +220,7 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
             m_pState->GetTotalAreaCoupling()->UpdateTotalArea(old_Tarea, new_Tarea);
             m_pState->GetGlobalCurvature()->UpdateEnergyChange(new_Tarea-old_Tarea, new_Tcurvature-old_Tcurvature);
         }
+        return true;
     }
     else {
 
@@ -241,6 +244,7 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
         for (std::vector<vertex *>::const_iterator it = vNeighbourV.begin() ; it != vNeighbourV.end(); ++it){
             (*it)->Reverse2PreviousCopy();
         }
+        return false;
      }
     return true;
 }

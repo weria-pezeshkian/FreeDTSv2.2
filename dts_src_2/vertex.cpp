@@ -61,6 +61,14 @@ void vertex::PositionPlus(double dx, double dy, double dz){
 
     return;
 }
+void vertex::ScalePos(double lx, double ly, double lz){
+    
+    m_X *= lx;
+    m_Y *= ly;
+    m_Z *= lz;
+
+    return;
+}
 void vertex::UpdateBox(Vec3D *pbox){
     m_pBox=pbox;
     return;

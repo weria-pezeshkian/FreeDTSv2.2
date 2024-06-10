@@ -84,6 +84,8 @@ inline int GetZSideVoxel() const { return (*m_pBox)(2)/double(m_Nz); }
 inline int GetXVoxelNumber() const { return m_Nx; }
 inline int GetYVoxelNumber() const { return m_Ny; }
 inline int GetZVoxelNumber() const { return m_Nz; }
+inline  Voxel<Type> **** GetAllVoxel() const { return m_AllVoxel;}
+
 
 
 void UpdateVoxelSize(double lx, double ly, double lz) {

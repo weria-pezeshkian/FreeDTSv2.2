@@ -74,6 +74,7 @@ public:
     
   // A set of functions to update vertex variables
   void UpdateVXPos(double x);    // a function for update the x position of a vertex
+  void ScalePos(double lx, double ly, double lz);    // a function for update the x position of a vertex
   void UpdateVYPos(double y);   // a function for update the y position of a vertex
   void UpdateVZPos(double z);   // a function for updates the z position of a vertex
   void PositionPlus(double dx, double dy, double dz);   // a function to increase the positions by dx, dt, dz
