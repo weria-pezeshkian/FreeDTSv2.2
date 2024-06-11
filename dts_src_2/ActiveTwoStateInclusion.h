@@ -42,7 +42,6 @@ public:
     
 private:
     int m_Period; ///< Period of exchange cycles.
-    State* m_pState; ///< Pointer to the  state class.
     double m_ActiveEnergy; ///< total Active energy.
     double m_Epsilon; ///< epsilon is the rate, we could have different rate but reducing the number of the model parameters
     double m_Percentage; ///<  percentage of type 1 vs type 2 .
@@ -56,6 +55,11 @@ private:
     std::vector<inclusion*> m_pSubInc; ///< List of inclusions to be exchanged.
     InclusionType *m_pIncType1; ///< Pointer to the first inclusion type.
     InclusionType *m_pIncType2; ///< Pointer to the second inclusion type.
+    ///
+    ///
+private:
+    State* m_pState; ///< Pointer to the  state class.
+
 
 };
 

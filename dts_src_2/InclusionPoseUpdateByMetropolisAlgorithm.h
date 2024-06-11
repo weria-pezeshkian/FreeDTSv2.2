@@ -23,19 +23,18 @@ class links;
 class InclusionPoseUpdateByMetropolisAlgorithm : public AbstractInclusionPoseIntegrator {
 public:
 
-    InclusionPoseUpdateByMetropolisAlgorithm();
+    InclusionPoseUpdateByMetropolisAlgorithm(State *pState);
+    InclusionPoseUpdateByMetropolisAlgorithm(State *pState, double rate_kawa, double rate_angle);
     ~InclusionPoseUpdateByMetropolisAlgorithm();
 
 
-    bool Initialize(State *pState);
+    bool Initialize();
     bool EvolveOneStep(int step);
     inline std::string GetDerivedDefaultReadName() { return "MetropolisAlgorithm"; }
     inline static std::string GetDefaultReadName() { return "MetropolisAlgorithm"; }
     std::string CurrentState();
 
-private:
-    State *m_pState; ///< Pointer to the simulation state.
-    double m_Beta;   ///< Inverse temperature factor.
+
 
 private:
     /**
@@ -49,8 +48,18 @@ private:
      * @param thermal Thermal fluctuation factor.
      * @return True if the move is accepted, false otherwise.
      */
-    bool KawasakiMove(int step, inclusion* p_inc, links* d_links, double thermal);
-    bool RotationMove(int step, inclusion* p_inc, double dx, double dy, double thermal);
+    bool KawasakiMove(inclusion* p_inc, links* d_links, double thermal);
+    bool RotationMove(inclusion* p_inc, double dx, double dy, double thermal);
+    
+private:
+    std::vector<links*> GetEdgesWithInteractionChange(links* p_link);
+    
+private:
+    State *m_pState; ///< Pointer to the simulation state.
+    std::vector<inclusion*>&        m_pInclusion;
+    double &m_Beta;
+    double &m_DBeta;
+
 };
 
 #endif

@@ -15,7 +15,8 @@ This class is a base class for changing the box
 class AbstractOpenEdgeEvolution {
 public:
     AbstractOpenEdgeEvolution(){
-        
+        m_NumberOfAttemptedMoves = 0;
+        m_AcceptedMoves = 0;
     }
     virtual ~AbstractOpenEdgeEvolution(){
         
@@ -47,7 +48,8 @@ public:
     bool Move(int step){
         return false;
     }
-    inline std::string GetDerivedDefaultReadName()  {return "NoEvolution";}
+    inline std::string GetDerivedDefaultReadName()  {return "No";}
+    inline static std::string GetDefaultReadName()  {return "No";}
     std::string CurrentState(){
         
         std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();

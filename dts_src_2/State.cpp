@@ -62,7 +62,7 @@ State::State(std::vector<std::string> argument) :
     m_pMesh = &m_Mesh;
     m_pVertexPositionIntegrator = new EvolveVerticesByMetropolisAlgorithm(this);
     m_pAlexanderMove            = new AlexanderMoveByMetropolisAlgorithm(this);         // Initialize AlexanderMove
-    m_pInclusionPoseIntegrator  = new InclusionPoseUpdateByMetropolisAlgorithm;  // Initialize InclusionPoseIntegrator
+    m_pInclusionPoseIntegrator  = new InclusionPoseUpdateByMetropolisAlgorithm(this);  // Initialize InclusionPoseIntegrator
 
 //-- Find input files name (input.tsi, top.top||top.tsi, index.inx, restart.res)
     if (!ExploreArguments(argument)) {
@@ -364,6 +364,24 @@ while (input >> firstword) {
             getline(input,rest);
         }
 //---- end //
+    //---- AlexanderMove
+            else if(firstword == AbstractInclusionPoseIntegrator::GetBaseDefaultReadName()) {
+                    input>>str>>type;
+                    if(type == InclusionPoseUpdateByMetropolisAlgorithm::GetDefaultReadName()){  // MetropolisAlgorithm
+                        double rate_kawa, rate_angle;
+                        input >> rate_kawa>> rate_angle;
+                        m_pInclusionPoseIntegrator  = new InclusionPoseUpdateByMetropolisAlgorithm(this, rate_kawa, rate_angle);  // Initialize InclusionPoseIntegrator
+                    }
+                    else{
+                        std::cout<<"---> error: unknown method for Alexander move "<<type<<"\n";
+                        m_NumberOfErrors++;
+                        return false;
+                    }
+                getline(input,rest);
+            }
+    //---- end //
+    
+
 //---- Volume_Constraint data
         else if(firstword == AbstractVolumeCoupling::GetBaseDefaultReadName())   { // Volume_Constraint
             
@@ -390,8 +408,7 @@ while (input >> firstword) {
         }
 //---- end Volume_Constraint
 //---- global curvature
-        else if(firstword == "GlobalCurvature")
-        {
+        else if(firstword == "GlobalCurvature") {
             double k,gc0;
             input>>str>>type>>k>>gc0;
             if(type == CouplingGlobalCurvatureToHarmonicPotential::GetDefaultReadName()) {
@@ -451,26 +468,90 @@ while (input >> firstword) {
             getline(input, rest);
         }
 // end dynamic box
-//ConstraintBetweenGroups
-        else if(firstword == "ConstraintBetweenGroups")
-        {
+// open edge treatment
+        else if(firstword == AbstractOpenEdgeEvolution::GetBaseDefaultReadName()){ // "OpenEdgeEvolution"
+            
+            // OpenEdgeEvolution =  EvolutionWithConstantVertex period rate
             input >> str >> type;
-            if(type == "HarmonicPotentialBetweenTwoGroups"){
+            getline(input,rest);
+            if (type == OpenEdgeEvolutionWithConstantVertex::GetDefaultReadName()) { // "EvolutionWithConstantVertex"
+                int period = 0;
+                double rate = 0;
+                input >>  period>> rate;
+                m_pOpenEdgeEvolution = new OpenEdgeEvolutionWithConstantVertex(period, rate, this);
+            }
+            else if(type == NoEvolution::GetDefaultReadName()){
+                
+            }
+            else {
+                
+                std::cout<<"---> error: unknown Open Edge Evolution type: "<<type<<"\n";
+            }
+        }
+// end open edge treatment
+// InclusionConversion and ActiveTwoStateInclusion
+        else if(firstword == AbstractInclusionConversion::GetBaseDefaultReadName()) {
+            input >> str >> type;
+            
+            if(type == ActiveTwoStateInclusion::GetDefaultReadName() ){ // "ActiveTwoStateInclusion"
+                
+                std::string inctype1, inctype2;
+                double ep1,ep2,persentage,gama;
+                input>> inctype1>> inctype2>> ep1>> ep2>> persentage>> gama;
+                m_pInclusionConversion = new ActiveTwoStateInclusion(ep1, ep2, persentage, gama, inctype1, inctype2);
+
+            }
+            else if(type == NoInclusionConversion::GetDefaultReadName()){ // No
+                 m_pInclusionConversion = new NoInclusionConversion;
+            }
+            else{
+                 std::cout<<"---> error: unknown Inclusion Conversion method "<<std::endl;
+                 m_NumberOfErrors++;
+                 return false;
+            }
+                
+            getline(input,rest);
+        }
+// end InclusionConversion
+// boundry condition
+        else if(firstword == AbstractBoundary::GetBaseDefaultReadName() ){ // " Boundary "
+            input >> str >> type;
+            if(type == TwoFlatParallelWall::GetDefaultReadName()){   // " "TwoFlatParallelWall" "
+                double thickness;
+                char direction;
+                input>>str>>thickness>>direction;
+                m_pBoundary = new TwoFlatParallelWall(this, thickness,direction);
+            }
+            else {
+                std::cout<<" unknown Boundary type: "<<type<<std::endl;
+            }
+            getline(input,rest);
+        }
+// end boundry condition
+//ConstraintBetweenGroups
+        else if(firstword == AbstractApplyConstraintBetweenGroups::GetBaseDefaultReadName()) { // ConstraintBetweenGroups
+            
+            input >> str >> type;
+            if(type == HarmonicPotentialBetweenTwoGroups::GetDefaultReadName()){ // HarmonicPotentialBetweenTwoGroups
                 // ConstraintBetweenGroups  = HarmonicPotentialBetweenTwoGroups 10 0.1 2000 Group1 Group2 0 1 1
                 double k,l0,nx,ny,nz;
                 std::string g1name,g2name;
                 input>>k>>l0>>g1name>>g2name>>nx>>ny>>nz;
                 m_pApplyConstraintBetweenGroups = new HarmonicPotentialBetweenTwoGroups(this, k, l0, g1name, g2name, nx, ny, nz);
             }
+            else if(type == NoConstraint::GetDefaultReadName()){ // No
+                
+            }
             else{
-                std::cout<<" unknown type of ConstraintBetweenGroups "<<std::endl;
+                std::cout<<" error---> unknown method of Constraint Between Groups "<<std::endl;
             }
             getline(input,rest);
 
         }
+// end ConstraintBetweenGroups
 //end of ConstraintBetweenGroups
-        else if(firstword == "MC_Moves")
-        {
+        else if( firstword == "MC_Moves" ) {
+            
             getline(input, str);
             std::vector<std::string> data = Nfunction::split(str);
 
@@ -489,36 +570,6 @@ while (input >> firstword) {
         {
             input>>str>>str;
             m_pVertexPositionIntegrator->UpdateFreezGroupName(str);
-            getline(input,rest);
-        }
-        else if(firstword=="InclusionConversion")
-        {
-            input >> str >> type;
-            if(type == "ActiveTwoStateInclusion"){
-                std::string inctype1, inctype2;
-                double ep1,ep2,persentage,gama;
-                input>>inctype1>>inctype2>>ep1>>ep2>>persentage>>gama;
-                m_pInclusionConversion = new ActiveTwoStateInclusion(ep1, ep2, persentage, gama, inctype1,inctype2);
-
-            }
-            else{
-                std::cout<<" unknown InclusionConversion method "<<std::endl;
-            }
-                
-            getline(input,rest);
-        }
-        else if(firstword == AbstractBoundary::GetBaseDefaultReadName()) // " Boundary "
-        {
-            input >> str >> type;
-            if(type == TwoFlatParallelWall::GetDefaultReadName()){   // " "TwoFlatParallelWall" "
-                double thickness;
-                char direction;
-                input>>str>>thickness>>direction;
-                m_pBoundary = new TwoFlatParallelWall(this, thickness,direction);
-            }
-            else {
-                std::cout<<" unknown Boundary type: "<<type<<std::endl;
-            }
             getline(input,rest);
         }
         else if(firstword == "ForceFromInclusions")
@@ -546,22 +597,6 @@ while (input >> firstword) {
             }
             // Consume remaining input line
             getline(input, rest);
-        }
-        else if(firstword == AbstractOpenEdgeEvolution::GetBaseDefaultReadName()){ // "OpenEdgeEvolution"
-            
-            // OpenEdgeEvolution =  EvolutionWithConstantVertex period rate
-            input >> str >> type;
-            getline(input,rest);
-            if (type == OpenEdgeEvolutionWithConstantVertex::GetDefaultReadName()) { // "EvolutionWithConstantVertex"
-                int period = 0;
-                double rate = 0;
-                input >>  period>> rate;
-                m_pOpenEdgeEvolution = new OpenEdgeEvolutionWithConstantVertex(period, rate, this);
-            }
-            else {
-                
-                std::cout<<"---> error: unknown Open Edge Evolution type: "<<type<<"\n";
-            }
         }
         else if(firstword == "TimeSeriesData_Period") { // TimeSeriesData
             int period;
@@ -789,7 +824,7 @@ bool State::Initialize(){
 //----> set some easy access for integrators
         m_pVertexPositionIntegrator->Initialize();
         m_pAlexanderMove->Initialize();
-        m_pInclusionPoseIntegrator->Initialize(this);
+        m_pInclusionPoseIntegrator->Initialize();
 //----> boundry of the simulations
         m_pBoundary->Initialize();
 //-----> box change

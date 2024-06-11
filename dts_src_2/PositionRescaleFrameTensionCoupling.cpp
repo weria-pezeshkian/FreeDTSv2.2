@@ -15,7 +15,7 @@
  Copyright (c) Weria Pezeshkian
 This class changes the box in x and y direction to minimize the energy. It is called in input file by Frame_Tension  = on 0 2, where the first flag should be on to start this command and the second argument is frame tension and the third argument is the priodic of the operating.
 
-The way it works is based on the changing the box in x and y direction by a small size of dr by calling "MCMoveBoxChange" function.
+The way it works is based on the changing the box in x and y direction by a small size of dr by calling "ChangeBoxSize" function.
 =================================================================================================================
 */
 PositionRescaleFrameTensionCoupling::PositionRescaleFrameTensionCoupling(int period, double sigma, std::string direction, State *pState)  :
@@ -46,6 +46,18 @@ void PositionRescaleFrameTensionCoupling::Initialize() {
     m_pBox=(m_pState->GetMesh())->GetBox();
 }
 bool PositionRescaleFrameTensionCoupling::ChangeBoxSize(int step){
+    /**
+     * @brief a call function to change the simulation box size at a given step.
+     *
+     * This function changes the size of the simulation box based on the current step.
+     * It first checks if the current step matches the defined period. If the voxel size
+     * is below a threshold, it updates the voxel size and re-voxelizes. It then computes
+     * the size change for the box using, and attempts to change the
+     * box size based on these calculations.
+     *
+     * @param step The current step in the simulation.
+     * @return true if the box size was changed, false otherwise.
+     */
     
 //---> if does not match the preiod, return false
     if(step%m_Period != 0)
@@ -65,16 +77,21 @@ bool PositionRescaleFrameTensionCoupling::ChangeBoxSize(int step){
     double dy = dx*((*m_pBox)(1))/(*m_pBox)(0);
     double dz = dx*((*m_pBox)(2))/(*m_pBox)(0);
     
-    double lx = 1 + m_Direction(0)*dx/(*m_pBox)(0);
-    double ly = 1 + m_Direction(0)*dy/(*m_pBox)(1);
-    double lz = 1 + m_Direction(0)*dz/(*m_pBox)(2);
+    // lx, ly, lz how much the box should be scaled in each direction
+     double lx = 1 + m_Direction(0) * dx / (*m_pBox)(0);
+     double ly = 1 + m_Direction(0) * dy / (*m_pBox)(1);
+     double lz = 1 + m_Direction(0) * dz / (*m_pBox)(2);
     double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
 
     
-    if(AnAtemptToChangeBox(lx, ly, lz, thermal)){
+    // Attempt to change the box size
+    if (AnAtemptToChangeBox(lx, ly, lz, thermal)) {
         m_AcceptedMoves++;
+        m_NumberOfAttemptedMoves++;
     }
-    m_NumberOfAttemptedMoves++;
+    else{
+        m_NumberOfAttemptedMoves++;
+    }
     
     return true;
 }
@@ -173,8 +190,7 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
 
 //---> new global variables
     if(m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()){
-        std::cout<<" error-->this function has not been completed \n";
-        m_pState->GetVAHGlobalMeshProperties()->CalculateBoxRescalingToGlobalVariables(lx, ly, lz, new_Tvolume, new_Tarea, new_Tcurvature);
+        m_pState->GetVAHGlobalMeshProperties()->CalculateBoxRescalingContributionToGlobalVariables(lx, ly, lz, new_Tvolume, new_Tarea, new_Tcurvature);
     }
     
     //---> energy change of global variables
@@ -220,13 +236,20 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
         }
         return false;
      }
-    
-
-    
+        
     return true;
 }
 bool PositionRescaleFrameTensionCoupling::VertexMoveIsFine(double lx,double ly, double lz){
-    
+    /**
+     * @brief Checks if distances are valid given the new box dimensions.
+     *
+     * and ensuring the distances between vertices are within acceptable limits.
+     *
+     * @param lx scaling factor in the x-direction.
+     * @param ly scaling factor in the y-direction.
+     * @param lz scaling factor in the z-direction.
+     * @return true if it is good
+     */
     if(!CheckLinkLength(lx, ly, lz)){
         return false;
     }
@@ -406,7 +429,14 @@ bool PositionRescaleFrameTensionCoupling::CheckFaces() {
     return true;
 }
 void PositionRescaleFrameTensionCoupling::SetDirection(std::string direction){
-    
+    /**
+     * @brief Sets the direction for box size rescaling.
+     *
+     * This function sets the direction vector for rescaling the box size based on the
+     * provided string. It supports various combinations of X, Y, and Z directions.
+     *
+     * @param direction A string specifying the direction for rescaling ("XYZ", "XY", "XZ", "YZ", "X", "Y", "Z").
+     */
     if(direction == "XYZ"){
         m_Direction(0) = 1;
         m_Direction(1) = 1;
@@ -447,8 +477,8 @@ void PositionRescaleFrameTensionCoupling::SetDirection(std::string direction){
         m_Direction(2) = 1;
     }
     else{
-        std::cout<<"---> error: direction of the box change is unknown \n";
-    }
+        // Print an error message if the direction is unknown
+        std::cout << "---> Error: direction of the box change is unknown\n";    }
     
     return;
 }

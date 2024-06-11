@@ -16,8 +16,15 @@
   * @author Weria Pezeshkian (weria.pezeshkian@gmail.com)
   */
 
-ActiveTwoStateInclusion::ActiveTwoStateInclusion(int period, double ep, double per, double gama, std::string t_name1,std::string t_name2 )
-    : m_Period(period), m_Epsilon(ep), m_Percentage(per), m_Gama(gama), m_TypeName_1(t_name1), m_TypeName_2(t_name2), m_N2(0), m_N1(0)
+ActiveTwoStateInclusion::ActiveTwoStateInclusion(int period, double ep, double per, double gama, std::string t_name1,std::string t_name2 ) :
+                        m_Period(period),
+                        m_Epsilon(ep),
+                        m_Percentage(per),
+                        m_Gama(gama),
+                        m_TypeName_1(t_name1),
+                        m_TypeName_2(t_name2),
+                        m_N2(0),
+                        m_N1(0)
 {
     
 }

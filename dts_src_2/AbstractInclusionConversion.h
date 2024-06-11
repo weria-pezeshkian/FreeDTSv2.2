@@ -45,7 +45,8 @@ public:
     ~NoInclusionConversion(){
         
     }
-    inline std::string GetDerivedDefaultReadName() {return "NoInclusionConversion";}
+    inline std::string GetDerivedDefaultReadName() {return "No";}
+    inline static std::string GetDefaultReadName() {return "No";}
 
 
     

@@ -86,11 +86,24 @@ void VAHGlobalMeshProperties::CalculateALinkTrianglesContributionToGlobalVariabl
 
     return;
 }
-void VAHGlobalMeshProperties::CalculateBoxRescalingToGlobalVariables(double lx, double ly, double lz, double& vol, double& area, double& curvature){
+void VAHGlobalMeshProperties::CalculateBoxRescalingContributionToGlobalVariables(double lx, double ly, double lz, double& vol, double& area, double& curvature){
     
     vol = 0;
     area = 0;
     curvature = 0;
+    
+    std::vector<triangle *>& all_tri = m_pState->GetMesh()->GetActiveT();
+    for (std::vector<triangle *>::iterator it = all_tri.begin() ; it != all_tri.end(); ++it) {
+        vol += CalculateSingleTriangleVolume(*it);
+        area += (*it)->GetArea();
+    }
+    
+    std::vector<vertex *>& all_vertex = m_pState->GetMesh()->GetActiveV();
+    for (std::vector<vertex *>::iterator it = all_vertex.begin() ; it != all_vertex.end(); ++it) {
+        double area = (*it)->GetArea();
+        double curv = (*it)->GetP1Curvature() + (*it)->GetP2Curvature();
+        curvature += curv*area;
+    }
     
     return;
 }

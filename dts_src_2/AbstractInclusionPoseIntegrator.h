@@ -23,7 +23,7 @@ public:
     virtual ~ AbstractInclusionPoseIntegrator(){
         
     }
-    virtual bool Initialize(State *pState) = 0;
+    virtual bool Initialize() = 0;
     virtual bool EvolveOneStep(int step) = 0;
     virtual std::string CurrentState() = 0;
     virtual inline std::string GetDerivedDefaultReadName() = 0;
@@ -37,6 +37,23 @@ public:
         m_NumberOfMovePerStep_Kawasaki = rate_kawa;
 
         return;
+    }
+    double GetAcceptanceRate(bool reset) {
+        // Check if there have been attempted moves to avoid division by zero
+        if (m_NumberOfAttemptedMoves == 0) {
+            return 0.0; // Return 0 if no moves have been attempted
+        }
+
+        // Calculate acceptance rate
+        double rate = static_cast<double>(m_AcceptedMoves) / m_NumberOfAttemptedMoves;
+
+        // Reset counters if requested
+        if (reset) {
+            m_NumberOfAttemptedMoves = 0;
+            m_AcceptedMoves = 0;
+        }
+
+        return rate;
     }
     
 protected:

@@ -46,9 +46,8 @@ public:
     NoConstraint() {}
     ~NoConstraint() {}
 
-    std::string GetDerivedDefaultReadName() {
-        return "No";
-    }
+    std::string GetDerivedDefaultReadName() {return "No";}
+    static std::string GetDefaultReadName() {return "No";}
 
     bool Initialize() {
         return true;

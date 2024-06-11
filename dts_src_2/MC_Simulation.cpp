@@ -104,6 +104,9 @@ for(int step = GetInitialStep(); step <= GetFinalStep(); step++){
         std::cout<<"Rates: "<<std::flush;
         std::cout<<" vertex move = "<<m_pState->GetVertexPositionUpdate()->GetAcceptanceRate(true)<<std::flush;
         std::cout<<" alexander move = "<<m_pState->GetAlexanderMove()->GetAcceptanceRate(true)<<std::flush;
+        std::cout<<" inclusion move = "<<m_pState->GetInclusionPoseUpdate()->GetAcceptanceRate(true)<<std::flush;
+        if(m_pState->GetDynamicBox()->GetDerivedDefaultReadName() != "No")
+        std::cout<<" Box Move = "<<m_pState->GetDynamicBox()->GetAcceptanceRate(true)<<std::flush;
         std::cout << '\r';
         std::cout << "\033[K";
     }
