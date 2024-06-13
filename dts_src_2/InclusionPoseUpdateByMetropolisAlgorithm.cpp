@@ -85,17 +85,17 @@ bool InclusionPoseUpdateByMetropolisAlgorithm::KawasakiMove(inclusion* p_inc, li
     vertex * hver = p_inc->Getvertex();      // Current vertex of the inclusion
     vertex * tver = d_links->GetV2();        // Target vertex for the inclusion
     bool has_inclusion = tver->VertexOwnInclusion();   // Check if target vertex has an inclusion
-
+    
+    
     // If both vertices contain the same type of inclusion, no move is needed
-    if (has_inclusion && p_inc == tver->GetInclusion()) {
+   if (has_inclusion && p_inc->GetInclusionType() == tver->GetInclusion()->GetInclusionType()) {
         return false;
     }
 
     double en_1 = hver->GetEnergy();
     double en_2 = tver->GetEnergy();
-
-    old_energy += en_1 + en_2;
-
+    old_energy = en_1 + en_2;
+    
     // add the interaction energies and make a copy to the links associated with them
     std::vector<links*> Affected_links = GetEdgesWithInteractionChange(d_links);
     for (std::vector<links *>::iterator it = Affected_links.begin() ; it != Affected_links.end(); ++it){
@@ -104,8 +104,6 @@ bool InclusionPoseUpdateByMetropolisAlgorithm::KawasakiMove(inclusion* p_inc, li
     }
 
 //--> performing the moves
-
-    //
     if(has_inclusion) {
         // give the host vertex the traget vertex inclusion (only is allowed if target vertex has one)
         hver->UpdateInclusion((tver->GetInclusion()));
@@ -127,11 +125,13 @@ bool InclusionPoseUpdateByMetropolisAlgorithm::KawasakiMove(inclusion* p_inc, li
     for (std::vector<links *>::iterator it = Affected_links.begin() ; it != Affected_links.end(); ++it){
         new_energy += (m_pState->GetEnergyCalculator())->TwoInclusionsInteractionEnergy(*it);
     }
+    
+
     //--> elatsic energy
     double diff_energy = new_energy - old_energy;
-    
+
     // Accept or reject the move based on the Metropolis criterion
-    if(diff_energy <= 0 || exp(-m_Beta * diff_energy + m_DBeta) > temp ) {
+    if( diff_energy <= 0 || exp(-m_Beta * diff_energy + m_DBeta) > temp ) {
         // move is accepted
         (m_pState->GetEnergyCalculator())->AddToTotalEnergy(diff_energy);
         return true;

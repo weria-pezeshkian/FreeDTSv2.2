@@ -24,13 +24,16 @@ double Energy::SingleVertexEnergy(vertex *p_vertex) {
 //---> note, if the vertex has no inclusion, this will return zero by default
     Energy+= m_pState->GetExternalFieldOnVectorFields()->GetCouplingEnergy(p_vertex);
     
-    if(p_vertex->m_VertexType==0) {
+    if(p_vertex->m_VertexType == 0) {
     
         Energy += SurfVertexBendingAndStretchingEnergy(p_vertex);
     }
-    else{
+    else if( p_vertex->m_VertexType == 1) {
         
         Energy += EdgeVertexBendingAndStretchingEnergy(p_vertex);
+    }
+    else{
+        std::cout<<" this is unexpected 666 \n";
     }
 
     p_vertex->UpdateEnergy(Energy);
@@ -45,8 +48,8 @@ double Energy::SurfVertexBendingAndStretchingEnergy(vertex * p_vertex){
     double c2 = p_vertex->GetP2Curvature();
 
     double mean_times2 = c1 + c2;
-    double gussian=c1*c1;
-    double area=p_vertex->GetArea();
+    double gussian = c1 * c1;
+    double area = p_vertex->GetArea();
     
     // energy for area coupling K*(area-a0)^2
     if(m_Ka != 0){
@@ -60,8 +63,7 @@ double Energy::SurfVertexBendingAndStretchingEnergy(vertex * p_vertex){
     else{
         
         // e_v = kappa/2*(2H-c0)^2-kgK+k1/2(cp-cp0)^2+k2/2(cn-cn0)^2
-        
-        inclusion *p_inc=p_vertex->GetInclusion();
+        inclusion *p_inc = p_vertex->GetInclusion();
         double k0 = p_inc->m_IncType->ITk;
         double kg = p_inc->m_IncType->ITkg;
         double k1 = p_inc->m_IncType->ITk1;
@@ -70,19 +72,20 @@ double Energy::SurfVertexBendingAndStretchingEnergy(vertex * p_vertex){
         double cp10 = p_inc->m_IncType->ITc1;
         double cn20 = p_inc->m_IncType->ITc2;
         //--- kappa/2*(2H-c0)^2-kgK+
-        en += k0*(mean_times2-c0)*(mean_times2-c0) - kg*m_kappa_G;
+        double ev = k0 * (mean_times2-c0) * (mean_times2-c0) - kg * m_kappa_G;
+        en += ev * area;
         
 //--> if the k1 and k2 are zero, we do not need to calculate the rest
-        if(k1!=0 || k2!=0){  // k1/2(cp-cp0)^2+k2/2(cn-cn0)^2
+        if(k1 != 0 || k2 != 0){  // k1/2(cp-cp0)^2+k2/2(cn-cn0)^2
         
             Vec3D local_direction = p_inc->GetLDirection();
             double Cos = local_direction(0);
             double Sin = local_direction(1);
-            double Cp = c1*Cos*Cos + c2*Sin*Sin;
-            double Cn = c1*Cos*Cos + c2*Sin*Sin;
-            double Delta_Cp = (Cp-cp10);
-            double Delta_Cn=(Cn-cn20);
-            en += (k1*Delta_Cp*Delta_Cp + k2*Delta_Cn*Delta_Cn)*area;            
+            double Cp = c1 * Cos * Cos + c2 * Sin * Sin;
+            double Cn = c1 * Cos * Cos + c2 * Sin * Sin;
+            double Delta_Cp = Cp - cp10;
+            double Delta_Cn = Cn - cn20;
+            en += (k1 * Delta_Cp * Delta_Cp + k2 * Delta_Cn * Delta_Cn) * area;
         }
     }
     

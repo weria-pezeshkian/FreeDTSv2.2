@@ -5,14 +5,17 @@
 #include "links.h"
 #include "triangle.h"
 #include "Nfunction.h"
+std::ostream& operator<<(std::ostream& os, const vertex& obj) {
+    os << "id:" <<obj.m_ID<<"  pos "<<obj.m_X<<"  "<<obj.m_Y<<"  "<<obj.m_Z<< " inc ";
 
+    return os;
+}
 vertex::vertex(MESH* pMesh, int id, double x, double y, double z) : m_pMesh(pMesh) {
 
     m_X = x;
     m_Y = y;
     m_Z = z;
     m_ID = id;
-    m_SimTimeStep=-1;
     m_Group = 0;
     m_OwnInclusion = false;
     m_GroupName = "system";
@@ -31,7 +34,6 @@ vertex::vertex(MESH* pMesh, int id) : m_pMesh(pMesh) {
     m_X=0;
     m_Y=0;
     m_Z=0;
-    m_SimTimeStep=-1;
     m_Group = 0;
     m_OwnInclusion = false;
     m_GroupName = "system";
@@ -229,10 +231,6 @@ void vertex::UpdateG2LTransferMatrix(Tensor2 v)
 {
     m_T_Global_2_Local = v;
 }
-void vertex::UpdateSimTimeStep(int v)
-{
-    m_SimTimeStep=v;
-}
 void vertex::UpdateVoxel(Voxel<vertex> * pVoxel){
     
     m_pVoxel = pVoxel;
@@ -241,16 +239,21 @@ void vertex::UpdateVoxel(Voxel<vertex> * pVoxel){
 void vertex::ConstantMesh_Copy(){
 
     m_OldpVoxel = m_pVoxel;
-
+    m_OldX = m_X;
+    m_OldY = m_Y;
+    m_OldZ = m_Z;
     m_OldArea = m_Area;
     m_OldNormal = m_Normal;
     m_OldEnergy = m_Energy;
     m_OldT_Local_2_Global = m_T_Local_2_Global;         //  Local to global transformation matrix
     m_OldT_Global_2_Local = m_T_Global_2_Local;        //  global to local transformation matrix
+    
+    m_OldPrincipalCurvature_1 = m_PrincipalCurvature_1;
+    m_OldPrincipalCurvature_2 = m_PrincipalCurvature_2;
+    m_OldMeanCurvature = m_MeanCurvature;
+    m_OldGaussianCurvature = m_GaussianCurvature;
                       // length of the vertex
-    if(m_VertexType==1){
-        m_OldpEdgeLink = m_pEdgeLink;
-        m_OldpPrecedingEdgeLink = m_pPrecedingEdgeLink;
+    if(m_VertexType == 1){
         m_OldGeodesic_Curvature = m_Geodesic_Curvature;          // Edge Vertex Curvature
         m_OldNormal_Curvature = m_Normal_Curvature;          // Edge Vertex Curvature
         m_OldVLength = m_VLength;
@@ -261,16 +264,21 @@ void vertex::ConstantMesh_Copy(){
 void vertex::ReverseConstantMesh_Copy(){
     
     m_pVoxel = m_OldpVoxel ;
-
+    m_X = m_OldX ;
+    m_Y = m_OldY ;
+    m_Z = m_OldZ ;
     m_Area = m_OldArea ;
     m_Normal = m_OldNormal ;
     m_Energy = m_OldEnergy ;
     m_T_Local_2_Global = m_OldT_Local_2_Global ;         //  Local to global transformation matrix
     m_T_Global_2_Local = m_OldT_Global_2_Local ;        //  global to local transformation matrix
-
+    
+    m_PrincipalCurvature_1 = m_OldPrincipalCurvature_1;
+    m_PrincipalCurvature_2 = m_OldPrincipalCurvature_2;
+    m_MeanCurvature = m_OldMeanCurvature;
+    m_GaussianCurvature = m_OldGaussianCurvature;
+    
     if(m_VertexType==1){
-        m_pEdgeLink = m_OldpEdgeLink;
-        m_pPrecedingEdgeLink = m_OldpPrecedingEdgeLink;
         m_Geodesic_Curvature = m_OldGeodesic_Curvature ;          // Edge Vertex Curvature
         m_Normal_Curvature = m_OldNormal_Curvature ;          // Edge Vertex Curvature
         m_VLength = m_OldVLength ;                       // length of the vertex

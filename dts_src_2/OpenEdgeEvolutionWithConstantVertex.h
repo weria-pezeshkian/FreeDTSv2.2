@@ -25,9 +25,7 @@
  */
 
 class State;
-class OpenEdgeEvolutionWithConstantVertex : public AbstractOpenEdgeEvolution,
-                                            public AbstractSimulation,
-                                            public MESH { // to use for polymorphism
+class OpenEdgeEvolutionWithConstantVertex : public AbstractOpenEdgeEvolution { // to use for polymorphism
 public:
     OpenEdgeEvolutionWithConstantVertex(int period, double rate, State *pState);
     ~OpenEdgeEvolutionWithConstantVertex();
@@ -45,10 +43,6 @@ private:
     bool MCAttemptedToAddALink();
     bool MCAttemptedToRemoveALink();
 
-                                            
-    State *m_pState;
-    int m_Period;
-    double m_NumberOfMovePerStep;   // how many updates should be made per step
 
     void RemoveFromLinkList(links* z, std::vector<links*> &vect);
     void RemoveFromVertexList(vertex* z, std::vector<vertex*> &vect);
@@ -56,20 +50,41 @@ private:
     void AddtoLinkList(links* z, std::vector<links*> &vect);
     void AddtoVertexList(vertex* z, std::vector<vertex*> &vect);
     void AddtoTriangleList(triangle* z, std::vector<triangle*> &vect);
-    bool Linkisvalid(vertex *, double lmin, double lmax, double maxangle);
+    bool Linkisvalid(vertex *);
     double  SystemEnergy();
 
    //  void MC_Move(double lmin, double lmax, double maxangle);
 
 
-    // the main hard part of the code. 4 interesting function
+    // the main hard part of the code. 
 private:  // this functions could be in princeple public, but no need for now
     
     links* CreateALink(vertex *);    // creates a link between two connected edge at the edge
     bool KillALink(links *);         // kills an edge that is on the edge. not an edge on the surface
-    triangle* CloseATriangleHole(vertex *v1);  //if an edge contains only three links, it will close it
-    bool KillATriangle(links *l1);      // kills a triangle anywhere
+    
 
+private:
+    State *m_pState;
+    int m_Period;
+    double m_NumberOfMovePerStep;   // how many updates should be made per step
+    
+    std::vector<links*>&          m_pEdgeL;
+    std::vector<links*>&          m_pGhostL;
+    std::vector<links*>&          m_pRightL;
+    std::vector<links*>&          m_pLeftL;
+    std::vector<links*>&          m_pActiveL;
+    std::vector<vertex*>&         m_pEdgeV;
+    std::vector<vertex*>&         m_pSurfV; // all the active vertices  surf
+    std::vector<triangle*>&       m_pGhostT;
+    std::vector<triangle*>&       m_pActiveT;
+    MESH *m_pMesh;
+    Vec3D *m_pBox;
+    
+    double &m_Beta;
+    double &m_DBeta;
+    double &m_MinLength2;
+    double &m_MaxLength2;
+    double &m_MinAngle;
     
 private:
     bool do_Simulation(){

@@ -90,6 +90,7 @@ bool AlexanderMoveByMetropolisAlgorithm::FlipOneEdge(int step, links *p_edge, do
 
 //-- get the energy for interaction
     std::vector<links*> Affected_links = GetEdgesWithInteractionChange(p_edge);
+    
     for (std::vector<links *>::iterator it = Affected_links.begin() ; it != Affected_links.end(); ++it){
         (*it)->Copy_InteractionEnergy();
         old_energy += 2 * (*it)->GetIntEnergy();
@@ -148,11 +149,11 @@ bool AlexanderMoveByMetropolisAlgorithm::FlipOneEdge(int step, links *p_edge, do
 
 //-- Update geometry
     //--- update the edges normal
-    p_edge->UpdateNormal();
-    l1->UpdateNormal();
-    l2->UpdateNormal();
-    l3->UpdateNormal();
-    l4->UpdateNormal();
+  //  p_edge->UpdateNormal();
+   // l1->UpdateNormal();
+   // l2->UpdateNormal();
+   // l3->UpdateNormal();
+   // l4->UpdateNormal();
 
     p_edge->UpdateShapeOperator(m_pBox);
     l1->UpdateShapeOperator(m_pBox);
@@ -446,14 +447,14 @@ std::vector<links*> AlexanderMoveByMetropolisAlgorithm::GetEdgesWithInteractionC
             if(v2->m_VertexType==1)
             temlinklist.push_back(v2->m_pPrecedingEdgeLink);
         }
-        if(v3->VertexOwnInclusion()==true) {
+        if(v3->VertexOwnInclusion()) {
             
             std::vector<links *> ltem = v3->GetVLinkList();
             temlinklist.insert(temlinklist.end(), ltem.begin(), ltem.end());
             if(v3->m_VertexType==1)
             temlinklist.push_back(v3->m_pPrecedingEdgeLink);
         }
-        if(v4->VertexOwnInclusion()==true) {
+        if(v4->VertexOwnInclusion()) {
             std::vector<links *> ltem=v4->GetVLinkList();
             temlinklist.insert(temlinklist.end(), ltem.begin(), ltem.end());
             if(v4->m_VertexType==1)

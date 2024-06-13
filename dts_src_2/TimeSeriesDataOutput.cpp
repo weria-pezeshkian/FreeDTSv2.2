@@ -59,6 +59,9 @@ and false if the periodic condition is not met or if there is an error writing t
     if (m_pState->GetApplyConstraintBetweenGroups()->GetDerivedDefaultReadName() != "No") {
         m_TimeSeriesFile << m_pState->GetApplyConstraintBetweenGroups()->GetEnergy()<<"  ";
     }
+    if (m_pState->GetOpenEdgeEvolution()->GetDerivedDefaultReadName() != "No") {
+        m_TimeSeriesFile <<m_pState->GetOpenEdgeEvolution()->GetEdgeSize() <<" ";
+    }
     m_TimeSeriesFile<<std::endl;
     
     return true;
@@ -102,6 +105,9 @@ bool TimeSeriesDataOutput::OpenFile(bool clearfile) {
         }
         if (m_pState->GetApplyConstraintBetweenGroups()->GetDerivedDefaultReadName() != "No") {
             m_TimeSeriesFile << " Constraint_energy ";
+        }
+        if (m_pState->GetOpenEdgeEvolution()->GetDerivedDefaultReadName() != "No") {
+            m_TimeSeriesFile << " edge_size ";
         }
         m_TimeSeriesFile << std::endl;
     }

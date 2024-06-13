@@ -58,15 +58,14 @@ bool PositionRescaleFrameTensionCoupling::ChangeBoxSize(int step){
      * @param step The current step in the simulation.
      * @return true if the box size was changed, false otherwise.
      */
-    
 //---> if does not match the preiod, return false
     if(step%m_Period != 0)
         return false;
     //--- first check if the voxel size is fine
     double voxel_lx = m_pState->GetVoxelization()->GetXSideVoxel();
-    double voxel_ly = m_pState->GetVoxelization()->GetXSideVoxel();
-    double voxel_lz = m_pState->GetVoxelization()->GetXSideVoxel();
-    if(voxel_lx < 1.05 || voxel_ly < 1.05 || voxel_lz < 1.05){
+    double voxel_ly = m_pState->GetVoxelization()->GetYSideVoxel();
+    double voxel_lz = m_pState->GetVoxelization()->GetZSideVoxel();
+    if(voxel_lx < 1.05 || voxel_ly < 1.05 || voxel_lz < 1.05) {
         m_pState->GetVoxelization()->UpdateVoxelSize(1.2, 1.2, 1.2);
         m_pState->GetVoxelization()->Voxelize(m_pActiveV);
     }
@@ -79,8 +78,8 @@ bool PositionRescaleFrameTensionCoupling::ChangeBoxSize(int step){
     
     // lx, ly, lz how much the box should be scaled in each direction
      double lx = 1 + m_Direction(0) * dx / (*m_pBox)(0);
-     double ly = 1 + m_Direction(0) * dy / (*m_pBox)(1);
-     double lz = 1 + m_Direction(0) * dz / (*m_pBox)(2);
+     double ly = 1 + m_Direction(1) * dy / (*m_pBox)(1);
+     double lz = 1 + m_Direction(2) * dz / (*m_pBox)(2);
     double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
 
     
@@ -101,10 +100,18 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
     if(!VertexMoveIsFine(lx, ly, lz)){
         return false;
     }
-    
+
     //---> get the energies
     double old_energy = m_pState->GetEnergyCalculator()->GetEnergy();
     double new_energy = 0;
+    
+    double new_systemsize = 1;   // area for 2d, volume for 3d, line for 1d
+    double old_systemsize = 1;
+    for (int i=0;i<3;i++) {
+        if(m_Direction(i) != 0){
+            old_systemsize *= (*m_pBox)(i);
+        }
+    }
     
     // Obtain and sum the initial global variables that might change
     double old_Tvolume = 0.0, old_Tarea = 0.0, old_Tcurvature = 0.0;
@@ -159,18 +166,17 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
     for (std::vector<links *>::iterator it = m_pRightL.begin() ; it != m_pRightL.end(); ++it){
         
         (*it)->ConstantMesh_Copy();
-        (*it)->UpdateNormal();
+      //  (*it)->UpdateNormal();
         (*it)->UpdateShapeOperator(m_pBox);
     }
     for (std::vector<links *>::iterator it = m_pEdgeL.begin() ; it != m_pEdgeL.end(); ++it){
         
         (*it)->ConstantMesh_Copy();
-        (*it)->UpdateNormal();
-        (*it)->UpdateShapeOperator(m_pBox);
+        (*it)->UpdateEdgeVector(m_pBox);  // UpdateNormal() exist in the shape operator
     }
     for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it){
         (*it)->ConstantMesh_Copy();
-        (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(*it);
+        (m_pState->GetCurvatureCalculator())->UpdateVertexCurvature(*it);
     }
 //--- calculate new energies
     for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it) {
@@ -202,9 +208,21 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
     double diff_energy = new_energy - old_energy;
     //--> sum of all the energies
     double tot_diff_energy = diff_energy + dE_Cgroup + dE_force_from_inc + dE_volume + dE_t_area + dE_g_curv ;
+    double NV = m_pActiveV.size();
     
+    for (int i=0;i<3;i++) {
+        if(m_Direction(i) != 0){
+            new_systemsize *= (*m_pBox)(i);
+        }
+    }
+    
+    tot_diff_energy -= m_SigmaP * (new_systemsize - old_systemsize);
+    
+
+
     //---> accept or reject the move
-    if(tot_diff_energy <= 0 || exp(-m_Beta * tot_diff_energy + m_DBeta) > temp ) {
+
+    if (pow(lx*ly*lz , NV) * exp(-m_Beta * tot_diff_energy + m_DBeta) > temp ) {
         // move is accepted
         (m_pState->GetEnergyCalculator())->AddToTotalEnergy(diff_energy);
         
@@ -236,7 +254,7 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
         }
         return false;
      }
-        
+
     return true;
 }
 bool PositionRescaleFrameTensionCoupling::VertexMoveIsFine(double lx,double ly, double lz){
@@ -396,10 +414,14 @@ bool PositionRescaleFrameTensionCoupling::CheckFaceAngleOfOneLink(links* p_edge)
     // Function to check if the angle between the normal vectors of the faces sharing the given edge
     // is above a minimum threshold defined by m_MinAngle.
     
+    if(!p_edge->GetMirrorFlag()){
+        return true;
+    }
     // Retrieve the normal vector of the triangle associated with the edge.
     Vec3D n1 = p_edge->GetTriangle()->GetNormalVector();
 
     // Retrieve the normal vector of the triangle associated with the mirror edge.
+   
     Vec3D n2 = p_edge->GetMirrorLink()->GetTriangle()->GetNormalVector();
 
     // Check if the dot product of the two normal vectors is less than the minimum allowed angle.

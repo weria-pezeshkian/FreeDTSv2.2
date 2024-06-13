@@ -79,7 +79,7 @@
 #define TopExt "top"  // Topology file extension
 #define TSExt "q"  // TS file extension
 #define BTSExt "bts"  // BTS file extension
-#define RestartExt ".res"  // Restart file extension
+#define RestartExt "res"  // Restart file extension
 #define TimeSeriDataExt "-en.xvg"  // 
 
 // Names and identifiers

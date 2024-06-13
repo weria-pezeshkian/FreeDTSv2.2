@@ -3,11 +3,10 @@
 #include "State.h"
 #include "WritevtuFiles.h"
 
-WritevtuFiles::WritevtuFiles(State* pState, int period, std::string foldername){
+WritevtuFiles::WritevtuFiles(State* pState, int period, std::string foldername) :  m_FolderName(foldername) {
     m_pState = pState;
     m_pBox = (pState->GetMesh())->GetBox();
-    m_FolderName = foldername;
-    m_Period = period;
+    m_Period = period;    
 }
 WritevtuFiles::WritevtuFiles(State* pState){
     

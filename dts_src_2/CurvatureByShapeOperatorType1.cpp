@@ -36,7 +36,7 @@ bool CurvatureByShapeOperatorType1::Initialize(){
     const std::vector<links *>& pAllRight_edges = m_pState->GetMesh()->GetRightL();
     for (std::vector<links *>::const_iterator it = pAllRight_edges.begin(); it != pAllRight_edges.end(); ++it) {
         
-        (*it)->UpdateNormal();
+        //(*it)->UpdateNormal();
         (*it)->UpdateShapeOperator(m_pBox);
     }
 //---> now the surface vertices curvature, including vertex shape operator
@@ -61,10 +61,10 @@ bool CurvatureByShapeOperatorType1::Initialize(){
 }
 bool CurvatureByShapeOperatorType1::UpdateVertexCurvature(vertex *pvertex){
  
-    if(pvertex->GetVertexType()==0){
+    if(pvertex->GetVertexType() == 0){
         return UpdateSurfVertexCurvature(pvertex);
     }
-    else if(pvertex->GetVertexType()==1){
+    else if(pvertex->GetVertexType() == 1){
         return UpdateEdgeVertexCurvature(pvertex);
     }
     else{

@@ -35,10 +35,14 @@ void Traj_tsi::WriteAFrame(int step ,  std::string filename){
     if (m_Period == 0 || step % m_Period != 0)
         return;
     
+    int id = step/m_Period;
+    
+    filename = filename + Nfunction::D2S(id)+ "." + TSIExt;
+
     
     // Check the extension of the filename and add ".tsi" if needed
-    if (Nfunction::SubstringFromRight(filename,'.') != TSIExt)
-        filename =filename + "." + TSIExt;
+   // if (Nfunction::SubstringFromRight(filename,'.') != TSIExt)
+     //   filename =filename + "." + TSIExt;
     
     // Retrieve active vertices, triangles, and inclusions from the mesh
      std::vector<vertex*> pver = m_pState->GetMesh()->GetActiveV();

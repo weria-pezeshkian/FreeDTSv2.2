@@ -64,7 +64,6 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneStep(int step){
       if(!m_pState->GetBoundary()->MoveHappensWithinTheBoundary(dx,dy,dz, pvertex)){
           continue;
       }
-      
       double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
       if(EvolveOneVertex(step, pvertex, m_DR*dx, m_DR*dy, m_DR*dz,thermal)){
           m_AcceptedMoves++;
@@ -93,24 +92,34 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneStep(int step){
         }
         m_NumberOfAttemptedMoves++;
     }
-    
+        
     return true;
 }
 bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pvertex, double dx, double dy, double dz,double temp){
     
     double old_energy = 0;
     double new_energy = 0;
-
 //---> first checking if all the distances will be fine if we move the vertex
     if(!VertexMoveIsFine(pvertex,dx,dy,dz,m_MinLength2,m_MaxLength2))  // this function could get a booling varaible to say, it crossed the voxel
         return 0;
 
-    //--- obtain vertices energy terms
+    //--- obtain vertices energy terms and make copies
     old_energy = pvertex->GetEnergy();
+    pvertex->ConstantMesh_Copy();
     const std::vector<vertex *>& vNeighbourV = pvertex->GetVNeighbourVertex();  
     for (std::vector<vertex *>::const_iterator it = vNeighbourV.begin() ; it != vNeighbourV.end(); ++it){
-        
+        (*it)->ConstantMesh_Copy();
         old_energy += (*it)->GetEnergy();
+    }
+    std::vector<triangle *> N_triangles = pvertex->GetVTraingleList();
+    for (std::vector<triangle *>::iterator it = N_triangles.begin() ; it != N_triangles.end(); ++it){
+        (*it)->ConstantMesh_Copy();
+    }
+    const std::vector<links *>& v_NLinks = pvertex->GetVLinkList();
+    for (std::vector<links *>::const_iterator it = v_NLinks.begin() ; it != v_NLinks.end(); ++it){
+        
+        (*it)->ConstantMesh_Copy();
+        (*it)->GetNeighborLink1()->ConstantMesh_Copy();
     }
     // find the links in which there interaction energy changes
     std::vector<links*> Affected_links = GetEdgesWithInteractionChange(pvertex);
@@ -125,7 +134,7 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
      double new_Tvolume = 0;
      double new_Tarea = 0;
      double new_Tcurvature = 0;
-
+   
 //--->
     if(m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()){
         m_pState->GetVAHGlobalMeshProperties()->CalculateAVertexRingContributionToGlobalVariables(pvertex, old_Tvolume, old_Tarea, old_Tcurvature);
@@ -134,44 +143,35 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
     //---> for now, only active nematic force: ForceonVerticesfromInclusions
     Vec3D Dx(dx,dy,dz);
     double dE_force_from_inc  = m_pState->GetForceonVerticesfromInclusions()->Energy_of_Force(pvertex, Dx);
-    
 //----> Move the vertex;
-        pvertex->SetCopy();
         pvertex->PositionPlus(dx,dy,dz);
     //--- update triangles normal
-    std::vector<triangle *> N_triangles = pvertex->GetVTraingleList();
     for (std::vector<triangle *>::iterator it = N_triangles.begin() ; it != N_triangles.end(); ++it){
-        (*it)->Copy();
         (*it)->UpdateNormal_Area(m_pBox);
     }
     //  check new faces angles, if bad, reverse the trinagles
     if(!CheckFacesAfterAVertexMove(pvertex)){
         
         for (std::vector<triangle *>::iterator it = N_triangles.begin() ; it != N_triangles.end(); ++it){
-            (*it)->Reverse2PreviousCopy();
+            (*it)->ReverseConstantMesh_Copy();
         }
         pvertex->PositionPlus(-dx,-dy,-dz);
         return false;
     }
 //---->
     //--> calculate edge shape operator;
-    const std::vector<links *>& v_NLinks = pvertex->GetVLinkList();
     for (std::vector<links *>::const_iterator it = v_NLinks.begin() ; it != v_NLinks.end(); ++it){
         
-        (*it)->SetCopy();
-        (*it)->UpdateNormal();
+       // (*it)->UpdateNormal();
+        //  (*it)->GetNeighborLink1()->UpdateNormal();
         (*it)->UpdateShapeOperator(m_pBox);
-                
-        (*it)->GetNeighborLink1()->SetCopy();
-        (*it)->GetNeighborLink1()->UpdateNormal();
         (*it)->GetNeighborLink1()->UpdateShapeOperator(m_pBox);
     }
 
     // --> calculate vertex shape operator
     (m_pState->GetCurvatureCalculator())->UpdateVertexCurvature(pvertex);
     for (std::vector<vertex *>::const_iterator it = vNeighbourV.begin() ; it != vNeighbourV.end(); ++it){
-        (*it)->SetCopy();
-        (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(*it);
+        (m_pState->GetCurvatureCalculator())->UpdateVertexCurvature(*it);
     }
 
     //---> calculate new energies
@@ -227,22 +227,22 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
 //---> reverse the changes that has been made to the system
         //---> reverse the triangles
         for (std::vector<triangle *>::iterator it = N_triangles.begin() ; it != N_triangles.end(); ++it){
-            (*it)->Reverse2PreviousCopy();
+            (*it)->ReverseConstantMesh_Copy();
         }
         //---> reverse the links
         for (std::vector<links *>::const_iterator it = v_NLinks.begin() ; it != v_NLinks.end(); ++it){
             
-            (*it)->Reverse2PreviousCopy();
-            (*it)->GetNeighborLink1()->Reverse2PreviousCopy();
+            (*it)->ReverseConstantMesh_Copy();
+            (*it)->GetNeighborLink1()->ReverseConstantMesh_Copy();
         }
         //--> the shape operator of these links has not been affected, therefore we only update the interaction energy
         for (std::vector<links *>::iterator it = Affected_links.begin() ; it != Affected_links.end(); ++it){
             (*it)->Reverse_InteractionEnergy();
         }
         //---> reverse the vertices
-        pvertex->Reverse2PreviousCopy();
+        pvertex->ReverseConstantMesh_Copy();
         for (std::vector<vertex *>::const_iterator it = vNeighbourV.begin() ; it != vNeighbourV.end(); ++it){
-            (*it)->Reverse2PreviousCopy();
+            (*it)->ReverseConstantMesh_Copy();
         }
         return false;
      }

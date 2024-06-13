@@ -21,12 +21,15 @@ public:
 
     inline std::vector<vertex*>&    GetActiveV()               {return m_pActiveV;}
     inline std::vector<triangle*>&   GetActiveT()               {return m_pActiveT;}
-    inline std::vector<links*>      GetActiveL()        const       {return m_pActiveL;}
+    inline std::vector<links*>&      GetActiveL()               {return m_pActiveL;}
     inline std::vector<vertex*>&           GetSurfV()                 {return m_pSurfV;}
     inline std::vector<vertex*>&           GetEdgeV()                 {return m_pEdgeV;}
     inline std::vector<links*>&      GetEdgeL()                      {return m_pEdgeL;}
     inline std::vector<links*>&      GetRightL()                    {return m_pHL;}
-    inline std::vector<links*>      GetLeftL()          const       {return m_pMHL;}
+    inline std::vector<links*>&        GetLeftL()                 {return m_pMHL;}
+    inline std::vector<links*>&        GetGhostL()                 {return m_pGhostL;}
+    inline std::vector<triangle*>&     GetGhostT()                {return m_pGhostT;}
+
     inline std::vector<inclusion*>&  GetInclusion()             {return m_pInclusion;}
     std::map<std::string, std::vector<vertex*> > GetGroups()  const  {return m_Groups;}
 

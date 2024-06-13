@@ -34,7 +34,6 @@ public:
         inline Vec3D GetNormalVector()                      {return m_Normal;}
         inline double GetEnergy()                           {return m_Energy;}
         inline Vec3D *GetBox()                              {return m_pBox;}
-        inline int GetSimTimeStep()                         {return m_SimTimeStep;}
         inline int GetGroup()                               {return m_Group;}
         inline std::string GetGroupName()                   {return m_GroupName;}
         inline std::vector <links *> GetVLinkList()             {return m_VLinkList;}
@@ -61,6 +60,7 @@ public:
         inline double GetNormalCurvature()          {return m_Normal_Curvature;}// surface curvature
         inline double GetLength()                   {return m_VLength;}// surface curvature
         inline links* GetPrecedingEdgeLink()        {return m_pPrecedingEdgeLink;}// preceding link at the edge
+        inline links* GetEdgeLink()                 {return m_pEdgeLink;}// preceding link at the edge
 
     
 
@@ -102,13 +102,16 @@ public:
   void UpdateGroup(int z);
   void UpdateVoxel(Voxel<vertex> * pVoxel);
   void UpdateDomainID(int domain_id);
-  void UpdateSimTimeStep(int v);   // we should remove this function at some point
 
 public:
     bool CheckVoxel();
     bool UpdateVoxelAfterAVertexMove(); // update the voxel after the move has happened.
     double SquareDistanceFromAVertex(vertex* pv2);
     double SquareDistanceOfAVertexFromAPoint(double X, double Y, double Z, vertex* pv2);
+
+    
+    friend std::ostream& operator<<(std::ostream& os, const vertex& obj);
+    
 
 private:
 
@@ -123,7 +126,6 @@ private:
     inclusion *m_pInclusion;                    // pointer to an inclusion that the vertex hold (could be empty)
     bool m_OwnInclusion;                        // to check if the vertex own any inclusion
     double m_Area;                              // area of the vertex
-    int m_SimTimeStep;                          // some extera access (should be removed )
     int m_Group;            // Id of a group that the vertex belong too
     private:
     Vec3D m_Normal;
@@ -176,13 +178,14 @@ private:
     double m_OldGeodesic_Curvature;          // Edge Vertex Curvature
     double m_OldNormal_Curvature;          // Edge Vertex Curvature
     double m_OldVLength;                       // length of the vertex
-    double m_OldLambda;                   // line tension
     int m_OldVertexType;                   // 0 surface vertex; 1 edge vertex;
     links * m_OldpEdgeLink;
     links * m_OldpPrecedingEdgeLink;// preceding link at the edge
     MESH* m_pMesh;
-    
-
+    double m_OldPrincipalCurvature_1;
+    double m_OldPrincipalCurvature_2;
+    double m_OldMeanCurvature;
+    double m_OldGaussianCurvature;
 };
 
 

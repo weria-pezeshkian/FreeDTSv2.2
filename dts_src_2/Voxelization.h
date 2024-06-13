@@ -78,9 +78,9 @@ Voxelization(Vec3D *pBox) { // Use Type here
         }
 }
 public:
-inline int GetXSideVoxel() const { return (*m_pBox)(0)/double(m_Nx); }
-inline int GetYSideVoxel() const { return (*m_pBox)(1)/double(m_Ny); }
-inline int GetZSideVoxel() const { return (*m_pBox)(2)/double(m_Nz); }
+inline double GetXSideVoxel() const { return (*m_pBox)(0)/double(m_Nx); }
+inline double GetYSideVoxel() const { return (*m_pBox)(1)/double(m_Ny); }
+inline double GetZSideVoxel() const { return (*m_pBox)(2)/double(m_Nz); }
 inline int GetXVoxelNumber() const { return m_Nx; }
 inline int GetYVoxelNumber() const { return m_Ny; }
 inline int GetZVoxelNumber() const { return m_Nz; }
@@ -122,13 +122,18 @@ bool Voxelize(std::vector<Type *> all_pObjects) {
     std::cout<<" all voxels has been emptied \n";
 #endif
         //--->find the appropriate voxel size and number of voxels
-        m_Nx=int((*m_pBox)(0)/m_Lx);
-        m_Ny=int((*m_pBox)(1)/m_Ly);
-        m_Nz=int((*m_pBox)(2)/m_Lz);
+        m_Nx = int((*m_pBox)(0)/m_Lx);
+        m_Ny = int((*m_pBox)(1)/m_Ly);
+        m_Nz = int((*m_pBox)(2)/m_Lz);
+#if DEBUG_MODE == Enabled
     std::cout<<m_Nx<<"  "<<m_Ny<<"  "<<m_Nz<<" number of voxels\n";
+#endif
         double Lx = (*m_pBox)(0)/double(m_Nx);
         double Ly = (*m_pBox)(1)/double(m_Ny);
         double Lz = (*m_pBox)(2)/double(m_Nz);
+#if DEBUG_MODE == Enabled
+    std::cout<<Lx<<"  "<<Ly<<"  "<<Lz<<" size of voxels\n";
+#endif
         //----> making m_AllVoxel an m_AllVoxel[m_Nx][m_Ny][m_Nz] and create all the cells
         int voxel_id = 0;
         m_AllVoxel = new Voxel<Type>***[m_Nx];

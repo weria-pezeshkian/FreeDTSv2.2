@@ -51,8 +51,6 @@ bool MC_Simulation::do_Simulation(){
 //----> checking if the mesh is good, within the bond of the simulation type. For here, it should be within
         //CheckMesh();
  
-   // open input files (except bts as it has opened before)
-   // m_pState->
 //--- before simualtion lets have a frame of the initial system
         m_pState->GetVisualization()->WriteAFrame(0);
    // time_t startTime;
@@ -79,9 +77,9 @@ for(int step = GetInitialStep(); step <= GetFinalStep(); step++){
        //--- update the mesh topology
        //m_pState->GetDynamicTopology()->MCMove();
         //--- update edge of mesh open edge
-        // m_pState->GetOpenEdgeEvolution()->Move(step);
+         m_pState->GetOpenEdgeEvolution()->Move(step);
         //---- convert inclusions
-        //m_pState->GetInclusionConversion()->ActiveExchange();
+        m_pState->GetInclusionConversion()->Exchange(step);
     
 //----> write files
     //--- write visulaization frame
@@ -101,12 +99,12 @@ for(int step = GetInitialStep(); step <= GetFinalStep(); step++){
     if (step%50 == 0) {
         std::cout<<"Step = "<<step<<"/"<<GetFinalStep()<<std::flush;
         std::cout << std::fixed << std::setprecision(2);
-        std::cout<<"Rates: "<<std::flush;
+        std::cout<<" Rates: "<<std::flush;
         std::cout<<" vertex move = "<<m_pState->GetVertexPositionUpdate()->GetAcceptanceRate(true)<<std::flush;
-        std::cout<<" alexander move = "<<m_pState->GetAlexanderMove()->GetAcceptanceRate(true)<<std::flush;
-        std::cout<<" inclusion move = "<<m_pState->GetInclusionPoseUpdate()->GetAcceptanceRate(true)<<std::flush;
+        std::cout<<"; alexander move = "<<m_pState->GetAlexanderMove()->GetAcceptanceRate(true)<<std::flush;
+        std::cout<<"; inclusion move = "<<m_pState->GetInclusionPoseUpdate()->GetAcceptanceRate(true)<<std::flush;
         if(m_pState->GetDynamicBox()->GetDerivedDefaultReadName() != "No")
-        std::cout<<" Box Move = "<<m_pState->GetDynamicBox()->GetAcceptanceRate(true)<<std::flush;
+        std::cout<<"; Box Move = "<<m_pState->GetDynamicBox()->GetAcceptanceRate(true)<<std::flush;
         std::cout << '\r';
         std::cout << "\033[K";
     }

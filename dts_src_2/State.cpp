@@ -326,8 +326,9 @@ while (input >> firstword) {
             input>>str>>type;
             if(type == WritevtuFiles::GetDefaultReadName()){  // VTUFileFormat
                 double period;
-                input >> type>> period;
-                m_pVisualizationFile = new WritevtuFiles(this, period, type);
+                std::string foldername;
+                input >> foldername>> period;
+                m_pVisualizationFile = new WritevtuFiles(this, period, foldername);
             }
             getline(input,rest);
         }
@@ -364,7 +365,7 @@ while (input >> firstword) {
             getline(input,rest);
         }
 //---- end //
-    //---- AlexanderMove
+    //---- inclsuion move
             else if(firstword == AbstractInclusionPoseIntegrator::GetBaseDefaultReadName()) {
                     input>>str>>type;
                     if(type == InclusionPoseUpdateByMetropolisAlgorithm::GetDefaultReadName()){  // MetropolisAlgorithm
@@ -473,7 +474,6 @@ while (input >> firstword) {
             
             // OpenEdgeEvolution =  EvolutionWithConstantVertex period rate
             input >> str >> type;
-            getline(input,rest);
             if (type == OpenEdgeEvolutionWithConstantVertex::GetDefaultReadName()) { // "EvolutionWithConstantVertex"
                 int period = 0;
                 double rate = 0;
@@ -487,6 +487,8 @@ while (input >> firstword) {
                 
                 std::cout<<"---> error: unknown Open Edge Evolution type: "<<type<<"\n";
             }
+            getline(input,rest);
+
         }
 // end open edge treatment
 // InclusionConversion and ActiveTwoStateInclusion
@@ -673,17 +675,21 @@ while (input >> firstword) {
                 input>>str>>period>>tsiPrecision>>tsiFolder_name;
                 m_pNonbinaryTrajectory  = new Traj_tsi(this, period, tsiFolder_name, tsiPrecision );
             }
+            getline(input,rest);
+
         }
         else if(firstword == "Parallel_Tempering")
         {
             // Parallel_Tempering  = on PT_steps  PT_minbeta    PT_maxbeta
             std::string state;
             input>>str>>state>>(m_pParallel_Replica->PT_steps)>>(m_pParallel_Replica->PT_minbeta)>>(m_pParallel_Replica->PT_maxbeta);
-            getline(input,rest);
             if(state=="on"|| state=="yes"|| state=="On"|| state=="ON"|| state=="Yes"|| state=="YES")
                 m_pParallel_Replica->State = true;
             else
                 m_pParallel_Replica->State = false;
+            
+            getline(input,rest);
+
         }
         else if(firstword == BTSFile::GetDefaultReadName() ){ // "OutPutTRJ_BTS"
             int periodic, precision;
@@ -829,11 +835,7 @@ bool State::Initialize(){
         m_pBoundary->Initialize();
 //-----> box change
     m_pDynamicBox->Initialize();
-//----> energy class
-    //---> to get interaction energies
-     m_pEnergyCalculator->Initialize(m_InputFileName);
-    //---> to update each vertex and edge energy. Up to now May 2024, edge energy is not zero when both vertices has inclusions
-    m_pEnergyCalculator->UpdateTotalEnergy(m_pEnergyCalculator->CalculateAllLocalEnergy());
+
     
 //----> inclsuion exchange, active inclsuion exchange
     m_pInclusionConversion->Initialize(this);
@@ -853,6 +855,12 @@ bool State::Initialize(){
     m_pTimeSeriesLogInformation->WriteStartingState();
     m_pVisualizationFile->WriteAFrame(-m_pVisualizationFile->GetPeriod());
 
+//----> energy class
+//---> to get interaction energies
+    m_pEnergyCalculator->Initialize(m_InputFileName);
+//---> to update each vertex and edge energy. Up to now May 2024, edge energy is not zero when both vertices has inclusions
+    m_pEnergyCalculator->UpdateTotalEnergy(m_pEnergyCalculator->CalculateAllLocalEnergy());
+    
     if(m_NumberOfErrors!=0){
         std::cout<<" There were "<<m_NumberOfErrors<<" errors in the input files "<<std::endl;
         exit(0);

@@ -1,5 +1,23 @@
-Kappa = 100 0 0
-VertexArea = 10 0.7 0 0
-VertexPositionIntegrator = MetropolisAlgorithm 1 0 0.05
+Kappa = 30 0 0
+Edge_Parameters = 0 0 0
+VertexArea = 0 0.7 0 0
+VertexPositionIntegrator = MetropolisAlgorithm 1 1 0.05
 AlexanderMove = MetropolisAlgorithm 1
-VisualizationFormat = VTUFileFormat VTU_F 1
+InclusionPoseIntegrator = MetropolisAlgorithm   1 1
+Dynamic_Box = No  IsotropicFrameTension 5 -3 XY
+OpenEdgeEvolution = No EvolutionWithConstantVertex 1 1
+VisualizationFormat = VTUFileFormat VTU_F 100
+INCLUSION
+Define 2 Inclusions
+SRotation   Type   K   KG  KP  KL  C0     C0P  C0L
+1           Pro1   100  0   0   0   0.0   0   0    0   0  0  0.0
+2           Pro2   20  0   0   0   0.0   0   0    0   2  0  0.0
+GenerateInclusions
+Selection_Type Random
+TypeID     1  2    
+Density    0.0  0.0  
+Inclusion-Inclusion-Int
+1    1    1   2  2   -2
+
+
+

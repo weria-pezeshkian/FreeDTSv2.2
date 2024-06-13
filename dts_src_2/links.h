@@ -33,7 +33,6 @@ public:
         inline Vec3D GetNormal()                 const      {return m_Normal;}
     	inline Vec3D GetBe()                     const     	{return m_Be;}
     	inline double GetHe()                    const      {return m_He;}
-        inline int GetSimTimeStep()              const      {return m_SimTimeStep;}
       //  inline double GetLinkSide()                 const      {return m_LinkSide;}
         inline double GetIntEnergy()             const      {return m_IntEnergy;}
         inline double GetEdgeSize()              const      {return m_EdgeSize;}
@@ -82,7 +81,6 @@ private:
     Vec3D m_Be;
     double m_He;
     double m_IntEnergy;
-    int m_SimTimeStep;
     
     
 public:

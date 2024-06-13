@@ -14,43 +14,65 @@
  */
 
 OpenEdgeEvolutionWithConstantVertex::OpenEdgeEvolutionWithConstantVertex(int period, double rate, State *pState ) :
-                                                    AbstractSimulation(*(pState->GetSimulation())),
-                                                    MESH(*(pState->GetMesh())),
                                                     m_pState(pState),
+                                                    m_pEdgeL(pState->GetMesh()->GetEdgeL()),
+                                                    m_pGhostL(pState->GetMesh()->GetGhostL()),
+                                                    m_pGhostT(pState->GetMesh()->GetGhostT()),
+                                                    m_pActiveT(pState->GetMesh()->GetActiveT()),
+                                                    m_pRightL(pState->GetMesh()->GetRightL()),
+                                                    m_pLeftL(pState->GetMesh()->GetLeftL()),
+                                                    m_pActiveL(pState->GetMesh()->GetActiveL()),
+                                                    m_pSurfV(pState->GetMesh()->GetSurfV()),
+                                                    m_pEdgeV(pState->GetMesh()->GetEdgeV()),
                                                     m_Period(period),
-                                                    m_NumberOfMovePerStep(rate) {
-
+                                                    m_NumberOfMovePerStep(rate),
+                                                    m_Beta(pState->GetSimulation()->GetBeta()),
+                                                    m_DBeta(pState->GetSimulation()->GetBeta()),
+                                                    m_MinLength2(pState->GetSimulation()->GetMinL2()),
+                                                    m_MaxLength2(pState->GetSimulation()->GetMaxL2()),
+                                                    m_MinAngle(pState->GetSimulation()->GetMinAngle())
+{
+    m_EdgeSize = 0;
 }
 OpenEdgeEvolutionWithConstantVertex::~OpenEdgeEvolutionWithConstantVertex(){
     
 }
 void OpenEdgeEvolutionWithConstantVertex::Initialize(){
-
-
+    
+    m_pBox = m_pState->GetMesh()->GetBox();
+    m_pMesh = m_pState->GetMesh();
+    m_NumberOfAttemptedMoves = 0;
+    m_AcceptedMoves = 0;
+    
+    for (std::vector<links *>::iterator it = m_pEdgeL.begin() ; it != m_pEdgeL.end(); ++it){
+        m_EdgeSize += (*it)->GetEdgeSize();
+    }
+    
+    return;
 }
 bool OpenEdgeEvolutionWithConstantVertex::Move(int step) {
 
-    if(step%m_Period != 0 || m_pEdgeL.size() == 0 )
+    if(step % m_Period != 0 || m_pEdgeL.size() == 0 )
         return false;
    
     int N = m_pEdgeL.size();
     N = int(m_NumberOfMovePerStep*double(N));
-    
+    if(m_AcceptedMoves == 0)
     for (int i = 0; i< N ;i++) {
 
         if(m_pEdgeL.size() == 0 )
             break;
-        
         if(MCAttemptedToAddALink()){
             m_AcceptedMoves++;
         }
-        if(MCAttemptedToRemoveALink()){
+        /*if(MCAttemptedToRemoveALink()){
             m_AcceptedMoves++;
-        }
+        }*/
         m_NumberOfAttemptedMoves++;
         m_NumberOfAttemptedMoves++;
+        break;
     }
-    
+
     return true;
 }
 bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToRemoveALink(){
@@ -58,55 +80,60 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToRemoveALink(){
     if( m_pEdgeL.size() == 0 )
         return false;
     
-
-   
-            int n = m_pState->GetRandomNumberGenerator()->IntRNG(m_pEdgeL.size());
-            links *plink = m_pEdgeL[n];
+    int n = m_pState->GetRandomNumberGenerator()->IntRNG(m_pEdgeL.size());
+    links *plink = m_pEdgeL[n];
     
-            vertex *v1 = plink->GetV1();
-            vertex *v2 = plink->GetV2();
-            vertex *v3 = plink->GetV3();
+    vertex *v1 = plink->GetV1();
+    vertex *v2 = plink->GetV2();
+    vertex *v3 = plink->GetV3();
 
-        if(v1->GetVLinkList().size()<2 || v2->GetVLinkList().size()<2 || v3->m_VertexType == 1)
-            return false;
+    if(v1->GetVLinkList().size() < 2 || v2->GetVLinkList().size() < 2 || v3->GetVertexType() == 1)
+        return false;
         
+    double eold = 0;
+    double enew = 0;
+    double old_edgeLength = 0;
+    double new_edgeLength = 0;
+
+    old_edgeLength = plink->GetEdgeSize();
+    
         // calculate the old energy
-        double eold = v1->GetEnergy();
-        eold+= v2->GetEnergy();
-        eold+= v3->GetEnergy();
+        eold = v1->GetEnergy();
+        eold += v2->GetEnergy();
+        eold += v3->GetEnergy();
 
         //
         {
         std::vector <links *> nvl1 = v1->GetVLinkList();
         for (std::vector<links *>::iterator it = nvl1.begin() ; it != nvl1.end(); ++it)
-            eold+=2*(*it)->GetIntEnergy();
+            eold += 2*(*it)->GetIntEnergy();
         
         std::vector <links *> nvl2 = v2->GetVLinkList();
         for (std::vector<links *>::iterator it = nvl2.begin() ; it != nvl2.end(); ++it)
-            eold+=2*(*it)->GetIntEnergy();
+            eold += 2*(*it)->GetIntEnergy();
         
         std::vector <links *> nvl3 = v3->GetVLinkList();
         for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it)
-            eold+=2*(*it)->GetIntEnergy();
+            eold += 2*(*it)->GetIntEnergy();
             
             //--- this link does not exist in the nb of any vertices
-            eold+=2*(v1->m_pPrecedingEdgeLink)->GetIntEnergy();
+            eold += 2*(v1->m_pPrecedingEdgeLink)->GetIntEnergy();
 
             // because these two links were counted two times
-            eold-=2*(plink->GetNeighborLink1())->GetIntEnergy();
-            eold-=2*(plink->GetNeighborLink2())->GetIntEnergy();
+            eold -= 2*(plink->GetNeighborLink1())->GetIntEnergy();
+            eold -= 2*(plink->GetNeighborLink2())->GetIntEnergy();
         }
         //== this is a new piece to use global inclusion direction as a constant variable during the move: note global direction should be projected on the new local plane
         if(v1->VertexOwnInclusion()){
-            if(!(v1->GetInclusion())->UpdateGlobalDirectionFromLocal())
+            if(!v1->GetInclusion()->UpdateGlobalDirectionFromLocal())
                 return false;
         }
         if(v2->VertexOwnInclusion()){
-            if(!(v2->GetInclusion())->UpdateGlobalDirectionFromLocal())
+            if(!v2->GetInclusion()->UpdateGlobalDirectionFromLocal())
                 return false;
         }
         if(v3->VertexOwnInclusion()){
-            if(!(v3->GetInclusion())->UpdateGlobalDirectionFromLocal())
+            if(!v3->GetInclusion()->UpdateGlobalDirectionFromLocal())
                 return false;
         }
 
@@ -124,7 +151,7 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToRemoveALink(){
                     return false;
                 }
                 LD1(2) = 0;
-                LD1 = LD1*(1/LD1.norm());
+                LD1.normalize();
             }
             if(v2->VertexOwnInclusion()){
                 LD2 = (v2->GetInclusion())->GetGDirection();
@@ -134,7 +161,7 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToRemoveALink(){
                     return false;
                 }
                 LD2(2) = 0;
-                LD2 = LD2*(1/LD2.norm());
+                LD2.normalize();
             }
             if(v3->VertexOwnInclusion()){
                 LD3 = (v3->GetInclusion())->GetGDirection();
@@ -144,19 +171,19 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToRemoveALink(){
                     return false;
                 }
                 LD3(2) = 0;
-                LD3 = LD3*(1/LD3.norm());
+                LD3.normalize();
             }
 //-- this should happen at the end, otherwise this early links get bad number
             if(v1->VertexOwnInclusion())
-            (v1->GetInclusion())->UpdateLocalDirection(LD1);
+                v1->GetInclusion()->UpdateLocalDirection(LD1);
             if(v2->VertexOwnInclusion())
-            (v2->GetInclusion())->UpdateLocalDirection(LD2);
+                v2->GetInclusion()->UpdateLocalDirection(LD2);
             if(v3->VertexOwnInclusion())
-            (v3->GetInclusion())->UpdateLocalDirection(LD3);
+                v3->GetInclusion()->UpdateLocalDirection(LD3);
         }
  
         // new energy
-        double enew = m_pState->GetEnergyCalculator()->SingleVertexEnergy(v1);
+               enew = m_pState->GetEnergyCalculator()->SingleVertexEnergy(v1);
                enew += m_pState->GetEnergyCalculator()->SingleVertexEnergy(v2);
                enew += m_pState->GetEnergyCalculator()->SingleVertexEnergy(v3);
         
@@ -174,17 +201,21 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToRemoveALink(){
         for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it)
             enew += m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(*it);
         }
-        enew += m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(v1->m_pPrecedingEdgeLink);
+        enew += m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(v1->GetPrecedingEdgeLink());
         
-        double DE = (enew-eold);
+        new_edgeLength = v1->GetEdgeLink()->GetEdgeSize() + v3->GetEdgeLink()->GetEdgeSize();
+        double diff_energy = enew - eold;
         double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
+    
         //if(double(NS)/double(NL+1)*(exp(-m_Beta*DE)>thermal ))
-        if(exp(-m_Beta*DE)>thermal) {
+    if(exp( -m_Beta * diff_energy + m_DBeta) > thermal) {
             
-            m_pState->GetEnergyCalculator()->AddToTotalEnergy(DE);
+            m_pState->GetEnergyCalculator()->AddToTotalEnergy(diff_energy);
+            AddToEdge(new_edgeLength - old_edgeLength);
         }
-        else{       // reject the move
-                    CreateALink(v1);
+        else{
+            // reject the move
+                CreateALink(v1);
                 if(v1->VertexOwnInclusion())
                 {
                     Tensor2  G2L = v1->GetG2LTransferMatrix();
@@ -212,7 +243,6 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToRemoveALink(){
                     }
                     (v3->GetInclusion())->UpdateLocalDirection(LD);
                 }
-            
             
             {
             double e = m_pState->GetEnergyCalculator()->SingleVertexEnergy(v1);
@@ -249,8 +279,8 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
                                                       //     v1-----v2
     
     
-    if(m_pEdgeL.size()<3 && m_pEdgeL.size()!= 0){
-        std::cout<<" error--> strangle, should not happen \n";
+    if(m_pEdgeL.size() < 3 && m_pEdgeL.size() != 0){
+        std::cout<<" error--> 123 should not happen \n";
         return false;
     }
     
@@ -258,13 +288,21 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
     int n = m_pState->GetRandomNumberGenerator()->IntRNG(m_pEdgeV.size());
     vertex *v1 = m_pEdgeV[n];
     
-    if(!Linkisvalid(v1, m_MinLength2, m_MaxLength2, m_MinAngle))
+    if( !Linkisvalid(v1) ){
         return false;
-
+    }
+    double old_edgeLength = 0;
+    double new_edgeLength = 0;
+    double eold = 0;
+    double enew = 0;
+    
     links* l2 = v1->m_pEdgeLink;
     vertex *v3 = l2->GetV2();
     links* l1 = v3->m_pEdgeLink;
     vertex *v2 = l1->GetV2();
+    
+    old_edgeLength = l2->GetEdgeSize() + l1->GetEdgeSize();
+
 //----   for constant global direction type of moves
     if(v1->VertexOwnInclusion()){
         if(!(v1->GetInclusion())->UpdateGlobalDirectionFromLocal())
@@ -279,28 +317,28 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
             return false;
     }
     
-    double eold = v1->GetEnergy();
-    eold+= v2->GetEnergy();
-    eold+= v3->GetEnergy();
+    eold += v1->GetEnergy();
+    eold += v2->GetEnergy();
+    eold += v3->GetEnergy();
 
     //=== inclusion interaction energy; it is multipled by two because only half is assinged to each edge
     std::vector <links *> nvl1 = v1->GetVLinkList();
     for (std::vector<links *>::iterator it = nvl1.begin() ; it != nvl1.end(); ++it)
-        eold+=2*(*it)->GetIntEnergy();
+        eold += 2*(*it)->GetIntEnergy();
 
     std::vector <links *> nvl2 = v2->GetVLinkList();
     for (std::vector<links *>::iterator it = nvl2.begin() ; it != nvl2.end(); ++it)
-        eold+=2*(*it)->GetIntEnergy();
+        eold += 2*(*it)->GetIntEnergy();
 
     std::vector <links *> nvl3 = v3->GetVLinkList();
     for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it)
-        eold+=2*(*it)->GetIntEnergy();
+        eold += 2*(*it)->GetIntEnergy();
 
-    eold+=2*(v1->m_pPrecedingEdgeLink)->GetIntEnergy();
-
+    eold += 2*(v1->m_pPrecedingEdgeLink)->GetIntEnergy();
     // create a link (this also updates the gemotry)
      links *newlink = CreateALink(v1);
-
+    std::cout<<" here we get \n";
+    return true;
     //----   for constant global direction type of moves
     if (v1->VertexOwnInclusion() || v2->VertexOwnInclusion() || v3->VertexOwnInclusion()) {
         Vec3D LD1, LD2, LD3;
@@ -312,7 +350,7 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
                 return false;
             }
             LD1(2) = 0;
-            LD1 = LD1*(1/LD1.norm());
+            LD1.normalize();
         }
         if(v2->VertexOwnInclusion()){
             LD2 = (v2->GetInclusion())->GetGDirection();
@@ -323,7 +361,7 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
                 return false;
             }
             LD2(2) = 0;
-            LD2 = LD2*(1/LD2.norm());
+            LD2.normalize();
         }
         if(v3->VertexOwnInclusion()){
             LD3 = (v3->GetInclusion())->GetGDirection();
@@ -334,7 +372,7 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
                 return false;
             }
             LD3(2) = 0;
-            LD3 = LD3*(1/LD3.norm());
+            LD3.normalize();
         }
 //-- this should happen at the end, otherwise this early links get bad number
         if(v1->VertexOwnInclusion())
@@ -345,7 +383,7 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
         (v3->GetInclusion())->UpdateLocalDirection(LD3);
     }
     
-    double enew = m_pState->GetEnergyCalculator()->SingleVertexEnergy(v1);
+    enew = m_pState->GetEnergyCalculator()->SingleVertexEnergy(v1);
     enew += m_pState->GetEnergyCalculator()->SingleVertexEnergy(v2);
     enew += m_pState->GetEnergyCalculator()->SingleVertexEnergy(v3);
 
@@ -360,13 +398,15 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
     enew += m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(v1->m_pPrecedingEdgeLink);
         // the new created link
     enew += m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(newlink);
+    new_edgeLength = newlink->GetEdgeSize();
 
-    double DE = (enew-eold);
+    double diff_energy = enew - eold;
     double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
 
-    if(exp(-m_Beta*DE + m_DBeta ) > thermal ) {
+    if(exp(-m_Beta  *diff_energy + m_DBeta ) > thermal ) {
         
-        m_pState->GetEnergyCalculator()->AddToTotalEnergy(DE);
+        m_pState->GetEnergyCalculator()->AddToTotalEnergy(diff_energy);
+        AddToEdge(new_edgeLength - old_edgeLength);
     }
     else
     {
@@ -412,46 +452,20 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
     
     return true;
 }
-void OpenEdgeEvolutionWithConstantVertex::RemoveFromLinkList(links* z, std::vector<links*> &vect)
-{
-    vect.erase(std::remove(vect.begin(), vect.end(), z), vect.end());
-}
-void OpenEdgeEvolutionWithConstantVertex::RemoveFromVertexList(vertex* z, std::vector<vertex*> &vect)
-{
-
-    vect.erase(std::remove(vect.begin(), vect.end(), z), vect.end());
-}
-void OpenEdgeEvolutionWithConstantVertex::RemoveFromTriangleList(triangle* z, std::vector<triangle*> &vect)
-{
-
-    vect.erase(std::remove(vect.begin(), vect.end(), z), vect.end());
-}
-// this can be written as template
-void OpenEdgeEvolutionWithConstantVertex::AddtoLinkList(links* z, std::vector<links*> &vect)
-{
-    vect.push_back(z);
-}
-void OpenEdgeEvolutionWithConstantVertex::AddtoVertexList(vertex* z, std::vector<vertex*> &vect)
-{
-    vect.push_back(z);
-}
-void OpenEdgeEvolutionWithConstantVertex::AddtoTriangleList(triangle* z, std::vector<triangle*> &vect)
-{
-    vect.push_back(z);
-}
 // an atempt to create a link                       //        v3                      v3
 // between v1 and v2                                // ml3  /   \  ml2---> ml3,l3  // T \\  l2, ml2   ml3(v1,v3)  ml2(v3,v2)
                                                   //     v1      v2               v1---->v2
-links* OpenEdgeEvolutionWithConstantVertex::CreateALink(vertex *v1){           //     l1
+links* OpenEdgeEvolutionWithConstantVertex::CreateALink(vertex *v1) {           //     l1
 // l1 will be created and
+    
     if(m_pGhostT.size()<1 && m_pGhostL.size()<3){
         std::cout<<" error 882---> we do not have enough storage for the new trinagle and links \n";
         exit(0);
     }
     
-    links* ml3 = v1->m_pEdgeLink;
+    links* ml3 = v1->GetEdgeLink();
     vertex *v3 = ml3->GetV2();
-    links* ml2 = v3->m_pEdgeLink;
+    links* ml2 = v3->GetEdgeLink();
     vertex *v2 = ml2->GetV2();
     links *l1 = m_pGhostL[0];
     links *l2 = m_pGhostL[1];
@@ -468,13 +482,13 @@ links* OpenEdgeEvolutionWithConstantVertex::CreateALink(vertex *v1){           /
     v1->AddtoTraingleList(tre);
     v2->AddtoTraingleList(tre);
     v3->AddtoTraingleList(tre);
-    
+
 //----- update the links
       //-- update l1 and l2 that have became a surface edge
     RemoveFromLinkList(ml2, m_pEdgeL);
     RemoveFromLinkList(ml3, m_pEdgeL);
-    AddtoLinkList(ml2, m_pHL);
-    AddtoLinkList(ml3, m_pHL);
+    AddtoLinkList(ml2, m_pRightL);
+    AddtoLinkList(ml3, m_pRightL);
     ml2->m_LinkType = 0;
     ml3->m_LinkType = 0;
     l2->m_LinkType = 0;
@@ -489,8 +503,8 @@ links* OpenEdgeEvolutionWithConstantVertex::CreateALink(vertex *v1){           /
     ml3->UpdateMirrorLink(l3);
     l2->UpdateMirrorLink(ml2);
     l3->UpdateMirrorLink(ml3);
-    AddtoLinkList(l2, m_pMHL);   // since we just added ml1 to m_pHL
-    AddtoLinkList(l3, m_pMHL);
+    AddtoLinkList(l2, m_pLeftL);   // since we just added ml1 to m_pRightL
+    AddtoLinkList(l3, m_pLeftL);
     m_pGhostL.erase(m_pGhostL.begin());   // three times for l1,l2,l1
     m_pGhostL.erase(m_pGhostL.begin());   // three times for l1,l2,l1
     m_pGhostL.erase(m_pGhostL.begin());    // three times for l1,l2,l1
@@ -524,8 +538,8 @@ links* OpenEdgeEvolutionWithConstantVertex::CreateALink(vertex *v1){           /
     
  //----- now we should update the geomtry of the affected v, l, t
     tre->UpdateNormal_Area(m_pBox);   //trinagule normal and area should be found
-    l2->UpdateNormal();   // normal of the links with mirror should be updated
-    l3->UpdateNormal();   // normal of the links with mirror should be updated
+   // l2->UpdateNormal();   // normal of the links with mirror should be updated
+   // l3->UpdateNormal();   // normal of the links with mirror should be updated
 
     // their mirror will be updated by the function within
     l1->UpdateEdgeVector(m_pBox);   // l1 is an edge link, we need only the edge vector and length
@@ -539,9 +553,9 @@ links* OpenEdgeEvolutionWithConstantVertex::CreateALink(vertex *v1){           /
     return l1;
 }
 
-//         v3                    v2
+//         v3                    v3
 //  l3  // T1 \\ l2  -->  ml3  /   \  ml2
-//      v1-l1- v2             v1    v3
+//      v1-l1- v2             v1    v2
 bool OpenEdgeEvolutionWithConstantVertex::KillALink(links *l1)
 {
         triangle *tri = l1->GetTriangle();
@@ -565,10 +579,10 @@ bool OpenEdgeEvolutionWithConstantVertex::KillALink(links *l1)
     RemoveFromLinkList(l1, m_pActiveL);  // too expensive
     RemoveFromLinkList(l2, m_pActiveL);  // too expensive
     RemoveFromLinkList(l3, m_pActiveL);  // too expensive
-    RemoveFromLinkList(l2, m_pHL);  // too expensive
-    RemoveFromLinkList(l3, m_pHL);  // too expensive
-    RemoveFromLinkList(l2, m_pMHL);  // too expensive
-    RemoveFromLinkList(l3, m_pMHL);  // too expensive
+    RemoveFromLinkList(l2, m_pRightL);  // too expensive
+    RemoveFromLinkList(l3, m_pRightL);  // too expensive
+    RemoveFromLinkList(l2, m_pLeftL);  // too expensive
+    RemoveFromLinkList(l3, m_pLeftL);  // too expensive
     RemoveFromLinkList(l1, m_pEdgeL);    // this link does not exist in m_pMHL and m_pHL
     AddtoLinkList(l1,m_pGhostL);
     AddtoLinkList(l2,m_pGhostL);
@@ -578,10 +592,10 @@ bool OpenEdgeEvolutionWithConstantVertex::KillALink(links *l1)
     v3->RemoveFromLinkList(l3);
     
 //--- convert the links into edge links ml2 and ml3
-    RemoveFromLinkList(ml2, m_pHL);  // too expensive; I should find a better way
-    RemoveFromLinkList(ml3, m_pHL);  // too expensive
-    RemoveFromLinkList(ml2, m_pMHL);  // too expensive
-    RemoveFromLinkList(ml3, m_pMHL);  // too expensive
+    RemoveFromLinkList(ml2, m_pRightL);  // too expensive; I should find a better way
+    RemoveFromLinkList(ml3, m_pRightL);  // too expensive
+    RemoveFromLinkList(ml2, m_pLeftL);  // too expensive
+    RemoveFromLinkList(ml3, m_pLeftL);  // too expensive
     ml2->UpdateMirrorFlag(false);
     ml3->UpdateMirrorFlag(false);
     ml2->m_LinkType = 1;
@@ -613,229 +627,14 @@ bool OpenEdgeEvolutionWithConstantVertex::KillALink(links *l1)
     return true;
     
 }
-
-// an atempt to create a triangle                    //       v3              v3
-// using v1                                          // l3   /   \ l2  -->  // T \\
-                                                  //       v1---v2        v1 ====v2
-                                                    //        l1
-triangle* OpenEdgeEvolutionWithConstantVertex::CloseATriangleHole(vertex *v1)
-{
-
-
-    links* l1 = v1->m_pEdgeLink;
-    vertex *v2 = l1->GetV2();
-    links* l2 = v2->m_pEdgeLink;
-    vertex *v3 = l2->GetV2();
-    links* l3 = v3->m_pEdgeLink;
-
-        // we added the triangle
-    if(m_pGhostT.size()<1 || m_pGhostL.size()<3){
-        std::cout<<" error 882---> we do not have enough storage for the new trinagles or links \n";
-        exit(0);
-    }
-
-//-- new triangle and links that need to be created.
-    links *ml1 = m_pGhostL[0];
-    links *ml2 = m_pGhostL[1];
-    links *ml3 = m_pGhostL[2];
-    triangle *outtriangle = m_pGhostT[0];
-//-- build the new triangle
-    m_pGhostT.erase(m_pGhostT.begin());
-    AddtoTriangleList(outtriangle, m_pActiveT);
-    // this trinagle is made of v1, v2 and v3 but aniwise
-    outtriangle->UpdateVertex(v2,v1,v3);
-    // add the trinagle to the vertcies list
-    v1->AddtoTraingleList(outtriangle);
-    v2->AddtoTraingleList(outtriangle);
-    v3->AddtoTraingleList(outtriangle);
-    // note, the exsisting links belong to different trinagles. ml1, ml2, ml3 making this trinagle
-    ml1->UpdateTriangle(outtriangle);
-    ml2->UpdateTriangle(outtriangle);
-    ml3->UpdateTriangle(outtriangle);
-//-- build the ml links
-    //-- removing from ghost containers
-    m_pGhostL.erase(m_pGhostL.begin());  // rm ml1
-    m_pGhostL.erase(m_pGhostL.begin());  // rm ml2
-    m_pGhostL.erase(m_pGhostL.begin());  // rm ml3
-    //--add ml links to active
-    AddtoLinkList(ml1, m_pActiveL);
-    AddtoLinkList(ml2, m_pActiveL);
-    AddtoLinkList(ml3, m_pActiveL);
-    //--- to mhl
-    AddtoLinkList(ml1, m_pMHL);  // note: this is true because l1 is added to hl
-    AddtoLinkList(ml2, m_pMHL);
-    AddtoLinkList(ml3, m_pMHL);
-    //-- next link
-    ml1->UpdateNeighborLink1(ml3);
-    ml1->UpdateNeighborLink2(ml2);
-    ml2->UpdateNeighborLink1(ml1);
-    ml2->UpdateNeighborLink2(ml3);
-    ml3->UpdateNeighborLink1(ml2);
-    ml3->UpdateNeighborLink2(ml1);
-    //-- update their vertex
-    ml1->UpdateV(v2,v1,v3);
-    ml2->UpdateV(v3,v2,v1);
-    ml3->UpdateV(v1,v3,v2);
-    //== adding the m links to vertices list
-    v1->AddtoLinkList(ml3);
-    v3->AddtoLinkList(ml2);
-    v2->AddtoLinkList(ml1);
-    ml1->m_LinkType = 0; //
-    ml2->m_LinkType = 0; //
-    ml3->m_LinkType = 0; //
-    ml1->UpdateMirrorFlag(true);
-    ml2->UpdateMirrorFlag(true);
-    ml3->UpdateMirrorFlag(true);
-    ml1->UpdateMirrorLink(l1);
-    ml2->UpdateMirrorLink(l2);
-    ml3->UpdateMirrorLink(l3);
-//-- update l1,l2,l3
-    l1->m_LinkType = 0; //
-    l2->m_LinkType = 0; //
-    l3->m_LinkType = 0; //
-    l1->UpdateMirrorFlag(true);
-    l2->UpdateMirrorFlag(true);
-    l3->UpdateMirrorFlag(true);
-    l1->UpdateMirrorLink(ml1);
-    l2->UpdateMirrorLink(ml2);
-    l3->UpdateMirrorLink(ml3);
-    //  l1 and l2 to  m_pHL
-    AddtoLinkList(l1, m_pHL);  //note  ml1  ml2 and ml3 are in mhl
-    AddtoLinkList(l2, m_pHL);
-    AddtoLinkList(l3, m_pHL);
-    RemoveFromLinkList(l1, m_pEdgeL);     // they are part of normal links now
-    RemoveFromLinkList(l2, m_pEdgeL);
-    RemoveFromLinkList(l3, m_pEdgeL);
-//== uodate vertices
-    v1->m_VertexType = 0; // meaning it is not an edge vertex anymore
-    v2->m_VertexType = 0; // meaning it is not an edge vertex anymore
-    v3->m_VertexType = 0; // meaning it is not an edge vertex anymore
-    //-- removing from vedge containers
-    RemoveFromVertexList(v1, m_pEdgeV);   // v1, v2 , v3 is no longer an edge vertex
-    RemoveFromVertexList(v2, m_pEdgeV);
-    RemoveFromVertexList(v3, m_pEdgeV);
-    //--- adding to the containers
-    AddtoVertexList(v1, m_pSurfV);
-    AddtoVertexList(v2, m_pSurfV);
-    AddtoVertexList(v3, m_pSurfV);
-
-// updating the geomtry
-      // triangle area and normal
-    outtriangle->UpdateNormal_Area(m_pBox);   //trinagule normal and area should be found
-    ml1->UpdateNormal();   // normal of the links with mirror should be updated
-    ml2->UpdateNormal();   // normal of the links with mirror should be updated
-    ml3->UpdateNormal();   // normal of the links with mirror should be updated
-
-    // their mirror will be updated by the function within
-    ml1->UpdateShapeOperator(m_pBox);   // this link is now a surface link and should be found a shape operator
-    ml2->UpdateShapeOperator(m_pBox);   // this link is now a surface link and should be found a shape operator
-    ml3->UpdateShapeOperator(m_pBox);   // this link is now a surface link and should be found a shape operator
-    
-    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(v1);  // v1 is still an edge vertex
-    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(v2);  // // v2 is still an edge vertex
-    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(v3);  // v3 is now a surface vertex
-
-
-    return outtriangle;
-}
-// the triangle should belong to l1 (l1 get killed at the end)
-// ---------------------------                      //               v3               v3
-// between v1 and v2                                //     l3     //  \\ l2 --->     /   \
-                                                  //             v1 ====v2          v1---v2
-                                                         //          l1
-
-// this function kills target_triangle and the assosciated links l1,l2,l3. It send them to the ghost area
-bool OpenEdgeEvolutionWithConstantVertex::KillATriangle(links *l1){
-//=== note: the mirror will be killed not l1,
-    // this are the objects that will be killed
-    links *ml1 = l1->GetMirrorLink();
-    links *ml3 = ml1->GetNeighborLink1();   //    in the reverse function ml1->UpdateNeighborLink1(ml3);
-    links *ml2 = ml3->GetNeighborLink1();   //    in the reverse function ml3->UpdateNeighborLink1(ml2);
-    triangle *target_triangle = ml1->GetTriangle();
-
-    //-- other objects
-    links *l2 = ml2->GetMirrorLink();
-    links *l3 = ml3->GetMirrorLink();
-    vertex *v1 = ml1->GetV2();
-    vertex *v2 = ml1->GetV1();      //  in the reverse function ml2->UpdateV(v3,v2,v1);
-    vertex *v3 = ml1->GetV3();
-
-//-- remove the triangle, only from active t and verices. Note the links that have this triangle will die anyway
-    AddtoTriangleList(target_triangle,m_pGhostT);
-    RemoveFromTriangleList(target_triangle, m_pActiveT);
-    v1->RemoveFromTraingleList(target_triangle);
-    v2->RemoveFromTraingleList(target_triangle);
-    v3->RemoveFromTraingleList(target_triangle);
-    
-//--- remove the links ml1, ml2, ml3 links
-    RemoveFromLinkList(ml1, m_pActiveL);
-    RemoveFromLinkList(ml2, m_pActiveL);
-    RemoveFromLinkList(ml3, m_pActiveL);
-    RemoveFromLinkList(ml1, m_pMHL);
-    RemoveFromLinkList(ml2, m_pMHL);
-    RemoveFromLinkList(ml3, m_pMHL);
-    RemoveFromLinkList(ml1, m_pHL);  // we know that they were added to mhl but for more generality
-    RemoveFromLinkList(ml2, m_pHL);
-    RemoveFromLinkList(ml3, m_pHL);
-    AddtoLinkList(ml1,m_pGhostL);
-    AddtoLinkList(ml2,m_pGhostL);
-    AddtoLinkList(ml3,m_pGhostL);
-// update l1,l2 and l3 links
-    RemoveFromLinkList(l1, m_pHL);  // this link also has became an edge links, should be removed form the list
-    RemoveFromLinkList(l2, m_pHL); // this link also has became an edge links, should be removed form the list
-    RemoveFromLinkList(l3, m_pHL); // this link also has became an edge links, should be removed form the list
-    RemoveFromLinkList(l1, m_pMHL); // we know they were added to phl but for generality
-    RemoveFromLinkList(l2, m_pMHL); // this link also has became an edge links, should be removed form the list
-    RemoveFromLinkList(l3, m_pMHL); // this link also has became an edge links, should be removed form the list
-    AddtoLinkList(l1, m_pEdgeL);    // so they became an edge link
-    AddtoLinkList(l2, m_pEdgeL);
-    AddtoLinkList(l3, m_pEdgeL);
-    l1->UpdateMirrorFlag(false);
-    l2->UpdateMirrorFlag(false);
-    l3->UpdateMirrorFlag(false);
-    l1->m_LinkType = 1;
-    l2->m_LinkType = 1;
-    l3->m_LinkType = 1;
-//-- convert the vertices into edge
-    RemoveFromVertexList(v1, m_pSurfV);
-    RemoveFromVertexList(v2, m_pSurfV);
-    RemoveFromVertexList(v3, m_pSurfV);
-    AddtoVertexList(v1, m_pEdgeV);
-    AddtoVertexList(v2, m_pEdgeV);
-    AddtoVertexList(v3, m_pEdgeV);
-    v1->m_VertexType = 1;
-    v2->m_VertexType = 1;
-    v3->m_VertexType = 1;
-    
-    v1->RemoveFromLinkList(ml3);    // in the counter function    v1->AddtoLinkList(ml3);
-    v2->RemoveFromLinkList(ml1);    // in the counter function    v2->AddtoLinkList(ml1);
-    v3->RemoveFromLinkList(ml2);    // in the counter function    v3->AddtoLinkList(ml2);
-
-    v1->m_pEdgeLink = l1;    // for here is not needed (since v1 was an edge vector). But in a general case, v1 may not have an edge vector
-    v2->m_pEdgeLink = l2;
-    v3->m_pEdgeLink = l3;
-    v1->m_pPrecedingEdgeLink = l3;
-    v2->m_pPrecedingEdgeLink = l1;
-    v3->m_pPrecedingEdgeLink = l2;
-      // now we should update the geomtry of the affected v1,v2,v3, ml1,ml2,ml3,
-    l1->UpdateEdgeVector(m_pBox);   // this is an edge link, we need only the edge vector and length
-    l2->UpdateEdgeVector(m_pBox);   // this is an edge link, we need only the edge vector and length
-    l3->UpdateEdgeVector(m_pBox);   // this is an edge link, we need only the edge vector and length
-    
-    (m_pState->GetCurvatureCalculator())->UpdateEdgeVertexCurvature(v1);  // v1 is still an edge vertex
-    (m_pState->GetCurvatureCalculator())->UpdateEdgeVertexCurvature(v2);  // // v2 is still an edge vertex
-    (m_pState->GetCurvatureCalculator())->UpdateEdgeVertexCurvature(v3);  // v3 is now a surface vertex
-
-    return true;
-}
-double  OpenEdgeEvolutionWithConstantVertex::SystemEnergy()
-{
+double  OpenEdgeEvolutionWithConstantVertex::SystemEnergy() {
+    double en = 0;
+    /*
     std::vector<vertex *> ActiveV =  m_pSurfV;
     std::vector<triangle *> pActiveT =  m_pActiveT;
     std::vector<links *> mLink =  m_pHL;
     std::vector<links *>  pEdgeL =  m_pEdgeL;
     std::vector<vertex *> EdgeV  =  m_pEdgeV;
-    double en = 0;
     
 
     for (std::vector<triangle *>::iterator it = pActiveT.begin() ; it != pActiveT.end(); ++it)
@@ -858,57 +657,86 @@ double  OpenEdgeEvolutionWithConstantVertex::SystemEnergy()
             (m_pState->GetCurvatureCalculator())->UpdateEdgeVertexCurvature(*it);
     
     en = m_pState->GetEnergyCalculator()->CalculateAllLocalEnergy();
-    
+    */
     return en;
 }
-//           va -- v3----vb
-//            \n2 /n1\n3/
-//             v1--- v2
-//                DP
-bool OpenEdgeEvolutionWithConstantVertex::Linkisvalid(vertex *v1, double lmin, double lmax, double minangle)
-{
+bool OpenEdgeEvolutionWithConstantVertex::Linkisvalid(vertex *v1) {
+    // Check if the new link length is within the allowed range and if the angle of the new triangle
+    // is acceptable with respect to the two other triangles.
+    //           va -- v3----vb
+    //            \n2 /n1\n3/
+    //             v1--- v2
+    //                DP
+    
     // check if the new link length is within the allowed range and also if the angle of the new trinagule is fine with respect to the two other trinagules
-    links* l2 = v1->m_pEdgeLink;
-    vertex *v3 = l2->GetV2();
-    links* l1 = v3->m_pEdgeLink;
-    vertex *v2 = l1->GetV2();
-    Vec3D *Box = v1->GetBox();
+    links* l2   = v1->GetEdgeLink();
+    vertex *v3  = l2->GetV2();
+    links* l1   = v3->GetEdgeLink();
+    vertex *v2  = l1->GetV2();
 
-    Vec3D P1(v1->GetVXPos(),v1->GetVYPos(),v1->GetVZPos());
-    Vec3D P2(v2->GetVXPos(),v2->GetVYPos(),v2->GetVZPos());
-    Vec3D DP = P2-P1;
+
+    Vec3D DP = v2->GetPos() - v1->GetPos();
     
     for (int i=0;i<3;i++)
-    if(fabs(DP(i))>(*Box)(i)/2.0)
+    if(fabs(DP(i)) > (*m_pBox)(i)/2.0)
     {
-        if(DP(i)<0)
-            DP(i)=(*Box)(i)+DP(i);
-        else if(DP(i)>0)
-            DP(i)=DP(i)-(*Box)(i);
+        if(DP(i) < 0)
+            DP(i) = (*m_pBox)(i)+DP(i);
+        else if(DP(i) > 0)
+            DP(i) = DP(i)-(*m_pBox)(i);
     }
-    double dist2 = P1.dot(DP,DP);
-    if(dist2<lmin || dist2>lmax){
+    double dist2 = DP.dot(DP,DP);
+    if(dist2 < m_MinLength2 || dist2 > m_MaxLength2){
         return false;
     }
     
     triangle t(0,v1,v2,v3);
-    t.UpdateNormal_Area(Box);
+    t.UpdateNormal_Area(m_pBox);
     Vec3D n1 = t.GetNormalVector();
-    Vec3D n2 = (l2->GetTriangle())->GetNormalVector();
-    Vec3D n3 = (l1->GetTriangle())->GetNormalVector();
+    Vec3D n2 = l2->GetTriangle()->GetNormalVector();
+    Vec3D n3 = l1->GetTriangle()->GetNormalVector();
     
-    if( n1.dot(n1,n2)<minangle){
+    if( n1.dot(n1,n2) < m_MinAngle){
         return false;
     }
-    if( n1.dot(n1,n3)<minangle){
+    if( n1.dot(n1,n3) < m_MinAngle){
         return false;
     }
     
     return true;
-    
+}
+void OpenEdgeEvolutionWithConstantVertex::RemoveFromLinkList(links* z, std::vector<links*> &vect)
+{
+    vect.erase(std::remove(vect.begin(), vect.end(), z), vect.end());
+}
+void OpenEdgeEvolutionWithConstantVertex::RemoveFromVertexList(vertex* z, std::vector<vertex*> &vect)
+{
+
+    vect.erase(std::remove(vect.begin(), vect.end(), z), vect.end());
+}
+void OpenEdgeEvolutionWithConstantVertex::RemoveFromTriangleList(triangle* z, std::vector<triangle*> &vect)
+{
+
+    vect.erase(std::remove(vect.begin(), vect.end(), z), vect.end());
+}
+// this can be written as template
+void OpenEdgeEvolutionWithConstantVertex::AddtoLinkList(links* z, std::vector<links*> &vect)
+{
+    vect.push_back(z);
+}
+void OpenEdgeEvolutionWithConstantVertex::AddtoVertexList(vertex* z, std::vector<vertex*> &vect)
+{
+    vect.push_back(z);
+}
+void OpenEdgeEvolutionWithConstantVertex::AddtoTriangleList(triangle* z, std::vector<triangle*> &vect)
+{
+    vect.push_back(z);
 }
 std::string OpenEdgeEvolutionWithConstantVertex::CurrentState(){
     
     std::string state = AbstractOpenEdgeEvolution::GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+    state = state + +" "+ Nfunction::D2S(m_Period) +" "+ Nfunction::D2S(m_NumberOfMovePerStep);
+
     return state;
 }
+
