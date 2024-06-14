@@ -38,7 +38,7 @@ public:
     virtual std::string CurrentState() = 0;
 
     
-    
+    void print(){m_pInt->Print();}
     //--- 
     
     

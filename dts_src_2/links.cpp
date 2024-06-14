@@ -5,6 +5,7 @@
 
 links::links(int id, vertex *v1, vertex *v2, triangle *t1) {
     m_IntEnergy = 0;
+    m_OldIntEnergy = 0;
     m_T1 = t1;
     m_V1 = v1;
     m_V2 = v2;
@@ -13,14 +14,19 @@ links::links(int id, vertex *v1, vertex *v2, triangle *t1) {
     m_Show = true;
     m_EdgeSize = 0;
     m_LinkType = 0;
+    m_Be = 0;
+    m_He = 0;
 }
 links::links(int id) {
     m_IntEnergy = 0;
+    m_OldIntEnergy = 0;
     m_ID = id;
     m_mirorflag = false;
     m_Show = true;
     m_EdgeSize = 0;
     m_LinkType = 0;
+    m_Be = 0;
+    m_He = 0;
 }
 
 links::~links() {
@@ -52,7 +58,9 @@ bool links::Copy_InteractionEnergy(){
 bool links::Reverse_InteractionEnergy(){
     
     m_IntEnergy = m_OldIntEnergy;
-    m_mirorlink->UpdateIntEnergy(m_IntEnergy);
+    if(m_mirorflag){
+        m_mirorlink->UpdateIntEnergy(m_IntEnergy);
+    }
     return true;
 }
 void links::UpdateEdgeVector(Vec3D e_vector, double size){

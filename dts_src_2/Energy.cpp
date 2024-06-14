@@ -22,7 +22,7 @@ double Energy::SingleVertexEnergy(vertex *p_vertex) {
     
     double Energy=0.0;
 //---> note, if the vertex has no inclusion, this will return zero by default
-    Energy+= m_pState->GetExternalFieldOnVectorFields()->GetCouplingEnergy(p_vertex);
+    Energy += m_pState->GetExternalFieldOnVectorFields()->GetCouplingEnergy(p_vertex);
     
     if(p_vertex->m_VertexType == 0) {
     
@@ -140,7 +140,7 @@ double Energy::EdgeVertexBendingAndStretchingEnergy(vertex *p_vertex)
 
 double Energy::CalculateAllLocalEnergy()
 {
-    double E=0.0;
+    double E = 0.0;
     
     const std::vector<vertex *>& pAllVertices = m_pState->GetMesh()->GetActiveV();
     const std::vector<links *>& pRight_L = m_pState->GetMesh()->GetRightL();
@@ -222,7 +222,7 @@ double Energy::TwoInclusionsInteractionEnergy(links * p_edge)
         }
      }
     
-    if(p_edge->GetMirrorFlag()==true) {
+    if(p_edge->GetMirrorFlag()) {
         p_edge->UpdateIntEnergy(e_int/2.0);
         (p_edge->GetMirrorLink())->UpdateIntEnergy(e_int/2.0);
     }

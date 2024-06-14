@@ -51,9 +51,9 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneStep(int step){
     int no_steps_surf = no_surf_v*m_NumberOfMovePerStep_Surf;
 
   for (int i = 0; i< no_steps_surf;i++) {
-    
       int r_vid = m_pState->GetRandomNumberGenerator()->IntRNG(no_surf_v);
       vertex *pvertex = m_pSurfV[r_vid];
+      
       if( m_FreezGroupName == pvertex->GetGroupName()){
           continue;
       }
@@ -70,7 +70,6 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneStep(int step){
       }
       m_NumberOfAttemptedMoves++;
     }
-    
     for (int i = 0; i< no_steps_edge;i++) {
       
         int r_vid = m_pState->GetRandomNumberGenerator()->IntRNG(no_edge_v);
@@ -91,6 +90,30 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneStep(int step){
             m_AcceptedMoves++;
         }
         m_NumberOfAttemptedMoves++;
+        
+/*
+        std::vector<links*> Affected_links1 = m_pState->GetMesh()->GetEdgeL() ;
+        std::vector<links*> Affected_links2 = m_pState->GetMesh()->GetRightL();
+        double e0 = (m_pState->GetEnergyCalculator())->GetEnergy();
+        double te = 0;
+        for (std::vector<links *>::iterator it = Affected_links1.begin() ; it != Affected_links1.end(); ++it){
+            double en_1 = 2*(*it)->GetIntEnergy();
+            double en_2 = (m_pState->GetEnergyCalculator())->TwoInclusionsInteractionEnergy(*it);
+
+            te +=en_2;
+            if(en_1 != en_2)
+                std::cout<<(*it)->GetID()<<"  L id  "<<en_1<<"  "<<en_2<<"\n";
+        }
+        for (std::vector<links *>::iterator it = Affected_links2.begin() ; it != Affected_links2.end(); ++it){
+            double en_1 = 2*(*it)->GetIntEnergy();
+            double en_2 = (m_pState->GetEnergyCalculator())->TwoInclusionsInteractionEnergy(*it);
+
+            te +=en_2;
+            if(en_1 != en_2)
+                std::cout<<(*it)->GetID()<<"  L id  "<<en_1<<"  "<<en_2<<"\n";
+        }
+        std::cout<<e0<<" de "<<te<<"\n";
+ */
     }
         
     return true;
@@ -121,6 +144,10 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
         (*it)->ConstantMesh_Copy();
         (*it)->GetNeighborLink1()->ConstantMesh_Copy();
     }
+    //-- we need this to make sure all the links connected to this v is updated
+    if(pvertex->GetVertexType() == 1){
+        pvertex->GetPrecedingEdgeLink()->ConstantMesh_Copy();
+    }
     // find the links in which there interaction energy changes
     std::vector<links*> Affected_links = GetEdgesWithInteractionChange(pvertex);
     for (std::vector<links *>::iterator it = Affected_links.begin() ; it != Affected_links.end(); ++it){
@@ -134,12 +161,10 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
      double new_Tvolume = 0;
      double new_Tarea = 0;
      double new_Tcurvature = 0;
-   
 //--->
     if(m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()){
         m_pState->GetVAHGlobalMeshProperties()->CalculateAVertexRingContributionToGlobalVariables(pvertex, old_Tvolume, old_Tarea, old_Tcurvature);
     }
-
     //---> for now, only active nematic force: ForceonVerticesfromInclusions
     Vec3D Dx(dx,dy,dz);
     double dE_force_from_inc  = m_pState->GetForceonVerticesfromInclusions()->Energy_of_Force(pvertex, Dx);
@@ -167,13 +192,15 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
         (*it)->UpdateShapeOperator(m_pBox);
         (*it)->GetNeighborLink1()->UpdateShapeOperator(m_pBox);
     }
-
+    //-- we need this to make sure all the links connected to this v is updated
+    if(pvertex->GetVertexType() == 1){
+        pvertex->GetPrecedingEdgeLink()->UpdateEdgeVector(m_pBox);
+    }
     // --> calculate vertex shape operator
     (m_pState->GetCurvatureCalculator())->UpdateVertexCurvature(pvertex);
     for (std::vector<vertex *>::const_iterator it = vNeighbourV.begin() ; it != vNeighbourV.end(); ++it){
         (m_pState->GetCurvatureCalculator())->UpdateVertexCurvature(*it);
     }
-
     //---> calculate new energies
     new_energy = (m_pState->GetEnergyCalculator())->SingleVertexEnergy(pvertex);
 
@@ -186,9 +213,7 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
     }
     //---> get energy for ApplyConstraintBetweenGroups
     double dE_Cgroup = m_pState->GetApplyConstraintBetweenGroups()->CalculateEnergyChange(pvertex, Dx);
-    
- 
-    
+
 //---> new global variables
     if(m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()){
         m_pState->GetVAHGlobalMeshProperties()->CalculateAVertexRingContributionToGlobalVariables(pvertex, new_Tvolume, new_Tarea, new_Tcurvature);
@@ -202,7 +227,6 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
     double diff_energy = new_energy - old_energy;
     //--> sum of all the energies
     double tot_diff_energy = diff_energy + dE_Cgroup + dE_force_from_inc + dE_volume + dE_t_area + dE_g_curv ;
-
     //---> accept or reject the move
     if(tot_diff_energy <= 0 || exp(-m_Beta * tot_diff_energy + m_DBeta) > temp ) {
         // move is accepted
@@ -223,7 +247,6 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
         return true;
     }
     else {
-
 //---> reverse the changes that has been made to the system
         //---> reverse the triangles
         for (std::vector<triangle *>::iterator it = N_triangles.begin() ; it != N_triangles.end(); ++it){
@@ -238,12 +261,18 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
         //--> the shape operator of these links has not been affected, therefore we only update the interaction energy
         for (std::vector<links *>::iterator it = Affected_links.begin() ; it != Affected_links.end(); ++it){
             (*it)->Reverse_InteractionEnergy();
+
+        }
+        //-- we need this to make sure all the links connected to this v is updated
+        if(pvertex->GetVertexType() == 1){
+            pvertex->GetPrecedingEdgeLink()->ReverseConstantMesh_Copy();
         }
         //---> reverse the vertices
         pvertex->ReverseConstantMesh_Copy();
         for (std::vector<vertex *>::const_iterator it = vNeighbourV.begin() ; it != vNeighbourV.end(); ++it){
             (*it)->ReverseConstantMesh_Copy();
         }
+
         return false;
      }
     return true;
@@ -391,34 +420,44 @@ std::string EvolveVerticesByMetropolisAlgorithm::CurrentState(){
     return state;
 }
 std::vector<links*> EvolveVerticesByMetropolisAlgorithm::GetEdgesWithInteractionChange(vertex* p_vertex){
+#if DEVELOPMENT_MODE == Enabled
+    std::cout<<" DEVELOPMENT_MODE ID 665656: This function should be made much better\n ";
+    // for example, precheck to select only links that both has includioon ...
+#endif
     
     std::vector<links*> edge_with_interaction_change;
     std::vector<links *> all_temlinks;
     
-    if( p_vertex->GetVertexType() == 1 )
+    // this is not need it,
+ /*   if( p_vertex->GetVertexType() == 1 ){
         all_temlinks.push_back(p_vertex->GetPrecedingEdgeLink());
-    
+    }
+*/
     
     std::vector<vertex *> neighbor_vertices = p_vertex->GetVNeighbourVertex();
     for (std::vector<vertex *>::iterator it = neighbor_vertices.begin() ; it != neighbor_vertices.end(); ++it)
     {
-            if((*it)->VertexOwnInclusion()==true) {
-                std::vector<links *> ltem=(*it)->GetVLinkList();
+            if((*it)->VertexOwnInclusion()) {
+                std::vector<links *> ltem = (*it)->GetVLinkList();
                 all_temlinks.insert(all_temlinks.end(), ltem.begin(), ltem.end());
-                if((*it)->m_VertexType==1)
+                // note, this is even need it if the p_vertex vertex is not an edge vertex
+                if((*it)->m_VertexType == 1){
                     all_temlinks.push_back((*it)->m_pPrecedingEdgeLink);
+                }
             }
     }
+
+    
     //-- now we remove the repeated links
     for (std::vector<links *>::iterator it = all_temlinks.begin() ; it != all_temlinks.end(); ++it)
     {
         bool Should_be_added = true;
         for (std::vector<links *>::iterator it2 = edge_with_interaction_change.begin() ; it2 != edge_with_interaction_change.end(); ++it2)
         {
-            if((*it2)==(*it)){
+            if( *it2 == *it){
                 Should_be_added = false;
             }
-            else if((*it2)->GetMirrorFlag() && (*it2)->GetMirrorLink() == (*it)){
+            else if((*it2)->GetMirrorFlag() && (*it2)->GetMirrorLink() == *it){
                 Should_be_added = false;
             }
         }

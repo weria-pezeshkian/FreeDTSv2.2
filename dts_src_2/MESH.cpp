@@ -265,13 +265,12 @@ void MESH::GenerateMesh(MeshBluePrint meshblueprint)
     }
     for (std::vector<vertex*>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it)
     {
-        bool isedge = false;
-        for (std::vector<vertex*>::iterator it2 = m_pEdgeV.begin() ; it2 != m_pEdgeV.end(); ++it2)
-        {
-            if((*it2)->GetVID()==(*it)->GetVID())
-                isedge = true;
+        bool is_an_edge = false;
+        for (std::vector<vertex*>::iterator it2 = m_pEdgeV.begin() ; it2 != m_pEdgeV.end(); ++it2) {
+            if( *it2 == *it)
+                is_an_edge = true;
         }
-        if(isedge==false)
+        if(!is_an_edge)
         m_pSurfV.push_back(*it);
     }
     

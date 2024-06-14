@@ -92,3 +92,21 @@ PairInt Inclusion_Interaction_Map::GetPairInt(int i, int j) {
 #endif
     return m_MAT[i][j];
 }
+void Inclusion_Interaction_Map::Print(){
+    
+    std::cout<<"-----------------------------\n";
+    for (int i=0;i<Inclusion_Type_Number;i++) {
+        for (int j=0;j<Inclusion_Type_Number;j++) {
+            std::vector<double> Varibale  = (m_MAT[i][j]).Varibale;
+            for (int n=0;n<Varibale.size();n++)
+                std::cout<<Varibale[n]<<"  ";
+            std::cout<<"\n";
+
+            
+        }
+    }
+
+    std::cout<<"-----------------------------\n";
+
+    return;
+}

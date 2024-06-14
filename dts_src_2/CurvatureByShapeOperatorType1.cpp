@@ -39,17 +39,17 @@ bool CurvatureByShapeOperatorType1::Initialize(){
         //(*it)->UpdateNormal();
         (*it)->UpdateShapeOperator(m_pBox);
     }
+    //---> edge links
+        const std::vector<links *>& pAlllink_edges = m_pState->GetMesh()->GetEdgeL();
+        for (std::vector<links *>::const_iterator it = pAlllink_edges.begin(); it != pAlllink_edges.end(); ++it) {
+            
+                (*it)->UpdateEdgeVector(m_pBox);
+        }
 //---> now the surface vertices curvature, including vertex shape operator
     const std::vector<vertex *>& pAllVertices = m_pState->GetMesh()->GetSurfV();
     for (std::vector<vertex *>::const_iterator it = pAllVertices.begin(); it != pAllVertices.end(); ++it) {
         
             UpdateSurfVertexCurvature(*it);
-    }
-//---> edge links
-    const std::vector<links *>& pAlllink_edges = m_pState->GetMesh()->GetEdgeL();
-    for (std::vector<links *>::const_iterator it = pAlllink_edges.begin(); it != pAlllink_edges.end(); ++it) {
-        
-            (*it)->UpdateEdgeVector(m_pBox);
     }
 //---> update edge vertices curvature
     const std::vector<vertex *>& pAlledge_vertex = m_pState->GetMesh()->GetEdgeV();

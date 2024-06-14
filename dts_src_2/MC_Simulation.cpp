@@ -44,6 +44,7 @@ bool MC_Simulation::do_Simulation(){
     
 //---> Voxelize the mesh for the first time; this should be done before any calculation
     m_pState->GetVoxelization()->Voxelize(m_pState->GetMesh()->GetActiveV());
+    
 #if DEBUG_MODE == Enabled
     std::cout<<" system has been voxelaized  \n";
 #endif
@@ -55,6 +56,9 @@ bool MC_Simulation::do_Simulation(){
         m_pState->GetVisualization()->WriteAFrame(0);
    // time_t startTime;
    // time(&startTime);
+#if DEBUG_MODE == Enabled
+    std::cout<<" We have reached simulation run loop!  \n";
+#endif
 for(int step = GetInitialStep(); step <= GetFinalStep(); step++){
         
 //---> centering the simulation box
@@ -98,7 +102,7 @@ for(int step = GetInitialStep(); step <= GetFinalStep(); step++){
    // time(&currentTime);
     if (step%50 == 0) {
         std::cout<<"Step = "<<step<<"/"<<GetFinalStep()<<std::flush;
-        std::cout << std::fixed << std::setprecision(2);
+        std::cout << std::fixed << std::setprecision(3);
         std::cout<<" Rates: "<<std::flush;
         std::cout<<" vertex move = "<<m_pState->GetVertexPositionUpdate()->GetAcceptanceRate(true)<<std::flush;
         std::cout<<"; alexander move = "<<m_pState->GetAlexanderMove()->GetAcceptanceRate(true)<<std::flush;
@@ -112,12 +116,15 @@ for(int step = GetInitialStep(); step <= GetFinalStep(); step++){
 } // for(int step=GetInitialStep(); step<GetFinalStep(); step++)
    
 
+    /*m_pState->GetCurvatureCalculator()->print();
+    m_pState->GetCurvatureCalculator()->print();*/
     m_pState->GetCurvatureCalculator()->Initialize();
-    double temenergy = m_pState->GetEnergyCalculator()->CalculateAllLocalEnergy();
-    double energy_leak = temenergy-m_pState->GetEnergyCalculator()->GetEnergy();
+    double Final_energy = m_pState->GetEnergyCalculator()->CalculateAllLocalEnergy();
+    double energy_leak = Final_energy - m_pState->GetEnergyCalculator()->GetEnergy();
+    std::cout << std::fixed << std::setprecision(4);
     if(fabs(energy_leak) > 0.0001){
         
-        std::cout<<"---> possible source of code error: energy leak... "<<energy_leak<<" with "<<temenergy<<"  "<<m_pState->GetEnergyCalculator()->GetEnergy()<<"\n";
+        std::cout<<"---> possible source of code error: energy leak... "<<energy_leak<<" with real energy of "<<Final_energy<<"  and stored energy of "<<m_pState->GetEnergyCalculator()->GetEnergy()<<"\n";
     }
         
     return true;

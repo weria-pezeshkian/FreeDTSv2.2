@@ -354,7 +354,7 @@ void CreateMashBluePrint::GenerateIncFromInputfile()
                 {
                     Type.push_back(f.String_to_Int(T.at(i)));
                     Density.push_back(f.String_to_Double(D.at(i)));
-                    totdensity+=f.String_to_Double(D.at(i));
+                    totdensity += f.String_to_Double(D.at(i));
                 }
                 if(T.size()!=D.size() || T.at(0)!="TypeID" || D.at(0)!="Density" || totdensity>1)
                 {

@@ -778,7 +778,7 @@ bool State::Initialize(){
                 if(!m_pTimeSeriesDataOutput->OpenFile(false)){
                     m_NumberOfErrors++;
                 }
-                //---- open the binar trajectory
+                //---- open the binary trajectory
                 if(!m_pBinaryTrajectory->OpenFile(false, 'w')){
                     m_NumberOfErrors++;
                 }
@@ -808,7 +808,7 @@ bool State::Initialize(){
                 m_NumberOfErrors++;
             }
             // open folder for Visualization
-            if(m_pVisualizationFile->GetDerivedDefaultReadName()=="VTUFileFormat"){
+            if(m_pVisualizationFile->GetDerivedDefaultReadName()== "VTUFileFormat"){
                 if(!m_pVisualizationFile->OpenFolder()){
                     m_NumberOfErrors++;
                 }

@@ -28,6 +28,7 @@ public:
 
     // Get the pair interaction for given indices i and j
     PairInt GetPairInt(int i, int j);
+    void Print();
 
 private:
     // Matrix to store pair interactions
