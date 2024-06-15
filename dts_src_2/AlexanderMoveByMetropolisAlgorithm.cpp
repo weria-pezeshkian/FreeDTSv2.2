@@ -149,12 +149,6 @@ bool AlexanderMoveByMetropolisAlgorithm::FlipOneEdge(int step, links *p_edge, do
 
 //-- Update geometry
     //--- update the edges normal
-  //  p_edge->UpdateNormal();
-   // l1->UpdateNormal();
-   // l2->UpdateNormal();
-   // l3->UpdateNormal();
-   // l4->UpdateNormal();
-
     p_edge->UpdateShapeOperator(m_pBox);
     l1->UpdateShapeOperator(m_pBox);
     l2->UpdateShapeOperator(m_pBox);

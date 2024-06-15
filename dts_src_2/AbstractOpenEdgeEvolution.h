@@ -27,7 +27,7 @@ public:
     virtual std::string CurrentState() = 0;
     virtual inline std::string GetDerivedDefaultReadName() = 0;
     inline static std::string GetBaseDefaultReadName() {return "OpenEdgeEvolution";}
-    inline const double GetEdgeSize()            const {return m_EdgeSize;}
+    inline const int GetEdgeSize()            const {return m_EdgeSize;}  // note, this is number of edge links not the length
 
     double GetAcceptanceRate(bool reset) {
         // Check if there have been attempted moves to avoid division by zero
@@ -48,15 +48,12 @@ public:
     }
     
 protected:
-    void AddToEdge(double length){
-        m_EdgeSize += length;
-        return;
-    }
+
     
 protected:
     double m_NumberOfAttemptedMoves;
     double m_AcceptedMoves;
-    double m_EdgeSize;
+    int m_EdgeSize;
 
 };
 //---- a class for no edge change

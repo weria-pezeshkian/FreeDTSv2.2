@@ -114,10 +114,7 @@ for(int step = GetInitialStep(); step <= GetFinalStep(); step++){
     }
 
 } // for(int step=GetInitialStep(); step<GetFinalStep(); step++)
-   
 
-    /*m_pState->GetCurvatureCalculator()->print();
-    m_pState->GetCurvatureCalculator()->print();*/
     m_pState->GetCurvatureCalculator()->Initialize();
     double Final_energy = m_pState->GetEnergyCalculator()->CalculateAllLocalEnergy();
     double energy_leak = Final_energy - m_pState->GetEnergyCalculator()->GetEnergy();

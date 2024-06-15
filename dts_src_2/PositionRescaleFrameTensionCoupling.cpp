@@ -22,8 +22,8 @@ PositionRescaleFrameTensionCoupling::PositionRescaleFrameTensionCoupling(int per
         m_pState(pState),
         m_pActiveV(pState->GetMesh()->GetActiveV()),
         m_pActiveT(pState->GetMesh()->GetActiveT()),
-        m_pRightL(pState->GetMesh()->GetEdgeL()),
-        m_pEdgeL(pState->GetMesh()->GetRightL()),
+        m_pRightL(pState->GetMesh()->GetRightL()),
+        m_pEdgeL(pState->GetMesh()->GetEdgeL()),
         m_Beta(pState->GetSimulation()->GetBeta()),
         m_DBeta(pState->GetSimulation()->GetBeta()),
         m_MinLength2(pState->GetSimulation()->GetMinL2()),
@@ -123,7 +123,18 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
         old_Tarea =  m_pState->GetVAHGlobalMeshProperties()->GetTotalArea();
         old_Tcurvature =  m_pState->GetVAHGlobalMeshProperties()->GetTotalMeanCurvature();
     }
-
+    for (std::vector<triangle *>::iterator it = m_pActiveT.begin() ; it != m_pActiveT.end(); ++it){
+        (*it)->ConstantMesh_Copy();
+    }
+    for (std::vector<links *>::iterator it = m_pRightL.begin() ; it != m_pRightL.end(); ++it){
+        (*it)->ConstantMesh_Copy();
+    }
+    for (std::vector<links *>::iterator it = m_pEdgeL.begin() ; it != m_pEdgeL.end(); ++it){
+        (*it)->ConstantMesh_Copy();
+    }
+    for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it){
+        (*it)->ConstantMesh_Copy();
+    }
     //---> for now, only active nematic force: ForceonVerticesfromInclusions
     // if we do this here, the force is from inital configuration
     // while if we do it after the move, it will be from final configurations
@@ -144,12 +155,10 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
     (*m_pBox)(1) *= ly;
     (*m_pBox)(2) *= lz;
     for (std::vector<vertex*>::iterator it =  m_pActiveV.begin(); it != m_pActiveV.end(); ++it) {
-        (*it)->ConstantMesh_Copy();
         (*it)->ScalePos(lx,ly,lz);
     }
     //-- Update geometry
     for (std::vector<triangle *>::iterator it = m_pActiveT.begin() ; it != m_pActiveT.end(); ++it){
-        (*it)->ConstantMesh_Copy();
         (*it)->UpdateNormal_Area(m_pBox);
     }
 
@@ -163,21 +172,19 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
         return false;
     }
     //--- lets now do the move
+  //  m_pState->GetCurvatureCalculator()->Initialize();
     for (std::vector<links *>::iterator it = m_pRightL.begin() ; it != m_pRightL.end(); ++it){
-        
-        (*it)->ConstantMesh_Copy();
-      //  (*it)->UpdateNormal();
         (*it)->UpdateShapeOperator(m_pBox);
     }
     for (std::vector<links *>::iterator it = m_pEdgeL.begin() ; it != m_pEdgeL.end(); ++it){
-        
-        (*it)->ConstantMesh_Copy();
-        (*it)->UpdateEdgeVector(m_pBox);  // UpdateNormal() exist in the shape operator
+        (*it)->UpdateEdgeVector(m_pBox);  //
     }
     for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it){
-        (*it)->ConstantMesh_Copy();
         (m_pState->GetCurvatureCalculator())->UpdateVertexCurvature(*it);
     }
+   // instead of the we do below. so for paralization helps
+ //new_energy = m_pState->GetEnergyCalculator()->CalculateAllLocalEnergy();
+
 //--- calculate new energies
     for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it) {
         new_energy += (m_pState->GetEnergyCalculator())->SingleVertexEnergy(*it);
@@ -222,7 +229,7 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
 
     //---> accept or reject the move
 
-    if (pow(lx*ly*lz , NV) * exp(-m_Beta * tot_diff_energy + m_DBeta) > temp ) {
+    if ( pow(lx*ly*lz , NV) * exp(-m_Beta * tot_diff_energy + m_DBeta) > temp ) {
         // move is accepted
         (m_pState->GetEnergyCalculator())->AddToTotalEnergy(diff_energy);
         
@@ -240,6 +247,9 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
     else {
 //---> reverse the changes that has been made to the system
         //---> reverse the triangles
+        (*m_pBox)(0) *= 1/lx;
+        (*m_pBox)(1) *= 1/ly;
+        (*m_pBox)(2) *= 1/lz;
         for (std::vector<triangle *>::iterator it = m_pActiveT.begin() ; it != m_pActiveT.end(); ++it){
             (*it)->ReverseConstantMesh_Copy();
         }

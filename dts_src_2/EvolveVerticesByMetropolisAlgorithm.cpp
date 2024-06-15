@@ -90,30 +90,6 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneStep(int step){
             m_AcceptedMoves++;
         }
         m_NumberOfAttemptedMoves++;
-        
-/*
-        std::vector<links*> Affected_links1 = m_pState->GetMesh()->GetEdgeL() ;
-        std::vector<links*> Affected_links2 = m_pState->GetMesh()->GetRightL();
-        double e0 = (m_pState->GetEnergyCalculator())->GetEnergy();
-        double te = 0;
-        for (std::vector<links *>::iterator it = Affected_links1.begin() ; it != Affected_links1.end(); ++it){
-            double en_1 = 2*(*it)->GetIntEnergy();
-            double en_2 = (m_pState->GetEnergyCalculator())->TwoInclusionsInteractionEnergy(*it);
-
-            te +=en_2;
-            if(en_1 != en_2)
-                std::cout<<(*it)->GetID()<<"  L id  "<<en_1<<"  "<<en_2<<"\n";
-        }
-        for (std::vector<links *>::iterator it = Affected_links2.begin() ; it != Affected_links2.end(); ++it){
-            double en_1 = 2*(*it)->GetIntEnergy();
-            double en_2 = (m_pState->GetEnergyCalculator())->TwoInclusionsInteractionEnergy(*it);
-
-            te +=en_2;
-            if(en_1 != en_2)
-                std::cout<<(*it)->GetID()<<"  L id  "<<en_1<<"  "<<en_2<<"\n";
-        }
-        std::cout<<e0<<" de "<<te<<"\n";
- */
     }
         
     return true;
@@ -428,12 +404,6 @@ std::vector<links*> EvolveVerticesByMetropolisAlgorithm::GetEdgesWithInteraction
     std::vector<links*> edge_with_interaction_change;
     std::vector<links *> all_temlinks;
     
-    // this is not need it,
- /*   if( p_vertex->GetVertexType() == 1 ){
-        all_temlinks.push_back(p_vertex->GetPrecedingEdgeLink());
-    }
-*/
-    
     std::vector<vertex *> neighbor_vertices = p_vertex->GetVNeighbourVertex();
     for (std::vector<vertex *>::iterator it = neighbor_vertices.begin() ; it != neighbor_vertices.end(); ++it)
     {
@@ -469,44 +439,5 @@ std::vector<links*> EvolveVerticesByMetropolisAlgorithm::GetEdgesWithInteraction
     return edge_with_interaction_change;
 }
 
-/*
-std::vector<links*> GetEdgesWithInteractionChange(vertex* p_vertex){
-    
-    std::vector<links*> edge_with_interaction_change;
-    std::unordered_set<links*> all_temlinks_set; // Change to unordered_set
-
-    if( p_vertex->GetVertexType() == 1 )
-        all_temlinks_set.insert(p_vertex->GetPrecedingEdgeLink());
-
-    std::vector<vertex*> neighbor_vertices = p_vertex->GetVNeighbourVertex();
-    for (std::vector<vertex*>::iterator it = neighbor_vertices.begin(); it != neighbor_vertices.end(); ++it) {
-        if((*it)->VertexOwnInclusion()) {
-            std::vector<links*> ltem = (*it)->GetVLinkList();
-            all_temlinks_set.insert(ltem.begin(), ltem.end());
-            if((*it)->m_VertexType == 1)
-                all_temlinks_set.insert((*it)->m_pPrecedingEdgeLink);
-        }
-    }
-
-    // Copy unique links from unordered_set to vector
-    std::vector<links*> all_temlinks(all_temlinks_set.begin(), all_temlinks_set.end());
-
-    
-    for (std::vector<links *>::iterator it = all_temlinks.begin() ; it != all_temlinks.end(); ++it)
-    {
-        bool addit=true;
-        for (std::vector<links *>::iterator it2 = edge_with_interaction_change.begin() ; it2 != edge_with_interaction_change.end(); ++it2)
-        {
-                if((*it2)->GetMirrorFlag()==true && ((*it2)->GetMirrorLink())==(*it)){
-                    addit=false;
-                }
-        }
-        if(addit==true)
-            edge_with_interaction_change.push_back((*it));
-    }
-    
-    return edge_with_interaction_change;
-}
-*/
 
 

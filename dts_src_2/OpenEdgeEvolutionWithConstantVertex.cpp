@@ -32,7 +32,7 @@ OpenEdgeEvolutionWithConstantVertex::OpenEdgeEvolutionWithConstantVertex(int per
                                                     m_MaxLength2(pState->GetSimulation()->GetMaxL2()),
                                                     m_MinAngle(pState->GetSimulation()->GetMinAngle())
 {
-    m_EdgeSize = 0;
+    m_EdgeSize = m_pEdgeL.size();
 }
 OpenEdgeEvolutionWithConstantVertex::~OpenEdgeEvolutionWithConstantVertex(){
     
@@ -44,10 +44,8 @@ void OpenEdgeEvolutionWithConstantVertex::Initialize(){
     m_NumberOfAttemptedMoves = 0;
     m_AcceptedMoves = 0;
     
-    for (std::vector<links *>::iterator it = m_pEdgeL.begin() ; it != m_pEdgeL.end(); ++it){
-        m_EdgeSize += (*it)->GetEdgeSize();
-    }
-    
+    m_EdgeSize = m_pEdgeL.size();
+
     return;
 }
 bool OpenEdgeEvolutionWithConstantVertex::Move(int step) {
@@ -57,7 +55,6 @@ bool OpenEdgeEvolutionWithConstantVertex::Move(int step) {
    
     int N = m_pEdgeL.size();
     N = int(m_NumberOfMovePerStep*double(N));
-    if(m_AcceptedMoves == 0)
     for (int i = 0; i< N ;i++) {
 
         if(m_pEdgeL.size() == 0 )
@@ -65,18 +62,17 @@ bool OpenEdgeEvolutionWithConstantVertex::Move(int step) {
         if(MCAttemptedToAddALink()){
             m_AcceptedMoves++;
         }
-        /*if(MCAttemptedToRemoveALink()){
+        if(MCAttemptedToRemoveALink()){
             m_AcceptedMoves++;
-        }*/
+        }
         m_NumberOfAttemptedMoves++;
         m_NumberOfAttemptedMoves++;
-        break;
     }
+    m_EdgeSize = m_pEdgeL.size();
 
     return true;
 }
 bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToRemoveALink(){
-    
     if( m_pEdgeL.size() == 0 )
         return false;
     
@@ -92,10 +88,6 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToRemoveALink(){
         
     double eold = 0;
     double enew = 0;
-    double old_edgeLength = 0;
-    double new_edgeLength = 0;
-
-    old_edgeLength = plink->GetEdgeSize();
     
         // calculate the old energy
         eold = v1->GetEnergy();
@@ -203,15 +195,13 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToRemoveALink(){
         }
         enew += m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(v1->GetPrecedingEdgeLink());
         
-        new_edgeLength = v1->GetEdgeLink()->GetEdgeSize() + v3->GetEdgeLink()->GetEdgeSize();
         double diff_energy = enew - eold;
         double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
     
         //if(double(NS)/double(NL+1)*(exp(-m_Beta*DE)>thermal ))
     if(exp( -m_Beta * diff_energy + m_DBeta) > thermal) {
-            
+
             m_pState->GetEnergyCalculator()->AddToTotalEnergy(diff_energy);
-            AddToEdge(new_edgeLength - old_edgeLength);
         }
         else{
             // reject the move
@@ -283,7 +273,7 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
         std::cout<<" error--> 123 should not happen \n";
         return false;
     }
-    
+
     // select an edge vertex
     int n = m_pState->GetRandomNumberGenerator()->IntRNG(m_pEdgeV.size());
     vertex *v1 = m_pEdgeV[n];
@@ -291,8 +281,7 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
     if( !Linkisvalid(v1) ){
         return false;
     }
-    double old_edgeLength = 0;
-    double new_edgeLength = 0;
+    
     double eold = 0;
     double enew = 0;
     
@@ -301,8 +290,6 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
     links* l1 = v3->m_pEdgeLink;
     vertex *v2 = l1->GetV2();
     
-    old_edgeLength = l2->GetEdgeSize() + l1->GetEdgeSize();
-
 //----   for constant global direction type of moves
     if(v1->VertexOwnInclusion()){
         if(!(v1->GetInclusion())->UpdateGlobalDirectionFromLocal())
@@ -337,8 +324,7 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
     eold += 2*(v1->m_pPrecedingEdgeLink)->GetIntEnergy();
     // create a link (this also updates the gemotry)
      links *newlink = CreateALink(v1);
-    std::cout<<" here we get \n";
-    return true;
+  //  return true;
     //----   for constant global direction type of moves
     if (v1->VertexOwnInclusion() || v2->VertexOwnInclusion() || v3->VertexOwnInclusion()) {
         Vec3D LD1, LD2, LD3;
@@ -398,7 +384,6 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
     enew += m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(v1->m_pPrecedingEdgeLink);
         // the new created link
     enew += m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(newlink);
-    new_edgeLength = newlink->GetEdgeSize();
 
     double diff_energy = enew - eold;
     double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
@@ -406,7 +391,6 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
     if(exp(-m_Beta  *diff_energy + m_DBeta ) > thermal ) {
         
         m_pState->GetEnergyCalculator()->AddToTotalEnergy(diff_energy);
-        AddToEdge(new_edgeLength - old_edgeLength);
     }
     else
     {
@@ -686,6 +670,7 @@ bool OpenEdgeEvolutionWithConstantVertex::Linkisvalid(vertex *v1) {
             DP(i) = DP(i)-(*m_pBox)(i);
     }
     double dist2 = DP.dot(DP,DP);
+   // std::cout<<dist2<<"\n";
     if(dist2 < m_MinLength2 || dist2 > m_MaxLength2){
         return false;
     }
