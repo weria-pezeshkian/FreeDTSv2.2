@@ -98,3 +98,8 @@
 
 // Random number generator configuration
 #define RNGTYPE UNIFROMTYPE0  // Random number generator type
+
+
+//Precisions
+
+#define TSI_Precisions  "18.10"

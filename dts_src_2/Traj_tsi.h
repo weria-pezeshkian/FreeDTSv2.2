@@ -21,11 +21,12 @@ class Traj_tsi : public AbstractNonbinaryTrajectory {
 public:
     // Constructors and Destructor
     Traj_tsi(State *pstate);
-    Traj_tsi(State *pstate, int period, std::string tsiFolder_name, std::string tsiPrecision);
+    Traj_tsi(State *pstate, int period, std::string tsiFolder_name);
     ~Traj_tsi();
 
     // Public member functions
-    void WriteAFrame(int step, std::string filename);
+    void WriteAFrame(std::string filename);
+    void WriteAFrame(int step);
     bool OpenFolder();
     
     inline  std::string GetDerivedDefaultReadName()  {return "TSI";}

@@ -10,14 +10,14 @@ Traj_tsi::Traj_tsi(State *pstate){
     m_Period = 1000;
     m_Folder_name = "TrajTSI";
     m_pState = pstate;
-    m_Precision = Nfunction::Int_to_String(18)+"."+Nfunction::Int_to_String(10);
+    m_Precision = TSI_Precisions;
 }
-Traj_tsi::Traj_tsi(State *pstate, int period, std::string tsiFolder_name, std::string tsiPrecision){
+Traj_tsi::Traj_tsi(State *pstate, int period, std::string tsiFolder_name){
     
     m_pState = pstate;
     m_Period = period;
     m_Folder_name = tsiFolder_name;
-    m_Precision = Nfunction::Int_to_String(18)+"."+Nfunction::Int_to_String(10);
+    m_Precision = TSI_Precisions;
     
 }
 
@@ -29,20 +29,25 @@ bool Traj_tsi::OpenFolder() {
     // waiting for use of <filesystem> in c++17; but lets not higher up the required version of c++ for other users
     return  Nfunction::OpenFolder(m_Folder_name);
 }
-void Traj_tsi::WriteAFrame(int step ,  std::string filename){
-    
+void Traj_tsi::WriteAFrame(int step){
+ 
     // If the period is not the right step, ignore the call
     if (m_Period == 0 || step % m_Period != 0)
         return;
     
     int id = step/m_Period;
     
-    filename = filename + Nfunction::D2S(id)+ "." + TSIExt;
-
+    std::string filename = m_pState->GetRunTag() + Nfunction::D2S(id)+ "." + TSIExt;
     
+    WriteAFrame(filename);
+    
+    return;
+}
+void Traj_tsi::WriteAFrame(std::string filename){
+
     // Check the extension of the filename and add ".tsi" if needed
-   // if (Nfunction::SubstringFromRight(filename,'.') != TSIExt)
-     //   filename =filename + "." + TSIExt;
+    if (Nfunction::SubstringFromRight(filename,'.') != TSIExt)
+        filename =filename + "." + TSIExt;
     
     // Retrieve active vertices, triangles, and inclusions from the mesh
      std::vector<vertex*> pver = m_pState->GetMesh()->GetActiveV();
@@ -316,5 +321,6 @@ MeshBluePrint Traj_tsi::ReadTSI2(std::string filename, std::vector<InclusionType
 std::string Traj_tsi::CurrentState(){
     
     std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+    state = state +" "+m_Folder_name+" "+Nfunction::D2S(m_Period);
     return state;
 }

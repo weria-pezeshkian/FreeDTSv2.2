@@ -19,7 +19,7 @@ public:
     virtual ~ AbstractNonbinaryTrajectory(){
         
     }
-    virtual void WriteAFrame(int step, std::string filename) = 0;
+    virtual void WriteAFrame(int step) = 0;
     virtual bool OpenFolder()= 0;
     virtual inline std::string GetDerivedDefaultReadName() = 0;
     virtual std::string CurrentState() = 0;

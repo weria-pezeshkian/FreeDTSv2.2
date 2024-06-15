@@ -524,8 +524,16 @@ while (input >> firstword) {
                 input>>str>>thickness>>direction;
                 m_pBoundary = new TwoFlatParallelWall(this, thickness,direction);
             }
+            else if(type == EllipsoidalShell::GetDefaultReadName()){   // " "EllipsoidalShell" "
+                double thickness, r, a, b, c;
+                input>> str >> thickness >> r >> a >> b >> c;
+                
+                m_pBoundary = new EllipsoidalShell(this, thickness, r, a, b, c);
+            }
             else {
-                std::cout<<" unknown Boundary type: "<<type<<std::endl;
+                std::cout<<"---> error: unknown Boundary type: "<<type<<std::endl;
+                m_NumberOfErrors++;
+                return false;
             }
             getline(input,rest);
         }
@@ -672,8 +680,8 @@ while (input >> firstword) {
             if(type == Traj_tsi::GetDefaultReadName()){ // "TSI"
                 int period;
                 std::string tsiPrecision, tsiFolder_name;
-                input>>str>>period>>tsiPrecision>>tsiFolder_name;
-                m_pNonbinaryTrajectory  = new Traj_tsi(this, period, tsiFolder_name, tsiPrecision );
+                input>>str>>tsiFolder_name>>period;
+                m_pNonbinaryTrajectory  = new Traj_tsi(this, period, tsiFolder_name);
             }
             getline(input,rest);
 

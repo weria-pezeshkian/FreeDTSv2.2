@@ -89,7 +89,7 @@ for(int step = GetInitialStep(); step <= GetFinalStep(); step++){
     //--- write visulaization frame
     m_pState->GetVisualization()->WriteAFrame(step);
     //--- write non-binary trejectory e.g., tsi, tsg
-    m_pState->GetNonbinaryTrajectory()->WriteAFrame(step,m_pState->GetRunTag());
+    m_pState->GetNonbinaryTrajectory()->WriteAFrame(step);
     //--- write binary trejectory e.g., bts
     m_pState->GetBinaryTrajectory()->WriteAFrame(step);
     //--- write into time seri file, e.g., energy, volume ...
