@@ -126,10 +126,8 @@ struct ParallelReplicaData {  // data structure for turning on and off certain m
     ParallelReplicaData(bool state){State = state;}
     ~ParallelReplicaData(){}
     bool State;
-    std::string type;
-    int PT_steps;
-    double PT_minbeta;
-    double PT_maxbeta;
+    std::string Type;
+    std::string Data;
 };
 
 
@@ -188,12 +186,14 @@ inline  RNG            *GetRandomNumberGenerator()                 const { retur
 inline std::vector <std::string> GetCommandLineArgument()                       {return m_Argument;}
 inline std::string               GetRunTag()                                    {return m_GeneralOutputFilename;}
 inline int                       GetThreads_Number()                                {return m_Total_no_Threads;}
-inline ParallelReplicaData       *GetParallelReplicaData()                           {return m_pParallel_Replica;}
+inline ParallelReplicaData       GetParallelReplicaData()                           {return m_Parallel_Replica;}
 std::string CurrentState();
 
 static void HelpMessage();              // writes a help message
 bool Initialize(); // makes all the objects ready for simulations, it will open the files ...
-
+    void UpdateRunTag(std::string runtag){
+        m_GeneralOutputFilename = runtag;
+    }
 private:
     bool ReadInputFile(std::string inputfile);    // updates variables based on data in the inputfile
     bool ExploreArguments(std::vector<std::string> &argument);
@@ -263,7 +263,7 @@ private:
         double m_MaxLinkLengthSquare;       //  maximum distance allowed between two nighbouring vertices  (larger will results in error)
         double m_MinFaceAngle;              //  minimum angle between the face (smaller will results in error), this is the value of the cos
 
-    ParallelReplicaData *m_pParallel_Replica; // an object that includes info about Parallel Tempering method that we are applying
+    ParallelReplicaData m_Parallel_Replica; // an object that includes info about Parallel Tempering method that we are applying
 };
 
 #endif

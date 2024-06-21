@@ -50,7 +50,7 @@ private:
     bool ReadTopology(const std::string& file);  // Function to generate a mesh topology using the provided files. If the restart is on, then the topology will be generated from the restart file.
     void Read_Mult_QFile(const std::string& file);
     void Read_TSIFile(const std::string& topfile);
-    void GenerateIncFromInputfile(); // Function to generate some distribution of inclusions based on the input file. It does this only if the topology is from q files, since the tsi file format should have inclusions inside ...
+    bool GenerateIncFromInputfile(); // Function to generate some distribution of inclusions based on the input file. It does this only if the topology is from q files, since the tsi file format should have inclusions inside ...
 
     bool m_Healthy;   // To check if the input data are read correctly
 

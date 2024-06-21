@@ -38,15 +38,16 @@ bool CreateMashBluePrint::ReadTopology(const std::string& file)
 {
 
     std::string ext =  Nfunction::SubstringFromRight(file, '.');
-    if(ext == TSIExt)
-        {
+    if(ext == TSIExt) {
+        
             Read_TSIFile(file);
-
         }
         else if(ext == TopExt)
         {
             Read_Mult_QFile(file);
-            GenerateIncFromInputfile();
+            if(!GenerateIncFromInputfile()){
+                return false;
+            }
         }
     else{
         std::cout<<" topology file type is not known "<<std::endl;
@@ -311,23 +312,25 @@ void CreateMashBluePrint::Read_Mult_QFile(const std::string& topfile)
         }
         Qs.close();
     }
-    std::cout<<"trinagle is read "<<"\n";
+    
+#if DEBUG_MODE == Enabled
+    std::cout<<" trinagle is read "<<"\n";
+#endif
 
 }
-void CreateMashBluePrint::GenerateIncFromInputfile()
-{
+bool CreateMashBluePrint::GenerateIncFromInputfile() {
+    
     std::string file = m_InputFileName;
     Nfunction f;
     std::string str;
     // enforcing correct file extension:  check simdef file for value of InExt
     std::string ext = file.substr(file.find_last_of(".") + 1);
-    if(ext!=InExt)
+    if(ext != InExt)
         file = file + "." + InExt;
     if (f.FileExist(file)!=true)
     {
         std::cout<<"----> Error: the input file with the name "<<file<< " does not exist "<<std::endl;
-        m_Healthy =false;
-        exit(0);
+        return false;
     }
     std::ifstream input;
     input.open(file.c_str());
@@ -338,7 +341,7 @@ void CreateMashBluePrint::GenerateIncFromInputfile()
         input>>str;
         if(input.eof())
             break;
-        if(str=="GenerateInclusions")
+        if(str == "GenerateInclusions")
         {
             input>>str>>str;
             if(str=="Random")
@@ -369,7 +372,7 @@ void CreateMashBluePrint::GenerateIncFromInputfile()
             else
             {
                 std::cout<<"----> Error: "<<str<<" type of the distribution is not defined yet "<<std::endl;
-                exit(0);
+                return false;
             }
         
         }
@@ -415,4 +418,6 @@ void CreateMashBluePrint::GenerateIncFromInputfile()
                     }
                 }
     delete [] V;
+        
+    return true;
 }

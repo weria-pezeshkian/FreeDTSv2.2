@@ -26,6 +26,7 @@ public:
 
     static bool CopyBinaryFile(const std::string& file1, const std::string& file2, const std::streamsize bufferSize);
     static void HelpMessage();
+    static std::string ConvertSecond2Time(double seconds);
 };
 
 #endif

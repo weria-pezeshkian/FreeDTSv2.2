@@ -4,6 +4,7 @@
 # include <omp.h>
 #endif
 #include <thread>
+#include <ctime>
 #include <iostream>
 #include <string.h>
 #include "MC_Simulation.h"
@@ -59,7 +60,9 @@ bool MC_Simulation::do_Simulation(){
 #if DEBUG_MODE == Enabled
     std::cout<<" We have reached simulation run loop!  \n";
 #endif
-for(int step = GetInitialStep(); step <= GetFinalStep(); step++){
+    std::clock_t start = std::clock();
+
+for (int step = m_Initial_Step; step <= m_Final_Step; step++){
         
 //---> centering the simulation box
     if(GetBoxCentering()!=0 && step%GetBoxCentering()==0){
@@ -101,19 +104,15 @@ for(int step = GetInitialStep(); step <= GetFinalStep(); step++){
    // time_t currentTime;
    // time(&currentTime);
     if (step%50 == 0) {
-        std::cout<<"Step = "<<step<<"/"<<GetFinalStep()<<std::flush;
-        std::cout << std::fixed << std::setprecision(3);
-        std::cout<<" Rates: "<<std::flush;
-        std::cout<<" vertex move = "<<m_pState->GetVertexPositionUpdate()->GetAcceptanceRate(true)<<std::flush;
-        std::cout<<"; alexander move = "<<m_pState->GetAlexanderMove()->GetAcceptanceRate(true)<<std::flush;
-        std::cout<<"; inclusion move = "<<m_pState->GetInclusionPoseUpdate()->GetAcceptanceRate(true)<<std::flush;
-        if(m_pState->GetDynamicBox()->GetDerivedDefaultReadName() != "No")
-        std::cout<<"; Box Move = "<<m_pState->GetDynamicBox()->GetAcceptanceRate(true)<<std::flush;
-        std::cout << '\r';
-        std::cout << "\033[K";
+        PrintRate(step, true, true);
     }
 
 } // for(int step=GetInitialStep(); step<GetFinalStep(); step++)
+    std::clock_t end = std::clock();
+    double elapsed_secs = double(end - start) / CLOCKS_PER_SEC;
+    std::cout<<"---- Simulation has ended ----\n";
+    std::cout<<" The run took: "<<Nfunction::ConvertSecond2Time(elapsed_secs)<<"\n";
+
 
     m_pState->GetCurvatureCalculator()->Initialize();
     double Final_energy = m_pState->GetEnergyCalculator()->CalculateAllLocalEnergy();
@@ -137,6 +136,19 @@ std::string MC_Simulation::CurrentState(){
     
     return state;
 }
-
+void  MC_Simulation::PrintRate(int step, bool clean, bool clear){
+    std::cout<<"Step = "<<step<<"/"<<GetFinalStep()<<std::flush;
+    std::cout << std::fixed << std::setprecision(3);
+    std::cout<<" Rates: "<<std::flush;
+    std::cout<<" vertex move = "<<m_pState->GetVertexPositionUpdate()->GetAcceptanceRate(clean)<<std::flush;
+    std::cout<<"; alexander move = "<<m_pState->GetAlexanderMove()->GetAcceptanceRate(clean)<<std::flush;
+    std::cout<<"; inclusion move = "<<m_pState->GetInclusionPoseUpdate()->GetAcceptanceRate(clean)<<std::flush;
+    if(m_pState->GetDynamicBox()->GetDerivedDefaultReadName() != "No")
+    std::cout<<"; Box Move = "<<m_pState->GetDynamicBox()->GetAcceptanceRate(clean)<<std::flush;
+    if(clear){
+        std::cout << '\r';
+        std::cout << "\033[K";
+    }
+}
 
 

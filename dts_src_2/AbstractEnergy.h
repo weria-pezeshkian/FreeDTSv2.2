@@ -31,7 +31,7 @@ public:
         delete m_pInt;
     }
     //---- virtual functions
-    virtual inline std::string GetDerivedDefaultReadName() = 0;
+    
     virtual inline double CalculateAllLocalEnergy() = 0 ;
     virtual double TwoInclusionsInteractionEnergy(links *) = 0;
     virtual double SingleVertexEnergy(vertex *p) = 0;
@@ -45,13 +45,17 @@ public:
     void Initialize(std::string inputfilename){
         
         m_pInt = new Inclusion_Interaction_Map(inputfilename);
-
+        // Check if m_pInt was successfully allocated
+        if (m_pInt == NULL) {
+            std::cerr << "Error: Failed to allocate memory for Inclusion_Interaction_Map \n";
+        }
+        
         return;
     }
    // virtual  double CalaculateEnergyofSingleVertex(vertex * pvertex) = 0;
 
 
-    
+    virtual inline std::string GetDerivedDefaultReadName() = 0;
     inline static std::string GetBaseDefaultReadName() {return "EnergyMethod";}
     
 //---> real functions
@@ -81,12 +85,17 @@ public:
         m_Kappa_Norm = kappa_norm;
         return;
     }
-    void SetSizeCoupling(double ka, double a0, double kl, double l0){
+    bool SetSizeCoupling(double ka, double a0, double kl, double l0){
+        
+        if(a0<0 || a0>1 || l0<0 || l0>1){
+            std::cout<<"---> error in constant vertex area; gamma is bad; it should be a double number between 0-1 \n";
+            return false;
+        }
         m_Ka = ka;
-        m_Area0 = a0;
+        m_Area0 = (1+2*a0)*sqrt(3)/2.0;
         m_Kl = kl;
-        m_l0 = l0;
-        return;
+        m_l0 = sqrt(1+2*l0);
+        return true;
     }
 private:
     double m_TotalEnergy;

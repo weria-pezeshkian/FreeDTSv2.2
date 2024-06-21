@@ -19,8 +19,8 @@ public:
     MESH();
     ~MESH();
 
-    inline std::vector<vertex*>&    GetActiveV()               {return m_pActiveV;}
-    inline std::vector<triangle*>&   GetActiveT()               {return m_pActiveT;}
+    inline std::vector<vertex*>&        GetActiveV()               {return m_pActiveV;}
+    inline std::vector<triangle*>&      GetActiveT()               {return m_pActiveT;}
     inline std::vector<links*>&      GetActiveL()               {return m_pActiveL;}
     inline std::vector<vertex*>&           GetSurfV()                 {return m_pSurfV;}
     inline std::vector<vertex*>&           GetEdgeV()                 {return m_pEdgeV;}
@@ -35,6 +35,7 @@ public:
 
 
     inline Vec3D                   *GetBox()                        {return m_pBox;}
+    inline Vec3D&                   Link2ReferenceBox()             {return m_Box;}
     inline const bool               GetHasCrossedPBC()  const       {return m_MeshCrossedPBC;}
     std::vector <InclusionType*>    GetInclusionType()     const    {return m_pInclusionType;}
     
@@ -62,7 +63,7 @@ public:
 //----
     bool UpdateGroupFromIndexFile(std::string &indexfilename);
     void CenterMesh();    // this function centers the mesh inside the box. For broken systems it may not work nicely
-    void GenerateMesh(MeshBluePrint meshblueprint);
+    bool GenerateMesh(MeshBluePrint meshblueprint);
     MeshBluePrint Convert_Mesh_2_BluePrint(MESH *mesh);
     std::vector <InclusionType*> m_pInclusionType;
     std::vector <InclusionType> m_InclusionType;
@@ -77,9 +78,9 @@ protected:
     std::vector<links*>         m_pEdgeL;
     std::vector<triangle*>      m_pActiveT;
     std::vector<inclusion*>     m_pInclusion;
-    std::vector<triangle*>       m_pGhostT; // Some trinagles for initial storing
-    std::vector<links*>          m_pGhostL;
-    std::vector<vertex*>         m_pGhostV;
+    std::vector<triangle*>      m_pGhostT; // Some trinagles for initial storing
+    std::vector<links*>         m_pGhostL;
+    std::vector<vertex*>        m_pGhostV;
     Vec3D                       *m_pBox;
     std::map<std::string, std::vector<vertex*> > m_Groups;
 

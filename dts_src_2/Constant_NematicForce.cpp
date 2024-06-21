@@ -26,7 +26,7 @@ double Constant_NematicForce::Energy_of_Force(vertex *pv, Vec3D dx)
             Force = Force + ActiveNematicForce_1(pv2, pv);
         }
         Tensor2  G2L = pv->GetG2LTransferMatrix();
-        Vec3D ldx = G2L*dx;
+        Vec3D ldx = G2L * dx;
         En = m_F0*(ldx.dot(ldx,Force));  // in the local space F = -zeta*div(Q); E=zeta*div(Q)*dX
     }
     return En;

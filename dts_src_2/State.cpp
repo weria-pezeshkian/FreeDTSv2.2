@@ -44,8 +44,6 @@ State::State(std::vector<std::string> argument) :
       m_pEnergyCalculator(new Energy(this)),  // Initialize EnergyCalculator
 
         // Initialize Simulation
-      m_pParallel_Replica(new ParallelReplicaData(false)),
-
      //--- Local state member variables
       m_Argument(argument),  // Set Argument
       m_TopologyFile("topology.top"),  // Set TopologyFile
@@ -63,6 +61,7 @@ State::State(std::vector<std::string> argument) :
     m_pVertexPositionIntegrator = new EvolveVerticesByMetropolisAlgorithm(this);
     m_pAlexanderMove            = new AlexanderMoveByMetropolisAlgorithm(this);         // Initialize AlexanderMove
     m_pInclusionPoseIntegrator  = new InclusionPoseUpdateByMetropolisAlgorithm(this);  // Initialize InclusionPoseIntegrator
+    m_Parallel_Replica.State    = false;
 
 //-- Find input files name (input.tsi, top.top||top.tsi, index.inx, restart.res)
     if (!ExploreArguments(argument)) {
@@ -102,7 +101,6 @@ State::~State()
     delete m_RandomNumberGenerator;
     delete m_pEnergyCalculator;
     delete m_pSimulation;
-    delete m_pParallel_Replica;
     delete m_pVoxelization;
 }
 bool State::ExploreArguments(std::vector<std::string> &argument){
@@ -202,7 +200,7 @@ bool State::ExploreArguments(std::vector<std::string> &argument){
 }
 bool State::ReadInputFile(std::string file)
 {
-    /**
+    /*
      * @brief Reads and parses the input file for the State class, configuring various simulation parameters.
      *
      * This function reads an input file specified by the `file` parameter, which is expected to contain a variety
@@ -268,6 +266,10 @@ std::string firstword, rest, str, type;
 while (input >> firstword) {
     if (input.eof()) break;
 
+    if(firstword.size() !=0  && firstword[0] == ';'){
+        getline(input,rest);
+        continue;
+    }
 //-- State class variable
         if(firstword == "Run_Tag")
         {
@@ -559,7 +561,19 @@ while (input >> firstword) {
 
         }
 // end ConstraintBetweenGroups
-//end of ConstraintBetweenGroups
+//energy
+        else if( firstword == AbstractEnergy::GetBaseDefaultReadName() ) {
+            input >> str >> type;
+            if(type == Energy::GetDefaultReadName()){ // "FreeDTS1.0_FF"
+                m_pEnergyCalculator = new Energy(this);  // Initialize EnergyCalculator
+            }
+            else {
+                std::cout<<" error---> unknown force field type: "<<type<<std::endl;
+                m_NumberOfErrors++;
+                return false;
+            }
+        }
+//-- end of energy
         else if( firstword == "MC_Moves" ) {
             
             getline(input, str);
@@ -652,14 +666,11 @@ while (input >> firstword) {
         {
             double a,b,c,d;
             input>>str>>a>>b>>c>>d;
-            double A01 = (1+2*b)*sqrt(3)/2.0;   // selecting b between 0-1
-            double A02 = sqrt(1+2*d);   // selecting d between 0-1
-
-            if(b<0 || b>1 || d<0 || d>1){
-                std::cout<<"---> error in constant vertex area; gamma is bad; it should be a double number between 0-1 \n";
-                exit(0);
+            
+            if(!m_pEnergyCalculator->SetSizeCoupling (a,b,c,d)){
+                m_NumberOfErrors++;
+                return false;
             }
-            m_pEnergyCalculator->SetSizeCoupling (a,A01,c,A02);
         }
         else if(firstword == "ConstantField") {
             double k,x,y,z;
@@ -686,17 +697,20 @@ while (input >> firstword) {
             getline(input,rest);
 
         }
-        else if(firstword == "Parallel_Tempering")
+        else if(firstword == "ParallelReplica")
         {
-            // Parallel_Tempering  = on PT_steps  PT_minbeta    PT_maxbeta
-            std::string state;
-            input>>str>>state>>(m_pParallel_Replica->PT_steps)>>(m_pParallel_Replica->PT_minbeta)>>(m_pParallel_Replica->PT_maxbeta);
-            if(state=="on"|| state=="yes"|| state=="On"|| state=="ON"|| state=="Yes"|| state=="YES")
-                m_pParallel_Replica->State = true;
-            else
-                m_pParallel_Replica->State = false;
-            
+            // ParallelReplica = Parallel_Tempering  rate  minbeta    maxbeta
+            std::string type;
+            input>>str>>type;
             getline(input,rest);
+
+            if(type == "No"|| type == "no"|| type == "NO")
+                m_Parallel_Replica.State = false;
+            else
+                m_Parallel_Replica.State = true;
+                        
+            m_Parallel_Replica.Type = type;
+            m_Parallel_Replica.Data = rest;
 
         }
         else if(firstword == BTSFile::GetDefaultReadName() ){ // "OutPutTRJ_BTS"
@@ -756,6 +770,37 @@ void State::HelpMessage(){
     return;
 }
 bool State::Initialize(){
+    /*
+     * Function: State::Initialize
+     * ---------------------------
+     * Initializes the state of the simulation by setting up various components such as the mesh, restart files,
+     * log files, trajectory files, and data structures. This function performs the following key tasks:
+     *
+     * 1. Mesh Initialization:
+     *    - Creates a MeshBluePrint object using either a restart file or an input topology file.
+     *    - Generates the mesh from the mesh blueprint and updates the voxelization box.
+     *
+     * 2. Restart File Handling:
+     *    - Checks if a restart file is provided and attempts to read it.
+     *    - If successful, updates various components to the state from the restart file and opens necessary log, data output, and trajectory files.
+     *    - If the restart file read fails or is not provided, uses the input topology file to generate the mesh blueprint and opens necessary files for logging and output.
+     *
+     * 3. Initializing Data Structures and Components:
+     *    - Initializes random number generators, curvature calculations, boundary conditions, dynamic topology, inclusion exchange, and various other integrators and couplings.
+     *
+     * 4. Logging and Visualization:
+     *    - Writes the starting state to the log file and creates an initial visualization frame.
+     *
+     * 5. Energy Calculations:
+     *    - Initializes the energy calculator and updates the total energy of the system.
+     *
+     * 6. Error and Warning Handling:
+     *    - Checks for any errors or warnings during initialization and outputs appropriate messages.
+     *    - Terminates the program if there are any errors.
+     *
+     * Returns:
+     *    - true if the initialization is successful.
+     */
 //-----> Get the mesh
         // Create a MeshBluePrint object
         CreateMashBluePrint Create_BluePrint;
@@ -823,8 +868,8 @@ bool State::Initialize(){
             }
 
         }
-
-    m_RandomNumberGenerator->Initialize();
+    
+        m_RandomNumberGenerator->Initialize();
         // Generate mesh from the mesh blueprint
         m_Mesh.GenerateMesh(mesh_blueprint);
         m_pVoxelization->SetBox(m_pMesh->GetBox());
@@ -841,15 +886,15 @@ bool State::Initialize(){
         m_pInclusionPoseIntegrator->Initialize();
 //----> boundry of the simulations
         m_pBoundary->Initialize();
-//-----> box change
-    m_pDynamicBox->Initialize();
 
+//-----> box change
+        m_pDynamicBox->Initialize();
     
 //----> inclsuion exchange, active inclsuion exchange
     m_pInclusionConversion->Initialize(this);
     m_pDynamicTopology->Initialize();
     m_pOpenEdgeEvolution->Initialize();
-    
+
      m_pTotalAreaCoupling->Initialize(this);
      m_pVolumeCoupling->Initialize(this);
     m_pCoupleGlobalCurvature->Initialize(this);
@@ -858,17 +903,16 @@ bool State::Initialize(){
     m_pApplyConstraintBetweenGroups->Initialize();
     m_pSimulation->Initialize();
 
-    
+
 //--- now that the system is ready for simulation, we first write the State into the log file and make one vis 
     m_pTimeSeriesLogInformation->WriteStartingState();
     m_pVisualizationFile->WriteAFrame(-m_pVisualizationFile->GetPeriod());
-
 //----> energy class
 //---> to get interaction energies
     m_pEnergyCalculator->Initialize(m_InputFileName);
 //---> to update each vertex and edge energy. Up to now May 2024, edge energy is not zero when both vertices has inclusions
     m_pEnergyCalculator->UpdateTotalEnergy(m_pEnergyCalculator->CalculateAllLocalEnergy());
-    
+
     if(m_NumberOfErrors!=0){
         std::cout<<" There were "<<m_NumberOfErrors<<" errors in the input files "<<std::endl;
         exit(0);
@@ -881,6 +925,82 @@ bool State::Initialize(){
     }
     return true;
 }
+bool State::ReadInclusionType(std::ifstream& input) {
+    /*
+     * @brief Reads and initializes inclusion types from an input file.
+     *
+     * This function reads the inclusion type definitions from an input file and initializes
+     * the necessary data structures in the State object. It reads various properties for
+     * each inclusion type and sets up the mesh to use these types.
+     *
+     * @param input Reference to the input file stream containing inclusion type definitions.
+     * @return true if the inclusion types were successfully read and initialized, false otherwise.
+     */
+    
+    std::string firstword, rest, str1, str2, TypeNames;
+    int N, TypeID, NoType;
+    double Kappa, KappaG, KappaP, KappaL, C0, C0P, C0N;
+
+    // Store inclusion types in a vector
+    std::vector<InclusionType> all_InclusionType;
+
+    // Add a default inclusion type
+    InclusionType emptyIncType;
+    all_InclusionType.push_back(emptyIncType);
+
+    // Read the header line
+    input >> str1 >> NoType >> str2;
+    getline(input, rest);
+    getline(input, rest); // Discard the header line
+
+    // Check if the header line indicates inclusion type definition
+    if (str1 == "Define" || str1 == "define" || str1 == "DEFINE") {
+        for (int i = 0; i < NoType; i++) {
+            std::string inc_data;
+            getline(input, inc_data);
+            std::vector<std::string> inclusion_str = Nfunction::split(inc_data);
+            if (inclusion_str.size() < 9) {
+                std::cout << "---> error: bad definition of inclusion types \n";
+                m_NumberOfErrors++;
+                return false;
+            }
+            N = Nfunction::String_to_Int(inclusion_str[0]);
+            TypeNames = inclusion_str[1];
+            Kappa = Nfunction::String_to_Double(inclusion_str[2]);
+            KappaG = Nfunction::String_to_Double(inclusion_str[3]);
+            KappaP = Nfunction::String_to_Double(inclusion_str[4]);
+            KappaL = Nfunction::String_to_Double(inclusion_str[5]);
+            C0 = Nfunction::String_to_Double(inclusion_str[6]);
+            C0P = Nfunction::String_to_Double(inclusion_str[7]);
+            C0N = Nfunction::String_to_Double(inclusion_str[8]);
+
+            // Parse edge data if available
+            double lam = 0, ekg = 0, ekn = 0, ecn = 0;
+            if (inclusion_str.size() >= 13) {
+                lam = Nfunction::String_to_Double(inclusion_str[9]);
+                ekg = Nfunction::String_to_Double(inclusion_str[10]);
+                ekn = Nfunction::String_to_Double(inclusion_str[11]);
+                ecn = Nfunction::String_to_Double(inclusion_str[12]);
+            }
+
+            // Create inclusion type and add to vector
+            InclusionType incType(TypeNames, i + 1, N, Kappa/2, KappaG, KappaP/2, KappaL/2, C0, C0P, C0N, lam, ekg, ekn, ecn);
+            all_InclusionType.push_back(incType);
+        }
+    }
+
+    // Set inclusion types in the mesh object
+    m_Mesh.m_InclusionType = all_InclusionType;
+
+    // Set pointers to inclusion types
+    m_Mesh.m_pInclusionType.clear();
+    for (size_t i = 0; i < m_Mesh.m_InclusionType.size(); ++i) {
+        m_Mesh.m_pInclusionType.push_back(&m_Mesh.m_InclusionType[i]);
+    }
+
+    return true;
+}
+/*
 bool State::ReadInclusionType(std::ifstream& input) {
     std::string firstword, rest, str1, str2, TypeNames;
     int N, TypeID, NoType;
@@ -931,7 +1051,7 @@ bool State::ReadInclusionType(std::ifstream& input) {
     }
 
     return true;
-}
+}*/
 std::string State::CurrentState(){
 
     std::string state = " Run_Tag = "+ m_GeneralOutputFilename;

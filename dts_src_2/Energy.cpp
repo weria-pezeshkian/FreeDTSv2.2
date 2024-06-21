@@ -10,10 +10,9 @@
  Energy of a link (when connected vertices has inclusions)
  Energy of the whole system
  */
-Energy::Energy(State* pState) {
+Energy::Energy(State* pState)  : m_Box(pState->GetMesh()->Link2ReferenceBox()) {
     
     m_pState = pState;
-    m_pBox = m_pState->GetMesh()->GetBox();
 }
 Energy::~Energy() {
     
@@ -141,26 +140,23 @@ double Energy::EdgeVertexBendingAndStretchingEnergy(vertex *p_vertex)
 double Energy::CalculateAllLocalEnergy()
 {
     double E = 0.0;
-    
+
     const std::vector<vertex *>& pAllVertices = m_pState->GetMesh()->GetActiveV();
     const std::vector<links *>& pRight_L = m_pState->GetMesh()->GetRightL();
     const std::vector<links *>& pEdge_L = m_pState->GetMesh()->GetEdgeL();
-
     for (std::vector<vertex *>::const_iterator it = pAllVertices.begin() ; it != pAllVertices.end(); ++it)
     {
         E += SingleVertexEnergy(*it);
     }
-    for (std::vector<links *>::const_iterator it = pRight_L.begin() ; it != pRight_L.end(); ++it) {
+     for (std::vector<links *>::const_iterator it = pRight_L.begin() ; it != pRight_L.end(); ++it) {
         E += TwoInclusionsInteractionEnergy(*it);
     }
     for (std::vector<links *>::const_iterator it = pEdge_L.begin() ; it != pEdge_L.end(); ++it) {
         E += TwoInclusionsInteractionEnergy(*it);
     }
-    
     return E;
 }
-double Energy::TwoInclusionsInteractionEnergy(links * p_edge)
-{
+double Energy::TwoInclusionsInteractionEnergy(links * p_edge) {
 
     vertex * p_v1 = p_edge->GetV1();
     vertex * p_v2 = p_edge->GetV2();
@@ -196,6 +192,7 @@ double Energy::TwoInclusionsInteractionEnergy(links * p_edge)
          case 1: {
              double theta = (ff[2] != 0) ? Geo_Theta(p_v1, p_v2) : 0.0;
              e_int = InteractionFunction(ff[0], ff[1], ff[2], theta);
+
              break;
          }
         case 2:{
@@ -230,7 +227,6 @@ double Energy::TwoInclusionsInteractionEnergy(links * p_edge)
         // divided by 2 here is also fine as everywhere will be muliplied by two again
         p_edge->UpdateIntEnergy(e_int/2.0);
     }
-    
     return e_int;
 }
 double Energy::InteractionFunction(double N, double A, double B, double theta) {
@@ -244,12 +240,13 @@ double Energy::InteractionFunction(double N, double A, double B, double theta) {
 double Energy::F2(vertex *v1, vertex *v2, std::vector<double> var)
 {
     /// F = -e0+e1*cosN(phi-phi0)+e2*(l/l0-1)cos(beta-beta0)
+    /// 
+
     double E = 0;
     m_Angle2D = Geo_Theta(v1,v2);
     Vec3D N1 = v1->GetNormalVector();
     Vec3D N2 = v2->GetNormalVector();
     double beta = acos(N1.dot(N1,N2));
-    
     
     double e0 = var.at(0);
     double e1 = var.at(1);
@@ -261,7 +258,6 @@ double Energy::F2(vertex *v1, vertex *v2, std::vector<double> var)
 
     theta0 = theta0/180.0*3.14;
     beta0 = beta0/180.0*3.14;
-    
     //====== obtain the orinatation of the beta
     Vec3D P1 (v1->GetVXPos(),v1->GetVYPos(),v1->GetVZPos()) ;
     Vec3D P2 (v2->GetVXPos(),v2->GetVYPos(),v2->GetVZPos()) ;
@@ -269,9 +265,8 @@ double Energy::F2(vertex *v1, vertex *v2, std::vector<double> var)
     Vec3D l1 = N2-N1+(P2-P1)*(1.0/l);
     if(l1.norm()<1)
         beta=-beta;
-    
     E = -e0-e1*cos(N*(m_Angle2D-theta0))+e2*(beta-beta0)*(beta-beta0);
-    
+
     return E;
 }
 double Energy::F10(vertex *v1, vertex *v2, std::vector<double> var)
@@ -418,22 +413,21 @@ double Energy::Geo_Theta(vertex *v1, vertex *v2) {
      * @param v2 Pointer to the second vertex.
      * @return The angle (in radians) between the transported vectors.
      */
+    
         Vec3D X1 = v1->GetPos();
         Vec3D X2 = v2->GetPos();
         Vec3D geodesic_dir=(X2-X1);
-        
+    
         for (int i=0;i<3;i++)
         {
-            if(fabs(geodesic_dir(i))>(*m_pBox)(i)/2)
+            if(fabs(geodesic_dir(i))>  m_Box(i)/2)
             {
                 if(geodesic_dir(i)<0)
-                    geodesic_dir(i)=geodesic_dir(i)+(*m_pBox)(i);
+                    geodesic_dir(i) = geodesic_dir(i) + m_Box(i);
                 else if(geodesic_dir(i)>0)
-                    geodesic_dir(i)=geodesic_dir(i)-(*m_pBox)(i);
+                    geodesic_dir(i) = geodesic_dir(i) - m_Box(i);
             }
         }
-
-        
         Vec3D y1=(v1->GetG2LTransferMatrix())*geodesic_dir;
         y1(2)=0;
         y1.normalize();
@@ -459,7 +453,7 @@ std::string Energy::CurrentState(){
     std::string state = AbstractEnergy::GetBaseDefaultReadName() + " = " + GetDerivedDefaultReadName();
     state = state + "\n Kappa = "+Nfunction::D2S(2*m_kappa)+" "+Nfunction::D2S(m_kappa_G)+" "+Nfunction::D2S(m_SCurvature0);
     state = state + "\n Edge_Parameters = "+Nfunction::D2S(m_Lambda)+" "+Nfunction::D2S(m_Kappa_Geo)+" "+Nfunction::D2S(m_Kappa_Norm);
-    state = state + "\n VertexArea = "+Nfunction::D2S(m_Ka)+" "+Nfunction::D2S(m_Area0)+" "+Nfunction::D2S(m_Kl)+" "+Nfunction::D2S(m_l0);
+    state = state + "\n VertexArea = "+Nfunction::D2S(m_Ka)+" "+Nfunction::D2S(m_Area0/sqrt(3)-0.5)+" "+Nfunction::D2S(m_Kl)+" "+Nfunction::D2S((m_l0*m_l0-1)/2);
 
     return state;
 }

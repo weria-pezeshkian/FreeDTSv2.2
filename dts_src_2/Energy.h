@@ -28,7 +28,8 @@ public:
 	 ~Energy();
 
 public:
-    inline std::string GetDerivedDefaultReadName() {return "FreeDTS1.0_FF";};
+    inline std::string GetDerivedDefaultReadName() {return "FreeDTS1.0_FF";}
+    inline static std::string GetDefaultReadName() {return "FreeDTS1.0_FF";}
     double CalculateAllLocalEnergy();   ///
     double SingleVertexEnergy(vertex *p);
     double TwoInclusionsInteractionEnergy(links *);
@@ -47,7 +48,7 @@ private:
 
 private:
     State* m_pState;
-    Vec3D *m_pBox;
+    Vec3D  &m_Box;
     double m_Angle3D;
     double m_Angle2D;
 

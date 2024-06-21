@@ -59,9 +59,14 @@ void  MESH::CenterMesh(){
     
     return;
 }
-void MESH::GenerateMesh(MeshBluePrint meshblueprint)
+bool MESH::GenerateMesh(MeshBluePrint meshblueprint)
 {
     m_Box = meshblueprint.simbox;
+    if(m_Box.isbad()){
+        std::cout<<"---> box from blueprint is bad \n";
+        return false;
+    }
+    
     m_pBox = &m_Box;
    // m_InclusionType = meshblueprint.binctype;
     
@@ -310,10 +315,11 @@ void MESH::GenerateMesh(MeshBluePrint meshblueprint)
     for (std::vector<vertex>::iterator it = m_GhostV.begin() ; it != m_GhostV.end(); ++it)
         m_pGhostV.push_back(&(*it));
 
-    
     //WritevtuFiles VTU(pState);
     //std::string file="ini_Mesh.vtu";
     //VTU.Writevtu(m_pAllV,m_pAllT,m_pAllLinks,file);
+    
+    return true;
 }
 //===========================================================
 // Note, the converted blue print will not have the exclusions

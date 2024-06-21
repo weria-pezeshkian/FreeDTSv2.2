@@ -209,3 +209,58 @@ void Nfunction::HelpMessage() {
     std::cout << std::left << std::setw(12) << "-restart" << std::setw(15) << "string" << std::setw(20) << "NO" << "Restart file name" << std::endl;
     std::cout << "=============================================================================" << std::endl;
 }
+std::string Nfunction::ConvertSecond2Time(double Seconds) {
+    int seconds = Seconds;
+    if(seconds != 0)
+    Seconds = Seconds/double(seconds);
+    const int daysPerMonth = 30; // Approximate average days per month
+    const int hoursPerDay = 24;
+    const int minutesPerHour = 60;
+    const int secondsPerMinute = 60;
+
+    // Convert seconds to months, days, hours, minutes, and seconds
+    int months = seconds / (daysPerMonth * hoursPerDay * minutesPerHour * secondsPerMinute);
+    seconds %= (daysPerMonth * hoursPerDay * minutesPerHour * secondsPerMinute);
+
+    int days = seconds / (hoursPerDay * minutesPerHour * secondsPerMinute);
+    seconds %= (hoursPerDay * minutesPerHour * secondsPerMinute);
+
+    int hours = seconds / (minutesPerHour * secondsPerMinute);
+    seconds %= (minutesPerHour * secondsPerMinute);
+
+    int minutes = seconds / secondsPerMinute;
+    seconds %= secondsPerMinute;
+
+    // Create a stringstream to build the output string
+    std::stringstream ss;
+
+    // Append non-zero units to the stringstream
+    bool printedSomething = false;
+
+    if (months > 0) {
+        ss << months << " months";
+        printedSomething = true;
+    }
+    if (days > 0) {
+        if (printedSomething) ss << ", ";
+        ss << days << " days";
+        printedSomething = true;
+    }
+    if (hours > 0) {
+        if (printedSomething) ss << ", ";
+        ss << hours << " hours";
+        printedSomething = true;
+    }
+    if (minutes > 0) {
+        if (printedSomething) ss << ", ";
+        ss << minutes << " minutes";
+        printedSomething = true;
+    }
+    if (seconds > 0 || !printedSomething) {
+        if (printedSomething) ss << ", ";
+        ss << seconds + Seconds << " seconds";
+    }
+
+    // Return the built string
+    return ss.str();
+}
