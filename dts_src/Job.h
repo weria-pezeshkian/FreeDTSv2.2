@@ -1,22 +1,20 @@
-#if !defined(AFX_Job_H_9F4A21B8_C13C_1223_BF23_124095086234__INCLUDED_)
-#define AFX_Job_H_9F4A21B8_C13C_1223_BF23_124095086234__INCLUDED_
+#ifndef JOB_FREEDTS_H_INCLUDED
+#define JOB_FREEDTS_H_INCLUDED
 
 #include "SimDef.h"
-class Job
-{
+#include <vector>
+#include <string>
+
+class Job {
 public:
+    // Constructor
+    Job(const std::vector<std::string>& argument);
     
-	Job(std::vector <std::string> argument);
-	 ~Job();
+    // Destructor
+    ~Job();
     
-
-
-public:
-
 private:
-
-
-
+    // Private member variables and functions can be added here
 };
 
-#endif
+#endif // JOB_H_INCLUDED

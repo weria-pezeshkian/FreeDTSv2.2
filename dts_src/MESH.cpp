@@ -1,32 +1,16 @@
+#include <fstream>
 #include "MESH.h"
-
 /*
  Weria Pezeshkian (weria.pezeshkian@gmail.com)
  Copyright (c) Weria Pezeshkian
 MESH class for quick access 
  */
-MESH::MESH()
-{
-    m_MinLength = 1;
-    m_MaxLength = 3;
-    m_MinAngle = -0.5;;
-    
+MESH::MESH() : m_MeshCrossedPBC(false) {
+
     m_pEdgeV.clear();
 }
-MESH::~MESH()
-{
+MESH::~MESH() {
     
-}
-void MESH::UpdateMinMaxLength(double lmin, double lmax){
- 
-    m_MinLength = lmin;
-    m_MaxLength = lmax;
-    return;
-}
-void MESH::UpdateMinAngle(double angle){
- 
-    m_MinAngle = angle;
-    return;
 }
 void MESH::RemoveFromLinkList(links* z, std::vector<links*> &vect){
     vect.erase(std::remove(vect.begin(), vect.end(), z), vect.end());
@@ -75,22 +59,27 @@ void  MESH::CenterMesh(){
     
     return;
 }
-void MESH::GenerateMesh(MeshBluePrint meshblueprint)
+bool MESH::GenerateMesh(MeshBluePrint meshblueprint)
 {
     m_Box = meshblueprint.simbox;
-    m_pBox = &m_Box;
-    m_InclusionType = meshblueprint.binctype;
+    if(m_Box.isbad()){
+        std::cout<<"---> box from blueprint is bad \n";
+        return false;
+    }
     
-    for (std::vector<InclusionType>::iterator it = m_InclusionType.begin() ; it != m_InclusionType.end(); ++it)
-        m_pInclusionType.push_back(&(*it));
+    m_pBox = &m_Box;
+   // m_InclusionType = meshblueprint.binctype;
+    
+  //  for (std::vector<InclusionType>::iterator it = m_InclusionType.begin() ; it != m_InclusionType.end(); ++it)
+    //    m_pInclusionType.push_back(&(*it));
     
     
     // Making vertices
     for (std::vector<Vertex_Map>::iterator it = (meshblueprint.bvertex).begin() ; it != (meshblueprint.bvertex).end(); ++it)
     {
-            vertex v(it->id,it->x,it->y,it->z);
+            vertex v(this, it->id,it->x,it->y,it->z);
             v.UpdateBox(m_pBox);
-            v.UpdateGroup(it->domain);
+            v.UpdateDomainID(it->domain);
             m_Vertex.push_back(v);
     }
 //===== Make exclution [since June, 2023]
@@ -138,14 +127,14 @@ void MESH::GenerateMesh(MeshBluePrint meshblueprint)
     //make inclusions
     for (std::vector<Inclusion_Map>::iterator it = (meshblueprint.binclusion).begin() ; it != (meshblueprint.binclusion).end(); ++it)
     {
-        inclusion Tinc(it->id);
-        if(m_Vertex.size()<it->vid+1)
-        {
-        std::cout<<"----> Error: Inclusion vertex id is out of range "<<std::endl;
+        
+        if(m_Vertex.size()<it->vid+1 && it->tid > m_InclusionType.size()) {
+            
+            std::cout<<"----> Error: Inclusion vertex id or type id is out of range "<<std::endl;
             exit(0);
         }
+        inclusion Tinc(it->id, &(m_InclusionType[it->tid]));
         Tinc.Updatevertex(&(m_Vertex.at(it->vid)));
-        Tinc.UpdateInclusionTypeID(it->tid);
         Vec3D D(it->x,it->y,0);
         Tinc.UpdateLocalDirection(D);
         m_Inclusion.push_back(Tinc);
@@ -281,29 +270,21 @@ void MESH::GenerateMesh(MeshBluePrint meshblueprint)
     }
     for (std::vector<vertex*>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it)
     {
-        bool isedge = false;
-        for (std::vector<vertex*>::iterator it2 = m_pEdgeV.begin() ; it2 != m_pEdgeV.end(); ++it2)
-        {
-            if((*it2)->GetVID()==(*it)->GetVID())
-                isedge = true;
+        bool is_an_edge = false;
+        for (std::vector<vertex*>::iterator it2 = m_pEdgeV.begin() ; it2 != m_pEdgeV.end(); ++it2) {
+            if( *it2 == *it)
+                is_an_edge = true;
         }
-        if(isedge==false)
+        if(!is_an_edge)
         m_pSurfV.push_back(*it);
     }
     
     //
     
     
-    for (std::vector<inclusion*>::iterator it = m_pInclusion.begin() ; it != m_pInclusion.end(); ++it)
-    {
+    for (std::vector<inclusion*>::iterator it = m_pInclusion.begin() ; it != m_pInclusion.end(); ++it) {
+        
         ((*it)->Getvertex())->UpdateInclusion((*it));
-        int inc_typeid=(*it)->GetInclusionTypeID();
-        if(m_InclusionType.size()-1<inc_typeid)
-        {
-            std::cout<<" Error: inclusion with typeid of "<<inc_typeid<<" has not been defined \n";
-            exit(0);
-        }
-        (*it)->UpdateInclusionType(&(m_InclusionType.at(inc_typeid)));
     }
     // =======
     // ==== info of the mesh
@@ -322,7 +303,7 @@ void MESH::GenerateMesh(MeshBluePrint meshblueprint)
         m_GhostT.push_back(triangle(tid++));
     }
     for (int i = 0; i < m_pActiveV.size(); ++i) {
-        m_GhostV.push_back(vertex(vid++));
+        m_GhostV.push_back(vertex(this, vid++));
     }
 
     for (std::vector<links>::iterator it = m_GhostL.begin() ; it != m_GhostL.end(); ++it)
@@ -334,10 +315,11 @@ void MESH::GenerateMesh(MeshBluePrint meshblueprint)
     for (std::vector<vertex>::iterator it = m_GhostV.begin() ; it != m_GhostV.end(); ++it)
         m_pGhostV.push_back(&(*it));
 
-    
     //WritevtuFiles VTU(pState);
     //std::string file="ini_Mesh.vtu";
     //VTU.Writevtu(m_pAllV,m_pAllT,m_pAllLinks,file);
+    
+    return true;
 }
 //===========================================================
 // Note, the converted blue print will not have the exclusions
@@ -382,14 +364,12 @@ MeshBluePrint MESH::Convert_Mesh_2_BluePrint(MESH *mesh)
         Inclusion_Map tim;
         tim.x = ((*it)->GetLDirection())(0);
         tim.y = ((*it)->GetLDirection())(1);
-        tim.vid = ((*it)->Getvertex())->GetVID();
-        tim.tid = ((*it)->GetInclusionType())->ITid;
-        tim.id = ((*it)->GetID());
+        tim.vid = (*it)->Getvertex()->GetVID();
+        tim.tid = (*it)->GetInclusionType()->ITid;
+        tim.id = (*it)->GetID();
         binclusion.push_back(tim);
 
     }
-    // inclusion type map member of the blue print
-    BluePrint.binctype = mesh->m_InclusionType;
     // Add other map into the mesh map
     BluePrint.bvertex = bvertex;
     BluePrint.btriangle = btriangle;
@@ -398,4 +378,42 @@ MeshBluePrint MESH::Convert_Mesh_2_BluePrint(MESH *mesh)
     
     return BluePrint;
 }
+bool MESH::UpdateGroupFromIndexFile(std::string &filename){
+    //std::map<std::string, std::vector<vertex*>> GetGroups()  const  {return m_Groups;}
 
+    if (Nfunction::SubstringFromRight(filename, '.') != "inx") {
+        filename += ".inx";
+    }
+    
+    std::ifstream indexfile(filename);
+    if (!indexfile) {
+        std::cerr << "---> note: no index file has been provided "  << std::endl;
+        return false;
+    }
+
+    std::string name;
+    int NAtom;
+    int gid = 1;
+    while (indexfile >> name >> NAtom) {
+        int vid;
+        std::vector<vertex*> gmember;
+        for (int i = 0; i < NAtom; ++i) {
+            if (!(indexfile >> vid)) {
+                std::cerr << "---> error: Failed to read ID from index file" << std::endl;
+                return false;
+            }
+            if (vid < m_pActiveV.size()) {
+                m_pActiveV[vid]->UpdateGroupName(name);
+                m_pActiveV[vid]->UpdateGroup(gid);
+                gmember.push_back(m_pActiveV[vid]);
+            } else {
+                std::cerr << "---> error: ID " << vid << " exceeds active vector size" << std::endl;
+                return false;
+            }
+        }
+        m_Groups[name] = gmember;
+        gid++;
+    }
+    indexfile.close();
+    return true;
+}

@@ -1,6 +1,7 @@
 #include <chrono>
 #include "Three_Edge_Scission.h"
 #include "State.h"
+#include "MESH.h"
 
 /*
  Weria Pezeshkian (weria.pezeshkian@gmail.com)
@@ -13,39 +14,47 @@
  // 2. We can create a hole closer function; instead of invoking the making links twice 
  
  */
-Three_Edge_Scission::Three_Edge_Scission(){
-    m_Period = 0;
-}
-Three_Edge_Scission::Three_Edge_Scission(int period, State *pState){
 
-    m_pState = pState;
-    m_Beta =   m_pState->m_Beta;
-    m_Period = period;
-    m_pEnergyCalculator = pState->GetEnergyCalculator();
+Three_Edge_Scission::Three_Edge_Scission(int period, State *pState) :
+                AbstractSimulation(*(pState->GetSimulation())),
+                MESH(*(pState->GetMesh())),
+                m_pState(pState),
+                m_Period(period) {
+
 }
 Three_Edge_Scission::~Three_Edge_Scission(){
     
 }
-bool Three_Edge_Scission::MCMove(int step, double * TotalEnergy, RNG *rng, GenerateCNTCells *pGenCNT )
-{
+void Three_Edge_Scission::Initialize() {
+
+    std::cout<<"---> note: three_Edge_Scission initalized"<<std::endl;
+}
+bool Three_Edge_Scission::MCMove(int step) {
+    
     if(m_Period==0 ||  step%m_Period!=0)
         return false;
     
-    MCScissionMove(step, TotalEnergy,rng);
-    MCFussionMove(step, TotalEnergy,rng);
+   // m_Beta = m_pState->GetSimulation()->GetBeta();
+    
+  //  double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
+    //AddToTotalEnergy
+    
+    
+    MCScissionMove(step);
+    MCFussionMove(step);
     
     
     return true;
 }
-bool Three_Edge_Scission::MCFussionMove(int step, double * TotalEnergy, RNG *rng){
+bool Three_Edge_Scission::MCFussionMove(int step){
     return false;
 }
-bool Three_Edge_Scission::MCScissionMove(int step, double * TotalEnergy, RNG *rng)
+bool Three_Edge_Scission::MCScissionMove(int step)
 {
 
     
 
-    if(m_GhostT.size()<4 || m_pGhostL.size()<4){
+    if(m_pGhostT.size()<4 || m_pGhostL.size()<4){
         std::cout<<" --->note: the number of the links and trinagles in repository is not enough, restart the simulations \n";
         exit(0);
     }
@@ -53,7 +62,7 @@ bool Three_Edge_Scission::MCScissionMove(int step, double * TotalEnergy, RNG *rn
    // auto start = std::chrono::steady_clock::now();
 
     // finding the pair list for cutting the trinagles
-    std::vector<pair_pot_triangle> pair_list  = FindPotentialTriangles(m_pMESH);
+    std::vector<pair_pot_triangle> pair_list  = FindPotentialTriangles();
 
     for (std::vector<pair_pot_triangle>::iterator it = pair_list.begin() ; it != pair_list.end(); ++it){// loop over all the possible one
         double enew = 0;
@@ -101,7 +110,11 @@ bool Three_Edge_Scission::MCScissionMove(int step, double * TotalEnergy, RNG *rn
         // volume and total area coupling
         double Volume_part_old = 0;
         double Area_part_old = 0;
-        if((m_pState->GetVolumeCoupling())->GetState()|| (m_pState->GetApply_Constant_Area())->GetState()){
+        
+        
+        std::cout<<" here should be modefied 0092-3\n";
+
+      /*  if((m_pState->GetVolumeCoupling())->GetState()|| (m_pState->GetApply_Constant_Area())->GetState()){
            
             if((m_pState->GetVolumeCoupling())->GetState()){
                 for (std::vector<triangle *>::iterator it = Ctriangles.begin() ; it != Ctriangles.end(); ++it){
@@ -114,26 +127,27 @@ bool Three_Edge_Scission::MCScissionMove(int step, double * TotalEnergy, RNG *rn
                     Area_part_old+=(*it)->GetArea();
                 }
             }
-        }
+        }*/
         //- global curvature
         double vertex_area = 0;
         double vertex_Carea = 0;
-        if(m_pState->GetGlobalCurvature()->GetState()){
+        std::cout<<" threeedge should be fixed 1\n";
+       /* if(m_pState->GetGlobalCurvature()->GetState()){
             double a11= ((it->PT1).pv1)->GetArea();
             double a12= ((it->PT1).pv2)->GetArea();
             double a13= ((it->PT1).pv3)->GetArea();
             double a21= ((it->PT2).pv1)->GetArea();
             double a22=((it->PT2).pv2)->GetArea();
             double a23= ((it->PT2).pv3)->GetArea();
-            double c11=(((it->PT1).pv1)->GetCurvature())[0]+(((it->PT1).pv1)->GetCurvature())[1];
-            double c12=(((it->PT1).pv2)->GetCurvature())[0]+(((it->PT1).pv1)->GetCurvature())[1];
-            double c13=(((it->PT1).pv3)->GetCurvature())[0]+(((it->PT1).pv1)->GetCurvature())[1];
-            double c21=(((it->PT2).pv1)->GetCurvature())[0]+(((it->PT1).pv1)->GetCurvature())[1];
-            double c22=(((it->PT2).pv2)->GetCurvature())[0]+(((it->PT1).pv1)->GetCurvature())[1];
-            double c23=(((it->PT2).pv3)->GetCurvature())[0]+(((it->PT1).pv1)->GetCurvature())[1];
+            double c11=(((it->PT1).pv1)->GetP1Curvature())+(((it->PT1).pv1)->GetP1Curvature());
+            double c12=(((it->PT1).pv2)->GetP1Curvature())+(((it->PT1).pv1)->GetP1Curvature());
+            double c13=(((it->PT1).pv3)->GetP1Curvature())+(((it->PT1).pv1)->GetP1Curvature());
+            double c21=(((it->PT2).pv1)->GetP1Curvature())+(((it->PT1).pv1)->GetP1Curvature());
+            double c22=(((it->PT2).pv2)->GetP1Curvature())+(((it->PT1).pv1)->GetP1Curvature());
+            double c23=(((it->PT2).pv3)->GetP1Curvature())+(((it->PT1).pv1)->GetP1Curvature());
             vertex_area=-(a11+a12+a13+a21+a22+a23);
             vertex_Carea=-(c11*a11+c12*a12+c13*a13+c21*a21+c22*a22+c23*a23);
-        }
+        }*/
 //----> end of: change in global variables should come in
 
 
@@ -169,14 +183,16 @@ bool Three_Edge_Scission::MCScissionMove(int step, double * TotalEnergy, RNG *rn
             RemoveFromLinkList((it->PT2).pl3,newAllEffectedEdge);
             
             for (std::vector<links *>::iterator it = newAllEffectedEdge.begin() ; it != newAllEffectedEdge.end(); ++it){
-                enew+=m_pEnergyCalculator->TwoInclusionsInteractionEnergy(*it);
+                enew+=m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(*it);
             }
 //=== end of inclusion interaction energy
 
 //----> change in global variables should come in
                 double Volume_part_new = 0;
                 double Area_part_new = 0;
-                if((m_pState->GetVolumeCoupling())->GetState()|| (m_pState->GetApply_Constant_Area())->GetState()){
+        std::cout<<" here should be modefied 775683\n";
+
+              /*  if((m_pState->GetVolumeCoupling())->GetState()|| (m_pState->GetApply_Constant_Area())->GetState()){
                    
                     if((m_pState->GetVolumeCoupling())->GetState()){
                         for (std::vector<triangle *>::iterator it = pair_tri.begin() ; it != pair_tri.end(); ++it){
@@ -189,53 +205,62 @@ bool Three_Edge_Scission::MCScissionMove(int step, double * TotalEnergy, RNG *rn
                             Area_part_new+=(*it)->GetArea();
                         }
                     }
-                }
+                }*/
         
         //- global curvature
         double en_g_curve = 0;
-        if(m_pState->GetGlobalCurvature()->GetState()){
+        std::cout<<" threeedge should be fixed 2\n";
+
+      /*  if(m_pState->GetGlobalCurvature()->GetState()){
+
             double a11= ((it->PT1).pv1)->GetArea();
             double a12= ((it->PT1).pv2)->GetArea();
             double a13= ((it->PT1).pv3)->GetArea();
             double a21= ((it->PT2).pv1)->GetArea();
             double a22=((it->PT2).pv2)->GetArea();
             double a23= ((it->PT2).pv3)->GetArea();
-            double c11=(((it->PT1).pv1)->GetCurvature())[0]+(((it->PT1).pv1)->GetCurvature())[1];
-            double c12=(((it->PT1).pv2)->GetCurvature())[0]+(((it->PT1).pv1)->GetCurvature())[1];
-            double c13=(((it->PT1).pv3)->GetCurvature())[0]+(((it->PT1).pv1)->GetCurvature())[1];
-            double c21=(((it->PT2).pv1)->GetCurvature())[0]+(((it->PT1).pv1)->GetCurvature())[1];
-            double c22=(((it->PT2).pv2)->GetCurvature())[0]+(((it->PT1).pv1)->GetCurvature())[1];
-            double c23=(((it->PT2).pv3)->GetCurvature())[0]+(((it->PT1).pv1)->GetCurvature())[1];
+            double c11=(((it->PT1).pv1)->GetP1Curvature())+(((it->PT1).pv1)->GetP1Curvature());
+            double c12=(((it->PT1).pv2)->GetP1Curvature())+(((it->PT1).pv1)->GetP1Curvature());
+            double c13=(((it->PT1).pv3)->GetP1Curvature())+(((it->PT1).pv1)->GetP1Curvature());
+            double c21=(((it->PT2).pv1)->GetP1Curvature())+(((it->PT1).pv1)->GetP1Curvature());
+            double c22=(((it->PT2).pv2)->GetP1Curvature())+(((it->PT1).pv1)->GetP1Curvature());
+            double c23=(((it->PT2).pv3)->GetP1Curvature())+(((it->PT1).pv1)->GetP1Curvature());
+            
+            
             vertex_area+=(a11+a12+a13+a21+a22+a23);
             vertex_Carea+=(c11*a11+c12*a12+c13*a13+c21*a21+c22*a22+c23*a23);
             en_g_curve = m_pState->GetGlobalCurvature()->CalculateEnergyChange(vertex_area,vertex_Carea);
 
-        }
+        }*/
             //--- change int energies of global
             double de_volume = 0;
             double de_global_area = 0;
-            if((m_pState->GetVolumeCoupling())->GetState()==true)
+        std::cout<<" here should be modefied 3333\n";
+
+           /* if((m_pState->GetVolumeCoupling())->GetState()==true)
                 de_volume = (m_pState->GetVolumeCoupling())->GetEnergyChange(step,Area_part_old,Volume_part_old,Area_part_new,Volume_part_new);
         
             if((m_pState->GetApply_Constant_Area())->GetState()==true)
-                de_global_area =(m_pState->GetApply_Constant_Area())->GetEnergyChange(step,Area_part_old,Area_part_new);
+                de_global_area =(m_pState->GetApply_Constant_Area())->GetEnergyChange(step,Area_part_old,Area_part_new);*/
 //------ end of: change in global variable
   
             
             double de = enew - eold;
-            double thermal = rng->UniformRNG(1.0);
+            double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
             if(de+de_volume+de_global_area+en_g_curve<0 || exp(-m_Beta*(de+de_volume+de_global_area+en_g_curve))>thermal){
                 //--- Accepted
-                double *glo_energy=&(m_pState->m_TotEnergy);
-                (*glo_energy)=(*glo_energy)+de;
+                m_pState->GetEnergyCalculator()->AddToTotalEnergy(de);
                 
+                std::cout<<" here should be modefied 1234\n";
+                /*
+                 
                 (m_pState->GetVolumeCoupling())->UpdateArea_Volume(Area_part_old,Volume_part_old,Area_part_new,Volume_part_new);
                 (m_pState->GetApply_Constant_Area())->UpdateArea(Area_part_old,Area_part_new);
                 //-- global curvature update of energy
                 if(m_pState->GetGlobalCurvature()->GetState()){
                     m_pState->GetGlobalCurvature()->UpdateEnergyChange(vertex_area,vertex_Carea);
 
-                }
+                }*/
             }
             else{ // reject the move
                 ReverseAScission(*it, pair_tri[0], pair_tri[1]);
@@ -247,7 +272,7 @@ bool Three_Edge_Scission::MCScissionMove(int step, double * TotalEnergy, RNG *rn
                 ten= (m_pState->GetEnergyCalculator())->SingleVertexEnergy((it->PT2).pv3);
                 //--- only the new is enough as the old (coonecting edges are not affected, they were ghost)
                 for (std::vector<links *>::iterator it = newAllEffectedEdge.begin() ; it != newAllEffectedEdge.end(); ++it){
-                    enew+=m_pEnergyCalculator->TwoInclusionsInteractionEnergy(*it);
+                    enew+=m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(*it);
                 }
             }
     }
@@ -255,33 +280,6 @@ bool Three_Edge_Scission::MCScissionMove(int step, double * TotalEnergy, RNG *rn
    // auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
    // std::cout << "Time taken: " << duration.count() << " milliseconds" << std::endl;
     return true;
-}
-void Three_Edge_Scission::initialize()
-{
-  // creating some trinagle and links to later create from them
-    
-    std::cout<<"---> note: three_Edge_Scission initalized"<<std::endl;
-    
-    
-    m_pMESH = m_pState->m_pMesh;
-    m_pBox = m_pMESH->m_pBox;
-    // ==== 
-    int lid = 2*((m_pMESH->m_pMHL).size())+(m_pMESH->m_pEdgeL).size();  // find the id of the last
-    int tid = (m_pMESH->m_pActiveT).size() ;
-
-    for (int i = 0; i < 30; ++i) {
-        m_GhostL.push_back(links(lid++));
-    }
-
-    for (int i = 0; i < 30; ++i) {
-        m_GhostT.push_back(triangle(tid++));
-    }
-    for (std::vector<links>::iterator it = m_GhostL.begin() ; it != m_GhostL.end(); ++it)
-        m_pGhostL.push_back(&(*it));
-    
-    for (std::vector<triangle>::iterator it = m_GhostT.begin() ; it != m_GhostT.end(); ++it)
-        m_pGhostT.push_back(&(*it));
-    
 }
 // it creates a triangle and place it to the active trinagles list
 triangle * Three_Edge_Scission::CreateATriangleFromAPotentialTriangle(pot_triangle &p1)
@@ -298,7 +296,7 @@ triangle * Three_Edge_Scission::CreateATriangleFromAPotentialTriangle(pot_triang
     gt1->UpdateVertex(p1.pv1,p1.pv2,p1.pv3);
 
     //--- put the triangle from ghost to active
-    (m_pMESH->m_pActiveT).push_back(gt1);
+    ( m_pActiveT).push_back(gt1);
     m_pGhostT.pop_back();
     
 //---> now make the changes in the edges
@@ -359,19 +357,19 @@ std::vector <triangle *> Three_Edge_Scission::DoAScission(pair_pot_triangle &pai
     std::vector <links *> Clinks = pair.ConnectingLinks;       // this does not include the mirror links
     for (std::vector<links*>::iterator it = Clinks.begin() ; it != Clinks.end(); it++){
         //-- remove the edge and its mirror
-        RemoveFromLinkList(*it, m_pMESH->m_pActiveL);
-        RemoveFromLinkList(*it, m_pMESH->m_pHL);
-        RemoveFromLinkList(*it, m_pMESH->m_pMHL);
-        RemoveFromLinkList((*it)->GetMirrorLink(), m_pMESH->m_pActiveL);
-        RemoveFromLinkList((*it)->GetMirrorLink(), m_pMESH->m_pHL);
-        RemoveFromLinkList((*it)->GetMirrorLink(), m_pMESH->m_pMHL);
+        RemoveFromLinkList(*it,  m_pActiveL);
+        RemoveFromLinkList(*it,  m_pHL);
+        RemoveFromLinkList(*it,  m_pMHL);
+        RemoveFromLinkList((*it)->GetMirrorLink(),  m_pActiveL);
+        RemoveFromLinkList((*it)->GetMirrorLink(),  m_pHL);
+        RemoveFromLinkList((*it)->GetMirrorLink(),  m_pMHL);
         AddtoVectorCarefully(*it,m_pGhostL);
         AddtoVectorCarefully((*it)->GetMirrorLink(),m_pGhostL);
         //-- remove the edge from the list of the vertices
         ((*it)->GetV1())->RemoveFromLinkList(*it);
         ((*it)->GetV2())->RemoveFromLinkList((*it)->GetMirrorLink());
         //-- remove the assosciated triangle
-        RemoveFromTriangleList((*it)->GetTriangle(),m_pMESH->m_pActiveT);
+        RemoveFromTriangleList((*it)->GetTriangle(), m_pActiveT);
         AddtoVectorCarefully((*it)->GetTriangle(),m_pGhostT);
         //-- remove the associated triangle from the vertices list
         ((*it)->GetTriangle()->GetV1())->RemoveFromTraingleList((*it)->GetTriangle());
@@ -384,12 +382,12 @@ std::vector <triangle *> Three_Edge_Scission::DoAScission(pair_pot_triangle &pai
 
 //--> update geometry
     //-- update geometry of the 6 vertices
-    (m_pState->CurvatureCalculator())->SurfVertexCurvature(p1.pv1);
-    (m_pState->CurvatureCalculator())->SurfVertexCurvature(p1.pv2);
-    (m_pState->CurvatureCalculator())->SurfVertexCurvature(p1.pv3);
-    (m_pState->CurvatureCalculator())->SurfVertexCurvature(p2.pv1);
-    (m_pState->CurvatureCalculator())->SurfVertexCurvature(p2.pv2);
-    (m_pState->CurvatureCalculator())->SurfVertexCurvature(p2.pv3);
+    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(p1.pv1);
+    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(p1.pv2);
+    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(p1.pv3);
+    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(p2.pv1);
+    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(p2.pv2);
+    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(p2.pv3);
 
     return createdtriangles;
 }
@@ -402,8 +400,8 @@ bool Three_Edge_Scission::ReverseAScission(pair_pot_triangle &pair , triangle *t
     
 //-- we take the triangle3 t1 and t2 to the ghost and remove them from associated vertices and edges
     //-- send t1 and t2 to the ghost
-    RemoveFromTriangleList(t1,m_pMESH->m_pActiveT);
-    RemoveFromTriangleList(t2,m_pMESH->m_pActiveT);
+    RemoveFromTriangleList(t1, m_pActiveT);
+    RemoveFromTriangleList(t2, m_pActiveT);
     m_pGhostT.push_back(t1);
     m_pGhostT.push_back(t2);
     //--- remove t1 and t2 from their v->t list
@@ -427,15 +425,15 @@ bool Three_Edge_Scission::ReverseAScission(pair_pot_triangle &pair , triangle *t
     for (std::vector<links*>::iterator it = Clinks.begin() ; it != Clinks.end(); it++){
 
         //--removing it and its mirror from ghost and add to real containors
-        AddtoVectorCarefully((*it),m_pMESH->m_pActiveL);
-        AddtoVectorCarefully((*it),m_pMESH->m_pMHL);
-        AddtoVectorCarefully((*it)->GetMirrorLink(),m_pMESH->m_pActiveL);
-        AddtoVectorCarefully((*it)->GetMirrorLink(),m_pMESH->m_pHL);
+        AddtoVectorCarefully((*it), m_pActiveL);
+        AddtoVectorCarefully((*it), m_pMHL);
+        AddtoVectorCarefully((*it)->GetMirrorLink(), m_pActiveL);
+        AddtoVectorCarefully((*it)->GetMirrorLink(), m_pHL);
         RemoveFromLinkList(*it,m_pGhostL);
         RemoveFromLinkList((*it)->GetMirrorLink(),m_pGhostL);
         //-- also bring the triangles to live again
         RemoveFromTriangleList((*it)->GetTriangle(),m_pGhostT);
-        AddtoVectorCarefully((*it)->GetTriangle(),m_pMESH->m_pActiveT);
+        AddtoVectorCarefully((*it)->GetTriangle(), m_pActiveT);
         //-- add the links to the vertex linklist
         ((*it)->GetV1())->AddtoLinkListCarefully((*it));
         ((*it)->GetV2())->AddtoLinkListCarefully((*it)->GetMirrorLink());
@@ -450,24 +448,24 @@ bool Three_Edge_Scission::ReverseAScission(pair_pot_triangle &pair , triangle *t
     } //   End of "for (std::vector<links*>::iterator it = Clinks.begin() ; it != Clinks.end(); it++){"
 //--> update geometry
     //-- update geometry of the 6 vertices
-    (m_pState->CurvatureCalculator())->SurfVertexCurvature(p1.pv1);
-    (m_pState->CurvatureCalculator())->SurfVertexCurvature(p1.pv2);
-    (m_pState->CurvatureCalculator())->SurfVertexCurvature(p1.pv3);
-    (m_pState->CurvatureCalculator())->SurfVertexCurvature(p2.pv1);
-    (m_pState->CurvatureCalculator())->SurfVertexCurvature(p2.pv2);
-    (m_pState->CurvatureCalculator())->SurfVertexCurvature(p2.pv3);
+    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(p1.pv1);
+    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(p1.pv2);
+    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(p1.pv3);
+    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(p2.pv1);
+    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(p2.pv2);
+    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(p2.pv3);
     
     return true;
 }
 //== this function get a mesh and search through it and finds possible fission sites
-std::vector<pair_pot_triangle> Three_Edge_Scission::FindPotentialTriangles(MESH* mesh){
+std::vector<pair_pot_triangle> Three_Edge_Scission::FindPotentialTriangles(){
 
 //---- this part searches through all the links and finds possible triangles that do not exist. This means, it finds triple vertices (v1,v2,v3) that are connected by edges but such
 // trinagle is not defined.
     
     int id = 0;
     std::vector<pot_triangle> list;
-    std::vector<links*>  all_link =  mesh->m_pActiveL;
+    std::vector<links*>  all_link =  m_pActiveL;
     for (std::vector<links*>::iterator il1 = all_link.begin() ; il1 != all_link.end(); il1++){
         vertex *pv1 = (*il1)->GetV1();
         vertex *pv2 = (*il1)->GetV2();
@@ -715,42 +713,18 @@ bool Three_Edge_Scission::AddtoVectorCarefully(T* item, std::vector<T*>& vect) {
     return true;
 }
 // this should be deleted at the end
-double  Three_Edge_Scission::UpdateEnergy()
-{
-    double en = 0;
 
-    
-    for (std::vector<triangle *>::iterator it = (m_pMESH->m_pActiveT).begin() ; it != (m_pMESH->m_pActiveT).end(); ++it)
-    (*it)->UpdateNormal_Area(m_pBox);
-
-    //===== Prepare links:  normal vector and shape operator
-    for (std::vector<links *>::iterator it = (m_pMESH->m_pHL).begin() ; it != (m_pMESH->m_pHL).end(); ++it)
-    {
-            (*it)->UpdateNormal();
-            (*it)->UpdateShapeOperator(m_pBox);
-    }
-
-    //======= Prepare vertex:  area and normal vector and curvature of surface vertices not the edge one
-    for (std::vector<vertex *>::iterator it = (m_pMESH->m_pSurfV).begin() ; it != (m_pMESH->m_pSurfV).end(); ++it)
-        (m_pState->CurvatureCalculator())->SurfVertexCurvature(*it);
-        
-    //====== edge links should be updated
-    for (std::vector<links *>::iterator it = (m_pMESH->m_pEdgeL).begin() ; it != (m_pMESH->m_pEdgeL).end(); ++it)
-            (*it)->UpdateEdgeVector(m_pBox);
-
-    for (std::vector<vertex *>::iterator it = (m_pMESH->m_pEdgeV).begin() ; it != (m_pMESH->m_pEdgeV).end(); ++it)
-            (m_pState->CurvatureCalculator())->EdgeVertexCurvature(*it);
-
-    Energy*   pEnergyCalculator = m_pState->GetEnergyCalculator();
-    en=pEnergyCalculator->TotalEnergy(m_pMESH->m_pSurfV,m_pMESH->m_pHL);
-    en+=pEnergyCalculator->TotalEnergy(m_pMESH->m_pEdgeV,m_pMESH->m_pEdgeL);
-    
-    return en;
-}
 template<typename T>
 void Three_Edge_Scission::KeepOneOccurrence(std::vector<T*> &vec){
    
     std::sort(vec.begin(), vec.end()); // Sort the vector
     vec.erase(std::unique(vec.begin(), vec.end()), vec.end()); // Remove duplicates
 }
+std::string Three_Edge_Scission::CurrentState(){
+    
+    std::string state = AbstractDynamicTopology::GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+    return state;
+}
+
+
 

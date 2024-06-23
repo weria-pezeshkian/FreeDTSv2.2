@@ -8,6 +8,9 @@
  Copyright (c) Weria Pezeshkian
  An inhouse made  3d vector object.
  *******************/
+//class Vec3D;
+//std::ostream& operator<<(std::ostream& os, const Vec3D& vec);
+
 class Vec3D {
 public:
     Vec3D(double x = 0.0, double y = 0.0, double z = 0.0);
@@ -23,6 +26,8 @@ public:
     bool isgood() const;
     void print();
     void normalize();
+    friend std::ostream& operator<<(std::ostream& os, const Vec3D& vec);
+
 
 private:
     double m_X;

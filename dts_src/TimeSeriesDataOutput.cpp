@@ -4,6 +4,7 @@
  Weria Pezeshkian (weria.pezeshkian@gmail.com)
  Copyright (c) Weria Pezeshkian
  */
+#include <sstream>
 #include "TimeSeriesDataOutput.h"
 #include "State.h"
 #include "Nfunction.h"
@@ -18,6 +19,7 @@ TimeSeriesDataOutput::TimeSeriesDataOutput(State *pState){
 }
 TimeSeriesDataOutput::~TimeSeriesDataOutput(){
     if (m_TimeSeriesFile.is_open()) {
+        m_TimeSeriesFile.flush(); 
         m_TimeSeriesFile.close();
      }
 }
@@ -26,128 +28,183 @@ void TimeSeriesDataOutput::UpdatePeriod(int period){
     m_Periodic = period;
     return;
 }
-bool TimeSeriesDataOutput::WrireTimeSeriesDataOutput(int step){
+bool TimeSeriesDataOutput::WriteTimeSeriesDataOutput(int step){
+ /*
+Writes time series data to the output file.
+-param step, The current step of the simulation.
+-return True if the data is successfully written, false otherwise.
+Note: The function returns true if the data is successfully written,
+and false if the periodic condition is not met or if there is an error writing to the file.
+*/
     if( m_Periodic == 0 || step%m_Periodic!=0)
         return false;
+    
     m_TimeSeriesFile<<std::fixed;
     m_TimeSeriesFile<<std::setprecision(Precision);
+    
 //--> write step and energy
-    m_TimeSeriesFile<<step<<"   "<<m_pState->GetSystemEnergy()<<"   ";
-//--->write nematic force energy
-    if((m_pState->m_pConstant_NematicForce)->m_F0!=0){
-        m_TimeSeriesFile<<(m_pState->m_pConstant_NematicForce)->m_ActiveEnergy<<"  ";
+    m_TimeSeriesFile<<step<<"   "<<m_pState->GetEnergyCalculator()->GetEnergy()<<"   ";
+
+//--->write box side length
+    if(m_pState->GetDynamicBox()->GetDerivedDefaultReadName()!= NoBoxChange::GetDefaultReadName() ){
+        m_TimeSeriesFile<<(*(m_pState->GetMesh()->GetBox()))(0)<<"  ";
+        m_TimeSeriesFile<<(*(m_pState->GetMesh()->GetBox()))(1)<<"  ";
+        m_TimeSeriesFile<<(*(m_pState->GetMesh()->GetBox()))(2)<<"  ";
     }
-//--->write box size
-    if(m_pState->GetDynamicBox()->GetTau()!=0){
-        m_TimeSeriesFile<<(*(m_pState->m_pMesh->GetBox()))(0)<<"  ";
-        m_TimeSeriesFile<<(*(m_pState->m_pMesh->GetBox()))(1)<<"  ";
-        m_TimeSeriesFile<<(*(m_pState->m_pMesh->GetBox()))(2)<<"  ";
+    if (m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()) {
+        m_TimeSeriesFile << m_pState->GetVAHGlobalMeshProperties()->GetTotalVolume()<<"  ";
+        m_TimeSeriesFile << m_pState->GetVAHGlobalMeshProperties()->GetTotalArea()<<"  ";
+        m_TimeSeriesFile << m_pState->GetVAHGlobalMeshProperties()->GetTotalMeanCurvature() <<"  ";
     }
-//---> global curvature
-    if (m_pState->GetGlobalCurvature()->GetState() == true){
-        m_TimeSeriesFile<<m_pState->GetGlobalCurvature()->GetEnergy()<<"  ";
+    if (m_pState->GetApplyConstraintBetweenGroups()->GetDerivedDefaultReadName() != "No") {
+        m_TimeSeriesFile << m_pState->GetApplyConstraintBetweenGroups()->GetEnergy()<<"  ";
     }
-//----> harmonic force
-    if(m_pState->Get2GroupHarmonic()->GetState()==true){
-        m_TimeSeriesFile<<m_pState->Get2GroupHarmonic()->GetEnergy()<<"  ";
-        m_TimeSeriesFile<<m_pState->Get2GroupHarmonic()->GetForce()<<"  ";
-        m_TimeSeriesFile<<m_pState->Get2GroupHarmonic()->GetDistance()<<"  ";
-    }
-//--> volume coupling
-    if(m_pState->GetVolumeCoupling()->GetState()==true){
-        m_TimeSeriesFile<<m_pState->GetVolumeCoupling()->GetTotalVolume()<<"   ";
-        m_TimeSeriesFile<<m_pState->GetVolumeCoupling()->GetTotalArea()<<"  ";
-    }
-//--> constant area
-    if((m_pState->GetApply_Constant_Area())->GetState()==true){
-        m_TimeSeriesFile<<"   "<<(m_pState->GetApply_Constant_Area())->GetTotalArea()<<"  ";
-    }
-//--> active exchange
-    if(m_pState->GetActiveTwoStateInclusion()->GetState() == true)
-    {
-        m_TimeSeriesFile<<*(m_pState->GetActiveTwoStateInclusion()->GetActiveEnergy())<<"   ";
-        m_TimeSeriesFile<<m_pState->GetActiveTwoStateInclusion()->GetDeltaN()<<"   ";
+    if (m_pState->GetOpenEdgeEvolution()->GetDerivedDefaultReadName() != "No") {
+        m_TimeSeriesFile <<m_pState->GetOpenEdgeEvolution()->GetEdgeSize() <<" ";
     }
     m_TimeSeriesFile<<std::endl;
     
     return true;
 }
-bool TimeSeriesDataOutput::OpenTimeSeriesDataOutput(){
-    
-    std::string filename = m_pState->m_GeneralOutputFilename;
-    filename = filename + "-en.xvg";
-    
-    //-- if it is a restart simulation, then do not clear the file and check for the last line in the file
-    if((m_pState->m_RESTART).restartState==true){
-        if(!CheckTimeSeriesFile(m_pState->m_Initial_Step)){
+bool TimeSeriesDataOutput::OpenFile(bool clearfile) {
+    /*
+      Opens the time series data output file.
+      -param clearfile Flag indicating whether to clear the file before opening.
+      -return True if the file is successfully opened, false otherwise.
+      This function opens the time series data output file for writing. If the 'clearfile'
+      parameter is true, the file is opened in write mode and the header is written. If 'clearfile'
+      is false, the file is opened in append mode and checked for compatibility with the restart
+      simulation. If the file cannot be opened or there is an error, appropriate error messages
+      are printed to stderr.
+     */
+    std::string filename = m_pState->GetRunTag() + TimeSeriDataExt;
+
+    if (!clearfile) {
+        // If it's a restart simulation, check if the energy file matches the restart
+        if (!CheckTimeSeriesFile(m_pState->GetSimulation()->GetInitialStep(), filename)) {
             std::cerr << "---> error: energy file does not match with the restart: " << filename << std::endl;
+            return false;
         }
-        m_TimeSeriesFile.open(filename.c_str(),std::fstream::app);
+        // Append to the file without clearing it
+        m_TimeSeriesFile.open(filename, std::ios_base::app);
+    } else {
+        // Open the file, clearing it if necessary
+        m_TimeSeriesFile.open(filename);
+        if (!m_TimeSeriesFile.is_open()) {
+            std::cerr << "---> error: Unable to open file: " << filename << std::endl;
+            return false;
+        }
+        // Write the header if it's not a restart
+        m_TimeSeriesFile << " ## mcstep  energy ";
+        if (m_pState->GetDynamicBox()->GetDerivedDefaultReadName() != NoBoxChange::GetDefaultReadName()) {
+            m_TimeSeriesFile << " Lx  Ly  Lz ";
+        }
+        if (m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()) {
+            m_TimeSeriesFile << " Volume  Area  TotalCurvature ";
+
+        }
+        if (m_pState->GetApplyConstraintBetweenGroups()->GetDerivedDefaultReadName() != "No") {
+            m_TimeSeriesFile << " Constraint_energy ";
+        }
+        if (m_pState->GetOpenEdgeEvolution()->GetDerivedDefaultReadName() != "No") {
+            m_TimeSeriesFile << " edge_size ";
+        }
+        m_TimeSeriesFile << std::endl;
     }
-    else{
-        m_TimeSeriesFile.open(filename.c_str());
-    }
-    
-    if (!m_TimeSeriesFile.is_open()) {
-        std::cerr << "---> error: Unable to open file: " << filename << std::endl;
-        return false;
-    }
-//-- write the header if not a restart
-    if((m_pState->m_RESTART).restartState==false){
-        
-            m_TimeSeriesFile<<" ## mcstep  energy ";
-            if((m_pState->m_pConstant_NematicForce)->m_F0!=0)
-                    m_TimeSeriesFile<<"  active_nematic_energy ";
-            if(m_pState->GetDynamicBox()->GetTau()!=0)
-                    m_TimeSeriesFile<<" Lx  Ly  Lz ";
-            if (m_pState->GetGlobalCurvature()->GetState() == true)
-                    m_TimeSeriesFile<<" global_curvature_energy  ";
-            if(m_pState->Get2GroupHarmonic()->GetState()==true)
-                    m_TimeSeriesFile<<" harmonic_energy harmonic_force distance ";
-            if(m_pState->GetVolumeCoupling()->GetState()==true)
-                    m_TimeSeriesFile<<" volume area ";
-            if((m_pState->GetApply_Constant_Area())->GetState()==true)
-                    m_TimeSeriesFile<<" area_constantArea ";
-            if(m_pState->GetActiveTwoStateInclusion()->GetState() == true)
-                    m_TimeSeriesFile<<" ActiveEnergy DeltaN ";
-        
-        m_TimeSeriesFile<<std::endl;
-    }
-        
+
     return true;
 }
-bool TimeSeriesDataOutput::FlushTimeSeriesFile(){ // the energy file should be flushed first
+bool TimeSeriesDataOutput::FlushFile(){ // the energy file should be flushed first
 
     m_TimeSeriesFile.flush(); //
 
     return true;
 }
-bool TimeSeriesDataOutput::CheckTimeSeriesFile(int endstep){ // this checks if the energy file matches the restart end step
+bool TimeSeriesDataOutput::CheckTimeSeriesFile(int ini_step, const std::string& filename) {
+    /*
+        Checks a time series file for lines with lines written after the last restart has been saved,
+        and removes these lines. Somehow update the file.
 
-   // This task is already is being done in the restart class
-    
-    /*std::string filename = m_pState->m_GeneralOutputFilename;
-    filename = filename + "-en.xvg";
-    energyfile.open(filename.c_str());
+        Parameters:
+            ini_step: The initial step of the new simulations.
+            filename: The name of the file to check and modify.
 
-    while(true)
-    {
-        ren>>step;
-        if(ren.eof())
-        {
-            std::cout<<"----> warning: the energy file does not contains enough output, some is missing "<<std::endl;
-            break;
-        }
-        if(step>=m_pState->m_Initial_Step-1)
-            break;
-        getline(ren,enstr);
-        energyfile<<step<<enstr<<"\n";
+        Returns:
+            true if the operation is successful, false otherwise.
 
-    }
-    energyfile.close();
-    ren.close();
-    remove("en.txt");
+        Note:
+            This function opens the input file specified by 'filename', reads each line,
+            and writes lines with numbers smaller than or equal to 'ini_step' to a temporary file.
+            After processing, it replaces the original file with the temporary file.
+
+        If any errors occur during file operations or if an invalid line is encountered
+        (i.e., a line without steps), appropriate error messages are printed to standard error.
     */
     
+// Open the input file
+    std::ifstream inputFile(filename);
+    if (!inputFile.is_open()) {
+        std::cerr << "Error: Unable to open file " << filename << std::endl;
+        return false;
+    }
+
+    // Create a temporary file for writing
+    std::ofstream tempFile("temp.txt");
+    if (!tempFile.is_open()) {
+        std::cerr << "Error: Unable to create temporary file" << std::endl;
+        inputFile.close();  // Close the input file before returning
+        return false;
+    }
+
+//----  Read each line from the input file
+    std::string line;
+    //  read the header
+    std::getline(inputFile, line);
+    // write the header
+    tempFile << line <<std::endl;
+    int no_lines;
+    while (std::getline(inputFile, line)) {
+        no_lines++;
+        std::istringstream iss(line);
+        int num;
+        if (iss >> num) {
+            // If the first number on the line is less than or equal to ini_step, write the line to the temp file
+            if (num <= ini_step) {
+                tempFile << line <<std::endl;  // Use '\n' instead of std::endl for better performance
+            }
+        } else {
+            // Handle invalid lines without a number
+            std::cerr << "Warning: Invalid line found in file: " << line << std::endl;
+        }
+    }
+
+    // Close both input and temporary files
+    inputFile.close();
+    tempFile.close();
+
+    // Remove the original file
+    if (std::remove(filename.c_str()) != 0) {
+        std::cerr << "Error: Unable to remove file " << filename << std::endl;
+        return false;
+    }
+
+    // Rename the temporary file to the original filename
+    if (std::rename("temp.txt", filename.c_str()) != 0) {
+        std::cerr << "Error: Unable to rename file" << std::endl;
+        return false;
+    }
+    //--- here we check if number of the lines matches the crashed simulation
+    if (m_Periodic * (no_lines + 1) < ini_step) {
+        
+        *(m_pState->GetTimeSeriesLog())<< "---> Warning: An error may have occurred while reading the energy file for restart. \n";
+        *(m_pState->GetTimeSeriesLog())<<"       It seems that the input.dts file has been changed compared to the initial file \n";
+        return false;
+    }
+    
     return true;
+}
+std::string TimeSeriesDataOutput::CurrentState(){
+    
+    std::string state = "TimeSeriesData_Period = "+ Nfunction::D2S(m_Periodic);
+    return state;
 }

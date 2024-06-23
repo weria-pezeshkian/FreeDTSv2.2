@@ -1,764 +1,190 @@
-
+#include <iostream>
+#include <string.h>
+#include "State.h"
 #include "WritevtuFiles.h"
 
-
-
-WritevtuFiles::WritevtuFiles(State* pState)
-{
-m_pState = pState;
-m_pBox = (pState->m_pMesh)->m_pBox;
-    const int dir_err = system("mkdir -p VTU_Frames");
-    if (-1 == dir_err)
-    {
-        std::cout<<"---> Error: while creating directory  VTU_Frames \n";
-        exit(1);
-    }
-
+WritevtuFiles::WritevtuFiles(State* pState, int period, std::string foldername) :  m_FolderName(foldername) {
+    m_pState = pState;
+    m_pBox = (pState->GetMesh())->GetBox();
+    m_Period = period;    
 }
-WritevtuFiles::~WritevtuFiles()
-{
+WritevtuFiles::WritevtuFiles(State* pState){
+    
+    m_pState = pState;
+    m_pBox = (pState->GetMesh())->GetBox();
+    m_FolderName = "VTU_Frames";
+    m_Period = 10;
+}
+WritevtuFiles::~WritevtuFiles(){
     
 }
-void WritevtuFiles::Writevtu_Plus_NumberList(std::vector<std::string> num_name, std::vector<std::vector<double> > num, std::vector<vertex* > ver, std::vector<triangle* > triangle1,  std::vector<links* > links1, std::string Filename)
-{
-    Vec3D m_Box=*m_pBox;
-    // First make all the triangles visualizable
-    for (std::vector<triangle *>::iterator it = triangle1.begin() ; it != triangle1.end(); ++it)
-        (*it)->UpdateRepresentation(true);
-
-    // then check the trinagle visualizablity
-    for (std::vector<links *>::iterator it = links1.begin() ; it != links1.end(); ++it)
-    {
-        vertex * v1=(*it)->GetV1();
-        vertex * v2=(*it)->GetV2();
-        vertex * v3=(*it)->GetV3();
-        
-        
-        double x1=v1->GetVXPos();
-        double x2=v2->GetVXPos();
-        double y1=v1->GetVYPos();
-        double y2=v2->GetVYPos();
-        double z1=v1->GetVZPos();
-        double z2=v2->GetVZPos();
-        double dx=x2-x1;
-        double dy=y2-y1;
-        double dz=z2-z1;
-        
-        
-        bool rep=true;
-        
-        if(fabs(dx)>m_Box(0)/2.0 || fabs(dy)>m_Box(1)/2.0 || fabs(dz)>m_Box(2)/2.0)
-        {
-            
-            rep=false;
-        }
-        if(rep==false)
-        {
-            ((*it)->GetTriangle())->UpdateRepresentation(rep);
-            
-        }
-        
-    }
-    int numv=ver.size();
-    int numtri=triangle1.size();
-    int numtrirep=0;
-    
-    for (int i=0;i<triangle1.size();i++)
-    {
-        triangle* a=triangle1.at(i);
-        if(a->GetRepresentation()==true)
-        {numtrirep++;}
-        
-    }
-    
-    Filename = "./VTU_Frames/"+Filename;
-    std::ofstream Output;
-    Output.open(Filename.c_str());
-    Output<<"<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"BigEndian\">"<<"\n";
-    Output<<"  <UnstructuredGrid>"<<"\n";
-    Output<<"    <Piece NumberOfPoints=\""<<numv<<"\" NumberOfCells=\""<<numtrirep<<"\">"<<"\n";
-    Output<<"      <PointData Scalars=\"scalars\">"<<"\n";
-    
-    
-    
-    std::vector <InclusionType> TYPES = (m_pState->m_pMesh)->m_InclusionType;
-    std::vector<int> inctypeid;
-    std::vector<std::string> inctype;
-    for (std::vector<InclusionType>::iterator it = TYPES.begin() ; it != TYPES.end(); ++it)
-    {
-        inctypeid.push_back(it->ITid);
-        inctype.push_back(it->ITName);
-        
-    }
-   // writing the number list here
-    int s=0;
-    for (std::vector<std::vector<double> >::iterator it1 = num.begin() ; it1 != num.end(); ++it1)
-    {
-        Output<<"        <DataArray type=\"Float32\" Name=\""<<num_name.at(s)<<"\" Format=\"ascii\">"<<"\n";
-        for (std::vector<double>::iterator it = (*it1).begin() ; it != (*it1).end(); ++it)
-                    Output<<"          "<<*it<<"\n";
-
-        Output<<"        </DataArray>"<<"\n";
-        s++;
-    }
-    //===========
-    
-    
-    
-    for (int n=0;n<inctypeid.size();n++)
-    {
-        Output<<"        <DataArray type=\"Float32\" Name=\""<<inctype.at(n)<<"\" Format=\"ascii\">"<<"\n";
-        
-        
-        for (int i=0;i<numv;i++)
-        {
-            vertex* a=ver.at(i);
-            if(a->VertexOwnInclusion()==true)
-            {
-                if(((a->GetInclusion())->GetInclusionType())->ITid ==inctypeid.at(n))
-                    Output<<"          "<<1<<"\n";
-                else
-                    Output<<"          "<<0<<"\n";
-            }
-            else
-                Output<<"          "<<0<<"\n";
-            
-        }
-        Output<<"        </DataArray>"<<"\n";
-    }
-    
-    WriteInclusion("dir", ver, &Output);
-    
-    
-    
-    
-    Output<<"      </PointData>"<<"\n";
-    Output<<"      <Points>"<<"\n";
-    Output<<"        <DataArray type=\"Float32\" NumberOfComponents=\"3\" Format=\"ascii\">"<<"\n";
-    
-    
-    for (int i=0;i<numv;i++)
-    {
-        vertex* a=ver.at(i);
-        Output<<"          "<<a->GetVXPos()<<" "<<a->GetVYPos()<<" "<<a->GetVZPos()<<" "<<"\n";
-        
-        
-    }
-    Output<<"        </DataArray>"<<"\n";
-    Output<<"      </Points>"<<"\n";
-    
-    Output<<"      <Cells>"<<"\n";
-    Output<<"        <DataArray type=\"Int32\" Name=\"connectivity\" Format=\"ascii\">"<<"\n";
-    
-    
-    for (int i=0;i<numtri;i++)
-    {
-        
-        
-        triangle* a=triangle1.at(i);
-        
-        if(a->GetRepresentation()==true)
-            Output<<"           "<<(a->GetV1())->GetVID()<<" "<<(a->GetV2())->GetVID()<<" "<<(a->GetV3())->GetVID()<<" "<<"\n";
-        
-        
-    }
-    Output<<"        </DataArray>"<<"\n";
-    Output<<"        <DataArray type=\"Int32\" Name=\"offsets\" Format=\"ascii\">"<<"\n";
-    int ofset=3;
-    Output<<"          ";
-    for (int i=0;i<numtrirep;i++)
-    {
-        
-        Output<<ofset+3*i<<" ";
-        
-        
-    }
-    Output<<"\n";
-    
-    Output<<"        </DataArray>"<<"\n";
-    Output<<"        <DataArray type=\"Int32\" Name=\"types\" Format=\"ascii\">"<<"\n";
-    Output<<"          ";
-    for (int i=0;i<numtrirep;i++)
-    {
-        
-        Output<<5<<" ";
-        
-        
-    }
-    Output<<"\n";
-    
-    Output<<"        </DataArray>"<<"\n";
-    Output<<"      </Cells>"<<"\n";
-    Output<<"    </Piece>"<<"\n";
-    Output<<"  </UnstructuredGrid>"<<"\n";
-    Output<<"</VTKFile> "<<"\n";
+bool WritevtuFiles::OpenFolder(){
+  
+    return Nfunction::OpenFolder(m_FolderName);
 }
-void WritevtuFiles::Writevtu(std::vector< vertex* > ver, std::vector< triangle* > triangle1,  std::vector< links* > links1, std::string Filename)
-{
-Vec3D m_Box=*m_pBox;
-    // First make all the triangles visualizable
- 
-
-    
-        for (std::vector<triangle *>::iterator it = triangle1.begin() ; it != triangle1.end(); ++it)
-        {
-			(*it)->UpdateRepresentation(true);
-        }
-        for (std::vector<triangle *>::iterator it = triangle1.begin() ; it != triangle1.end(); ++it)
-        {
-            vertex * v1=(*it)->GetV1();
-            vertex * v2=(*it)->GetV2();
-            vertex * v3=(*it)->GetV3();
-            double x1=v1->GetVXPos();
-            double x2=v2->GetVXPos();
-            double x3=v3->GetVXPos();
-            double y1=v1->GetVYPos();
-            double y2=v2->GetVYPos();
-            double y3=v3->GetVYPos();
-            double z1=v1->GetVZPos();
-            double z2=v2->GetVZPos();
-            double z3=v3->GetVZPos();
- 
-            bool rep=true;
-            {
-                double dx=x2-x1;
-                double dy=y2-y1;
-                double dz=z2-z1;
-            if(fabs(dx)>m_Box(0)/2.0 || fabs(dy)>m_Box(1)/2.0 || fabs(dz)>m_Box(2)/2.0)
-                rep=false;
-
-                 dx=x3-x1;
-                 dy=y3-y1;
-                 dz=z3-z1;
-            if(fabs(dx)>m_Box(0)/2.0 || fabs(dy)>m_Box(1)/2.0 || fabs(dz)>m_Box(2)/2.0)
-                rep=false;
-
-                 dx=x3-x2;
-                 dy=y3-y2;
-                 dz=z3-z2;
-            if(fabs(dx)>m_Box(0)/2.0 || fabs(dy)>m_Box(1)/2.0 || fabs(dz)>m_Box(2)/2.0)
-                rep=false;
-            }
-            
-            if(rep==false)
-            (*it)->UpdateRepresentation(false);
-        }
-    // then check the trinagle visualizablity
-
-int numv=ver.size();
-int numtri=triangle1.size();
-int numtrirep=0;
-
-for (int i=0;i<triangle1.size();i++)
-{
-triangle* a=triangle1.at(i);
-if(a->GetRepresentation()==true)
-{numtrirep++;}
-
-}
-    
-                                    Filename = "./VTU_Frames/"+Filename;
-                                    std::ofstream Output;
-                                    Output.open(Filename.c_str());
-Output<<"<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"BigEndian\">"<<"\n";
-Output<<"  <UnstructuredGrid>"<<"\n";
-Output<<"    <Piece NumberOfPoints=\""<<numv<<"\" NumberOfCells=\""<<numtrirep<<"\">"<<"\n";
-Output<<"      <PointData Scalars=\"scalars\">"<<"\n";
-    
-    
-
-        std::vector <InclusionType> TYPES = (m_pState->m_pMesh)->m_InclusionType;
-    std::vector<int> inctypeid;
-    std::vector<std::string> inctype;
-    for (std::vector<InclusionType>::iterator it = TYPES.begin() ; it != TYPES.end(); ++it)
-    {
-        inctypeid.push_back(it->ITid);
-        inctype.push_back(it->ITName);
-
-    }
-
-    
-for (int n=0;n<inctypeid.size();n++)
-{
-Output<<"        <DataArray type=\"Float32\" Name=\""<<inctype.at(n)<<"\" Format=\"ascii\">"<<"\n";
-
-
-for (int i=0;i<numv;i++)
-{
-        vertex* a=ver.at(i);
-        if(a->VertexOwnInclusion()==true)
-        {
-            if(((a->GetInclusion())->GetInclusionType())->ITid ==inctypeid.at(n))
-            Output<<"          "<<1<<"\n";
-            else
-                Output<<"          "<<0<<"\n";
-        }
-        else
-            Output<<"          "<<0<<"\n";
-
-}
-Output<<"        </DataArray>"<<"\n";
-}
-//=== write group id
-{
-        Output<<"        <DataArray type=\"Float32\" Name=\""<<"GroupID"<<"\" Format=\"ascii\">"<<"\n";
-
-
-        for (int i=0;i<numv;i++)
-        {
-                vertex* a=ver.at(i);
-                        Output<<"          "<<a->GetGroup()<<"\n";
-
-        }
-        Output<<"        </DataArray>"<<"\n";
-}
-
-    WriteInclusion("dir", ver, &Output);
-
-
-
-
-Output<<"      </PointData>"<<"\n";
-Output<<"      <Points>"<<"\n";
-Output<<"        <DataArray type=\"Float32\" NumberOfComponents=\"3\" Format=\"ascii\">"<<"\n";
-
-for (std::vector<vertex*>::iterator it = ver.begin() ; it != ver.end(); ++it)
-{
-Output<<"          "<<(*it)->GetVXPos()<<" "<<(*it)->GetVYPos()<<" "<<(*it)->GetVZPos()<<" "<<"\n";
-}
-    
-Output<<"        </DataArray>"<<"\n";
-Output<<"      </Points>"<<"\n";
-
-Output<<"      <Cells>"<<"\n";
-Output<<"        <DataArray type=\"Int32\" Name=\"connectivity\" Format=\"ascii\">"<<"\n";
-
-
-for (int i=0;i<numtri;i++)
-{
-
-
-triangle* a=triangle1.at(i);
-
-if(a->GetRepresentation()==true) 
-Output<<"           "<<(a->GetV1())->GetVID()<<" "<<(a->GetV2())->GetVID()<<" "<<(a->GetV3())->GetVID()<<" "<<"\n";
-
-
-}
-Output<<"        </DataArray>"<<"\n";
-Output<<"        <DataArray type=\"Int32\" Name=\"offsets\" Format=\"ascii\">"<<"\n";
-int ofset=3;
-Output<<"          ";
-for (int i=0;i<numtrirep;i++)
-{
-
-Output<<ofset+3*i<<" ";
-
-
-}
-Output<<"\n";
-
-Output<<"        </DataArray>"<<"\n";
-Output<<"        <DataArray type=\"Int32\" Name=\"types\" Format=\"ascii\">"<<"\n";
-Output<<"          ";
-for (int i=0;i<numtrirep;i++)
-{
-
-Output<<5<<" ";
-
-
-}
-Output<<"\n";
-
-Output<<"        </DataArray>"<<"\n";
-Output<<"      </Cells>"<<"\n";
-Output<<"    </Piece>"<<"\n";
-Output<<"  </UnstructuredGrid>"<<"\n";
-Output<<"</VTKFile> "<<"\n";
-
-
-}
-void WritevtuFiles::Writefullvtu(std::vector< vertex* > ver, std::vector< triangle* > triangle1,  std::vector< links* > links1, std::string Filename)
-{
-    
-    Vec3D m_Box=*m_pBox;
-    
-    // First make all the triangles visualizable
-    for (std::vector<triangle *>::iterator it = triangle1.begin() ; it != triangle1.end(); ++it)
-    {
-        
-        (*it)->UpdateRepresentation(true);
-    }
-    // then check the trinagle visualizablity
-    for (std::vector<links *>::iterator it = links1.begin() ; it != links1.end(); ++it)
-    {
-        vertex * v1=(*it)->GetV1();
-        vertex * v2=(*it)->GetV2();
-        vertex * v3=(*it)->GetV3();
-        
-        
-        double x1=v1->GetVXPos();
-        double x2=v2->GetVXPos();
-        double y1=v1->GetVYPos();
-        double y2=v2->GetVYPos();
-        double z1=v1->GetVZPos();
-        double z2=v2->GetVZPos();
-        double dx=x2-x1;
-        double dy=y2-y1;
-        double dz=z2-z1;
-        bool rep=true;
-        
-        if(fabs(dx)>m_Box(0)/2.0)
-        {
-            rep=false;
-        }
-        else if(fabs(dy)>m_Box(1)/2.0)
-        {
-            rep=false;
-        }
-        else if(fabs(dz)>m_Box(2)/2.0)
-        {
-            rep=false;
-        }
-        if(rep==false)
-        {
-            triangle * t=(*it)->GetTriangle();
-            t->UpdateRepresentation(rep);
-            
-            
-        }
-        
-    }
-    
-    
-    
-    
-    
-    int numv=ver.size();
-    int numtri=triangle1.size();
-    int numtrirep=0;
-    
-    for (int i=0;i<triangle1.size();i++)
-    {
-        triangle* a=triangle1.at(i);
-        if(a->GetRepresentation()==true)
-        {numtrirep++;}
-        
-    }
-    
-    
-    
-    std::ofstream Output;
-    Filename = "./VTU_Frames/"+Filename;
-    Output.open(Filename.c_str());
-    
-    
-    
-    
-    Output<<"<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"BigEndian\">"<<"\n";
-    Output<<"  <UnstructuredGrid>"<<"\n";
-    Output<<"    <Piece NumberOfPoints=\""<<numv<<"\" NumberOfCells=\""<<numtrirep<<"\">"<<"\n";
-    Output<<"      <PointData Scalars=\"scalars\">"<<"\n";
-    Output<<"        <DataArray type=\"Float32\" Name=\"inc\" Format=\"ascii\">"<<"\n";
-    
-    for (int i=0;i<numv;i++)
-    {
-        vertex* a=ver.at(i);
-        if(a->VertexOwnInclusion()==true)
-            Output<<"          "<<1<<"\n";
-        else
-            Output<<"          "<<0<<"\n";
-        
-    }
-    Output<<"        </DataArray>"<<"\n";
-    //============================================= cuvrature c1
-    Output<<"        <DataArray type=\"Float32\" Name=\"c1\" Format=\"ascii\">"<<"\n";
-    
-    for (int i=0;i<numv;i++)
-    {
-        vertex* a=ver.at(i);
-        std::vector <double> c=a->GetCurvature();
-            Output<<"          "<<c.at(0)<<"\n";
-
-        
-    }
-    Output<<"        </DataArray>"<<"\n";
-    //============================================= cuvrature c2
-
-    Output<<"        <DataArray type=\"Float32\" Name=\"c2\" Format=\"ascii\">"<<"\n";
-    
-    for (int i=0;i<numv;i++)
-    {
-        vertex* a=ver.at(i);
-        std::vector <double> c=a->GetCurvature();
-        Output<<"          "<<c.at(1)<<"\n";
-        
-        
-    }
-    Output<<"        </DataArray>"<<"\n";
-    //============================================= inclsuion v
-    WriteInclusion("dir", ver, &Output);
-    //============================================= principal direction 1
-
-    (Output)<<std::fixed;
-    (Output)<<std::setprecision( Precision );
-    Output<<"        <DataArray type=\"Float32\" Name=\" t1 \"  NumberOfComponents=\"3\" Format=\"ascii\">"<<"\n";
-    for (std::vector<vertex*>::iterator itr = ver.begin() ; itr != ver.end(); ++itr)
-    {
-
-            Tensor2 LG= (*itr)->GetL2GTransferMatrix();
-            Vec3D L(1,0,0);
-        Vec3D G=LG*L;
-            Output<<"  "<<G(0)<<"      "<<G(1)<<"      "<<G(2)<<"\n";
-
-        
-    }
-    Output<<"        </DataArray>"<<"\n";
-
-    //============================================= principal direction  2
-    (Output)<<std::fixed;
-    (Output)<<std::setprecision( Precision );
-    Output<<"        <DataArray type=\"Float32\" Name=\" t2 \"  NumberOfComponents=\"3\" Format=\"ascii\">"<<"\n";
-    for (std::vector<vertex*>::iterator itr = ver.begin() ; itr != ver.end(); ++itr)
-    {
-        
-        Tensor2 LG= (*itr)->GetL2GTransferMatrix();
-        Vec3D L(0,1,0);
-        Vec3D G=LG*L;
-        Output<<"  "<<G(0)<<"      "<<G(1)<<"      "<<G(2)<<"\n";
-        
-        
-    }
-    Output<<"        </DataArray>"<<"\n";
-    
-    //============================================= normal
-    (Output)<<std::fixed;
-    (Output)<<std::setprecision( Precision );
-    Output<<"        <DataArray type=\"Float32\" Name=\" normal \"  NumberOfComponents=\"3\" Format=\"ascii\">"<<"\n";
-    for (std::vector<vertex*>::iterator itr = ver.begin() ; itr != ver.end(); ++itr)
-    {
-        
-        Vec3D N= (*itr)->GetNormalVector();
-
-        Output<<"  "<<N(0)<<"      "<<N(1)<<"      "<<N(2)<<"\n";
-        
-        
-    }
-    Output<<"        </DataArray>"<<"\n";
-
-       //============================================= vertices points
-    Output<<"      </PointData>"<<"\n";
-    Output<<"      <Points>"<<"\n";
-    Output<<"        <DataArray type=\"Float32\" NumberOfComponents=\"3\" Format=\"ascii\">"<<"\n";
-    
-    
-    for (int i=0;i<numv;i++)
-    {
-        vertex* a=ver.at(i);
-        Output<<"          "<<a->GetVXPos()<<" "<<a->GetVYPos()<<" "<<a->GetVZPos()<<" "<<"\n";
-        
-        
-    }
-    Output<<"        </DataArray>"<<"\n";
-    Output<<"      </Points>"<<"\n";
-    
-    Output<<"      <Cells>"<<"\n";
-    Output<<"        <DataArray type=\"Int32\" Name=\"connectivity\" Format=\"ascii\">"<<"\n";
-    
-    
-    for (int i=0;i<numtri;i++)
-    {
-        
-        
-        triangle* a=triangle1.at(i);
-        
-        if(a->GetRepresentation()==true)
-            Output<<"           "<<(a->GetV1())->GetVID()<<" "<<(a->GetV2())->GetVID()<<" "<<(a->GetV3())->GetVID()<<" "<<"\n";
-        
-        
-    }
-    Output<<"        </DataArray>"<<"\n";
-    Output<<"        <DataArray type=\"Int32\" Name=\"offsets\" Format=\"ascii\">"<<"\n";
-    int ofset=3;
-    Output<<"          ";
-    for (int i=0;i<numtrirep;i++)
-    {
-        
-        Output<<ofset+3*i<<" ";
-        
-        
-    }
-    Output<<"\n";
-    
-    Output<<"        </DataArray>"<<"\n";
-    Output<<"        <DataArray type=\"Int32\" Name=\"types\" Format=\"ascii\">"<<"\n";
-    Output<<"          ";
-    for (int i=0;i<numtrirep;i++)
-    {
-        
-        Output<<5<<" ";
-        
-        
-    }
-    Output<<"\n";
-    
-    
-    
-    
-    
-    
-    
-    Output<<"        </DataArray>"<<"\n";
-    Output<<"      </Cells>"<<"\n";
-    Output<<"    </Piece>"<<"\n";
-    Output<<"  </UnstructuredGrid>"<<"\n";
-    Output<<"</VTKFile> "<<"\n";
-    
-    
-}
-
-void WritevtuFiles::WriteInclusion(std::string id, std::vector<vertex* > ver, std::ofstream *Output)
+void WritevtuFiles::WriteInclusion(std::string id, const std::vector<vertex *>  &all_ver, std::ofstream *Output)
 {
     double cc=0;
     (*Output)<<std::fixed;
     (*Output)<<std::setprecision( Precision );
     *Output<<"        <DataArray type=\"Float32\" Name=\""<<id<<"\"  NumberOfComponents=\"3\" Format=\"ascii\">"<<"\n";
-    for (std::vector<vertex*>::iterator itr = ver.begin() ; itr != ver.end(); ++itr)
+    
+   // std::vector<vertex *>  all_ver = m_pState->GetMesh()->GetActiveV();
+    for (std::vector<vertex*>::const_iterator itr = all_ver.begin() ; itr != all_ver.end(); ++itr)
     {
-        if((*itr)->VertexOwnInclusion()==true)
-        {
-            inclusion* in=(*itr)->GetInclusion();
-            Vec3D D=(in)->GetLDirection();
-            D=((*itr)->GetL2GTransferMatrix())*D;
-
-            *Output<<"  "<<D(0)<<"      "<<D(1)<<"      "<<D(2)<<"\n";
-
+        if((*itr)->VertexOwnInclusion()){
+            
+            Vec3D direction = (*itr)->GetInclusion()->GetLDirection();
+            direction=((*itr)->GetL2GTransferMatrix())*direction;
+            
+            *Output<<"  "<<direction(0)<<"      "<<direction(1)<<"      "<<direction(2)<<"\n";
         }
         else
         *Output<<"  "<<cc<<"    "<<cc<<"    "<<cc<<"\n";
-        
     }
     *Output<<"        </DataArray>"<<"\n";
     
 }
-void WritevtuFiles::WritevtuNochange(std::vector< vertex* > ver, std::vector< triangle* > triangle1,  std::vector< links* > links1, std::string Filename)
-{
+bool WritevtuFiles::WriteAFrame(int step){
     
-    Vec3D m_Box=*m_pBox;
-    
-    // First make all the triangles visualizable
 
-    
-    
-    
-    int numv=ver.size();
-    int numtri=triangle1.size();
-    int numtrirep=0;
-    
-    for (int i=0;i<triangle1.size();i++)
-    {
-        triangle* a=triangle1.at(i);
-        if(a->GetRepresentation()==true)
-        {numtrirep++;}
-        
+    if(m_Period == 0 || step%m_Period != 0){
+        return false;
     }
-    
-    
-    Filename = "./VTU_Frames/"+Filename;
+    int file_index = step/m_Period;
+    std::string Filename = "./"+m_FolderName+"/conf"+Nfunction::Int_to_String(file_index)+".vtu";
     std::ofstream Output;
     Output.open(Filename.c_str());
     
+    m_pBox = m_pState->GetMesh()->GetBox();
+    double Half_Lx = (*m_pBox)(0)/2.0;
+    double Half_Ly = (*m_pBox)(1)/2.0;
+    double Half_Lz = (*m_pBox)(2)/2.0;
+
     
+    std::vector<triangle *>  all_tri = m_pState->GetMesh()->GetActiveT();
+    std::vector<vertex *>  all_ver = m_pState->GetMesh()->GetActiveV();
+    int numv=all_ver.size();
+    int numtri=all_tri.size();
+    int numtrirep=0;
     
-    
+    for (std::vector<triangle *>::iterator it = all_tri.begin() ; it != all_tri.end(); ++it){
+        
+        (*it)->UpdateRepresentation(true);
+        double dx1=(*it)->GetV1()->GetXPos()-(*it)->GetV2()->GetXPos();
+        double dy1=(*it)->GetV1()->GetYPos()-(*it)->GetV2()->GetYPos();
+        double dz1=(*it)->GetV1()->GetZPos()-(*it)->GetV2()->GetZPos();
+        double dx2=(*it)->GetV1()->GetXPos()-(*it)->GetV3()->GetXPos();
+        double dy2=(*it)->GetV1()->GetYPos()-(*it)->GetV3()->GetYPos();
+        double dz2=(*it)->GetV1()->GetZPos()-(*it)->GetV3()->GetZPos();
+        
+        if(fabs(dx1)>Half_Lx || fabs(dy1)>Half_Ly || fabs(dz1)>Half_Lz){
+            (*it)->UpdateRepresentation(false);
+        }
+        else if(fabs(dx2)>Half_Lx || fabs(dy2)>Half_Ly || fabs(dz2)>Half_Lz){
+                (*it)->UpdateRepresentation(false);
+        }
+        else{
+            numtrirep++;
+        }
+    }
     Output<<"<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"BigEndian\">"<<"\n";
     Output<<"  <UnstructuredGrid>"<<"\n";
     Output<<"    <Piece NumberOfPoints=\""<<numv<<"\" NumberOfCells=\""<<numtrirep<<"\">"<<"\n";
     Output<<"      <PointData Scalars=\"scalars\">"<<"\n";
-    Output<<"        <DataArray type=\"Float32\" Name=\"inc\" Format=\"ascii\">"<<"\n";
-    
-    for (int i=0;i<numv;i++)
-    {
-        vertex* a=ver.at(i);
-        if(a->VertexOwnInclusion()==true)
-            Output<<"          "<<1<<"\n";
-        else
-            Output<<"          "<<0<<"\n";
         
+        
+
+    std::vector <InclusionType*> TYPES = (m_pState->GetMesh())->GetInclusionType();
+    std::vector<int> inctypeid;
+    std::vector<std::string> inctype;
+    for (std::vector<InclusionType*>::iterator it = TYPES.begin() ; it != TYPES.end(); ++it){
+        
+        inctypeid.push_back((*it)->ITid);
+        inctype.push_back((*it)->ITName);
     }
-    Output<<"        </DataArray>"<<"\n";
-    
-    // std::string R= (*itr)->GetName();
-    WriteInclusion("dir", ver, &Output);
-    
-    /*for (std::vector<RigidInclusion*>::iterator itr = inc.begin() ; itr != inc.end(); ++itr)
-     {
-     std::string R= (*itr)->GetName();
-     WriteInclusion(R, ver, &Output);
-     }*/
-    
-    
+
+        
+    for (int n=0;n<inctypeid.size();n++) {
+    Output<<"        <DataArray type=\"Float32\" Name=\""<<inctype[n]<<"\" Format=\"ascii\">"<<"\n";
+        for (std::vector<vertex *>::iterator it = all_ver.begin() ; it != all_ver.end(); ++it){
+        
+            if((*it)->VertexOwnInclusion()==true){
+                if((*it)->GetInclusion()->GetInclusionType()->ITid ==inctypeid[n]){
+                    Output<<"          "<<1<<"\n";
+                }
+                else{
+                    Output<<"          "<<0<<"\n";
+                }
+            }
+            else{
+                Output<<"          "<<0<<"\n";
+            }
+
+        }
+        Output<<"        </DataArray>"<<"\n";
+    }
+    //=== write group id
+    Output<<"        <DataArray type=\"Float32\" Name=\""<<"GroupID"<<"\" Format=\"ascii\">"<<"\n";
+    for (std::vector<vertex *>::iterator it = all_ver.begin() ; it != all_ver.end(); ++it){
+        Output<<"          "<<(*it)->GetGroup()<<"\n";
+
+    }
+     Output<<"        </DataArray>"<<"\n";
+     WriteInclusion("dir", all_ver, &Output);
+
     Output<<"      </PointData>"<<"\n";
     Output<<"      <Points>"<<"\n";
     Output<<"        <DataArray type=\"Float32\" NumberOfComponents=\"3\" Format=\"ascii\">"<<"\n";
-    
-    
-    for (int i=0;i<numv;i++)
-    {
-        vertex* a=ver.at(i);
-        Output<<"          "<<a->GetVXPos()<<" "<<a->GetVYPos()<<" "<<a->GetVZPos()<<" "<<"\n";
-        
-        
+
+    for (std::vector<vertex*>::iterator it = all_ver.begin() ; it != all_ver.end(); ++it) {
+    Output<<"          "<<(*it)->GetXPos()<<" "<<(*it)->GetYPos()<<" "<<(*it)->GetZPos()<<" "<<"\n";
     }
     Output<<"        </DataArray>"<<"\n";
     Output<<"      </Points>"<<"\n";
-    
     Output<<"      <Cells>"<<"\n";
     Output<<"        <DataArray type=\"Int32\" Name=\"connectivity\" Format=\"ascii\">"<<"\n";
-    
-    
-    for (int i=0;i<numtri;i++)
-    {
-        
-        
-        triangle* a=triangle1.at(i);
-        
-        if(a->GetRepresentation()==true)
-            Output<<"           "<<(a->GetV1())->GetVID()<<" "<<(a->GetV2())->GetVID()<<" "<<(a->GetV3())->GetVID()<<" "<<"\n";
-        
-        
+
+
+    for (std::vector<triangle *>::iterator it = all_tri.begin() ; it != all_tri.end(); ++it){
+
+        if((*it)->GetRepresentation()){
+        Output<<"           "<<(*it)->GetV1()->GetVID()<<" "<<(*it)->GetV2()->GetVID()<<" "<<(*it)->GetV3()->GetVID()<<" "<<"\n";
+        }
     }
+    
     Output<<"        </DataArray>"<<"\n";
     Output<<"        <DataArray type=\"Int32\" Name=\"offsets\" Format=\"ascii\">"<<"\n";
     int ofset=3;
     Output<<"          ";
-    for (int i=0;i<numtrirep;i++)
-    {
-        
+    for (int i=0;i<numtrirep;i++){
+
         Output<<ofset+3*i<<" ";
-        
-        
     }
     Output<<"\n";
-    
+
     Output<<"        </DataArray>"<<"\n";
     Output<<"        <DataArray type=\"Int32\" Name=\"types\" Format=\"ascii\">"<<"\n";
     Output<<"          ";
-    for (int i=0;i<numtrirep;i++)
-    {
-        
+    
+    for (int i=0;i<numtrirep;i++){
         Output<<5<<" ";
-        
-        
     }
     Output<<"\n";
-    
+
     Output<<"        </DataArray>"<<"\n";
     Output<<"      </Cells>"<<"\n";
     Output<<"    </Piece>"<<"\n";
     Output<<"  </UnstructuredGrid>"<<"\n";
     Output<<"</VTKFile> "<<"\n";
     
-    
-}
+    Output.flush();
+    Output.close();
 
+    return true;
+}
+std::string WritevtuFiles::CurrentState(){
+    
+    std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName() +" "+m_FolderName+" "+ Nfunction::D2S(m_Period);
+    return state;
+}

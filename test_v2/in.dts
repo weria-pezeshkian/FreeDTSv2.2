@@ -8,14 +8,14 @@ Integrator_Type = MC_Simulation
  Kappa = 20 0 0
  Edge_Parameters = 200 0 0
  VertexArea = 0 0.7 0 0
-TimeSeriesData_Period = 1
+TimeSeriesData_Period = 100
 VertexPositionIntegrator = MetropolisAlgorithm 1 1 0.05
 AlexanderMove = MetropolisAlgorithm 1
 InclusionPoseIntegrator = MetropolisAlgorithm   1 1
 Dynamic_Box = No IsotropicFrameTension 5 -3 XY
 OpenEdgeEvolution =  No EvolutionWithConstantVertex 1 1
-VisualizationFormat = VTUFileFormat VTU_F 1
-NonbinaryTrajectory = TSI TrajTSI 10
+VisualizationFormat = VTUFileFormat VTU_F 100
+NonbinaryTrajectory = TSI TrajTSI 1000
 INCLUSION
 Define 2 Inclusions
 SRotation   Type   K   KG  KP  KL  C0     C0P  C0L

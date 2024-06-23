@@ -6,69 +6,51 @@
 #include "triangle.h"
 #include "links.h"
 #include "Inclusion_Interaction_Map.h"
-
+#include "AbstractEnergy.h"
 /*
- Weria Pezeshkian (weria.pezeshkian@gmail.com)
- Copyright (c) Weria Pezeshkian
- This object calculate energy of the system
+ * @brief Energy calculation based on FreeDTS1.1 force field.
+ *
+ * This class is responsible for calculating the energy of a system using the FreeDTS1.1 force field.
+ * It includes methods to compute various energy contributions such as single vertex energy, energy
+ * due to interactions between two inclusions.
+
+ *
+ * @note This class inherits from the AbstractEnergy interface, providing a common interface for energy
+ * calculation modules in the simulation framework.
+ *
+ * @author Weria Pezeshkian (weria.pezeshkian@gmail.com)
+ * @copyright Weria Pezeshkian
  */
-class Energy
-{
+class State;
+class Energy : public AbstractEnergy {
 public:
-    Energy();
-	Energy(Inclusion_Interaction_Map * );
+    Energy(State* pState);
 	 ~Energy();
 
-     inline Inclusion_Interaction_Map  * GetIncIntMap()                const  {return m_pInt;}
-private:
-    double m_Kappa;
-    double m_KappaG;
-    double m_mem_c0;
-    
-    //== vertex area
-    double m_Kva;
-    double m_av0;
-    double m_KvaEdge;
-    double m_av0Edge;
-
-    std::vector<double> m_Membrane_model_parameters;
-    int m_NO_Membrane_model_parameters;
-    
-    //=== edge
-    double m_Lambda;
-    double m_KnEdge;
-    double m_KgEdge;
-    
-    // field info
-     Vec3D m_FieldDirection;
-     double m_FieldStrength;
-
 public:
-    double TotalEnergy(std::vector<vertex *> pVeretx, std::vector<links *> plink);   ///
-    double Energy_OneVertexMove(vertex * pVeretx);   ///
-    double Energy_OneLinkFlip(links * pLinks);
+    inline std::string GetDerivedDefaultReadName() {return "FreeDTS1.0_FF";}
+    inline static std::string GetDefaultReadName() {return "FreeDTS1.0_FF";}
+    double CalculateAllLocalEnergy();   ///
     double SingleVertexEnergy(vertex *p);
     double TwoInclusionsInteractionEnergy(links *);
-    double InteractionFunction(double N2, double A, double B, double theta);
-    double SingleEdgeVertexEnergy(vertex *p);
-private:
-
-    Inclusion_Interaction_Map * m_pInt;
-    double m_Angle3D;
-    double m_Angle2D;
-    
 
 private:
-    double Geo_Theta(vertex *v1, vertex *v2);
+    double SurfVertexBendingAndStretchingEnergy(vertex * pver);
+    double EdgeVertexBendingAndStretchingEnergy(vertex * pver);
+    std::string CurrentState();
+
+    // types of interactions
+    double Geo_Theta(vertex *v1, vertex *v2);  // Calculate the angle between two vectors after parallel transport
     double F10(vertex *v1, vertex *v2,std::vector<double>);
     double F2(vertex *v1, vertex *v2,std::vector<double>);
     double F11(vertex *v1, vertex *v2,std::vector<double>);
+    double InteractionFunction(double N2, double A, double B, double theta);
 
-
-
-
-    
-
+private:
+    State* m_pState;
+    Vec3D  &m_Box;
+    double m_Angle3D;
+    double m_Angle2D;
 
 
 

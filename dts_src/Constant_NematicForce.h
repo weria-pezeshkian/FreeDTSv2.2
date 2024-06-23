@@ -8,34 +8,20 @@
 #include "SimDef.h"
 #include "vertex.h"
 #include "links.h"
-
-class Constant_NematicForce
-{
+#include "AbstractForceonVerticesfromInclusions.h"
+class Constant_NematicForce : public AbstractForceonVerticesfromInclusions{
 public:
-    Constant_NematicForce();
+    Constant_NematicForce(double f0);
     ~Constant_NematicForce();
-
-
-
-    
-
-
-public:
-    double m_F0;
-    double m_Fd;   // in the direction of the protein
-    double m_Fn;    // in the direction of surface normal
-    double m_ActiveEnergy;
-public:
     double Energy_of_Force(vertex *p, Vec3D dx);
-    Vec3D ActiveNematicForce_1(vertex *pv2, vertex *pv1);
-
-    void  Initialize();
-    //=====
-    
-    
+    std::string CurrentState();
+    inline  std::string GetDerivedDefaultReadName()  {return "Constant_NematicForce";}
+    inline static std::string GetDefaultReadName() {return "Constant_NematicForce";}
     
 private:
-
+    Vec3D ActiveNematicForce_1(vertex *pv2, vertex *pv1);
+    double m_F0;
+    double m_ActiveEnergy;
 
 };
 

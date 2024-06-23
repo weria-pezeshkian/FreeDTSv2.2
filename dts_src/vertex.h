@@ -2,7 +2,6 @@
 #define AFX_vertex_H_9P4B21B8_C13C_5648_BF23_124095086234__INCLUDED_
 #include "Voxel.h"
 #include "SimDef.h"
-#include "CNTCell.h"
 #include "Vec3D.h"
 #include "Tensor2.h"
 #include "inclusion.h"
@@ -14,53 +13,76 @@
  *******************/
 class links;
 class triangle;
-class vertex
-{
+class MESH;
+class vertex {
+    
 public:
-	vertex(int id, double x, double y, double z);
-	vertex(int id);
+	vertex(MESH* pMesh, int id, double x, double y, double z);
+	vertex(MESH* pMesh, int id);
     vertex();
 
 	 ~vertex();
 
 // A set of function to get vertex variables (since all of them are private)
 	    inline int GetVID()                                 {return m_ID;}
+        inline int GetVertexType()                          {return m_VertexType;}
+        inline int  GetDomainID()                           {return m_DomainID;}
+        inline Tensor2  GetL2GTransferMatrix()              {return m_T_Local_2_Global;}
+        inline Tensor2  GetG2LTransferMatrix()              {return m_T_Global_2_Local;}
+        inline inclusion* GetInclusion()                    {return m_pInclusion;}
+        inline bool VertexOwnInclusion()                    {return m_OwnInclusion;}
+        inline Vec3D GetNormalVector()                      {return m_Normal;}
+        inline double GetEnergy()                           {return m_Energy;}
+        inline Vec3D *GetBox()                              {return m_pBox;}
+        inline int GetGroup()                               {return m_Group;}
+        inline std::string GetGroupName()                   {return m_GroupName;}
+        inline std::vector <links *> GetVLinkList()             {return m_VLinkList;}
+        inline std::vector <triangle *> GetVTraingleList()         {return m_VTraingleList;}
+        inline std::vector <vertex *> GetVNeighbourVertex()     {return m_VNeighbourVertex;}
+        inline Voxel<vertex> * GetVoxel()     {return m_pVoxel;}
+
+//---> functions to access positions
         inline double GetVXPos()                            {return m_X;}
         inline double GetVYPos()                            {return m_Y;}
         inline double GetVZPos()                            {return m_Z;}
         inline double GetXPos()                             {return m_X;}
         inline double GetYPos()                             {return m_Y;}
         inline double GetZPos()                             {return m_Z;}
-        inline double GetArea()                             {return m_Area;}
-        inline Tensor2  GetL2GTransferMatrix()              {return m_T_Local_2_Global;}
-        inline Tensor2  GetG2LTransferMatrix()              {return m_T_Global_2_Local;}
-        inline Vec3D GetNormalVector()                      {return m_Normal;}
-        inline std::vector <double> GetCurvature()          {return m_Curvature;}// surface curvature
-        inline double GetEnergy()                           {return m_Energy;}
-        inline CNTCell * GetVCNTCell()                      {return m_CNTCell;}
-        inline inclusion* GetInclusion()                    {return m_pInclusion;}
-        inline bool VertexOwnInclusion()                    {return m_OwnInclusion;}
-        inline Vec3D *GetBox()                              {return m_pBox;}
-        inline int GetSimTimeStep()                         {return m_SimTimeStep;}
-        inline int GetGroup()                               {return m_Group;}
-        inline std::string GetGroupName()                   {return m_GroupName;}
-        inline std::vector <links *> GetVLinkList()             {return m_VLinkList;}
-        inline std::vector <triangle *> GetVTraingleList()         {return m_VTraingleList;}
-        inline std::vector <vertex *> GetVNeighbourVertex()     {return m_VNeighbourVertex;}
+        inline  Vec3D GetPos()                              {return   Vec3D(m_X,m_Y,m_Z);}
+
+//---->
+        //---> for if the vertex is surface vertex
+        inline double GetP1Curvature()              {return m_PrincipalCurvature_1;}// surface curvature
+        inline double GetP2Curvature()              {return m_PrincipalCurvature_2;}// surface curvature
+        inline double GetArea()                     {return m_Area;}
+        //---> for if the vertex is edge vertex
+        inline double GetGeodesicCurvature()        {return m_Geodesic_Curvature;}// surface curvature
+        inline double GetNormalCurvature()          {return m_Normal_Curvature;}// surface curvature
+        inline double GetLength()                   {return m_VLength;}// surface curvature
+        inline links* GetPrecedingEdgeLink()        {return m_pPrecedingEdgeLink;}// preceding link at the edge
+        inline links* GetEdgeLink()                 {return m_pEdgeLink;}// preceding link at the edge
+
     
+
 public:
     
     bool SetCopy();            // Copies the key ellements into the old type
     bool Reverse2PreviousCopy();  // reverse the edge to the value set at the time of MakeCopy()
+    
+    void ConstantMesh_Copy();
+    void ReverseConstantMesh_Copy();
+    
   // A set of functions to update vertex variables
   void UpdateVXPos(double x);    // a function for update the x position of a vertex
+  void ScalePos(double lx, double ly, double lz);    // a function for update the x position of a vertex
   void UpdateVYPos(double y);   // a function for update the y position of a vertex
   void UpdateVZPos(double z);   // a function for updates the z position of a vertex
+  void PositionPlus(double dx, double dy, double dz);   // a function to increase the positions by dx, dt, dz
+  void UpdateP1Curvature(double p1_curvature);
+  void UpdateP2Curvature(double p2_curvature);
   void UpdateGroupName(std::string z); // A vertex can only have one group name, is different from group id
-  void UpdateVCNTCell(CNTCell * z);
   void UpdateBox(Vec3D *z);
-  void UpdateCurvature(double,double); // vis
-  void UpdateEnergy(double); 
+  void UpdateEnergy(double);
   void UpdateNormal_Area(Vec3D,double); // vis
   void UpdateL2GTransferMatrix(Tensor2 v);
   void UpdateG2LTransferMatrix(Tensor2 v);
@@ -79,23 +101,22 @@ public:
   void RemoveFromNeighbourVertex(vertex* z);
   void UpdateGroup(int z);
   void UpdateVoxel(Voxel<vertex> * pVoxel);
-
-  void UpdateSimTimeStep(int v);   // we should remove this function at some point
+  void UpdateDomainID(int domain_id);
 
 public:
-    bool CheckCNT();
-    bool VertexMoveIsFine(double dx,double dy, double dz,  double mindist, double maxdist);
     bool CheckVoxel();
     bool UpdateVoxelAfterAVertexMove(); // update the voxel after the move has happened.
-    //-- checks the face angles of trinagle around the vertex and with the next triangles
-    bool CheckFacesAfterAVertexMove(double &minangle);  // this checks if the faces are fine, if not, the move need to be rejected.
-
-private:
     double SquareDistanceFromAVertex(vertex* pv2);
     double SquareDistanceOfAVertexFromAPoint(double X, double Y, double Z, vertex* pv2);
+
+    
+    friend std::ostream& operator<<(std::ostream& os, const vertex& obj);
+    
+
 private:
 
     int m_ID;         // ID of the vertex, a unique number
+    int m_DomainID;
     double m_X;       // X coordinate
     double m_Y;       // Y coordinate
     double m_Z;       // Z coordinate
@@ -105,21 +126,19 @@ private:
     inclusion *m_pInclusion;                    // pointer to an inclusion that the vertex hold (could be empty)
     bool m_OwnInclusion;                        // to check if the vertex own any inclusion
     double m_Area;                              // area of the vertex
-    CNTCell * m_CNTCell;                        // a unitcell that the vertex belong to at any point of the simulation, it will be chnage during a simulation
-    int m_SimTimeStep;                          // some extera access (should be removed )
     int m_Group;            // Id of a group that the vertex belong too
     private:
     Vec3D m_Normal;
     Vec3D *m_pBox;
-    std::vector<double> m_Curvature;
     double m_Energy;
     Tensor2  m_T_Local_2_Global;         //  Local to global transformation matrix
     Tensor2  m_T_Global_2_Local;        //  global to local transformation matrix
     std::string m_GroupName;
      Voxel<vertex> * m_pVoxel;
-   // Voxel * m_pVoxel;
-
-    
+    double m_PrincipalCurvature_1;
+    double m_PrincipalCurvature_2;
+    double m_MeanCurvature;
+    double m_GaussianCurvature;
     
 public:
     // lets have them public for now
@@ -132,11 +151,11 @@ public:
     double m_Geodesic_Curvature;          // Edge Vertex Curvature
     double m_Normal_Curvature;          // Edge Vertex Curvature
     double m_VLength;                       // length of the vertex
-    double m_Lambda;                   // line tension
+    
     int m_VertexType;                   // 0 surface vertex; 1 edge vertex;
     links * m_pEdgeLink;
     links * m_pPrecedingEdgeLink;// preceding link at the edge
-    
+
     
 // members for copying.
 private:
@@ -149,10 +168,8 @@ private:
     inclusion *m_OldpInclusion;                    // pointer to an inclusion that the vertex hold (could be empty)
     bool m_OldOwnInclusion;                        // to check if the vertex own any inclusion
     double m_OldArea;                              // area of the vertex
-    CNTCell * m_OldCNTCell;                        // a unitcell that the vertex belong to at any point of the simulation, it will be chnage during a simulation
     int m_OldGroup;            // Id of a group that the vertex belong too
     Vec3D m_OldNormal;
-    std::vector<double> m_OldCurvature;
     double m_OldEnergy;
     Tensor2  m_OldT_Local_2_Global;         //  Local to global transformation matrix
     Tensor2  m_OldT_Global_2_Local;        //  global to local transformation matrix
@@ -161,11 +178,14 @@ private:
     double m_OldGeodesic_Curvature;          // Edge Vertex Curvature
     double m_OldNormal_Curvature;          // Edge Vertex Curvature
     double m_OldVLength;                       // length of the vertex
-    double m_OldLambda;                   // line tension
     int m_OldVertexType;                   // 0 surface vertex; 1 edge vertex;
     links * m_OldpEdgeLink;
     links * m_OldpPrecedingEdgeLink;// preceding link at the edge
-    
+    MESH* m_pMesh;
+    double m_OldPrincipalCurvature_1;
+    double m_OldPrincipalCurvature_2;
+    double m_OldMeanCurvature;
+    double m_OldGaussianCurvature;
 };
 
 

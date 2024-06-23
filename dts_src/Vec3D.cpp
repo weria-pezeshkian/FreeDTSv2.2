@@ -5,7 +5,10 @@
 /*
  Perhaps we could use array so we do not have if condition for accessing membranes 
  */
-
+std::ostream& operator<<(std::ostream& os, const Vec3D& vec) {
+    os << vec.m_X << " " << vec.m_Y << " " << vec.m_Z;
+    return os;
+}
 Vec3D::Vec3D(double x, double y, double z) : m_X(x), m_Y(y), m_Z(z) {}
 
 double& Vec3D::operator()(const int n) {
@@ -19,6 +22,17 @@ double& Vec3D::operator()(const int n) {
 Vec3D Vec3D::operator+(const Vec3D& other) const {
     return Vec3D(m_X + other.m_X, m_Y + other.m_Y, m_Z + other.m_Z);
 }
+
+
+Vec3D Vec3D::operator-(const Vec3D& other) const {
+    return Vec3D(m_X - other.m_X, m_Y - other.m_Y, m_Z - other.m_Z);
+}
+
+Vec3D Vec3D::operator*(const Vec3D& other) const {
+    return Vec3D(m_Y * other.m_Z - m_Z * other.m_Y,
+                 m_Z * other.m_X - m_X * other.m_Z,
+                 m_X * other.m_Y - m_Y * other.m_X);
+}
 void Vec3D::normalize(){
     double norm = std::sqrt(m_X*m_X + m_Y*m_Y + m_Z*m_Z);
     if(norm==0)
@@ -30,16 +44,6 @@ void Vec3D::normalize(){
 
     
 }
-Vec3D Vec3D::operator-(const Vec3D& other) const {
-    return Vec3D(m_X - other.m_X, m_Y - other.m_Y, m_Z - other.m_Z);
-}
-
-Vec3D Vec3D::operator*(const Vec3D& other) const {
-    return Vec3D(m_Y * other.m_Z - m_Z * other.m_Y,
-                 m_Z * other.m_X - m_X * other.m_Z,
-                 m_X * other.m_Y - m_Y * other.m_X);
-}
-
 Vec3D Vec3D::operator*(double scalar) const {
     return Vec3D(m_X * scalar, m_Y * scalar, m_Z * scalar);
 }

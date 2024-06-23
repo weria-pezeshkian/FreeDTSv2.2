@@ -5,34 +5,83 @@
  Copyright (c) Weria Pezeshkian
  */
 #include <fstream>
+#include <vector>
 #include "BTSFile.h"
 #include "State.h"
 #include "Nfunction.h"
 #include "CreateMashBluePrint.h"
-BTSFile::BTSFile()
-{
+BTSFile::BTSFile(State* pState){
+    m_Periodic = 0;
+    m_pState = pState;
 }
-BTSFile::BTSFile(std::string filename , bool clear, std::string readorwrite)
-{
-    std::string ext = filename.substr(filename.find_last_of(".") + 1);
-    
-    m_FileName = filename;
-    if(ext!=BTSExt)
-        m_FileName = filename+"."+BTSExt;  
-  if(clear==false && readorwrite=="w")
-  m_File.open(m_FileName.c_str(),std::ios::out | std::ios::binary | std::ios::trunc );
-  else if(clear==true && readorwrite=="w")
-   m_File.open(m_FileName.c_str(),std::ios::out | std::ios::binary | std::ios::app );
-  else if(readorwrite=="r")
-    m_File.open(m_FileName.c_str(), std::ios::in |std::ios::binary);
+BTSFile::BTSFile(State *pState, int periodic, int precision, std::string btsfilename){
+
+    m_pState = pState;
+    m_Periodic = periodic;
+    m_FileName = btsfilename;
 }
 BTSFile::~BTSFile()
 {
     m_File.close();
 }
+/*
+bool BTSFile::OpenFile(bool clear, char readorwrite){
+    
+    // we could just use generic name and find the file name using state class
+    std::string ext = m_FileName.substr(m_FileName.find_last_of(".") + 1);
+    
+    if(ext!=BTSExt)
+        m_FileName = m_FileName+"."+BTSExt;
+  if(clear==false && readorwrite=='w')
+  m_File.open(m_FileName.c_str(),std::ios::out | std::ios::binary | std::ios::trunc );
+  else if(clear==true && readorwrite=='w')
+   m_File.open(m_FileName.c_str(),std::ios::out | std::ios::binary | std::ios::app );
+  else if(readorwrite=='r')
+    m_File.open(m_FileName.c_str(), std::ios::in |std::ios::binary);
+  else{
+      std::cout<<"---> error229 "<<std::endl;
+      return false;
+  }
+    
+    return true;
+}*/
+bool BTSFile::OpenFile(bool clear, char readorwrite) {
+    // Determine file extension
+    std::string ext = m_FileName.substr(m_FileName.find_last_of(".") + 1);
+
+    // Append extension if necessary
+    m_FileName = (ext != BTSExt) ? m_FileName + "." + BTSExt : m_FileName;
+
+    // Determine file mode based on parameters
+    std::ios_base::openmode mode;
+    if (readorwrite == 'w') {
+        mode = (clear) ? std::ios::out | std::ios::binary | std::ios::app : std::ios::out | std::ios::binary | std::ios::trunc;
+    } else if (readorwrite == 'r') {
+        mode = std::ios::in | std::ios::binary;
+    } else {
+        std::cerr << "--> error: Invalid read/write mode in bts file !" << std::endl;
+        return false;
+    }
+
+    // Open the file
+    m_File.open(m_FileName.c_str(), mode);
+
+    // Check if the file opened successfully
+    if (!m_File.is_open()) {
+        std::cerr << "---> error: Failed to open file '" << m_FileName << "'" << std::endl;
+        return false;
+    }
+
+    return true;
+}
 //=== Writing a BTSFile file: Writing the mesh only
-void BTSFile::WrireBTSFile(int step, MESH * pmesh)
-{
+void BTSFile::WriteAFrame(int &step){
+    
+    std::cout<<" fghgh this function is not complete yet \n";
+    if(m_Periodic==0 || step%m_Periodic!=0)
+        return;
+        
+        MESH * pmesh;
     MeshBluePrint blueprint = pmesh->Convert_Mesh_2_BluePrint(pmesh);
 
     (m_File).write((char *) &step, sizeof(int));
@@ -53,23 +102,9 @@ void BTSFile::WrireBTSFile(int step, MESH * pmesh)
     (m_File).write((char *) &size, sizeof(int));
     for (std::vector<Inclusion_Map>::iterator it = (blueprint.binclusion).begin() ; it != (blueprint.binclusion).end(); ++it)
         (m_File).write((char *) &(*it), sizeof(Inclusion_Map));
-    size = (blueprint.binctype).size();
-    (m_File).write((char *) &size, sizeof(int));
-    for (std::vector<InclusionType>::iterator it = (blueprint.binctype).begin() ; it != (blueprint.binctype).end(); ++it)
-    {
-        (m_File).write((char *) &(it->ITid), sizeof(int));
-        (m_File).write((char *) &(it->ITN), sizeof(int));
-        (m_File).write((char *) &(it->ITk), sizeof(double));
-        (m_File).write((char *) &(it->ITkg), sizeof(double));
-        (m_File).write((char *) &(it->ITk1), sizeof(double));
-        (m_File).write((char *) &(it->ITk2), sizeof(double));
-        (m_File).write((char *) &(it->ITc0), sizeof(double));
-        (m_File).write((char *) &(it->ITc1), sizeof(double));
-        (m_File).write((char *) &(it->ITc2), sizeof(double));
-        (m_File).write((it->ITName).c_str(), (it->ITName).size());
-        (m_File).write("\0",sizeof(char)); // null end string for easier reading
-    }
+    
     m_File.flush();
+    return;
 }
 //=== Read a BTSFile file
 MeshBluePrint BTSFile::ReadBTSFile(bool *readok)
@@ -118,30 +153,8 @@ if(m_File.is_open() && !m_File.eof() )
         (m_File).read((char *) &incmap, sizeof(Inclusion_Map));
         binclusion.push_back(incmap);
     }
-    m_File.read((char *) &size, sizeof(int));
-    for (int i=0;i<size;i++)
-    {
-        InclusionType inctype;
-        (m_File).read((char *) &inctype, sizeof(InclusionType));
-        binctype.push_back(inctype);
-    }
-    for (int i=0;i<size;i++)
-    {
-        InclusionType inctype;
-        (m_File).read((char *) &(inctype.ITid), sizeof(int));
-        (m_File).read((char *) &(inctype.ITN), sizeof(int));
-        (m_File).read((char *) &(inctype.ITk), sizeof(double));
-        (m_File).read((char *) &(inctype.ITkg), sizeof(double));
-        (m_File).read((char *) &(inctype.ITk1), sizeof(double));
-        (m_File).read((char *) &(inctype.ITk2), sizeof(double));
-        (m_File).read((char *) &(inctype.ITc0), sizeof(double));
-        (m_File).read((char *) &(inctype.ITc1), sizeof(double));
-        (m_File).read((char *) &(inctype.ITc2), sizeof(double));
-        std::getline(m_File,inctype.ITName,'\0'); // get player name (remember we null ternimated in binary)
-        binctype.push_back(inctype);
-    }
+
     
-    blueprint.binctype = binctype;
     blueprint.bvertex = bvertex;
     blueprint.btriangle = btriangle;
     blueprint.binclusion = binclusion;
@@ -150,4 +163,8 @@ if(m_File.is_open() && !m_File.eof() )
 }
     return blueprint;
 }
-
+std::string BTSFile::CurrentState(){
+    
+    std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+    return state;
+}

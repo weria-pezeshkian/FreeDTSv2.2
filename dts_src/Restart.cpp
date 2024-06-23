@@ -7,42 +7,49 @@
 #include <fstream>
 #include "Restart.h"
 #include "State.h"
-#include "Nfunction.h"
 #include "CreateMashBluePrint.h"
-Restart::Restart()
-{
+
+Restart::Restart(){
+    m_Period = 1000;
+    m_RestartFileName = "";
 }
 Restart::Restart(State *pState)
 {
     m_pState = pState;
-    m_CopyFileName = "copyrestart-1.res";
+    m_TEMFileName = "-1.res";
+    m_Period = 1000;
+    m_RestartFileName = ".res";
 }
 Restart::~Restart()
 {
     
 }
-//=== Writing a restart file: this file is just the active [State] Object with an updated initial step
-void Restart::WrireRestart(int step, std::string filename, MESH * pmesh, double r, double rb)
-{
-    MeshBluePrint blueprint = pmesh->Convert_Mesh_2_BluePrint(pmesh);
-    std::string restartfilename;
-    std::string ext = filename.substr(filename.find_last_of(".") + 1);
-    if(ext!=RestartExt)
-     restartfilename = filename+"."+RestartExt;
-#if TEST_MODE == Enabled
-    std::cout<<"----> Note: restart file name for writing "<<restartfilename<<std::endl;
-#endif
-    {// first make a copy of an existing restart file incase we fail to update restart file
-        std::string f1=restartfilename;
-        std::string f2=m_CopyFileName;
-        std::ifstream file(f1.c_str(),std::ios::binary);
-        if(file)
-        CopyBinaryFile(f1,f2);
-        file.close();
+void Restart::UpdatePeriod(int period){
+    
+    m_Period = period;
+    return;
+}
+void Restart::SetRestartFileName(){
+    
+    m_RestartFileName = m_pState->GetRunTag() +"."+ RestartExt;
+    m_TEMFileName = m_pState->GetRunTag() +"-1."+ RestartExt;
+    return;
+}
+bool Restart::UpdateRestartState(int step,  double r_vertex, double r_box){
+        
+    if(m_Period!=0 && step%m_Period == 0 ){
+        WriteRestart(m_RestartFileName, step, m_pState->GetMesh(),r_vertex, r_box);
     }
-    //=== Since we have a copy of the restart file, we copy the active State object into the the file
+    return true;
+}
+//=== Writing a restart file: this file is just the active [State] Object with an updated initial step
+void Restart::WriteRestart(std::string &filename, int step, MESH * pmesh, double r, double rb){
+    
+    MeshBluePrint blueprint = pmesh->Convert_Mesh_2_BluePrint(pmesh);
+
+    //=== we write the restart into tem restart file
     std::fstream Rfile;
-    Rfile.open(restartfilename.c_str(),std::ios::out | std::ios::binary);
+    Rfile.open(m_TEMFileName.c_str(),std::ios::out | std::ios::binary);
     (Rfile).write((char *) &step, sizeof(int));    
     (Rfile).write((char *) &r, sizeof(double));
     (Rfile).write((char *) &rb, sizeof(double));
@@ -63,170 +70,87 @@ void Restart::WrireRestart(int step, std::string filename, MESH * pmesh, double 
     (Rfile).write((char *) &size, sizeof(int));
     for (std::vector<Inclusion_Map>::iterator it = (blueprint.binclusion).begin() ; it != (blueprint.binclusion).end(); ++it)
         (Rfile).write((char *) &(*it), sizeof(Inclusion_Map));
-    size = (blueprint.binctype).size();
-    (Rfile).write((char *) &size, sizeof(int));
-    for (std::vector<InclusionType>::iterator it = (blueprint.binctype).begin() ; it != (blueprint.binctype).end(); ++it)
-    {
-        (Rfile).write((char *) &(it->ITid), sizeof(int));
-        (Rfile).write((char *) &(it->ITN), sizeof(int));
-        (Rfile).write((char *) &(it->ITk), sizeof(double));
-        (Rfile).write((char *) &(it->ITkg), sizeof(double));
-        (Rfile).write((char *) &(it->ITk1), sizeof(double));
-        (Rfile).write((char *) &(it->ITk2), sizeof(double));
-        (Rfile).write((char *) &(it->ITc0), sizeof(double));
-        (Rfile).write((char *) &(it->ITc1), sizeof(double));
-        (Rfile).write((char *) &(it->ITc2), sizeof(double));
-        (Rfile).write((char *) &(it->ITelambda), sizeof(double));
-        (Rfile).write((char *) &(it->ITekg), sizeof(double));
-        (Rfile).write((char *) &(it->ITekn), sizeof(double));
-        (Rfile).write((char *) &(it->ITecn), sizeof(double));
 
-          (Rfile).write((it->ITName).c_str(), (it->ITName).size());
-        (Rfile).write("\0",sizeof(char)); // null end string for easier reading
-
-    }
     Rfile.close();
     Rfile.flush();
-    remove(m_CopyFileName.c_str());
 
+    Nfunction::CopyBinaryFile(m_TEMFileName,m_RestartFileName, FreeDTS_BUFFERSIZE);
+
+    remove(m_TEMFileName.c_str());
+
+    return;
+}
+MeshBluePrint Restart::ReadFromRestart(const std::string& inputFilename, int& step, bool& readOk, double& rVertex, double& rBox) {
+    readOk = false;
+    std::string restartFilename = m_TEMFileName; // Default to temporary file name
+
+    // Check if the temporary restart file exists
+    std::ifstream tempFile(m_TEMFileName);
+    if (!tempFile.good()) {
+        // Use the provided input filename if the temporary file doesn't exist
+        restartFilename = inputFilename;
+
+        // Append the restart file extension if needed
+        std::string ext = inputFilename.substr(inputFilename.find_last_of(".") + 1);
+        if (ext != RestartExt) {
+            restartFilename = restartFilename + "." + RestartExt;
+        }
+    }
+
+    // Read from the determined restart file
+    return ReadRestart(restartFilename, step, readOk, rVertex, rBox);
 }
 //=== Read a restart file and load to the  active [State] Object
-MeshBluePrint Restart::ReadRestart(std::string filename , bool *readok) {
-    
-    *readok = false;
-    MeshBluePrint blueprint;
-    std::string restartfilename;
-    std::ifstream f(m_CopyFileName.c_str());
-    if(f.good())
-        restartfilename = m_CopyFileName;
-    else
-        restartfilename = filename;
-    std::string ext = filename.substr(filename.find_last_of(".") + 1);
-    if(ext!=RestartExt)
-        restartfilename = filename+"."+RestartExt;
+MeshBluePrint Restart::ReadRestart(std::string filename , int &step, bool &readok, double &r_vertex, double &r_box) {
 
-#if TEST_MODE == Enabled
-    std::cout<<"----> Note: restart file name for reading "<<restartfilename<<std::endl;
-#endif
+    MeshBluePrint blueprint;
+
     // We should make a check and see if the restart file is writtn correctly or not
     //=== just read the restart file and copy it into the current active [State] object
     std::fstream Rfile;
-    Rfile.open(restartfilename.c_str(), std::ios::in |std::ios::binary);
+    Rfile.open(filename.c_str(), std::ios::in |std::ios::binary);
 if(Rfile.is_open())
 {
-    int step = 44 ;
     Rfile.read((char *) &step, sizeof(int));
-    m_pState->m_Initial_Step = step+1;
-#if TEST_MODE == Enabled
-    std::cout<<"----> Note: The saved restart was at step "<<step<<std::endl;
-#endif
-    double r,rb,lx,ly,lz;
-    Rfile.read((char *) &r, sizeof(double));
-    Rfile.read((char *) &rb, sizeof(double));
+
+    double lx,ly,lz;
+    Rfile.read((char *) &r_vertex, sizeof(double));
+    Rfile.read((char *) &r_box, sizeof(double));
     Rfile.read((char *) &lx, sizeof(double));
     Rfile.read((char *) &ly, sizeof(double));
     Rfile.read((char *) &lz, sizeof(double));
-
-    m_pState->m_R_Vertex = r;
-    m_pState->m_R_Box = rb;
     Vec3D box(lx,ly,lz);
     blueprint.simbox= box;
     std::vector<Vertex_Map> bvertex;       // a vector of all vertices (only the blueprint not the object) in the mesh
     std::vector<Triangle_Map> btriangle;   // a vector of all triangles (only the blueprint not the object) in the mesh
     std::vector<Inclusion_Map> binclusion; // a vector of all inclusions (only the blueprint not the object) in the mesh
-    std::vector <InclusionType> binctype;  // a vector containing all inclsuion type and a default one
     int size;
     Rfile.read((char *) &size, sizeof(int));
-    for (int i=0;i<size;i++)
-    {
+    for (int i=0;i<size;i++){
         Vertex_Map vmap;
         (Rfile).read((char *) &vmap, sizeof(Vertex_Map));
         bvertex.push_back(vmap);
     }
     Rfile.read((char *) &size, sizeof(int));
-    for (int i=0;i<size;i++)
-    {
+    for (int i=0;i<size;i++){
         Triangle_Map tmap;
         (Rfile).read((char *) &tmap, sizeof(Triangle_Map));
         btriangle.push_back(tmap);
     }
     Rfile.read((char *) &size, sizeof(int));
-    for (int i=0;i<size;i++)
-    {
+    for (int i=0;i<size;i++){
         Inclusion_Map incmap;
         (Rfile).read((char *) &incmap, sizeof(Inclusion_Map));
         binclusion.push_back(incmap);
     }
-    Rfile.read((char *) &size, sizeof(int));
-    for (int i=0;i<size;i++)
-    {
-        InclusionType inctype;
-        (Rfile).read((char *) &(inctype.ITid), sizeof(int));
-        (Rfile).read((char *) &(inctype.ITN), sizeof(int));
-        (Rfile).read((char *) &(inctype.ITk), sizeof(double));
-        (Rfile).read((char *) &(inctype.ITkg), sizeof(double));
-        (Rfile).read((char *) &(inctype.ITk1), sizeof(double));
-        (Rfile).read((char *) &(inctype.ITk2), sizeof(double));
-        (Rfile).read((char *) &(inctype.ITc0), sizeof(double));
-        (Rfile).read((char *) &(inctype.ITc1), sizeof(double));
-        (Rfile).read((char *) &(inctype.ITc2), sizeof(double));
-        (Rfile).read((char *) &(inctype.ITelambda), sizeof(double));
-        (Rfile).read((char *) &(inctype.ITekg), sizeof(double));
-        (Rfile).read((char *) &(inctype.ITekn), sizeof(double));
-        (Rfile).read((char *) &(inctype.ITecn), sizeof(double));
-        std::getline(Rfile,inctype.ITName,'\0'); // get player name (remember we null ternimated in binary)
-        binctype.push_back(inctype);
-    }
-    
-    blueprint.binctype = binctype;
     blueprint.bvertex = bvertex;
     blueprint.btriangle = btriangle;
     blueprint.binclusion = binclusion;
 
     Rfile.close();
-    
-    *readok = true;
+
 }
+    readok = true;
     return blueprint;
 }
-void Restart::CopyBinaryFile(std::string file1, std::string file2)
-{
-//==============================================================================
-//=========== This function copies file1 into file2 while both are in binary mode
-    std::ifstream in(file1.c_str(),std::ios::binary);
-    std::ofstream out(file2.c_str(),std::ios::binary);
-    
-    if(in.is_open() && out.is_open())
-    {
-        while(!in.eof())
-        {
-            out.put(in.get());
-        }
-    }
-    
-    //Close both files
-    in.close();
-    out.close();
-}
-void Restart::CopyFile(std::string file1, std::string file2)
-{
-    //==============================================================================
-    //=========== This function copies file1 into file2
-    std::ifstream in(file1.c_str());
-    std::ofstream out(file2.c_str());
-    std::string str;
-    if(in.is_open() && out.is_open())
-    {
-        while(true)
-        {
-            getline(in,str);
-            if(in.eof())
-                break;
-            out<<str<<"\n";
-        }
-    }
-    
-    //Close both files
-    in.close();
-    out.close();
-}
+

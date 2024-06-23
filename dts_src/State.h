@@ -1,108 +1,135 @@
 #if !defined(AFX_State_H_INCLUDED_)
 #define AFX_State_H_INCLUDED_
+/*
+     State Class: 2024
 
+     Author: Weria Pezeshkian (weria.pezeshkian@gmail.com)
+     Copyright (c) Weria Pezeshkian
+
+     Description:
+     The State class manages the overall state of the simulation. It initializes various components,
+     reads input files, explores command-line arguments, and handles the distribution of tasks based on inputs provided.
+
+     The class coordinates the initialization of simulation parameters, such as time steps, input files, and restart options.
+     It also sets up integrators, constraints, energy calculators, and a pointer to simulations  for the simulation process.
+
+     The class serves as a central hub for initializing and managing simulation components, ensuring the proper setup
+     and execution of the simulation according to the provided inputs.
+
+     Public Methods:
+     - State(): Default constructor.
+     - State(std::vector<std::string> argument): Constructor that takes command-line arguments.
+     - ~State(): Destructor.
+
+     Private Methods:
+     - ExploreArguments(std::vector<std::string> &argument): Method to explore and process command-line arguments.
+     - ReadInputFile(std::string file): Method to read input files and initialize simulation parameters.
+     - HelpMessage(): Method to display a help message with usage instructions.
+
+     Member Variables:
+     - Various pointers to components such as TimeSeriesDataOutput, Restart, Traj_tsi, WritevtuFiles, etc.
+     - Parameters for simulation setup such as input file names, time steps, thread count, etc.
+     - Flags and options for controlling simulation behavior.
+
+     Dependencies:
+     - Requires the presence of various supporting classes such as TimeSeriesDataOutput, Restart, Traj_tsi, WritevtuFiles, etc.
+     - Relies on external input files for simulation parameters.
+
+     Usage:
+     - Construct an instance of the State class to initialize and manage the simulation state.
+     - Call appropriate methods to read input files, explore command-line arguments, and execute the simulation.
+
+     Example:
+     State stateInstance(arguments);
+     stateInstance.ExploreArguments(arguments);
+     stateInstance.ReadInputFile(inputFile);
+     stateInstance.RunSimulation();
+
+     Notes:
+     - Ensure that input files are present and correctly formatted for proper initialization.
+     - Command-line arguments should be provided in the correct format to enable proper configuration of the simulation.
+
+ */
 #include "SimDef.h"
 #include "MESH.h"
-#include "CreateMashBluePrint.h"
 #include "Nfunction.h"
 //--- system evolution
-#include "LinkFlipMC.h"
-#include "VertexMCMove.h"
-#include "EdgeVertexMCMove.h"
-#include "InclusionMCMove.h"
+#include "AbstractVertexPositionIntegrator.h"
+#include "AbstractAlexanderMove.h"
+#include "AbstractInclusionPoseIntegrator.h"
+#include "EvolveVerticesByMetropolisAlgorithm.h"
+#include "AlexanderMoveByMetropolisAlgorithm.h"
+#include "InclusionPoseUpdateByMetropolisAlgorithm.h"
 //---
-#include "Inclusion_Interaction_Map.h"
-//--- output files
+//--- I/O
+#include "AbstractNonbinaryTrajectory.h"
+#include "AbstractVisualizationFile.h"
+#include "AbstractBinaryTrajectory.h"
 #include "TimeSeriesDataOutput.h"
-//--- input file treatment
+#include "TimeSeriesLogInformation.h"
+#include "Traj_tsi.h"
 #include "Restart.h"
-#include "Curvature.h"
+#include "WritevtuFiles.h"
+#include "BTSFile.h"
+//--- energy calcuation method
+#include "AbstractEnergy.h"
 #include "Energy.h"
-#include "Constant_NematicForce.h"
-#include "SpringPotentialBetweenTwoGroups.h"
-#include "ActiveTwoStateInclusion.h"
-#include "CoupleToWallPotential.h"
+//-- curvature
+#include "AbstractCurvature.h"
+#include "CurvatureByShapeOperatorType1.h"
 //-- dynamic box
-#include "DynamicBox.h"
-#include "DynamicBoxSide.h"
+#include "AbstractDynamicBox.h"
 #include "PositionRescaleFrameTensionCoupling.h"
 //-- dynamic topology
-#include "DynamicTopology.h"
+#include "AbstractDynamicTopology.h"
 #include "Three_Edge_Scission.h"
 //-- open edge treatment
-#include "OpenEdgeEvolution.h"
+#include "AbstractOpenEdgeEvolution.h"
 #include "OpenEdgeEvolutionWithConstantVertex.h"
-#include "OpenEdgeEvolutionWithConstantVertex_B.h"
 //-- volume coupling
-#include "VolumeCoupling.h"
+#include "AbstractVolumeCoupling.h"
 #include "Apply_Osmotic_Pressure.h"
-#include "CmdVolumeCouplingSecondOrder.h"
+#include "VolumeCouplingSecondOrder.h"
 //-- global curvature
-#include "GlobalCurvature.h"
-#include "CouplingtoFixedGlobalCurvature.h"
+#include "AbstractGlobalCurvature.h"
+#include "CouplingGlobalCurvatureToHarmonicPotential.h"
 //--- total area coupling
-#include "TotalAreaCoupling.h"
+#include "AbstractTotalAreaCoupling.h"
 #include "CouplingTotalAreaToHarmonicPotential.h"
+//--- Constraint Between vertex Groups
+#include "AbstractApplyConstraintBetweenGroups.h"
+#include "HarmonicPotentialBetweenTwoGroups.h"
+//--- Inclusion exchange
+#include "AbstractInclusionConversion.h"
+#include "ActiveTwoStateInclusion.h"
+//--- force from inc to ver
+#include "AbstractForceonVerticesfromInclusions.h"
+#include "Constant_NematicForce.h"
+//--- interaction with external fields
+#include "AbstractExternalFieldOnVectorFields.h"
+#include "ConstantExternalField.h"
 //--- rigid boundries
-#include "Boundary.h"
-
+#include "AbstractBoundary.h"
+#include "RigidWallTypes.h"
 #include "Voxelization.h"
-
-/*
- Weria Pezeshkian (weria.pezeshkian@gmail.com)
- Copyright (c) Weria Pezeshkian
- This class reads the inputs and distrubutes the tasks based on inputs provided and makes all the initials variables
- It is called by Job class: 
- */
-struct STRUC_Membrane_Parameters {
-    double lambda;
-    double kappa_geo;
-    double kappa_normal;
-    double kappa; // this is read by another parameters for now; later may change
-    double kappa_g; // this is read by another parameters for now; later may change
-};
-struct STRUC_TRJTSI {    // data structure for tsi trajectory file
-    int tsiPeriod;
-    int tsiPrecision;
-    std::string tsiFolder_name;
-    bool tsiState;
-};
-struct STRUC_RESTART {  // restart, how often write a file and check if this is a restart sim
-    int  restartPeriod;
-    bool restartState;
-    std::string restartFilename;
-
-};
-struct STRUC_TRJBTS { //data structure for bts trajectory file (binary file format)
-    int btsPeriod;
-    int btsPrecision;
-    std::string btsFile_name;
-    bool btsState;
-};
-struct STRUC_MCMOVES {  // data structure for turning on and off certain moves and specify the rate
-    double VertexMove;
-    double LinkFlip;
-    double InclusionMove_Angle;
-    double InclusionMove_Kawasaki;
-    double EdgeVertexMove;
+//--- simulation
+#include "AbstractSimulation.h"
+#include "MC_Simulation.h"
+//--- accessory objects
+#include "RNG.h"
+#include "VAHGlobalMeshProperties.h"
+#include "InclusionType.h"
 
 
-};
-struct Parallel_Tempering {  // data structure for turning on and off certain moves
+struct ParallelReplicaData {  // data structure for turning on and off certain moves
+    ParallelReplicaData(){State = false;}
+    ParallelReplicaData(bool state){State = state;}
+    ~ParallelReplicaData(){}
     bool State;
-    int PT_steps;
-    double PT_minbeta;
-    double PT_maxbeta;
+    std::string Type;
+    std::string Data;
 };
-struct STRUC_ActiveTwoStateInclusion {
-    bool state;
-    std::string nametype1;
-    std::string nametype2;
-    double ep1 ;
-    double ep2 ;
-    double persentage;
-    double gama;
-};
+
 
 class State
 {
@@ -110,113 +137,133 @@ public:
     
 	State(std::vector <std::string> argument);
     State();
+    ~State();
+    
+  //  friend class Three_Edge_Scission;
 
-	 ~State();
-//-- standard
-inline LinkFlipMC *GetMCMoveLinkFlip()                                          {return &m_LinkFlipMC;}
-inline VertexMCMove *GetMCAVertexMove()                                         {return &m_VertexMoveMC;}
-inline EdgeVertexMCMove *GetMCEdgeVertexMove()                                  {return &m_EdgeVertexMoveMC;}
-inline InclusionMCMove *GetInclusionMCMove()                                    {return &m_IncMove;}
-//---- IO
-inline Restart *GetRestart()                                                    {return &m_Restart;}
+    
+//-- standard Integrators
+inline AbstractAlexanderMove                *GetAlexanderMove()                 {return m_pAlexanderMove;}
+inline AbstractVertexPositionIntegrator     *GetVertexPositionUpdate()                  {return m_pVertexPositionIntegrator;}
+inline AbstractInclusionPoseIntegrator      *GetInclusionPoseUpdate()                {return m_pInclusionPoseIntegrator;}
+//---- I/O managment
+inline Restart                   *GetRestart()                                      {return m_pRestart;}
+inline TimeSeriesDataOutput      *GetTimeSeriesDataOutput()                         {return m_pTimeSeriesDataOutput;}
+inline TimeSeriesLogInformation  *GetTimeSeriesLog()                            {return m_pTimeSeriesLogInformation;}
+inline AbstractNonbinaryTrajectory   *GetNonbinaryTrajectory()                    {return m_pNonbinaryTrajectory;}
+inline AbstractVisualizationFile     *GetVisualization()                           {return m_pVisualizationFile;}
+inline AbstractBinaryTrajectory      *GetBinaryTrajectory()                         {return m_pBinaryTrajectory;}
+
 //---- energy and curvature
-inline Energy *GetEnergyCalculator()                                            {return &m_EnergyCalculator;}
-inline Curvature *CurvatureCalculator()                                         {return &m_CurvatureCalculations;}
+inline AbstractEnergy               *GetEnergyCalculator()                          {return m_pEnergyCalculator;}
+inline AbstractCurvature            *GetCurvatureCalculator()                          {return m_pCurvatureCalculations;}
 //----
-inline CoupleToWallPotential *GetRigidWallCoupling()                            {return &m_RigidWallCoupling;}
-inline SpringPotentialBetweenTwoGroups *Get2GroupHarmonic()                     {return &m_SpringPotentialBetweenTwoGroups;}
-inline ActiveTwoStateInclusion *GetActiveTwoStateInclusion()                    {return &m_ActiveTwoStateInclusion;}
+inline AbstractApplyConstraintBetweenGroups *GetApplyConstraintBetweenGroups()                    {return m_pApplyConstraintBetweenGroups;}
+
 //---- algorithm mangments
-inline TotalAreaCoupling        *GetTotalAreaCoupling()                         {return m_pTotalAreaCoupling;}
-inline DynamicBox               *GetDynamicBox()                                {return m_pDynamicBox;}
-inline DynamicTopology          *GetDynamicTopology()                           {return m_pDynamicTopology;}
-inline OpenEdgeEvolution        *GetOpenEdgeEvolution()                         {return m_pOpenEdgeEvolution;}
-inline VolumeCoupling           *GetVolumeCoupling()                            {return m_pVolumeCoupling;}
-inline GlobalCurvature          *GetGlobalCurvature()                           {return m_pCoupleGlobalCurvature;}
-inline Boundary                 *GetBoundary()                                  {return m_pBoundary;}
-//---- System energy mesh
-inline MESH* GetMesh()                                                          {return m_pMesh;}  // this does not include the constratint energies
+inline AbstractTotalAreaCoupling        *GetTotalAreaCoupling()                         {return m_pTotalAreaCoupling;}
+inline AbstractVolumeCoupling           *GetVolumeCoupling()                            {return m_pVolumeCoupling;}
+inline AbstractGlobalCurvature          *GetGlobalCurvature()                           {return m_pCoupleGlobalCurvature;}
+inline AbstractForceonVerticesfromInclusions *GetForceonVerticesfromInclusions()    {return m_pForceonVerticesfromInclusions;}
+inline AbstractExternalFieldOnVectorFields *GetExternalFieldOnVectorFields()        {return m_pExternalFieldOnVectorFields;}
+inline VAHGlobalMeshProperties              *GetVAHGlobalMeshProperties()        {return m_pVAHCalculator;}
 
-//--- might need to be part of another class
-inline double GetSystemEnergy()                                                 {return m_TotEnergy;}  // this does not include the constratint energies
+//---- supplementary integrators
+inline AbstractDynamicBox               *GetDynamicBox()                                {return m_pDynamicBox;}
+inline AbstractDynamicTopology          *GetDynamicTopology()                           {return m_pDynamicTopology;}
+inline AbstractOpenEdgeEvolution        *GetOpenEdgeEvolution()                         {return m_pOpenEdgeEvolution;}
+inline AbstractInclusionConversion      *GetInclusionConversion()                       {return m_pInclusionConversion;}
 
 
-public:
-//--- system variables
-    double m_Beta ;                     // system temperature only applicable if Parallel Tempering Methods is on
-    double m_MinVerticesDistanceSquare; //  minimum distance allowed between two vertices  (smaller will results in error)
-    double m_MaxLinkLengthSquare;       //  maximum distance allowed between two nighbouring vertices  (larger will results in error)
-    double m_MinFaceAngle;              //  minimum angle between the face (smaller will results in error), this is the value of the cos
-    bool m_Targeted_State; // Only relavant for Parallel Tempering by 2022; Which state carries the target temparature
+inline AbstractBoundary                 *GetBoundary()                                  {return m_pBoundary;}
+//---- System energy and voxels
+inline MESH                     *GetMesh()                                      {return m_pMesh;}  //
+inline Voxelization<vertex>     *GetVoxelization()                              {return m_pVoxelization;}
+inline AbstractSimulation           *GetSimulation()                                {return m_pSimulation;};
+//--- accessory objects
+inline  RNG            *GetRandomNumberGenerator()                 const { return m_RandomNumberGenerator; }
+//--- some constant variables
+inline std::vector <std::string> GetCommandLineArgument()                       {return m_Argument;}
+inline std::string               GetRunTag()                                    {return m_GeneralOutputFilename;}
+inline int                       GetThreads_Number()                                {return m_Total_no_Threads;}
+inline ParallelReplicaData       GetParallelReplicaData()                           {return m_Parallel_Replica;}
+std::string CurrentState();
 
-    bool m_Healthy;   // To check if the input data are read correctly
+static void HelpMessage();              // writes a help message
+bool Initialize(); // makes all the objects ready for simulations, it will open the files ...
+    void UpdateRunTag(std::string runtag){
+        m_GeneralOutputFilename = runtag;
+    }
+private:
+    bool ReadInputFile(std::string inputfile);    // updates variables based on data in the inputfile
+    bool ExploreArguments(std::vector<std::string> &argument);
+    bool ReadInclusionType(std::ifstream& input);
+private:
+    AbstractApplyConstraintBetweenGroups *m_pApplyConstraintBetweenGroups;
+    AbstractInclusionConversion* m_pInclusionConversion;
+    Restart *m_pRestart;
+    AbstractForceonVerticesfromInclusions *m_pForceonVerticesfromInclusions;
+    AbstractExternalFieldOnVectorFields *m_pExternalFieldOnVectorFields;
+//--- Integrators of different degree of freedom
+    AbstractAlexanderMove               *m_pAlexanderMove;
+    AbstractVertexPositionIntegrator    *m_pVertexPositionIntegrator;
+    AbstractInclusionPoseIntegrator     *m_pInclusionPoseIntegrator;
+//--- IO file managment
+    TimeSeriesDataOutput            *m_pTimeSeriesDataOutput;
+    TimeSeriesLogInformation        *m_pTimeSeriesLogInformation;
+    AbstractNonbinaryTrajectory         *m_pNonbinaryTrajectory;
+    AbstractBinaryTrajectory            *m_pBinaryTrajectory;
+    AbstractVisualizationFile           *m_pVisualizationFile;
+//---- algorithm mangments
+    AbstractDynamicBox            *m_pDynamicBox;
+    AbstractDynamicTopology       *m_pDynamicTopology;
+    AbstractOpenEdgeEvolution     *m_pOpenEdgeEvolution;
+    
+    VAHGlobalMeshProperties       *m_pVAHCalculator;
+    AbstractVolumeCoupling        *m_pVolumeCoupling;
+    AbstractGlobalCurvature       *m_pCoupleGlobalCurvature;
+    AbstractTotalAreaCoupling     *m_pTotalAreaCoupling;
+    
+    /*
+     AbstractVolumeCoupling        *m_pVolumeCoupling = new AbstractVolumeCoupling(*m_pVAHCalculator);
+     AbstractGlobalCurvature       *m_pCoupleGlobalCurvature = = new AbstractGlobalCurvature(*m_pVAHCalculator);
+     AbstractTotalAreaCoupling     *m_pTotalAreaCoupling = new AbstractTotalAreaCoupling (*m_pVAHCalculator);
+     
+     */
+    
+    
+    AbstractBoundary              *m_pBoundary;
+    AbstractCurvature             *m_pCurvatureCalculations;
+    AbstractSimulation            *m_pSimulation;
+    AbstractEnergy                *m_pEnergyCalculator;
+
+//--- accessory objects
+    RNG      *m_RandomNumberGenerator;
+//----
+    Voxelization<vertex>  *m_pVoxelization;
+    MESH                  *m_pMesh;
+    MESH                   m_Mesh;
+
+// --- pure members
+private:
     std::vector <std::string> m_Argument;
-    int m_Initial_Step; // initial step
-    int m_Final_Step; // final step
-    int m_Centering; // box centering frequency; important for pressure coupling
-    int m_Seed;       // seed for random number generator
+    std::string     m_GeneralOutputFilename; //  a general file flag for specific run
+    std::string     m_InputFileName; // name of the topology file, *.top, *.dat *.tsi *.bts
+    std::string     m_IndexFileName;            // Name of the index file for group specification
+    std::string     m_TopologyFile; // name of the topology file, *.top, *.dat *.tsi *.bts
+    std::string     m_RestartFileName; // name of the topology file, *.top, *.dat *.tsi *.bts
+    bool m_Targeted_State; // Only relavant for Parallel Tempering by 2022; Which state carries the target temparature
     int m_Total_no_Threads;       // Total no of Threads
-    std::string   m_TopologyFile; // name of the topology file, *.top, *.dat *.tsi *.bts
-    std::string   m_InputFileName; // name of the topology file, *.top, *.dat *.tsi *.bts
-    double m_Mem_Spontaneous_Curvature ; //Spontaneous Curvature of the membrane, same effect if the membrane is covered fully by proteins but faster
-    double m_R_Vertex;   // Move Vertex  within a box with this size
-    double m_R_Box;   // box change within this range
-    std::string m_GeneralOutputFilename; //  a general file flag for specific run
-    std::string m_IndexFileName;            // Name of the index file for group specification
-    bool m_IndexFile;                       // to check if the index file is provided
-    std::string m_FreezGroupName ;            // Name of a group to be frozen
-    STRUC_TRJTSI m_TRJTSI;                  //  an object for tsi file format
-    STRUC_TRJBTS m_TRJBTS;                  //  an object for binary  trajectory
-    int  m_Display_periodic ;               //  periodic for paraview output
-    int m_OutPutEnergy_periodic;            //  periodic for energy file
-    Vec3D m_CNTCELL;                    // for domain decomposition
-    std::string m_Integrator;               //  Type of integrator (for now only mc exist)
-    STRUC_RESTART m_RESTART;                // To check if this is a restart simulation of fresh start
-    STRUC_MCMOVES m_MCMove;                 // data structure for turning on and off certain moves
-    STRUC_ActiveTwoStateInclusion m_STRUC_ActiveTwoStateInclusion;  // input data to start active two state membrane
-    Parallel_Tempering m_Parallel_Tempering; // an object that includes info about Parallel Tempering method that we are applying
-    MESH          *m_pMesh;
-    Inclusion_Interaction_Map *m_pinc_ForceField;
+    int m_NumberOfErrors;
+    int m_NumberOfWarnings;
 
-    double m_TotEnergy;
-    SpringPotentialBetweenTwoGroups m_SpringPotentialBetweenTwoGroups;
-    ActiveTwoStateInclusion m_ActiveTwoStateInclusion;
-    LinkFlipMC m_LinkFlipMC;
-    VertexMCMove m_VertexMoveMC;
-    EdgeVertexMCMove m_EdgeVertexMoveMC;
-    InclusionMCMove m_IncMove;
-    Restart m_Restart;
-    Curvature m_CurvatureCalculations;
-    Energy m_EnergyCalculator;
-    Constant_NematicForce *m_pConstant_NematicForce;
     
-    CoupleToWallPotential m_RigidWallCoupling;
+    //--- system variables
+        double m_MinVerticesDistanceSquare; //  minimum distance allowed between two vertices  (smaller will results in error)
+        double m_MaxLinkLengthSquare;       //  maximum distance allowed between two nighbouring vertices  (larger will results in error)
+        double m_MinFaceAngle;              //  minimum angle between the face (smaller will results in error), this is the value of the cos
 
-//--- IO file managment 
-    TimeSeriesDataOutput  *m_pTimeSeriesDataOutput;
-//---- algorithm mangments
-    DynamicBox            *m_pDynamicBox;
-    DynamicTopology       *m_pDynamicTopology; 
-    OpenEdgeEvolution     *m_pOpenEdgeEvolution;
-    VolumeCoupling        *m_pVolumeCoupling;
-    GlobalCurvature       *m_pCoupleGlobalCurvature;
-    TotalAreaCoupling     *m_pTotalAreaCoupling;
-    Boundary              *m_pBoundary;
-
-
-private:
-    Inclusion_Interaction_Map m_inc_ForceField;
-    Constant_NematicForce m_Constant_NematicForce;
-private:
-    MESH          m_Mesh;
-    void ExploreArguments();         // updates variables based on the command line arguments
-    void HelpMessage();              // writes a help message
-    void ReadInputFile(std::string);    // updates variables based on data in the inputfile
-    void WriteStateLog();
-   
-    
-
-
+    ParallelReplicaData m_Parallel_Replica; // an object that includes info about Parallel Tempering method that we are applying
 };
 
 #endif

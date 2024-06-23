@@ -2,66 +2,63 @@
 #define AFX_ActiveTwoStateInclusion_H_999B21B8_C13C_5648_BC23_444775086239__INCLUDED_
 
 
-//#include "SimDef.h"
-#include "Inclusion_Interaction_Map.h"
+#include "SimDef.h"
+#include "AbstractInclusionConversion.h"
 #include "inclusion.h"
-#include "RNG.h"
+
 /*
- Weria Pezeshkian (weria.pezeshkian@gmail.com)
- Copyright (c) Weria Pezeshkian
- Active inclusion
- This command is not tested and may contain errors, do not used it .....
+ * @class ActiveTwoStateInclusion
+ * @brief Class for actively exchanging inclusion types between two states.
+ *
+ * This class implements an active inclusion exchange algorithm that continuously changes
+ * the inclusion type between two specified states.
+ *
+ * @author Weria Pezeshkian
  */
 
-class ActiveTwoStateInclusion
-{
+class ActiveTwoStateInclusion : public AbstractInclusionConversion {
+
 public:
     
-    ActiveTwoStateInclusion();
-    ActiveTwoStateInclusion(bool state, double ep1, double ep2, double per, double gama, std::string t1,std::string t2 );
+    /*
+     * @brief Constructor for ActiveTwoStateInclusion.
+     * @param period The period of exchange cycles (on simulation steps).
+     * @param ep .
+     * @param per percentage of state one vs state two.
+     * @param gama The activity parameter.
+     * @param t_name1 The name of the first inclusion type.
+     * @param t_name2 The name of the second inclusion type.
+     */
+    ActiveTwoStateInclusion(int period, double ep, double per, double gama, std::string t_name1,std::string t_name2 );
 	 ~ActiveTwoStateInclusion();
 
 
-
-    inline bool  GetHealth()                    {return m_Health;}
-    inline bool  GetState()                    {return m_State;}
-    inline double  *GetActiveEnergy()           {return &m_ActiveEnergy;}
-    inline int    GetDeltaN()                   {return m_DeltaN;}
-
-
-
-
-
-
-public:
-    void ActiveExchange(double *energy);
-void Initialize(std::vector<inclusion*> pInc, std::vector<InclusionType*> inctype, Inclusion_Interaction_Map * pint, RNG* rng);
-
-
+    void Initialize(State *pstate);
+    bool Exchange(int step);
+    inline  std::string GetDerivedDefaultReadName()  {return "ActiveTwoStateInclusion";}
+    inline static std::string GetDefaultReadName() {return "ActiveTwoStateInclusion";}
+    std::string CurrentState();
+    
+    
 private:
-    InclusionType *m_pIncType1;
-    InclusionType *m_pIncType2;
-    std::vector<InclusionType*> m_AllIncType;
-    std::vector<inclusion*> m_pInclusions;
-    bool m_Health;
-    RNG *m_RNG;
-    double m_Epsilon1;
-    double m_Epsilon2;
-    double m_Percentge;
-    double m_Gama;
-    std::string m_IncType1Name;
-    std::string m_IncType2Name;
-    std::vector<inclusion*> m_pInc;
-    int m_N2;
-    int m_N1;
-    int m_DeltaN0;
-    int m_N;
-    int totDN;
-    Inclusion_Interaction_Map *m_pInt;
-    double m_ActiveEnergy;
-    int m_DeltaN;
-    bool m_State;
-
+    int m_Period; ///< Period of exchange cycles.
+    double m_ActiveEnergy; ///< total Active energy.
+    double m_Epsilon; ///< epsilon is the rate, we could have different rate but reducing the number of the model parameters
+    double m_Percentage; ///<  percentage of type 1 vs type 2 .
+    double m_Gama; ///< Activity gamma parameter.
+    int m_N2; ///< Number of inclusions of type 1.
+    int m_N1; ///< Number of inclusions of type 2.
+    int m_N; ///< Total number of inclusions.
+    int m_Delta_N0; ///< Forced average of (n1 - n2).
+    std::string m_TypeName_1; ///< Name of the first inclusion type.
+    std::string m_TypeName_2; ///< Name of the second inclusion type.
+    std::vector<inclusion*> m_pSubInc; ///< List of inclusions to be exchanged.
+    InclusionType *m_pIncType1; ///< Pointer to the first inclusion type.
+    InclusionType *m_pIncType2; ///< Pointer to the second inclusion type.
+    ///
+    ///
+private:
+    State* m_pState; ///< Pointer to the  state class.
 
 
 };
