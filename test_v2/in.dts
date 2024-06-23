@@ -16,6 +16,7 @@ Dynamic_Box = No IsotropicFrameTension 5 -3 XY
 OpenEdgeEvolution =  No EvolutionWithConstantVertex 1 1
 VisualizationFormat = VTUFileFormat VTU_F 100
 NonbinaryTrajectory = TSI TrajTSI 1000
+Restart_Period = 200
 INCLUSION
 Define 2 Inclusions
 SRotation   Type   K   KG  KP  KL  C0     C0P  C0L

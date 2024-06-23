@@ -61,7 +61,7 @@ bool MC_Simulation::do_Simulation(){
     std::cout<<" We have reached simulation run loop!  \n";
 #endif
     std::clock_t start = std::clock();
-
+    std::cout<<"------>   Simulation will be performed from "<<m_Initial_Step<<" to "<<m_Final_Step<<" steps\n";
 for (int step = m_Initial_Step; step <= m_Final_Step; step++){
         
 //----> write files

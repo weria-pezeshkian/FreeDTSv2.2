@@ -54,15 +54,15 @@ bool ParallelTempering::Run() {
 #pragma omp parallel
         int Thread_ID = omp_get_thread_num();
         State ReplicaState(m_Argument);
-        //--> set the run tag id
-        std::string gfile = T_state.GetRunTag() + Nfunction::Int_to_String(Thread_ID); // general output file name
-        T_state.UpdateRunTag(runtag);
+
         //--> set the temprature
         double beta = m_minBeta + double(Thread_ID) * (m_maxBeta - m_minBeta)/double(m_Bins-1)
         T_state.GetSimulation()->SetBeta(beta, 0);
         T_state.Initialize();
         T_state.GetSimulation()->do_Simulation();
-
+    //--> set the run tag id, we need to update this ID each time that the processor changes its temprature. The id should be temprature dependent
+        std::string gfile = T_state.GetRunTag() + Nfunction::Int_to_String(beta); // general output file name
+        T_state.UpdateRunTag(gfile);
 #endif
     
     return true;

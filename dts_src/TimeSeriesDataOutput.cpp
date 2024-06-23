@@ -140,7 +140,6 @@ bool TimeSeriesDataOutput::CheckTimeSeriesFile(int ini_step, const std::string& 
         If any errors occur during file operations or if an invalid line is encountered
         (i.e., a line without steps), appropriate error messages are printed to standard error.
     */
-    
 // Open the input file
     std::ifstream inputFile(filename);
     if (!inputFile.is_open()) {
@@ -162,7 +161,7 @@ bool TimeSeriesDataOutput::CheckTimeSeriesFile(int ini_step, const std::string& 
     std::getline(inputFile, line);
     // write the header
     tempFile << line <<std::endl;
-    int no_lines;
+    int no_lines = 0;
     while (std::getline(inputFile, line)) {
         no_lines++;
         std::istringstream iss(line);
@@ -177,7 +176,6 @@ bool TimeSeriesDataOutput::CheckTimeSeriesFile(int ini_step, const std::string& 
             std::cerr << "Warning: Invalid line found in file: " << line << std::endl;
         }
     }
-
     // Close both input and temporary files
     inputFile.close();
     tempFile.close();
@@ -187,7 +185,6 @@ bool TimeSeriesDataOutput::CheckTimeSeriesFile(int ini_step, const std::string& 
         std::cerr << "Error: Unable to remove file " << filename << std::endl;
         return false;
     }
-
     // Rename the temporary file to the original filename
     if (std::rename("temp.txt", filename.c_str()) != 0) {
         std::cerr << "Error: Unable to rename file" << std::endl;
@@ -200,7 +197,7 @@ bool TimeSeriesDataOutput::CheckTimeSeriesFile(int ini_step, const std::string& 
         *(m_pState->GetTimeSeriesLog())<<"       It seems that the input.dts file has been changed compared to the initial file \n";
         return false;
     }
-    
+
     return true;
 }
 std::string TimeSeriesDataOutput::CurrentState(){
