@@ -8,7 +8,7 @@ InclusionPoseUpdateByMetropolisAlgorithm::InclusionPoseUpdateByMetropolisAlgorit
                 m_pState(pState),
                 m_pInclusion(pState->GetMesh()->GetInclusion()),
                 m_Beta(pState->GetSimulation()->GetBeta()),
-                m_DBeta(pState->GetSimulation()->GetBeta())
+                m_DBeta(pState->GetSimulation()->GetDBeta())
 {
                 m_NumberOfMovePerStep_Angle  = 1;
                 m_NumberOfMovePerStep_Kawasaki = 1;
@@ -17,7 +17,7 @@ InclusionPoseUpdateByMetropolisAlgorithm::InclusionPoseUpdateByMetropolisAlgorit
                     m_pState(pState),
                     m_pInclusion(pState->GetMesh()->GetInclusion()),
                     m_Beta(pState->GetSimulation()->GetBeta()),
-                    m_DBeta(pState->GetSimulation()->GetBeta())
+                    m_DBeta(pState->GetSimulation()->GetDBeta())
 {
                     m_NumberOfMovePerStep_Angle = rate_kawa;
                     m_NumberOfMovePerStep_Kawasaki = rate_angle;

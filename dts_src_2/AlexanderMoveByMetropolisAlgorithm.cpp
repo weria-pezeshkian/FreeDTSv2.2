@@ -7,7 +7,7 @@ AlexanderMoveByMetropolisAlgorithm::AlexanderMoveByMetropolisAlgorithm(State* pS
             m_pState(pState),
             m_pSurfL(pState->GetMesh()->GetRightL()),
             m_Beta(pState->GetSimulation()->GetBeta()),
-            m_DBeta(pState->GetSimulation()->GetBeta()),
+            m_DBeta(pState->GetSimulation()->GetDBeta()),
             m_MinLength2(pState->GetSimulation()->GetMinL2()),
             m_MaxLength2(pState->GetSimulation()->GetMaxL2()),
             m_MinAngle(pState->GetSimulation()->GetMinAngle()) {
@@ -18,7 +18,7 @@ AlexanderMoveByMetropolisAlgorithm::AlexanderMoveByMetropolisAlgorithm(State* pS
             m_pState(pState),
             m_pSurfL(pState->GetMesh()->GetRightL()),
             m_Beta(pState->GetSimulation()->GetBeta()),
-            m_DBeta(pState->GetSimulation()->GetBeta()),
+            m_DBeta(pState->GetSimulation()->GetDBeta()),
             m_MinLength2(pState->GetSimulation()->GetMinL2()),
             m_MaxLength2(pState->GetSimulation()->GetMaxL2()),
             m_MinAngle(pState->GetSimulation()->GetMinAngle()){

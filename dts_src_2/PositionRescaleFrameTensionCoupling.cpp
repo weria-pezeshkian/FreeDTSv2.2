@@ -25,7 +25,7 @@ PositionRescaleFrameTensionCoupling::PositionRescaleFrameTensionCoupling(int per
         m_pRightL(pState->GetMesh()->GetRightL()),
         m_pEdgeL(pState->GetMesh()->GetEdgeL()),
         m_Beta(pState->GetSimulation()->GetBeta()),
-        m_DBeta(pState->GetSimulation()->GetBeta()),
+        m_DBeta(pState->GetSimulation()->GetDBeta()),
         m_MinLength2(pState->GetSimulation()->GetMinL2()),
         m_MaxLength2(pState->GetSimulation()->GetMaxL2()),
         m_MinAngle(pState->GetSimulation()->GetMinAngle()),

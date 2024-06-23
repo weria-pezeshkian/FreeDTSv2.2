@@ -27,7 +27,7 @@ OpenEdgeEvolutionWithConstantVertex::OpenEdgeEvolutionWithConstantVertex(int per
                                                     m_Period(period),
                                                     m_NumberOfMovePerStep(rate),
                                                     m_Beta(pState->GetSimulation()->GetBeta()),
-                                                    m_DBeta(pState->GetSimulation()->GetBeta()),
+                                                    m_DBeta(pState->GetSimulation()->GetDBeta()),
                                                     m_MinLength2(pState->GetSimulation()->GetMinL2()),
                                                     m_MaxLength2(pState->GetSimulation()->GetMaxL2()),
                                                     m_MinAngle(pState->GetSimulation()->GetMinAngle())
