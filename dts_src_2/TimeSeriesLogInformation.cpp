@@ -84,6 +84,7 @@ void TimeSeriesLogInformation::WriteStartingState(){
     m_TimeSeriesFile<<m_pState->GetDynamicBox()->CurrentState()<<std::endl;
     m_TimeSeriesFile<<m_pState->GetDynamicTopology()->CurrentState()<<std::endl;
     m_TimeSeriesFile<<m_pState->GetOpenEdgeEvolution()->CurrentState()<<std::endl;
+    m_TimeSeriesFile<<m_pState->GetTimeSeriesDataOutput()->CurrentState()<<std::endl;
 
 
     m_TimeSeriesFile<<";------------------------------------------  "<<std::endl;

@@ -33,6 +33,7 @@ public:
     bool OpenFile(bool clearfile);
     bool FlushFile(); // The energy file should be flushed first
     void UpdatePeriod(int period);
+    std::string CurrentState();
 
 private:
     State *m_pState;

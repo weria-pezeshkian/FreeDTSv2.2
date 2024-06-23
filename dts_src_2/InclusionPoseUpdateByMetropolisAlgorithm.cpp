@@ -130,8 +130,9 @@ bool InclusionPoseUpdateByMetropolisAlgorithm::KawasakiMove(inclusion* p_inc, li
     //--> elatsic energy
     double diff_energy = new_energy - old_energy;
 
-    // Accept or reject the move based on the Metropolis criterion
-    if( diff_energy <= 0 || exp(-m_Beta * diff_energy + m_DBeta) > temp ) {
+    double U = m_Beta * diff_energy - m_DBeta;
+    //---> accept or reject the move
+    if(U <= 0 || exp(-U) > temp ) {
         // move is accepted
         (m_pState->GetEnergyCalculator())->AddToTotalEnergy(diff_energy);
         return true;
@@ -208,8 +209,9 @@ bool InclusionPoseUpdateByMetropolisAlgorithm::RotationMove(inclusion *p_inc, do
     //--> elatsic energy
     double diff_energy = new_energy - old_energy;
     
-    // Accept or reject the move based on the Metropolis criterion
-    if(diff_energy <= 0 || exp(-m_Beta * diff_energy + m_DBeta) > temp ) {
+    double U = m_Beta * diff_energy - m_DBeta;
+    //---> accept or reject the move
+    if(U <= 0 || exp(-U) > temp ) {
         // move is accepted
         (m_pState->GetEnergyCalculator())->AddToTotalEnergy(diff_energy);
         return true;

@@ -9,7 +9,7 @@ EvolveVerticesByMetropolisAlgorithm::EvolveVerticesByMetropolisAlgorithm(State *
       m_pSurfV(pState->GetMesh()->GetSurfV()),
       m_pEdgeV(pState->GetMesh()->GetEdgeV()),
       m_Beta(pState->GetSimulation()->GetBeta()),
-      m_DBeta(pState->GetSimulation()->GetBeta()),
+      m_DBeta(pState->GetSimulation()->GetDBeta()),
       m_MinLength2(pState->GetSimulation()->GetMinL2()),
       m_MaxLength2(pState->GetSimulation()->GetMaxL2()),
       m_MinAngle(pState->GetSimulation()->GetMinAngle()){
@@ -24,7 +24,7 @@ EvolveVerticesByMetropolisAlgorithm::EvolveVerticesByMetropolisAlgorithm(State *
       m_pSurfV(pState->GetMesh()->GetSurfV()),
       m_pEdgeV(pState->GetMesh()->GetEdgeV()),
       m_Beta(pState->GetSimulation()->GetBeta()),
-      m_DBeta(pState->GetSimulation()->GetBeta()),
+      m_DBeta(pState->GetSimulation()->GetDBeta()),
       m_MinLength2(pState->GetSimulation()->GetMinL2()),
       m_MaxLength2(pState->GetSimulation()->GetMaxL2()),
       m_MinAngle(pState->GetSimulation()->GetMinAngle()) {
@@ -203,8 +203,9 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
     double diff_energy = new_energy - old_energy;
     //--> sum of all the energies
     double tot_diff_energy = diff_energy + dE_Cgroup + dE_force_from_inc + dE_volume + dE_t_area + dE_g_curv ;
+    double U = m_Beta * tot_diff_energy - m_DBeta;
     //---> accept or reject the move
-    if(tot_diff_energy <= 0 || exp(-m_Beta * tot_diff_energy + m_DBeta) > temp ) {
+    if(U <= 0 || exp(-U) > temp ) {
         // move is accepted
         (m_pState->GetEnergyCalculator())->AddToTotalEnergy(diff_energy);
         //---> if vertex is out of the voxel, update its voxel

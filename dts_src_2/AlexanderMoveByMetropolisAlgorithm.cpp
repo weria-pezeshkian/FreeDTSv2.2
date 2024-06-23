@@ -184,8 +184,9 @@ bool AlexanderMoveByMetropolisAlgorithm::FlipOneEdge(int step, links *p_edge, do
     //--> sum of all the energies
     double tot_diff_energy = diff_energy +  dE_volume + dE_t_area + dE_g_curv ;
 
+    double U = m_Beta * tot_diff_energy - m_DBeta;
     //---> accept or reject the move
-    if(tot_diff_energy <= 0 || exp(-m_Beta * tot_diff_energy + m_DBeta) > temp ) {
+    if(U <= 0 || exp(-U) > temp ) {
         // move is accepted
         (m_pState->GetEnergyCalculator())->AddToTotalEnergy(diff_energy);
         

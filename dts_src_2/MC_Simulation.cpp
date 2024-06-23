@@ -64,8 +64,20 @@ bool MC_Simulation::do_Simulation(){
 
 for (int step = m_Initial_Step; step <= m_Final_Step; step++){
         
+//----> write files
+        //--- write visulaization frame
+        m_pState->GetVisualization()->WriteAFrame(step);
+        //--- write non-binary trejectory e.g., tsi, tsg
+        m_pState->GetNonbinaryTrajectory()->WriteAFrame(step);
+        //--- write binary trejectory e.g., bts
+        m_pState->GetBinaryTrajectory()->WriteAFrame(step);
+        //--- write into time seri file, e.g., energy, volume ...
+        m_pState->GetTimeSeriesDataOutput()->WriteTimeSeriesDataOutput(step);
+        //--- write check point for the state
+        m_pState->GetRestart()->UpdateRestartState(step, m_pState->GetVertexPositionUpdate()->GetDR(), m_pState->GetDynamicBox()->GetDR());
+    
 //---> centering the simulation box
-    if(GetBoxCentering()!=0 && step%GetBoxCentering()==0){
+    if(m_CenteringFrequently != 0 && step%m_CenteringFrequently == 0){
         m_pState->GetMesh()->CenterMesh();
         m_pState->GetVoxelization()->ReassignMembersToVoxels(m_pState->GetMesh()->GetActiveV());
     } // [ if(GetBoxCentering()!=0 && step%GetBoxCentering()==0)]
@@ -81,25 +93,17 @@ for (int step = m_Initial_Step; step <= m_Final_Step; step++){
 //----> Run the supplementary integrators
        //--- update the box side
          m_pState->GetDynamicBox()->ChangeBoxSize(step); // we may need the final step as well to check if the update of move size should be done
-       //--- update the mesh topology
-       //m_pState->GetDynamicTopology()->MCMove();
         //--- update edge of mesh open edge
          m_pState->GetOpenEdgeEvolution()->Move(step);
         //---- convert inclusions
         m_pState->GetInclusionConversion()->Exchange(step);
     
-//----> write files
-    //--- write visulaization frame
-    m_pState->GetVisualization()->WriteAFrame(step);
-    //--- write non-binary trejectory e.g., tsi, tsg
-    m_pState->GetNonbinaryTrajectory()->WriteAFrame(step);
-    //--- write binary trejectory e.g., bts
-    m_pState->GetBinaryTrajectory()->WriteAFrame(step);
-    //--- write into time seri file, e.g., energy, volume ...
-    m_pState->GetTimeSeriesDataOutput()->WriteTimeSeriesDataOutput(step);
-    //--- write check point for the state
-    m_pState->GetRestart()->UpdateRestartState(step, m_pState->GetVertexPositionUpdate()->GetDR(), m_pState->GetDynamicBox()->GetDR());
+        if(!CheckMesh(step)){
+            std::cout<<"---> error, the mesh does not meet the requirment for MC sim \n";
+        }
 
+        //--- update the mesh topology
+        //m_pState->GetDynamicTopology()->MCMove();
 //----> print info about the simulation, e.g., rate,
    // time_t currentTime;
    // time(&currentTime);
@@ -125,6 +129,26 @@ for (int step = m_Initial_Step; step <= m_Final_Step; step++){
         
     return true;
 }
+void  MC_Simulation::PrintRate(int step, bool clean, bool clear){
+    
+    double  vmove_rate =  100 * (m_pState->GetVertexPositionUpdate()->GetAcceptanceRate(clean));
+    double  emove_rate =  100 * (m_pState->GetAlexanderMove()->GetAcceptanceRate(clean));
+    double  imove_rate =  100 * (m_pState->GetInclusionPoseUpdate()->GetAcceptanceRate(clean));
+    double  bmove_rate =  100 * (m_pState->GetDynamicBox()->GetAcceptanceRate(clean));
+
+    std::cout<<"Step = "<<step<<"/"<<m_Final_Step<<std::flush;
+    std::cout << std::fixed << std::setprecision(1);
+    std::cout<<" Rates: "<<std::flush;
+    std::cout<<" vertex move = "<<vmove_rate<<"%"<<std::flush;
+    std::cout<<"; alexander move = "<<emove_rate<<"%"<<std::flush;
+    std::cout<<"; inclusion move = "<<imove_rate<<"%"<<std::flush;
+    if(m_pState->GetDynamicBox()->GetDerivedDefaultReadName() != "No")
+    std::cout<<"; Box Move = "<<bmove_rate<<"%"<<std::flush;
+    if(clear){
+        std::cout << '\r';
+        std::cout << "\033[K";
+    }
+}
 std::string MC_Simulation::CurrentState(){
     
     std::string state = GetBaseDefaultReadName() +" = "+ GetDerivedDefaultReadName();
@@ -136,19 +160,28 @@ std::string MC_Simulation::CurrentState(){
     
     return state;
 }
-void  MC_Simulation::PrintRate(int step, bool clean, bool clear){
-    std::cout<<"Step = "<<step<<"/"<<GetFinalStep()<<std::flush;
-    std::cout << std::fixed << std::setprecision(3);
-    std::cout<<" Rates: "<<std::flush;
-    std::cout<<" vertex move = "<<m_pState->GetVertexPositionUpdate()->GetAcceptanceRate(clean)<<std::flush;
-    std::cout<<"; alexander move = "<<m_pState->GetAlexanderMove()->GetAcceptanceRate(clean)<<std::flush;
-    std::cout<<"; inclusion move = "<<m_pState->GetInclusionPoseUpdate()->GetAcceptanceRate(clean)<<std::flush;
-    if(m_pState->GetDynamicBox()->GetDerivedDefaultReadName() != "No")
-    std::cout<<"; Box Move = "<<m_pState->GetDynamicBox()->GetAcceptanceRate(clean)<<std::flush;
-    if(clear){
-        std::cout << '\r';
-        std::cout << "\033[K";
+bool MC_Simulation::CheckMesh(int step){
+    
+    if(m_CheckMeshFrequently == 0 && step%m_CheckMeshFrequently == 0){
+        return true;
     }
+    
+    // this is only the  edges
+    const std::vector<links *>& all_links = m_pState->GetMesh()->GetActiveL();
+    for (std::vector<links *>::const_iterator it = all_links.begin() ; it != all_links.end(); ++it){
+
+        vertex *p_v1 = (*it)->GetV1();
+        vertex *p_v2 = (*it)->GetV2();
+        double dist2 = p_v1->SquareDistanceFromAVertex(p_v2);
+        if(dist2 < m_MinLength2 || dist2 > m_MaxLength2){
+            
+            return false;
+        }
+    }
+   
+    // all vertices should also have a distance larger then sqrt(m_MinLength2)
+
+
+    
+    return true;
 }
-
-

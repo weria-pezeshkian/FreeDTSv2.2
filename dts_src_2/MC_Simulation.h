@@ -53,6 +53,7 @@ public:
 private:
     State *m_pState;
     void PrintRate(int step, bool clean, bool clear);
+    bool CheckMesh(int step);
     // Private members
 };
 

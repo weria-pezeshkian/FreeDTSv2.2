@@ -203,3 +203,8 @@ bool TimeSeriesDataOutput::CheckTimeSeriesFile(int ini_step, const std::string& 
     
     return true;
 }
+std::string TimeSeriesDataOutput::CurrentState(){
+    
+    std::string state = "TimeSeriesData_Period = "+ Nfunction::D2S(m_Periodic);
+    return state;
+}

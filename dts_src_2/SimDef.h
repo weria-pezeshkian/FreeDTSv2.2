@@ -49,6 +49,8 @@
 //
 // These constants are essential for configuring the software system and can be adjusted as needed to customize its behavior.
 #include <iostream>
+#include <algorithm>
+#include <iomanip> // Include this header for std::setprecision
 #include "Nfunction.h"
 
 // Mathematical constants

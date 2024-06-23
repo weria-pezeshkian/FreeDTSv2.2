@@ -690,8 +690,8 @@ while (input >> firstword) {
             input>>str>>type;
             if(type == Traj_tsi::GetDefaultReadName()){ // "TSI"
                 int period;
-                std::string tsiPrecision, tsiFolder_name;
-                input>>str>>tsiFolder_name>>period;
+                std::string tsiFolder_name;
+                input>>tsiFolder_name>>period;
                 m_pNonbinaryTrajectory  = new Traj_tsi(this, period, tsiFolder_name);
             }
             getline(input,rest);
