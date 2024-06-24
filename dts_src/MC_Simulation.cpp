@@ -162,7 +162,7 @@ std::string MC_Simulation::CurrentState(){
 }
 bool MC_Simulation::CheckMesh(int step){
     
-    if(m_CheckMeshFrequently == 0 && step%m_CheckMeshFrequently == 0){
+    if(m_CheckMeshFrequently == 0 || step%m_CheckMeshFrequently == 0){
         return true;
     }
     

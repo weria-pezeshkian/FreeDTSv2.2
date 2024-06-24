@@ -41,8 +41,8 @@ bool ParallelTempering::Initialize(ParallelReplicaData PRD){
     }
     m_Rate = Nfunction::String_to_Int(data[0]);
     m_Bins = Nfunction::String_to_Int(data[1]);
-    m_minBeta = Nfunction::String_to_Int(data[2]);
-    m_maxBeta = Nfunction::String_to_Int(data[3]);
+    m_minBeta = Nfunction::String_to_Double(data[2]);
+    m_maxBeta = Nfunction::String_to_Double(data[3]);
     
     return true;
 }
@@ -58,11 +58,19 @@ bool ParallelTempering::Run() {
         //--> set the temprature
         double beta = m_minBeta + double(Thread_ID) * (m_maxBeta - m_minBeta)/double(m_Bins-1)
         T_state.GetSimulation()->SetBeta(beta, 0);
-        T_state.Initialize();
-        T_state.GetSimulation()->do_Simulation();
     //--> set the run tag id, we need to update this ID each time that the processor changes its temprature. The id should be temprature dependent
         std::string gfile = T_state.GetRunTag() + Nfunction::Int_to_String(beta); // general output file name
         T_state.UpdateRunTag(gfile);
+        T_state.Initialize();
+   // T_state.GetVisualization()
+    // T_state.GetSimulation()->UpdateInitialStep(int ini_step)
+   // T_state.GetSimulation()->UpdateFinalStep(int final_step)
+    
+   // T_state.GetVisualization() = new WritevtuFiles(&T_state, period, foldername);
+   // 
+    
+    T_state.GetSimulation()->do_Simulation();
+
 #endif
     
     return true;
