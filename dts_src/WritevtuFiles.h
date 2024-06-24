@@ -35,7 +35,8 @@ private:
 
 private:
 
-    Vec3D *m_pBox;
+  //  Vec3D *m_pBox;
+    Vec3D &m_Box;
     State* m_pState;
     std::string m_FolderName;
 

@@ -43,7 +43,7 @@ PositionRescaleFrameTensionCoupling::~PositionRescaleFrameTensionCoupling() {
 void PositionRescaleFrameTensionCoupling::Initialize() {
     
     std::cout<<"---> the algorithm for box change involves applying: "<< GetDefaultReadName()<<" \n";
-    m_pBox=(m_pState->GetMesh())->GetBox();
+    m_pBox = (m_pState->GetMesh())->GetBox();
 }
 bool PositionRescaleFrameTensionCoupling::ChangeBoxSize(int step){
     /**

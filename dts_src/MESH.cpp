@@ -8,6 +8,10 @@ MESH class for quick access
 MESH::MESH() : m_MeshCrossedPBC(false) {
 
     m_pEdgeV.clear();
+    Vec3D b;
+    m_Box = b;
+    m_pBox = &m_Box;
+
 }
 MESH::~MESH() {
     
@@ -67,7 +71,6 @@ bool MESH::GenerateMesh(MeshBluePrint meshblueprint)
         return false;
     }
     
-    m_pBox = &m_Box;
    // m_InclusionType = meshblueprint.binctype;
     
   //  for (std::vector<InclusionType>::iterator it = m_InclusionType.begin() ; it != m_InclusionType.end(); ++it)

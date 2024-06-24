@@ -3,15 +3,18 @@
 #include "State.h"
 #include "WritevtuFiles.h"
 
-WritevtuFiles::WritevtuFiles(State* pState, int period, std::string foldername) :  m_FolderName(foldername) {
+WritevtuFiles::WritevtuFiles(State* pState, int period, std::string foldername) :
+    m_FolderName(foldername),
+    m_Box(pState->GetMesh()->Link2ReferenceBox())
+ {
     m_pState = pState;
-    m_pBox = (pState->GetMesh())->GetBox();
-    m_Period = period;    
+    m_Period = period;
 }
-WritevtuFiles::WritevtuFiles(State* pState){
+WritevtuFiles::WritevtuFiles(State* pState) :
+    m_Box(pState->GetMesh()->Link2ReferenceBox())
+{
     
     m_pState = pState;
-    m_pBox = (pState->GetMesh())->GetBox();
     m_FolderName = "VTU_Frames";
     m_Period = 10;
 }
@@ -20,6 +23,7 @@ WritevtuFiles::~WritevtuFiles(){
 }
 bool WritevtuFiles::OpenFolder(){
   
+  //  m_pBox = (pState->GetMesh())->GetBox();
     return Nfunction::OpenFolder(m_FolderName);
 }
 void WritevtuFiles::WriteInclusion(std::string id, const std::vector<vertex *>  &all_ver, std::ofstream *Output)
@@ -56,10 +60,10 @@ bool WritevtuFiles::WriteAFrame(int step){
     std::ofstream Output;
     Output.open(Filename.c_str());
     
-    m_pBox = m_pState->GetMesh()->GetBox();
-    double Half_Lx = (*m_pBox)(0)/2.0;
-    double Half_Ly = (*m_pBox)(1)/2.0;
-    double Half_Lz = (*m_pBox)(2)/2.0;
+    //m_pBox = m_pState->GetMesh()->GetBox();
+    double Half_Lx = m_Box(0)/2.0;
+    double Half_Ly = m_Box(1)/2.0;
+    double Half_Lz = m_Box(2)/2.0;
 
     
     std::vector<triangle *>  all_tri = m_pState->GetMesh()->GetActiveT();
