@@ -59,6 +59,10 @@ public:
     void UpdateMirrorFlag(bool v);
     void UpdateSimTimeStep(int v);
     void UpdateIntEnergy(double en);
+    bool UpdateVFIntEnergy(int vf_id, double en);  // vector field
+    void UpdateVFIntEnergy(std::vector<double> VF_EN);
+    void InitializeVFIntEnergy(int no_vf);   //     //-- in each run, this function should run only once
+
     void UpdateEdgeVector(Vec3D *pbox);
     void PutEdgeVector(Vec3D , double);
 
@@ -81,7 +85,8 @@ private:
     Vec3D m_Be;
     double m_He;
     double m_IntEnergy;
-    
+    std::vector<double> m_VFieldIntEnergy;    // interaction energy of the vector fields
+
     
 public:
     Vec3D m_EdgeVector;    // a vector along the edge
@@ -93,7 +98,9 @@ public:
     bool Reverse2PreviousCopy();  // reverse the edge to the value set at the time of MakeCopy()
     bool Copy_InteractionEnergy();            // Copies the key ellements into the old type
     bool Reverse_InteractionEnergy();            // Copies the key ellements into the old type
-    
+    bool Copy_VHInteractionEnergy();            // Copies the key ellements into the old type
+    bool Reverse_VHInteractionEnergy();            // Copies the key ellements into the old type
+
     void ConstantMesh_Copy();
     void ReverseConstantMesh_Copy();
     
@@ -115,6 +122,7 @@ private:
     Vec3D m_OldEdgeVector;    // a vector along the edge
     double m_OldEdgeSize;    // size of the edge
     int m_OldLinkType;  // 0 surface link; 1 edge link;
+    std::vector<double> m_OldVFieldIntEnergy;    // interaction energy of the vector fields
 
 
 };

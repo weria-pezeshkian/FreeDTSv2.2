@@ -34,6 +34,7 @@ Convert::Convert(std::vector <std::string> argument)
     m_center = false;
     m_CutType = "direction";
     m_Translate(0)=0; m_Translate(1)=0; m_Translate(2)=0;
+    m_NoVF = 0;
     Nfunction f;
     ExploreArguments();     // read the input data
 
@@ -63,6 +64,7 @@ Convert::Convert(std::vector <std::string> argument)
         ExploreArguments();     // read the input data
     
     // first we do the translation
+    if(m_Translate.norm() != 0 )
     for (std::vector<Vertex_Map>::iterator it = bvertex.begin() ; it != bvertex.end(); ++it)
     {
          double x = it->x + m_Translate(0);
@@ -179,9 +181,9 @@ else if(m_CutType == "vertex"){
     int vid;
     std::cout<<" enter id of the vertex \n";
     std::cin>>vid;
-    double x0 = bvertex[0].x -m_Box(0)/2;
-    double y0 = bvertex[0].y -m_Box(1)/2;
-    double z0 = bvertex[0].z -m_Box(2)/2;
+    double x0 = bvertex[0].x;// -m_Box(0)/2;
+    double y0 = bvertex[0].y; //-m_Box(1)/2;
+    double z0 = bvertex[0].z;// -m_Box(2)/2;
     
     Vec3D A(1,1,1);
     std::cout<<" enter the a b c: \n";
@@ -198,9 +200,48 @@ else if(m_CutType == "vertex"){
 
     
     for (std::vector<Vertex_Map>::iterator it = bvertex.begin() ; it != bvertex.end(); ++it){
-        double x = it->x -m_Box(0)/2;
-        double y = it->y -m_Box(1)/2;
-        double z = it->z -m_Box(2)/2;
+        double x = it->x ;//-m_Box(0)/2;
+        double y = it->y ;//-m_Box(1)/2;
+        double z = it->z ;//-m_Box(2)/2;
+        
+        
+        double d = A(0)*(x-x0)*(x-x0)+A(1)*(y-y0)*(y-y0)+A(2)*(z-z0)*(z-z0);
+        
+        if(d<R0*R0)
+        {
+        RemVlist.push_back(*it);
+        }
+        else
+        {
+        newVlist.push_back(*it);
+        }
+    }
+    
+}
+else if(m_CutType == "center"){
+
+    double x0 = m_Box(0)/2;
+    double y0 = m_Box(1)/2;
+    double z0 = m_Box(2)/2;
+    
+    Vec3D A(1,1,1);
+    std::cout<<" enter the a b c: \n";
+    std::cin>>A(0)>>A(1)>>A(2);
+    A = A*(1.0/A.norm());
+
+    double R0= 8;
+    std::cout<<" enter the R \n";
+    std::cin>>R0;
+    
+
+    
+
+
+    
+    for (std::vector<Vertex_Map>::iterator it = bvertex.begin() ; it != bvertex.end(); ++it){
+        double x = it->x ;//-m_Box(0)/2;
+        double y = it->y ;//-m_Box(1)/2;
+        double z = it->z ;//-m_Box(2)/2;
         
         
         double d = A(0)*(x-x0)*(x-x0)+A(1)*(y-y0)*(y-y0)+A(2)*(z-z0)*(z-z0);
@@ -280,6 +321,36 @@ else if(m_CutType == "vertex"){
         m_BluePrint.bvertex = newVlist;
         m_BluePrint.btriangle = newTr;
         m_BluePrint.binclusion = newInc;
+        m_BluePrint.number_vector_field = m_NoVF;
+    //--- we generate vector fields
+    std::vector<VectorField_Map> bVF;
+    srand(3847);
+
+    for (std::vector<Vertex_Map>::iterator it = newVlist.begin() ; it != newVlist.end(); ++it) {
+        std::string s_vf;
+        for  (int i = 0; i<m_NoVF; i++){
+            double x = (double(rand() % 2000000) / 2000000.0);
+            double y = (double(rand() % 2000000) / 2000000.0);
+            double size = sqrt(x*x+y*y);
+            x = x/size;
+            y = y/size;
+            s_vf += " "+ f.Int_to_String(i+1) +" "+ f.Int_to_String(x) +" "+ f.Int_to_String(y) ;
+        }
+
+        VectorField_Map tvf;
+        tvf.data_line = s_vf;
+        bVF.push_back(tvf);
+   }
+    m_BluePrint.bvectorfields  = bVF;
+    
+    
+    
+    
+    
+    //----
+    
+    
+    
     std::cout<<" eveything is good here \n";
     //=======================================================
     std::string outext = m_OutputFilename.substr(m_OutputFilename.find_last_of(".") + 1);
@@ -372,6 +443,10 @@ void Convert::ExploreArguments()
             m_Box(2) = f.String_to_Double(m_Argument.at(i+3));
             i++;i++;
             
+        }
+        else if(Arg1=="-NoVF")
+        {
+            m_NoVF = f.String_to_Double(m_Argument.at(i+1));
         }
         else if(Arg1=="-center")
         {

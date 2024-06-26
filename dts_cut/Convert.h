@@ -44,6 +44,7 @@ private:
     Vec3D m_Zoom;
     Vec3D m_Translate;
     std::string m_CutType;
+    int m_NoVF;
     
 
 

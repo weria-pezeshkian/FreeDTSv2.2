@@ -90,6 +90,16 @@ void Traj_tsi::WriteAFrame(std::string filename){
         fprintf(output,format.c_str(),(*it)->GetID(),(*it)->GetInclusionType()->ITid,((*it)->Getvertex())->GetVID(),((*it)->GetLDirection())(0),((*it)->GetLDirection())(1));
  
     
+    size = m_pState->GetMesh()->GetNoVFPerVertex();
+    if(size != 0){
+        const char* vfname = "vector_fields";
+        fprintf(output, "%s%20d\n", vfname, size);
+        for (std::vector<vertex*>::iterator it = pver.begin(); it != pver.end(); ++it) {
+            std::string s_vf = (*it)->GetVectorFieldsStream();
+            fprintf(output, "%s\n", s_vf.c_str());
+        }
+    }
+    
     fclose(output);
     
 }

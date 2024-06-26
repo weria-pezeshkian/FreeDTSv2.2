@@ -11,6 +11,7 @@ MESH::MESH() : m_MeshCrossedPBC(false) {
     Vec3D b;
     m_Box = b;
     m_pBox = &m_Box;
+    m_No_VectorFields_Per_V = 0;
 
 }
 MESH::~MESH() {
@@ -35,6 +36,11 @@ void MESH::MakeALinkGhost(links* l){
     RemoveFromLinkList(l,m_pHL);
     RemoveFromLinkList(l,m_pMHL);
     m_pGhostL.push_back(l);
+    return;
+}
+void MESH::UpdateNoVFPerVertex(int number){
+    
+    m_No_VectorFields_Per_V = number;
     return;
 }
 void MESH::MakeATriangleGhost(triangle* tri){
@@ -318,6 +324,30 @@ bool MESH::GenerateMesh(MeshBluePrint meshblueprint)
     for (std::vector<vertex>::iterator it = m_GhostV.begin() ; it != m_GhostV.end(); ++it)
         m_pGhostV.push_back(&(*it));
 
+    
+    //--- setting up the vector fields
+    m_No_VectorFields_Per_V = meshblueprint.number_vector_field;
+
+    // Ensure the size of meshblueprint.bvectorfields matches the number of active vertices
+    if (m_No_VectorFields_Per_V !=0 && meshblueprint.bvectorfields.size() != m_pActiveV.size()) {
+        std::cerr << "Error: Mismatch between vector fields data and active vertices count.\n";
+        return false;
+    }
+
+    if(m_No_VectorFields_Per_V != 0 ) {
+        // Get an iterator to the beginning of meshblueprint.bvectorfields
+        std::cout<<"---> Note, each vertex has "<< m_No_VectorFields_Per_V <<" vector fields \n";
+        std::vector<VectorField_Map>::iterator data_it = meshblueprint.bvectorfields.begin();
+        // Iterate over active vertices and initialize them with corresponding vector field data
+        for (std::vector<vertex*>::iterator it = m_pActiveV.begin(); it != m_pActiveV.end(); ++it, ++data_it) {
+            std::string data_line = data_it->data_line;
+            (*it)->Initialize(m_No_VectorFields_Per_V, data_line, this);
+        }
+    }//     if(m_No_VectorFields_Per_V !=0) {
+    else{
+        std::cout<<"---> Note, the vertices do not have any vector fields. \n";
+    }
+    
     //WritevtuFiles VTU(pState);
     //std::string file="ini_Mesh.vtu";
     //VTU.Writevtu(m_pAllV,m_pAllT,m_pAllLinks,file);
@@ -334,6 +364,8 @@ MeshBluePrint MESH::Convert_Mesh_2_BluePrint(MESH *mesh)
     std::vector<Triangle_Map> btriangle;   // a vector of all triangles (only the blueprint not the object) in the mesh
     std::vector<Inclusion_Map> binclusion; // a vector of all inclusions (only the blueprint not the object) in the mesh
     std::vector <InclusionType> binctype;  // a vector containing all inclsuion type and a default one
+    std::vector <VectorField_Map> bvectorfields;  // a vector containing all inclsuion type and a default one
+
     Vec3D simbox;
     
     // vertex member of the blue print
@@ -347,6 +379,9 @@ MeshBluePrint MESH::Convert_Mesh_2_BluePrint(MESH *mesh)
         tvm.id = (*it)->GetVID();
         tvm.domain = (*it)->GetGroup();
         bvertex.push_back(tvm);
+        VectorField_Map tem_vf;
+        tem_vf.data_line = (*it)->GetVectorFieldsStream();
+        bvectorfields.push_back(tem_vf);
     }
     // triangle map member of the blue print
     std::vector<triangle*> pT = mesh->m_pActiveT;
@@ -377,6 +412,8 @@ MeshBluePrint MESH::Convert_Mesh_2_BluePrint(MESH *mesh)
     BluePrint.bvertex = bvertex;
     BluePrint.btriangle = btriangle;
     BluePrint.binclusion = binclusion;
+    BluePrint.bvectorfields = bvectorfields;
+    BluePrint.number_vector_field = mesh->GetNoVFPerVertex();
     BluePrint.simbox = *(mesh->m_pBox);
     
     return BluePrint;

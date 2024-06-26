@@ -8,8 +8,8 @@
 #include "CreateMashBluePrint.h"
 #include "Nfunction.h"
 #include "RNG.h"
-CreateMashBluePrint::CreateMashBluePrint()
-{
+CreateMashBluePrint::CreateMashBluePrint() {
+    
 }
 MeshBluePrint CreateMashBluePrint::MashBluePrintFromInput_Top(const std::string& inputfilename, const std::string& topfilename)
 {
@@ -17,7 +17,7 @@ MeshBluePrint CreateMashBluePrint::MashBluePrintFromInput_Top(const std::string&
     m_Box(0) = 1;
     m_Box(1) = 1;
     m_Box(2) = 1;
-
+    m_Number_of_VectorFields = 0;
     m_InputFileName = inputfilename;
     m_TopologyFileName = topfilename;
     
@@ -28,6 +28,8 @@ MeshBluePrint CreateMashBluePrint::MashBluePrintFromInput_Top(const std::string&
     m_MeshBluePrint.binclusion = m_InclusionMap;
     m_MeshBluePrint.simbox = m_Box;
     m_MeshBluePrint.excluded_id = m_ExcludedID;
+    m_MeshBluePrint.bvectorfields = m_VectorFieldsMap;
+    m_MeshBluePrint.number_vector_field =  m_Number_of_VectorFields;
     return m_MeshBluePrint;
 }
 CreateMashBluePrint::~CreateMashBluePrint()
@@ -63,6 +65,7 @@ void CreateMashBluePrint::Read_TSIFile(const std::string &tsifile)
     tsi.open(tsifile.c_str());
     std::string str;
     int nver,ntr,ninc,nexc,id;
+    
     while (true)
     {
         tsi>>str;
@@ -186,6 +189,19 @@ void CreateMashBluePrint::Read_TSIFile(const std::string &tsifile)
             {
                 tsi>>id;
                 m_ExcludedID.push_back(id);
+            }
+
+        }
+        else if(str=="vector_fields")
+        {
+            tsi>>m_Number_of_VectorFields;
+            getline(tsi,str);
+            for (int i=0;i<nver;i++)
+            {
+                getline(tsi,str);
+                VectorField_Map vf;
+                vf.data_line = str;
+                m_VectorFieldsMap.push_back(vf);
             }
 
         }

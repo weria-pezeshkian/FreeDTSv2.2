@@ -8,16 +8,22 @@
 #include "links.h"
 #include "CreateMashBluePrint.h"
 /*
- by Weria Pezeshkian (weria.pezeshkian@gmail.com)
- Copyright (c) Weria Pezeshkian
- the mesh class has all the functions for manipulating the mesh stracture
-*/
+ * @class MESH
+ * @brief This class provides functionalities for manipulating the mesh structure.
+ *
+ * The MESH class contains methods for creating, updating, and manipulating the mesh.
+ * It handles various mesh elements including vertices, triangles, and links. It also
+ * provides methods for handling inclusions, groups, and boundary conditions.
+ *
+ * Author: Weria Pezeshkian (weria.pezeshkian@gmail.com)
+ * Copyright (c) Weria Pezeshkian
+ */
 class MESH
 {
 public:
+    MESH();  // Default constructor for MESH.
+    ~MESH();  // Destructor for MESH.
 
-    MESH();
-    ~MESH();
 
     inline std::vector<vertex*>&        GetActiveV()               {return m_pActiveV;}
     inline std::vector<triangle*>&      GetActiveT()               {return m_pActiveT;}
@@ -38,7 +44,8 @@ public:
     inline Vec3D&                   Link2ReferenceBox()             {return m_Box;}
     inline const bool               GetHasCrossedPBC()  const       {return m_MeshCrossedPBC;}
     std::vector <InclusionType*>    GetInclusionType()     const    {return m_pInclusionType;}
-    
+    inline const int               GetNoVFPerVertex()  const       {return m_No_VectorFields_Per_V;} // returning the number of vector field per vertex
+
     
     
     
@@ -53,6 +60,7 @@ public:
     void RemoveFromLinkList(links* z, std::vector<links*> &vect);
     void RemoveFromTriangleList(triangle* z, std::vector<triangle*> &vect);
     void RemoveFromVertexList(vertex* z, std::vector<vertex*> &vect);
+    
 // -- it could be optimised
     void MakeALinkGhost(links* l);
     void MakeATriangleGhost(triangle* tri);
@@ -62,6 +70,7 @@ public:
     bool EdgeV2SurfV(vertex* v);
 //----
     bool UpdateGroupFromIndexFile(std::string &indexfilename);
+    void UpdateNoVFPerVertex(int number);
     void CenterMesh();    // this function centers the mesh inside the box. For broken systems it may not work nicely
     bool GenerateMesh(MeshBluePrint meshblueprint);
     MeshBluePrint Convert_Mesh_2_BluePrint(MESH *mesh);
@@ -87,7 +96,7 @@ protected:
 
     
 private:
-    
+    int m_No_VectorFields_Per_V;
     bool m_MeshCrossedPBC;
 //========== this variables should be fully hidden from anything =======================
     std::vector<vertex>         m_Vertex;                           //                ||

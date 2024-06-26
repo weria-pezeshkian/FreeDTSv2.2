@@ -30,6 +30,7 @@ public:
     
 private:
     void WriteInclusion(std::string id, const std::vector<vertex *>  &all_ver, std::ofstream *Output);
+    bool WriteVectorFields(const std::vector<vertex *>  &all_ver, std::ofstream *Output);
 
 
 

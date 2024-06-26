@@ -48,6 +48,18 @@ void TSIFile::WriteTSI(std::string filename , MeshBluePrint blueprint)
     for (std::vector<Inclusion_Map>::iterator it = (blueprint.binclusion).begin() ; it != (blueprint.binclusion).end(); ++it)
         fprintf(output,format.c_str(),it->id,it->tid,it->vid,it->x,it->y);
     
+    
+    const char* vfname = "vector_fields";
+    size = blueprint.number_vector_field;
+    fprintf(output, "%s%20d\n", vfname, size);
+
+    for (std::vector<VectorField_Map>::iterator it = blueprint.bvectorfields.begin(); it != blueprint.bvectorfields.end(); ++it) {
+        std::string s_vf = it->data_line;
+        fprintf(output, "%s\n", s_vf.c_str());
+    }
+    
+    
+    
     fclose(output);
 }
 MeshBluePrint TSIFile::ReadTSI(std::string filename)

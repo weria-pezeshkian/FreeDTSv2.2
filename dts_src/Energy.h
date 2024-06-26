@@ -33,6 +33,7 @@ public:
     double CalculateAllLocalEnergy();   ///
     double SingleVertexEnergy(vertex *p);
     double TwoInclusionsInteractionEnergy(links *);
+    double TwoVectorFieldInteractionEnergy(int vf_layer, links * p_edge);
 
 private:
     double SurfVertexBendingAndStretchingEnergy(vertex * pver);
@@ -41,6 +42,7 @@ private:
 
     // types of interactions
     double Geo_Theta(vertex *v1, vertex *v2);  // Calculate the angle between two vectors after parallel transport
+    double AngleDiff_ParallelTransport(Vec3D &d1, Vec3D &d2, links* p_link);
     double F10(vertex *v1, vertex *v2,std::vector<double>);
     double F2(vertex *v1, vertex *v2,std::vector<double>);
     double F11(vertex *v1, vertex *v2,std::vector<double>);

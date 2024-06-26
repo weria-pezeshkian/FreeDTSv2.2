@@ -49,6 +49,52 @@ void WritevtuFiles::WriteInclusion(std::string id, const std::vector<vertex *>  
     *Output<<"        </DataArray>"<<"\n";
     
 }
+
+bool WritevtuFiles::WriteVectorFields(const std::vector<vertex *> &all_ver, std::ofstream *Output) {
+    /*
+     * @brief Write vector fields to a VTU file.
+     *
+     * This function writes the vector fields of all vertices to a VTU file.
+     *
+     * @param all_ver A vector containing pointers to all vertex objects.
+     * @param Output A pointer to the output file stream.
+     * @return True if the operation is successful, false otherwise.
+     */
+    // Set output format to fixed and precision to specified value
+    
+    int number_of_vector_fields = m_pState->GetMesh()->GetNoVFPerVertex();
+    if(number_of_vector_fields == 0){
+        return true;
+    }
+    
+    (*Output) << std::fixed;
+    (*Output) << std::setprecision(Precision);
+
+    // Loop through each vector field per vertex
+    for (int i = 0; i < number_of_vector_fields; i++) {
+        // Create the name ID for the vector field
+        std::string nameid = "Vector_Field" + Nfunction::D2S(i + 1);
+
+        // Write the DataArray header to the output file
+        *Output << "        <DataArray type=\"Float32\" Name=\"" << nameid
+                << "\" NumberOfComponents=\"3\" Format=\"ascii\">\n";
+
+        // Loop through all vertices and write their vector field data
+        for (std::vector<vertex*>::const_iterator itr = all_ver.begin(); itr != all_ver.end(); ++itr) {
+            // Get the local direction of the vector field and transform it to global coordinates
+            Vec3D direction = (*itr)->GetVectorField(i)->GetLDirection();
+            direction = ((*itr)->GetL2GTransferMatrix()) * direction;
+
+            // Write the transformed vector field data to the output file
+            *Output << "  " << direction(0) << "      " << direction(1) << "      " << direction(2) << "\n";
+        }
+
+        // Close the DataArray element
+        *Output << "        </DataArray>\n";
+    }
+
+    return true;
+}
 bool WritevtuFiles::WriteAFrame(int step){
     
 
@@ -136,6 +182,8 @@ bool WritevtuFiles::WriteAFrame(int step){
     }
      Output<<"        </DataArray>"<<"\n";
      WriteInclusion("dir", all_ver, &Output);
+    
+    WriteVectorFields(all_ver, &Output);
 
     Output<<"      </PointData>"<<"\n";
     Output<<"      <Points>"<<"\n";

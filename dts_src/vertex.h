@@ -5,6 +5,7 @@
 #include "Vec3D.h"
 #include "Tensor2.h"
 #include "inclusion.h"
+#include "VertexVectorFields.h"
 /*******************
  Weria Pezeshkian (weria.pezeshkian@gmail.com)
  Copyright (c) Weria Pezeshkian
@@ -14,7 +15,7 @@
 class links;
 class triangle;
 class MESH;
-class vertex {
+class vertex : public VertexVectorFields {
     
 public:
 	vertex(MESH* pMesh, int id, double x, double y, double z);

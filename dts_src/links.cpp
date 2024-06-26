@@ -46,6 +46,13 @@ void links::UpdateV3(vertex *v3){
     m_V3=v3;
     return;
 }
+void links::InitializeVFIntEnergy(int no_vf){
+    //-- in each run, this function should run only once 
+    for (int i = 0; i<no_vf; i++){
+        m_VFieldIntEnergy.push_back(0);
+    }
+    return;
+}
 void links::UpdateMirrorLink(links* v){
     m_mirorlink=v;
     return;
@@ -53,6 +60,16 @@ void links::UpdateMirrorLink(links* v){
 bool links::Copy_InteractionEnergy(){
     
     m_OldIntEnergy = m_IntEnergy;
+    return true;
+}
+bool links::Copy_VHInteractionEnergy(){
+    
+    m_OldVFieldIntEnergy = m_VFieldIntEnergy;
+    return true;
+}
+bool links::Reverse_VHInteractionEnergy(){
+    
+    m_VFieldIntEnergy = m_OldVFieldIntEnergy;
     return true;
 }
 bool links::Reverse_InteractionEnergy(){
@@ -202,6 +219,22 @@ void links::PutShapeOperator(Vec3D Be,double He)
 void links::UpdateIntEnergy(double en)
 {
     m_IntEnergy = en;
+}
+bool links::UpdateVFIntEnergy(int vf_id, double en){
+    
+    if(vf_id >= m_VFieldIntEnergy.size()){
+        std::cout<<"---> error, unexpected 293944 \n";
+        return false;
+    }
+    
+    m_VFieldIntEnergy[vf_id] = en;
+    
+    return true;
+}
+void links::UpdateVFIntEnergy(std::vector<double> VF_EN){
+
+    m_VFieldIntEnergy = VF_EN;    
+    return;
 }
 void links::UpdateShapeOperator(Vec3D *pBox)
 {

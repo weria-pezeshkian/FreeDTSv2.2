@@ -57,7 +57,7 @@ double Energy::SurfVertexBendingAndStretchingEnergy(vertex * p_vertex){
     
     if(!p_vertex->VertexOwnInclusion()) {
         //---> if the vertex is just a membrane; kappa/2*(2H-c0)^2-kg*K
-        en += (m_kappa*(mean_times2-m_SCurvature0)*(mean_times2-m_SCurvature0) - gussian*m_kappa_G)*area;
+        en += (m_kappa*(mean_times2-m_SCurvature0)*(mean_times2-m_SCurvature0) - m_kappa_G * gussian) * area;
     }
     else{
         
@@ -71,7 +71,7 @@ double Energy::SurfVertexBendingAndStretchingEnergy(vertex * p_vertex){
         double cp10 = p_inc->m_IncType->ITc1;
         double cn20 = p_inc->m_IncType->ITc2;
         //--- kappa/2*(2H-c0)^2-kgK+
-        double ev = k0 * (mean_times2-c0) * (mean_times2-c0) - kg * m_kappa_G;
+        double ev = k0 * (mean_times2-c0) * (mean_times2-c0) - kg * gussian;
         en += ev * area;
         
 //--> if the k1 and k2 are zero, we do not need to calculate the rest
@@ -119,7 +119,7 @@ double Energy::EdgeVertexBendingAndStretchingEnergy(vertex *p_vertex)
         
         en += (lambda + kg*geo_c*geo_c)*length;
         
-        if(kn!=0) {
+        if(kn != 0) {
             
             Vec3D LD = p_inc->GetLDirection();
             double Cos = LD(0);
@@ -128,7 +128,7 @@ double Energy::EdgeVertexBendingAndStretchingEnergy(vertex *p_vertex)
             
             en += (kn*Delta_norm_c*Delta_norm_c)*length;
         }
-        else{
+        else{  // I do not understand what does this means. 
             en += kn*norm_c*norm_c*length;
         }
     }
@@ -144,15 +144,35 @@ double Energy::CalculateAllLocalEnergy()
     const std::vector<vertex *>& pAllVertices = m_pState->GetMesh()->GetActiveV();
     const std::vector<links *>& pRight_L = m_pState->GetMesh()->GetRightL();
     const std::vector<links *>& pEdge_L = m_pState->GetMesh()->GetEdgeL();
-    for (std::vector<vertex *>::const_iterator it = pAllVertices.begin() ; it != pAllVertices.end(); ++it)
-    {
+    int number_of_vectorfields = m_pState->GetMesh()->GetNoVFPerVertex();
+    
+    
+    
+    for (std::vector<vertex *>::const_iterator it = pAllVertices.begin() ; it != pAllVertices.end(); ++it) {
+        
         E += SingleVertexEnergy(*it);
+        //---- this is for the vector fields
+        E += (*it)->CalculateBindingEnergy(*it);
     }
      for (std::vector<links *>::const_iterator it = pRight_L.begin() ; it != pRight_L.end(); ++it) {
+         
         E += TwoInclusionsInteractionEnergy(*it);
+         
+         (*it)->InitializeVFIntEnergy(number_of_vectorfields);
+         //-- interaction energies of vector fields
+         for (int i = 0; i<number_of_vectorfields; i++){
+             E += TwoVectorFieldInteractionEnergy(i, *it);
+         }
     }
     for (std::vector<links *>::const_iterator it = pEdge_L.begin() ; it != pEdge_L.end(); ++it) {
         E += TwoInclusionsInteractionEnergy(*it);
+        
+        (*it)->InitializeVFIntEnergy(number_of_vectorfields);
+        //-- interaction energies of vector fields
+        for (int i = 0; i<number_of_vectorfields; i++){
+            E += TwoVectorFieldInteractionEnergy(i, *it);
+        }
+
     }
     return E;
 }
@@ -399,6 +419,100 @@ double Energy::F11(vertex *v1, vertex *v2, std::vector<double> var)
     E = -E;
     
     return E;
+}
+double Energy::TwoVectorFieldInteractionEnergy(int vf_layer, links * p_edge) {
+
+    vertex * p_v1 = p_edge->GetV1();
+    vertex * p_v2 = p_edge->GetV2();
+    
+    if(vf_layer<0 || vf_layer >= p_v1->GetNumberOfVF()){
+        std::cout<<"---> error: unexpected, this function should not be called \n";
+        return 0;
+    }
+//--> now use the type if to get the interaction parameters of this pars
+    double e_int = 0;
+    VectorField *VF1 =  p_v1->GetVectorField(vf_layer);
+    VectorField *VF2 =  p_v2->GetVectorField(vf_layer);
+    Vec3D d1 = VF1->GetLDirection();
+    Vec3D d2 = VF2->GetLDirection();
+    int id1 = VF1->GetInclusionType()->ITid;
+    int id2 = VF1->GetInclusionType()->ITid;
+    PairInt pair_ab = m_pInt->GetPairInt(id1,id2);
+    std::vector <double> ff = pair_ab.Varibale;
+    //---> get the type of function that they interact, it is an intger
+    int FunctionType  = pair_ab.FunctionType;
+
+    switch (FunctionType) {
+        case 0:{
+            e_int = -ff[0];
+             break;
+        }
+         case 1: {
+             
+             double theta = (ff[2] != 0) ? AngleDiff_ParallelTransport(d1, d1, p_edge) : 0.0;
+             e_int = -ff[1] + ff[2] * cos(double(ff[0]) * theta);
+             break;
+         }
+        default:{
+             std::cerr << "---> Error: Unrecognized function type ID for vector field--> " << FunctionType << std::endl;
+             exit(0);
+        }
+     }
+    
+    if(p_edge->GetMirrorFlag()) {
+        p_edge->UpdateVFIntEnergy(vf_layer, e_int/2.0);
+        (p_edge->GetMirrorLink())->UpdateVFIntEnergy(vf_layer, e_int/2.0);
+    }
+    else {
+        // divided by 2 here is also fine as everywhere will be muliplied by two again
+        p_edge->UpdateVFIntEnergy(vf_layer, e_int/2.0);
+    }
+    return e_int;
+}
+double Energy::AngleDiff_ParallelTransport(Vec3D &d1, Vec3D &d2, links* p_link) {
+    /*
+     * @brief Calculate the angle between two vectors after parallel transport along the geodesic direction.
+     *
+     * This function computes the angle between two vectors after parallel transport along the geodesic direction
+     * connecting two vertices. The geodesic direction is determined by subtracting the position vectors of the
+     * two vertices. The resulting angle represents the deviation between the directions of the two vectors
+     * after transporting them along the geodesic path.
+     */
+    
+        vertex *v1 = p_link->GetV1();
+        vertex *v2 = p_link->GetV2();
+
+        Vec3D X1 = v1->GetPos();
+        Vec3D X2 = v2->GetPos();
+        Vec3D geodesic_dir=(X2-X1);
+    
+        for (int i=0;i<3;i++)
+        {
+            if(fabs(geodesic_dir(i))>  m_Box(i)/2)
+            {
+                if(geodesic_dir(i)<0)
+                    geodesic_dir(i) = geodesic_dir(i) + m_Box(i);
+                else if(geodesic_dir(i)>0)
+                    geodesic_dir(i) = geodesic_dir(i) - m_Box(i);
+            }
+        }
+        Vec3D y1=(v1->GetG2LTransferMatrix())*geodesic_dir;
+        y1(2)=0;
+        y1.normalize();
+        Vec3D y2=(v2->GetG2LTransferMatrix())*geodesic_dir;
+        y2(2)=0;
+        y2.normalize();
+        Vec3D n(0,0,1);
+        double cos1 = y1.dot(y1,d1);
+        double sin1 = n.dot(n*y1,d1);
+        double cos2 = y1.dot(y2,d2);
+        double sin2 = n.dot(n*y2,d2);
+    
+        // Compute theta
+        double S_an = sin1 * sin2 + cos1 * cos2;
+        double theta = acos(S_an);
+
+    return theta;
 }
 double Energy::Geo_Theta(vertex *v1, vertex *v2) {
     /*

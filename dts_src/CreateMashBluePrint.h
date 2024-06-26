@@ -27,6 +27,9 @@ struct Inclusion_Map {    // Data structure for inclusion map (not triangle obje
     double x, y;
     int id, vid, tid;
 };
+struct VectorField_Map {    // Data structure for inclusion map (not triangle object)
+    std::string data_line;
+};
 
 struct MeshBluePrint {    // Data structure for the mesh blueprint
     std::vector<Vertex_Map> bvertex;       // Vector of all vertices (only the blueprint, not the object) in the mesh
@@ -34,6 +37,8 @@ struct MeshBluePrint {    // Data structure for the mesh blueprint
     std::vector<Inclusion_Map> binclusion; // Vector of all inclusions (only the blueprint, not the object) in the mesh
     std::vector<int> excluded_id;
     Vec3D simbox;
+    int number_vector_field;
+    std::vector<VectorField_Map> bvectorfields;
 };
 
 class CreateMashBluePrint {
@@ -60,8 +65,9 @@ private:
     std::vector<Inclusion_Map> m_InclusionMap; // Vector of all inclusions (only the blueprint, not the object) in the mesh
     std::vector<int> m_ExcludedID;
     Vec3D m_Box;
-
+    std::vector<VectorField_Map> m_VectorFieldsMap;
     MeshBluePrint m_MeshBluePrint;
+    int m_Number_of_VectorFields;
 };
 
 #endif
