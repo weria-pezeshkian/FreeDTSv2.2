@@ -144,6 +144,7 @@ double Energy::CalculateAllLocalEnergy()
     const std::vector<vertex *>& pAllVertices = m_pState->GetMesh()->GetActiveV();
     const std::vector<links *>& pRight_L = m_pState->GetMesh()->GetRightL();
     const std::vector<links *>& pEdge_L = m_pState->GetMesh()->GetEdgeL();
+
     int number_of_vectorfields = m_pState->GetMesh()->GetNoVFPerVertex();
     
     
@@ -151,14 +152,12 @@ double Energy::CalculateAllLocalEnergy()
     for (std::vector<vertex *>::const_iterator it = pAllVertices.begin() ; it != pAllVertices.end(); ++it) {
         
         E += SingleVertexEnergy(*it);
-        //---- this is for the vector fields
+        //---- this is for the vector fields; in VertexVectorFields the vectorfield energy will be set. such a function does not set the binding energy in the vectorfield class
         E += (*it)->CalculateBindingEnergy(*it);
     }
      for (std::vector<links *>::const_iterator it = pRight_L.begin() ; it != pRight_L.end(); ++it) {
          
         E += TwoInclusionsInteractionEnergy(*it);
-         
-         (*it)->InitializeVFIntEnergy(number_of_vectorfields);
          //-- interaction energies of vector fields
          for (int i = 0; i<number_of_vectorfields; i++){
              E += TwoVectorFieldInteractionEnergy(i, *it);
@@ -166,8 +165,6 @@ double Energy::CalculateAllLocalEnergy()
     }
     for (std::vector<links *>::const_iterator it = pEdge_L.begin() ; it != pEdge_L.end(); ++it) {
         E += TwoInclusionsInteractionEnergy(*it);
-        
-        (*it)->InitializeVFIntEnergy(number_of_vectorfields);
         //-- interaction energies of vector fields
         for (int i = 0; i<number_of_vectorfields; i++){
             E += TwoVectorFieldInteractionEnergy(i, *it);
@@ -441,10 +438,12 @@ double Energy::TwoVectorFieldInteractionEnergy(int vf_layer, links * p_edge) {
     std::vector <double> ff = pair_ab.Varibale;
     //---> get the type of function that they interact, it is an intger
     int FunctionType  = pair_ab.FunctionType;
+   // std::cout<<ff.size()<<"  ff.size \n";
+   // m_pInt->Print();
 
     switch (FunctionType) {
         case 0:{
-            e_int = -ff[0];
+            e_int = 0.0;
              break;
         }
          case 1: {

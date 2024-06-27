@@ -61,6 +61,8 @@ State::State(std::vector<std::string> argument) :
     m_pVertexPositionIntegrator = new EvolveVerticesByMetropolisAlgorithm(this);
     m_pAlexanderMove            = new AlexanderMoveByMetropolisAlgorithm(this);         // Initialize AlexanderMove
     m_pInclusionPoseIntegrator  = new InclusionPoseUpdateByMetropolisAlgorithm(this);  // Initialize InclusionPoseIntegrator
+    m_pVectorFieldsRotationIntegrator  = new VectorFieldsRotationByMetropolisAlgorithm (this);  // Initialize InclusionPoseIntegrator
+
     m_Parallel_Replica.State    = false;
 
 //-- Find input files name (input.tsi, top.top||top.tsi, index.inx, restart.res)
@@ -94,6 +96,7 @@ State::~State()
     delete m_pVertexPositionIntegrator;
     delete m_pAlexanderMove;
     delete m_pInclusionPoseIntegrator;
+    delete m_pVectorFieldsRotationIntegrator;
     delete m_pDynamicBox;
     delete m_pDynamicTopology;
     delete m_pOpenEdgeEvolution;
@@ -383,8 +386,28 @@ while (input >> firstword) {
                 getline(input,rest);
             }
     //---- end //
-    
-
+//---- vector field
+            else if(firstword == AbstractVectorFieldsRotationMove::GetBaseDefaultReadName()) {
+                    input>>str>>type;
+                    if(type == VectorFieldsRotationByMetropolisAlgorithm::GetDefaultReadName()){  // MetropolisAlgorithm
+                        double rate, dr;
+                        input >> rate;
+                        getline(input,rest);
+                        std::vector<std::string> str_dr = Nfunction::Split(rest);
+                        if(str_dr.size() == 0){
+                            m_pVectorFieldsRotationIntegrator  = new VectorFieldsRotationByMetropolisAlgorithm (this, rate);  // Initialize InclusionPoseIntegrator
+                        }
+                        if(str_dr.size() != 0){
+                            dr = Nfunction::String_to_Double(str_dr[0]);
+                            m_pVectorFieldsRotationIntegrator  = new VectorFieldsRotationByMetropolisAlgorithm (this, rate, dr);  // Initialize InclusionPoseIntegrator
+                        }
+                    }
+                    else{
+                        std::cout<<"---> error: unknown method for Alexander move "<<type<<"\n";
+                        m_NumberOfErrors++;
+                        return false;
+                    }
+            }
 //---- Volume_Constraint data
         else if(firstword == AbstractVolumeCoupling::GetBaseDefaultReadName())   { // Volume_Constraint
             
@@ -884,6 +907,7 @@ bool State::Initialize(){
         m_pVertexPositionIntegrator->Initialize();
         m_pAlexanderMove->Initialize();
         m_pInclusionPoseIntegrator->Initialize();
+        m_pVectorFieldsRotationIntegrator->Initialize();
 //----> boundry of the simulations
         m_pBoundary->Initialize();
 

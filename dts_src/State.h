@@ -57,9 +57,11 @@
 #include "AbstractVertexPositionIntegrator.h"
 #include "AbstractAlexanderMove.h"
 #include "AbstractInclusionPoseIntegrator.h"
+#include "AbstractVectorFieldsRotationMove.h"
 #include "EvolveVerticesByMetropolisAlgorithm.h"
 #include "AlexanderMoveByMetropolisAlgorithm.h"
 #include "InclusionPoseUpdateByMetropolisAlgorithm.h"
+#include "VectorFieldsRotationByMetropolisAlgorithm.h"
 //---
 //--- I/O
 #include "AbstractNonbinaryTrajectory.h"
@@ -146,6 +148,7 @@ public:
 inline AbstractAlexanderMove                *GetAlexanderMove()                 {return m_pAlexanderMove;}
 inline AbstractVertexPositionIntegrator     *GetVertexPositionUpdate()                  {return m_pVertexPositionIntegrator;}
 inline AbstractInclusionPoseIntegrator      *GetInclusionPoseUpdate()                {return m_pInclusionPoseIntegrator;}
+inline AbstractVectorFieldsRotationMove     *GetVectorFieldsRotationUpdate()                {return m_pVectorFieldsRotationIntegrator;}
 //---- I/O managment
 inline Restart                   *GetRestart()                                      {return m_pRestart;}
 inline TimeSeriesDataOutput      *GetTimeSeriesDataOutput()                         {return m_pTimeSeriesDataOutput;}
@@ -208,6 +211,7 @@ private:
     AbstractAlexanderMove               *m_pAlexanderMove;
     AbstractVertexPositionIntegrator    *m_pVertexPositionIntegrator;
     AbstractInclusionPoseIntegrator     *m_pInclusionPoseIntegrator;
+    AbstractVectorFieldsRotationMove    *m_pVectorFieldsRotationIntegrator;
 //--- IO file managment
     TimeSeriesDataOutput            *m_pTimeSeriesDataOutput;
     TimeSeriesLogInformation        *m_pTimeSeriesLogInformation;

@@ -89,7 +89,8 @@ for (int step = m_Initial_Step; step <= m_Final_Step; step++){
         m_pState->GetAlexanderMove()->EvolveOneStep(step);
         //--- run the inclusion update
         m_pState->GetInclusionPoseUpdate()->EvolveOneStep(step);
-
+        //--- run vector fields
+        m_pState->GetVectorFieldsRotationUpdate()->EvolveOneStep(step);
 //----> Run the supplementary integrators
        //--- update the box side
          m_pState->GetDynamicBox()->ChangeBoxSize(step); // we may need the final step as well to check if the update of move size should be done

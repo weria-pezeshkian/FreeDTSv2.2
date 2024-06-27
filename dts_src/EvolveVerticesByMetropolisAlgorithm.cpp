@@ -98,17 +98,24 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
     
     double old_energy = 0;
     double new_energy = 0;
+
 //---> first checking if all the distances will be fine if we move the vertex
     if(!VertexMoveIsFine(pvertex,dx,dy,dz,m_MinLength2,m_MaxLength2))  // this function could get a booling varaible to say, it crossed the voxel
         return 0;
 
     //--- obtain vertices energy terms and make copies
     old_energy = pvertex->GetEnergy();
+    old_energy += pvertex->GetBindingEnergy();
     pvertex->ConstantMesh_Copy();
+    pvertex->Copy_VFsBindingEnergy();  // vector field
     const std::vector<vertex *>& vNeighbourV = pvertex->GetVNeighbourVertex();  
     for (std::vector<vertex *>::const_iterator it = vNeighbourV.begin() ; it != vNeighbourV.end(); ++it){
         (*it)->ConstantMesh_Copy();
         old_energy += (*it)->GetEnergy();
+        old_energy += (*it)->GetBindingEnergy();
+        (*it)->Copy_VFsBindingEnergy();
+
+
     }
     std::vector<triangle *> N_triangles = pvertex->GetVTraingleList();
     for (std::vector<triangle *>::iterator it = N_triangles.begin() ; it != N_triangles.end(); ++it){
@@ -128,7 +135,9 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
     std::vector<links*> Affected_links = GetEdgesWithInteractionChange(pvertex);
     for (std::vector<links *>::iterator it = Affected_links.begin() ; it != Affected_links.end(); ++it){
         (*it)->Copy_InteractionEnergy();
-        old_energy += 2*(*it)->GetIntEnergy();
+        (*it)->Copy_VFInteractionEnergy();
+        old_energy += 2 * (*it)->GetIntEnergy();
+        old_energy += 2 * (*it)->GetVFIntEnergy();
     }
     // --- obtaining global variables that can change by the move. Note, this is not the total volume, only the one that can change.
      double old_Tvolume = 0;
@@ -179,13 +188,20 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
     }
     //---> calculate new energies
     new_energy = (m_pState->GetEnergyCalculator())->SingleVertexEnergy(pvertex);
+    new_energy += pvertex->CalculateBindingEnergy(pvertex);
 
     for (std::vector<vertex *>::const_iterator it = vNeighbourV.begin() ; it != vNeighbourV.end(); ++it){
         new_energy += (m_pState->GetEnergyCalculator())->SingleVertexEnergy(*it);
+        new_energy += (*it)->CalculateBindingEnergy(*it);
+
     }
     //-- interaction energy should be calculated here
+
     for (std::vector<links *>::iterator it = Affected_links.begin() ; it != Affected_links.end(); ++it){
         new_energy += (m_pState->GetEnergyCalculator())->TwoInclusionsInteractionEnergy(*it);
+        for( int vf_layer = 0; vf_layer< m_pState->GetMesh()->GetNoVFPerVertex(); vf_layer++){
+          new_energy +=  (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, *it);
+        }
     }
     //---> get energy for ApplyConstraintBetweenGroups
     double dE_Cgroup = m_pState->GetApplyConstraintBetweenGroups()->CalculateEnergyChange(pvertex, Dx);
@@ -201,6 +217,7 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
     
     //--> only elatsic energy
     double diff_energy = new_energy - old_energy;
+    //std::cout<<diff_energy<<" dif en \n";
     //--> sum of all the energies
     double tot_diff_energy = diff_energy + dE_Cgroup + dE_force_from_inc + dE_volume + dE_t_area + dE_g_curv ;
     double U = m_Beta * tot_diff_energy - m_DBeta;
@@ -238,6 +255,7 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
         //--> the shape operator of these links has not been affected, therefore we only update the interaction energy
         for (std::vector<links *>::iterator it = Affected_links.begin() ; it != Affected_links.end(); ++it){
             (*it)->Reverse_InteractionEnergy();
+            (*it)->Reverse_VFInteractionEnergy();
 
         }
         //-- we need this to make sure all the links connected to this v is updated
@@ -246,8 +264,11 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
         }
         //---> reverse the vertices
         pvertex->ReverseConstantMesh_Copy();
+        pvertex->Reverse_VFsBindingEnergy();
+
         for (std::vector<vertex *>::const_iterator it = vNeighbourV.begin() ; it != vNeighbourV.end(); ++it){
             (*it)->ReverseConstantMesh_Copy();
+            (*it)->Reverse_VFsBindingEnergy();
         }
 
         return false;
@@ -408,14 +429,14 @@ std::vector<links*> EvolveVerticesByMetropolisAlgorithm::GetEdgesWithInteraction
     std::vector<vertex *> neighbor_vertices = p_vertex->GetVNeighbourVertex();
     for (std::vector<vertex *>::iterator it = neighbor_vertices.begin() ; it != neighbor_vertices.end(); ++it)
     {
-            if((*it)->VertexOwnInclusion()) {
+          //  if((*it)->VertexOwnInclusion()) {  // due to vector fields
                 std::vector<links *> ltem = (*it)->GetVLinkList();
                 all_temlinks.insert(all_temlinks.end(), ltem.begin(), ltem.end());
                 // note, this is even need it if the p_vertex vertex is not an edge vertex
                 if((*it)->m_VertexType == 1){
                     all_temlinks.push_back((*it)->m_pPrecedingEdgeLink);
                 }
-            }
+          //  }
     }
 
     

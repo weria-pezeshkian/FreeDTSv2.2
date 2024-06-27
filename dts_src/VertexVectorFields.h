@@ -32,6 +32,7 @@ public:
     inline double GetNumberOfVF()               { return m_NoFields; }
     
     
+    // this function returns a specific vector field
     inline VectorField * GetVectorField(int vd_layer){
         
         if(vd_layer >= m_NoFields){
@@ -65,6 +66,11 @@ public:
      */
     std::string GetVectorFieldsStream();
     double CalculateBindingEnergy(vertex *p_vertex);
+    double GetBindingEnergy();
+
+    void Copy_VFsBindingEnergy();
+    void Reverse_VFsBindingEnergy();
+
 private:
     std::vector<VectorField *> m_VectorFields;
     int m_NoFields;

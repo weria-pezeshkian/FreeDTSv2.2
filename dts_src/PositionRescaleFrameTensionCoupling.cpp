@@ -128,12 +128,15 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
     }
     for (std::vector<links *>::iterator it = m_pRightL.begin() ; it != m_pRightL.end(); ++it){
         (*it)->ConstantMesh_Copy();
+        (*it)->Copy_VFInteractionEnergy();
     }
     for (std::vector<links *>::iterator it = m_pEdgeL.begin() ; it != m_pEdgeL.end(); ++it){
         (*it)->ConstantMesh_Copy();
+        (*it)->Copy_VFInteractionEnergy();
     }
     for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it){
         (*it)->ConstantMesh_Copy();
+        (*it)->Copy_VFsBindingEnergy();
     }
     //---> for now, only active nematic force: ForceonVerticesfromInclusions
     // if we do this here, the force is from inital configuration
@@ -186,14 +189,22 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
  //new_energy = m_pState->GetEnergyCalculator()->CalculateAllLocalEnergy();
 
 //--- calculate new energies
+    int number_of_vectorfields = m_pState->GetMesh()->GetNoVFPerVertex();
     for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it) {
         new_energy += (m_pState->GetEnergyCalculator())->SingleVertexEnergy(*it);
+        new_energy += (*it)->CalculateBindingEnergy(*it);
     }
     for (std::vector<links *>::iterator it = m_pRightL.begin() ; it != m_pRightL.end(); ++it) {
         new_energy += (m_pState->GetEnergyCalculator())->TwoInclusionsInteractionEnergy(*it);
+        for (int i = 0; i<number_of_vectorfields; i++){
+            new_energy += (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(i, *it);
+        }
     }
     for (std::vector<links *>::iterator it = m_pEdgeL.begin() ; it != m_pEdgeL.end(); ++it) {
         new_energy += (m_pState->GetEnergyCalculator())->TwoInclusionsInteractionEnergy(*it);
+        for (int i = 0; i<number_of_vectorfields; i++){
+            new_energy += (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(i, *it);
+        }
     }
     
     //-- more to energies
@@ -255,12 +266,15 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
         }
         for (std::vector<links *>::iterator it = m_pRightL.begin() ; it != m_pRightL.end(); ++it){
             (*it)->ReverseConstantMesh_Copy();
+            (*it)->Reverse_VFInteractionEnergy();
         }
         for (std::vector<links *>::iterator it = m_pEdgeL.begin() ; it != m_pEdgeL.end(); ++it){
             (*it)->ReverseConstantMesh_Copy();
+            (*it)->Reverse_VFInteractionEnergy();
         }
         for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it){
             (*it)->ReverseConstantMesh_Copy();
+            (*it)->Reverse_VFsBindingEnergy();
         }
         return false;
      }

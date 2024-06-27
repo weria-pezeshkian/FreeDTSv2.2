@@ -85,7 +85,8 @@ private:
     double &m_MinLength2;
     double &m_MaxLength2;
     double &m_MinAngle;
-    
+    int &m_No_VectorFields_Per_V;
+
 private:
     bool do_Simulation(){
         std::cout<<" ---> error, 999o1o this should have been called \n";

@@ -348,6 +348,15 @@ bool MESH::GenerateMesh(MeshBluePrint meshblueprint)
         std::cout<<"---> Note, the vertices do not have any vector fields. \n";
     }
     
+    if(m_No_VectorFields_Per_V != 0 )
+    {
+        for (std::vector<links *>::const_iterator it = m_pActiveL.begin() ; it != m_pActiveL.end(); ++it) {
+            (*it)->InitializeVFIntEnergy(m_No_VectorFields_Per_V);
+        }
+        for (std::vector<links *>::const_iterator it = m_pGhostL.begin() ; it != m_pGhostL.end(); ++it) {
+            (*it)->InitializeVFIntEnergy(m_No_VectorFields_Per_V);
+        }
+    }
     //WritevtuFiles VTU(pState);
     //std::string file="ini_Mesh.vtu";
     //VTU.Writevtu(m_pAllV,m_pAllT,m_pAllLinks,file);

@@ -30,7 +30,8 @@ OpenEdgeEvolutionWithConstantVertex::OpenEdgeEvolutionWithConstantVertex(int per
                                                     m_DBeta(pState->GetSimulation()->GetDBeta()),
                                                     m_MinLength2(pState->GetSimulation()->GetMinL2()),
                                                     m_MaxLength2(pState->GetSimulation()->GetMaxL2()),
-                                                    m_MinAngle(pState->GetSimulation()->GetMinAngle())
+                                                    m_MinAngle(pState->GetSimulation()->GetMinAngle()),
+                                                    m_No_VectorFields_Per_V(pState->GetMesh()->GetNoVFPerVertex())
 {
     m_EdgeSize = m_pEdgeL.size();
 }
@@ -93,27 +94,40 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToRemoveALink(){
         eold = v1->GetEnergy();
         eold += v2->GetEnergy();
         eold += v3->GetEnergy();
+        eold += v1->GetBindingEnergy();
+        eold += v2->GetBindingEnergy();
+        eold += v3->GetBindingEnergy();
 
         //
         {
         std::vector <links *> nvl1 = v1->GetVLinkList();
-        for (std::vector<links *>::iterator it = nvl1.begin() ; it != nvl1.end(); ++it)
-            eold += 2*(*it)->GetIntEnergy();
+            for (std::vector<links *>::iterator it = nvl1.begin() ; it != nvl1.end(); ++it){
+                eold += 2 * (*it)->GetIntEnergy();
+                eold += 2 * (*it)->GetVFIntEnergy();
+            }
         
         std::vector <links *> nvl2 = v2->GetVLinkList();
-        for (std::vector<links *>::iterator it = nvl2.begin() ; it != nvl2.end(); ++it)
-            eold += 2*(*it)->GetIntEnergy();
+            for (std::vector<links *>::iterator it = nvl2.begin() ; it != nvl2.end(); ++it){
+                eold += 2 * (*it)->GetIntEnergy();
+                eold += 2 * (*it)->GetVFIntEnergy();
+            }
         
         std::vector <links *> nvl3 = v3->GetVLinkList();
-        for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it)
-            eold += 2*(*it)->GetIntEnergy();
+            for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it){
+                eold += 2 * (*it)->GetIntEnergy();
+                eold += 2 * (*it)->GetVFIntEnergy();
+            }
             
             //--- this link does not exist in the nb of any vertices
-            eold += 2*(v1->m_pPrecedingEdgeLink)->GetIntEnergy();
+            eold += 2 * (v1->m_pPrecedingEdgeLink)->GetIntEnergy();
+            eold += 2 * (v1->m_pPrecedingEdgeLink)->GetVFIntEnergy();
 
             // because these two links were counted two times
-            eold -= 2*(plink->GetNeighborLink1())->GetIntEnergy();
-            eold -= 2*(plink->GetNeighborLink2())->GetIntEnergy();
+            eold -= 2 * (plink->GetNeighborLink1())->GetIntEnergy();
+            eold -= 2 * (plink->GetNeighborLink2())->GetIntEnergy();
+            eold -= 2 * (plink->GetNeighborLink1())->GetVFIntEnergy();
+            eold -= 2 * (plink->GetNeighborLink2())->GetVFIntEnergy();
+
         }
         //== this is a new piece to use global inclusion direction as a constant variable during the move: note global direction should be projected on the new local plane
         if(v1->VertexOwnInclusion()){
@@ -178,22 +192,40 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToRemoveALink(){
                enew = m_pState->GetEnergyCalculator()->SingleVertexEnergy(v1);
                enew += m_pState->GetEnergyCalculator()->SingleVertexEnergy(v2);
                enew += m_pState->GetEnergyCalculator()->SingleVertexEnergy(v3);
-        
+               enew += v1->CalculateBindingEnergy(v1);
+               enew += v2->CalculateBindingEnergy(v2);
+               enew += v3->CalculateBindingEnergy(v3);
+
         
         {
         std::vector <links *> nvl1 = v1->GetVLinkList();
-        for (std::vector<links *>::iterator it = nvl1.begin() ; it != nvl1.end(); ++it)
-            enew += m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(*it);
+            for (std::vector<links *>::iterator it = nvl1.begin() ; it != nvl1.end(); ++it){
+                enew += m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(*it);
+                for( int vf_layer = 0; vf_layer< m_No_VectorFields_Per_V; vf_layer++) {
+                    enew +=  (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, *it);
+                }
+            }
             
         std::vector <links *> nvl2 = v2->GetVLinkList();
-        for (std::vector<links *>::iterator it = nvl2.begin() ; it != nvl2.end(); ++it)
-            enew += m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(*it);
+            for (std::vector<links *>::iterator it = nvl2.begin() ; it != nvl2.end(); ++it){
+                enew += m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(*it);
+                for( int vf_layer = 0; vf_layer< m_No_VectorFields_Per_V; vf_layer++) {
+                    enew +=  (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, *it);
+                }
+            }
             
         std::vector <links *> nvl3 = v3->GetVLinkList();
-        for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it)
-            enew += m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(*it);
+            for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it){
+                enew += m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(*it);
+                for( int vf_layer = 0; vf_layer< m_No_VectorFields_Per_V; vf_layer++) {
+                    enew +=  (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, *it);
+                }
+        }
         }
         enew += m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(v1->GetPrecedingEdgeLink());
+        for( int vf_layer = 0; vf_layer< m_No_VectorFields_Per_V; vf_layer++) {
+            enew +=  (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, v1->GetPrecedingEdgeLink());
+        }
         
         double diff_energy = enew - eold;
         double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
@@ -202,6 +234,7 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToRemoveALink(){
     if(exp( -m_Beta * diff_energy + m_DBeta) > thermal) {
 
             m_pState->GetEnergyCalculator()->AddToTotalEnergy(diff_energy);
+            return true;
         }
         else{
             // reject the move
@@ -238,21 +271,41 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToRemoveALink(){
             double e = m_pState->GetEnergyCalculator()->SingleVertexEnergy(v1);
             e = m_pState->GetEnergyCalculator()->SingleVertexEnergy(v2);
             e = m_pState->GetEnergyCalculator()->SingleVertexEnergy(v3);
-            
-            std::vector <links *> nvl1 = v1->GetVLinkList();
-            for (std::vector<links *>::iterator it = nvl1.begin() ; it != nvl1.end(); ++it)
-                e=m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(*it);
                 
-            std::vector <links *> nvl2 = v2->GetVLinkList();
-            for (std::vector<links *>::iterator it = nvl2.begin() ; it != nvl2.end(); ++it)
-                e=m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(*it);
-                
-            std::vector <links *> nvl3 = v3->GetVLinkList();
-            for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it)
-                e=m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(*it);
+            e = v1->CalculateBindingEnergy(v1);
+            e = v2->CalculateBindingEnergy(v2);
+            e = v3->CalculateBindingEnergy(v3);
             
-            e=m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(v1->m_pPrecedingEdgeLink);
+                std::vector <links *> nvl1 = v1->GetVLinkList();
+                    for (std::vector<links *>::iterator it = nvl1.begin() ; it != nvl1.end(); ++it){
+                         m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(*it);
+                        for( int vf_layer = 0; vf_layer< m_No_VectorFields_Per_V; vf_layer++) {
+                            (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, *it);
+                        }
+                    }
+                    
+                std::vector <links *> nvl2 = v2->GetVLinkList();
+                    for (std::vector<links *>::iterator it = nvl2.begin() ; it != nvl2.end(); ++it){
+                        m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(*it);
+                        for( int vf_layer = 0; vf_layer< m_No_VectorFields_Per_V; vf_layer++) {
+                            (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, *it);
+                        }
+                    }
+                    
+                std::vector <links *> nvl3 = v3->GetVLinkList();
+                for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it){
+                    m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(*it);
+                    for( int vf_layer = 0; vf_layer< m_No_VectorFields_Per_V; vf_layer++) {
+                        (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, *it);
+                    }
+                }
+                m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(v1->GetPrecedingEdgeLink());
+                for( int vf_layer = 0; vf_layer< m_No_VectorFields_Per_V; vf_layer++) {
+                    (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, v1->GetPrecedingEdgeLink());
+                }
             }
+            return false;
+
            // std::cout<<"killed rejected \n";
 
         }
@@ -307,21 +360,34 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
     eold += v1->GetEnergy();
     eold += v2->GetEnergy();
     eold += v3->GetEnergy();
+    
+    eold += v1->GetBindingEnergy();
+    eold += v2->GetBindingEnergy();
+    eold += v3->GetBindingEnergy();
 
     //=== inclusion interaction energy; it is multipled by two because only half is assinged to each edge
     std::vector <links *> nvl1 = v1->GetVLinkList();
-    for (std::vector<links *>::iterator it = nvl1.begin() ; it != nvl1.end(); ++it)
-        eold += 2*(*it)->GetIntEnergy();
+    for (std::vector<links *>::iterator it = nvl1.begin() ; it != nvl1.end(); ++it){
+        eold += 2 * (*it)->GetIntEnergy();
+        eold += 2 * (*it)->GetVFIntEnergy();
+
+    }
 
     std::vector <links *> nvl2 = v2->GetVLinkList();
-    for (std::vector<links *>::iterator it = nvl2.begin() ; it != nvl2.end(); ++it)
-        eold += 2*(*it)->GetIntEnergy();
+    for (std::vector<links *>::iterator it = nvl2.begin() ; it != nvl2.end(); ++it){
+        eold += 2 * (*it)->GetIntEnergy();
+        eold += 2 * (*it)->GetVFIntEnergy();
+    }
 
     std::vector <links *> nvl3 = v3->GetVLinkList();
-    for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it)
-        eold += 2*(*it)->GetIntEnergy();
+    for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it){
+        eold += 2 * (*it)->GetIntEnergy();
+        eold += 2 * (*it)->GetVFIntEnergy();
+    }
 
-    eold += 2*(v1->m_pPrecedingEdgeLink)->GetIntEnergy();
+    eold += 2 * (v1->m_pPrecedingEdgeLink)->GetIntEnergy();
+    eold += 2 * (v1->m_pPrecedingEdgeLink)->GetVFIntEnergy();
+
     // create a link (this also updates the gemotry)
      links *newlink = CreateALink(v1);
   //  return true;
@@ -372,18 +438,42 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
     enew = m_pState->GetEnergyCalculator()->SingleVertexEnergy(v1);
     enew += m_pState->GetEnergyCalculator()->SingleVertexEnergy(v2);
     enew += m_pState->GetEnergyCalculator()->SingleVertexEnergy(v3);
+    // vector field contributions
+    enew += v1->CalculateBindingEnergy(v1);
+    enew += v2->CalculateBindingEnergy(v2);
+    enew += v3->CalculateBindingEnergy(v3);
+
 
     //=== inclusion interaction energy
-    for (std::vector<links *>::iterator it = nvl1.begin() ; it != nvl1.end(); ++it)
+    for (std::vector<links *>::iterator it = nvl1.begin() ; it != nvl1.end(); ++it){
         enew += m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(*it);
-    for (std::vector<links *>::iterator it = nvl2.begin() ; it != nvl2.end(); ++it)
+        for( int vf_layer = 0; vf_layer< m_pState->GetMesh()->GetNoVFPerVertex(); vf_layer++) {
+            enew +=  (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, *it);
+        }
+    }
+    for (std::vector<links *>::iterator it = nvl2.begin() ; it != nvl2.end(); ++it){
         enew += m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(*it);
-    for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it)
+        for( int vf_layer = 0; vf_layer< m_No_VectorFields_Per_V; vf_layer++) {
+            enew +=  (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, *it);
+        }
+    }
+    for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it){
         enew += m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(*it);
+        for( int vf_layer = 0; vf_layer< m_No_VectorFields_Per_V; vf_layer++) {
+            enew +=  (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, *it);
+        }
+    }
 
     enew += m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(v1->m_pPrecedingEdgeLink);
+    for( int vf_layer = 0; vf_layer< m_No_VectorFields_Per_V; vf_layer++) {
+        enew +=  (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, v1->m_pPrecedingEdgeLink);
+    }
         // the new created link
     enew += m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(newlink);
+    
+    for( int vf_layer = 0; vf_layer< m_No_VectorFields_Per_V; vf_layer++) {
+        enew +=  (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, newlink);
+    }
 
     double diff_energy = enew - eold;
     double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
@@ -391,6 +481,7 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
     if(exp(-m_Beta  *diff_energy + m_DBeta ) > thermal ) {
         
         m_pState->GetEnergyCalculator()->AddToTotalEnergy(diff_energy);
+        return true;
     }
     else
     {
@@ -422,15 +513,34 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
         double e = m_pState->GetEnergyCalculator()->SingleVertexEnergy(v1);
         e = m_pState->GetEnergyCalculator()->SingleVertexEnergy(v2);
         e = m_pState->GetEnergyCalculator()->SingleVertexEnergy(v3);
+        e = v1->CalculateBindingEnergy(v1);
+        e = v2->CalculateBindingEnergy(v2);
+        e = v3->CalculateBindingEnergy(v3);
         {
-        for (std::vector<links *>::iterator it = nvl1.begin() ; it != nvl1.end(); ++it)
-            e = m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(*it);
-        for (std::vector<links *>::iterator it = nvl2.begin() ; it != nvl2.end(); ++it)
-            e = m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(*it);
-        for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it)
-            e = m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(*it);
+            for (std::vector<links *>::iterator it = nvl1.begin() ; it != nvl1.end(); ++it){
+                e = m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(*it);
+                for( int vf_layer = 0; vf_layer< m_No_VectorFields_Per_V; vf_layer++) {
+                    (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, *it);
+                }
+            }
+            for (std::vector<links *>::iterator it = nvl2.begin() ; it != nvl2.end(); ++it){
+                e = m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(*it);
+                for( int vf_layer = 0; vf_layer<m_No_VectorFields_Per_V; vf_layer++) {
+                    (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, *it);
+                }
+            }
+            for (std::vector<links *>::iterator it = nvl3.begin() ; it != nvl3.end(); ++it){
+                e = m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(*it);
+                for( int vf_layer = 0; vf_layer< m_No_VectorFields_Per_V; vf_layer++) {
+                    (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, *it);
+                }
+            }
         }
         e = m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(v1->m_pPrecedingEdgeLink);
+        for( int vf_layer = 0; vf_layer< m_pState->GetMesh()->GetNoVFPerVertex(); vf_layer++) {
+            (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, v1->m_pPrecedingEdgeLink);
+        }
+        return false;
 
     }
     

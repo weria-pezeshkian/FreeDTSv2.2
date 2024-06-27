@@ -35,11 +35,22 @@ public:
     double CalculateMembraneBindingEnergy(vertex *p_vertex);
     void UpdateMembraneBindingEnergy(const double &en);
     void Add2MembraneBindingEnergy(const double &en);
+    
+    void Copy_BindingEnergy(){
+        m_OldMembraneBindingEnergy = m_MembraneBindingEnergy;
+    };
+    void Reverse_BindingEnergy(){
+        m_MembraneBindingEnergy = m_OldMembraneBindingEnergy;
+    };
+
 private:
     Vec3D m_LDirection;         ///< Direction of the vector field in the local frame.
     Vec3D m_GDirection;         ///< Direction of the vector field in the global frame.
     InclusionType* m_IncType;   ///< Pointer to the inclusion type associated with this vector field.
     double m_MembraneBindingEnergy;
+    
+    double m_OldMembraneBindingEnergy;
+
 };
 
 #endif // VECTORFIELD_H

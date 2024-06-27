@@ -101,3 +101,26 @@ double VertexVectorFields::CalculateBindingEnergy(vertex *p_vertex){
     
     return T_en;
 }
+double VertexVectorFields::GetBindingEnergy(){
+ 
+    double en = 0;
+    for (std::vector<VectorField*>::iterator it = m_VectorFields.begin(); it != m_VectorFields.end(); ++it) {
+        en += (*it)->GetMembraneBindingEnergy();
+    }
+    
+    return en;
+}
+void VertexVectorFields::Copy_VFsBindingEnergy(){
+    
+    for (std::vector<VectorField*>::iterator it = m_VectorFields.begin(); it != m_VectorFields.end(); ++it) {
+        (*it)->Copy_BindingEnergy();
+    }
+    return;
+}
+void VertexVectorFields::Reverse_VFsBindingEnergy(){
+    
+    for (std::vector<VectorField*>::iterator it = m_VectorFields.begin(); it != m_VectorFields.end(); ++it) {
+        (*it)->Reverse_BindingEnergy();
+    }
+    return;
+}

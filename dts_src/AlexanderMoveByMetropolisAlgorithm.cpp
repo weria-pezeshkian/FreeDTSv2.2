@@ -87,13 +87,22 @@ bool AlexanderMoveByMetropolisAlgorithm::FlipOneEdge(int step, links *p_edge, do
     old_energy += v2->GetEnergy();
     old_energy += v3->GetEnergy();
     old_energy += v4->GetEnergy();
+    
+    old_energy += v1->GetBindingEnergy();
+    old_energy += v2->GetBindingEnergy();
+    old_energy += v3->GetBindingEnergy();
+    old_energy += v4->GetBindingEnergy();
+
 
 //-- get the energy for interaction
     std::vector<links*> Affected_links = GetEdgesWithInteractionChange(p_edge);
     
     for (std::vector<links *>::iterator it = Affected_links.begin() ; it != Affected_links.end(); ++it){
         (*it)->Copy_InteractionEnergy();
+        (*it)->Copy_VFInteractionEnergy();
         old_energy += 2 * (*it)->GetIntEnergy();
+        old_energy += 2 * (*it)->GetVFIntEnergy();
+
     }
     
     // Obtain and sum the initial global variables that might change
@@ -146,6 +155,12 @@ bool AlexanderMoveByMetropolisAlgorithm::FlipOneEdge(int step, links *p_edge, do
     v2->ConstantMesh_Copy();
     v3->ConstantMesh_Copy();
     v4->ConstantMesh_Copy();
+    v1->Copy_VFsBindingEnergy();
+    v2->Copy_VFsBindingEnergy();
+    v3->Copy_VFsBindingEnergy();
+    v4->Copy_VFsBindingEnergy();
+
+    
 
 //-- Update geometry
     //--- update the edges normal
@@ -166,10 +181,19 @@ bool AlexanderMoveByMetropolisAlgorithm::FlipOneEdge(int step, links *p_edge, do
     new_energy += (m_pState->GetEnergyCalculator())->SingleVertexEnergy(v2);
     new_energy += (m_pState->GetEnergyCalculator())->SingleVertexEnergy(v3);
     new_energy += (m_pState->GetEnergyCalculator())->SingleVertexEnergy(v4);
+    new_energy += v1->CalculateBindingEnergy(v1);
+    new_energy += v2->CalculateBindingEnergy(v2);
+    new_energy += v3->CalculateBindingEnergy(v3);
+    new_energy += v4->CalculateBindingEnergy(v4);
+
+
 
 //-- interaction energy should be calculated here
     for (std::vector<links *>::iterator it = Affected_links.begin() ; it != Affected_links.end(); ++it){
         new_energy += (m_pState->GetEnergyCalculator())->TwoInclusionsInteractionEnergy(*it);
+        for( int vf_layer = 0; vf_layer< m_pState->GetMesh()->GetNoVFPerVertex(); vf_layer++){
+          new_energy +=  (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, *it);
+        }
     }
 //---> new global variables
     if(m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()){
@@ -217,10 +241,16 @@ bool AlexanderMoveByMetropolisAlgorithm::FlipOneEdge(int step, links *p_edge, do
         v2->ReverseConstantMesh_Copy();
         v3->ReverseConstantMesh_Copy();
         v4->ReverseConstantMesh_Copy();
+        v1->Reverse_VFsBindingEnergy();
+        v2->Reverse_VFsBindingEnergy();
+        v3->Reverse_VFsBindingEnergy();
+        v4->Reverse_VFsBindingEnergy();
+
         
         //--> the shape operator of these links has not been affected, therefore we only update the interaction energy
         for (std::vector<links *>::iterator it = Affected_links.begin() ; it != Affected_links.end(); ++it){
             (*it)->Reverse_InteractionEnergy();
+            (*it)->Reverse_VFInteractionEnergy();
         }
         return false;
 
@@ -427,7 +457,8 @@ std::vector<links*> AlexanderMoveByMetropolisAlgorithm::GetEdgesWithInteractionC
     std::vector <links*> temlinklist;
     
 // Gather edges from v1 if it owns an inclusion
-        if(v1->VertexOwnInclusion()) {
+        //if(v1->VertexOwnInclusion())
+        {
             
             std::vector<links *> ltem = v1->GetVLinkList();
             temlinklist.insert(temlinklist.end(), ltem.begin(), ltem.end());
@@ -435,21 +466,24 @@ std::vector<links*> AlexanderMoveByMetropolisAlgorithm::GetEdgesWithInteractionC
             if(v1->m_VertexType==1)
             temlinklist.push_back(v1->m_pPrecedingEdgeLink);
         }
-        if(v2->VertexOwnInclusion()) {
+        //if(v2->VertexOwnInclusion())
+        {
             
             std::vector<links *> ltem=v2->GetVLinkList();
             temlinklist.insert(temlinklist.end(), ltem.begin(), ltem.end());
             if(v2->m_VertexType==1)
             temlinklist.push_back(v2->m_pPrecedingEdgeLink);
         }
-        if(v3->VertexOwnInclusion()) {
+        //if(v3->VertexOwnInclusion())
+        {
             
             std::vector<links *> ltem = v3->GetVLinkList();
             temlinklist.insert(temlinklist.end(), ltem.begin(), ltem.end());
             if(v3->m_VertexType==1)
             temlinklist.push_back(v3->m_pPrecedingEdgeLink);
         }
-        if(v4->VertexOwnInclusion()) {
+        //if(v4->VertexOwnInclusion())
+        {
             std::vector<links *> ltem=v4->GetVLinkList();
             temlinklist.insert(temlinklist.end(), ltem.begin(), ltem.end());
             if(v4->m_VertexType==1)

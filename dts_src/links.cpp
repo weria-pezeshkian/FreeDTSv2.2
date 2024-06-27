@@ -53,6 +53,33 @@ void links::InitializeVFIntEnergy(int no_vf){
     }
     return;
 }
+
+double links::GetVFIntEnergy() {
+    /*
+     * @brief Calculates the total vector field interaction energy.
+     *
+     * This function iterates through the vector of interaction energies and
+     * accumulates the total energy for this specific connection.
+     *
+     * @return The total vector field interaction energy.
+     */
+    double en = 0.0; // Initialize total energy to zero
+
+    // Iterate through the vector using iterators and accumulate the total energy
+    for (std::vector<double>::iterator it = m_VFieldIntEnergy.begin(); it != m_VFieldIntEnergy.end(); ++it) {
+        en += *it;
+    }
+
+    return en; // Return the total interaction energy
+}
+double links::GetVFIntEnergy(int layer) {
+
+    if( layer >= m_VFieldIntEnergy.size()){
+        std::cout<<"---> iligal action \n";
+        return 0;
+    }
+    return m_VFieldIntEnergy[layer];
+}
 void links::UpdateMirrorLink(links* v){
     m_mirorlink=v;
     return;
@@ -62,14 +89,17 @@ bool links::Copy_InteractionEnergy(){
     m_OldIntEnergy = m_IntEnergy;
     return true;
 }
-bool links::Copy_VHInteractionEnergy(){
+bool links::Copy_VFInteractionEnergy(){
     
     m_OldVFieldIntEnergy = m_VFieldIntEnergy;
     return true;
 }
-bool links::Reverse_VHInteractionEnergy(){
+bool links::Reverse_VFInteractionEnergy(){
     
     m_VFieldIntEnergy = m_OldVFieldIntEnergy;
+    if(m_mirorflag){
+        m_mirorlink->UpdateVFIntEnergy(m_OldVFieldIntEnergy);
+    }
     return true;
 }
 bool links::Reverse_InteractionEnergy(){

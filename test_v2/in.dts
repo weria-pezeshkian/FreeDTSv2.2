@@ -6,28 +6,28 @@ Integrator_Type = MC_Simulation
  Set_Steps = 1 500
  EnergyMethod = FreeDTS1.0_FF
  Kappa = 20 0 0
- Edge_Parameters = 200 0 0
+ Edge_Parameters = 10 0 0
  VertexArea = 0 0.7 0 0
 TimeSeriesData_Period = 100
 VertexPositionIntegrator = MetropolisAlgorithm 1 1 0.05
 AlexanderMove = MetropolisAlgorithm 1
 InclusionPoseIntegrator = MetropolisAlgorithm   1 1
-Dynamic_Box = No IsotropicFrameTension 5 -3 XY
-OpenEdgeEvolution =  No EvolutionWithConstantVertex 1 1
+Dynamic_Box = IsotropicFrameTension 5 -3 XY
+OpenEdgeEvolution =  EvolutionWithConstantVertex 1 1
 VisualizationFormat = VTUFileFormat VTU_F 100
 NonbinaryTrajectory = TSI TrajTSI 100
 Restart_Period = 200
 INCLUSION
 Define 2 Inclusions
 SRotation   Type   K   KG  KP  KL  C0     C0P  C0L
-1           Pro1   3   0   0   0   0.0   0   0    20   0  0  0.0
-2           Pro2   20  0   0   0   0.0   0   0    0    2  0  0.0
+1           Pro1   2   0   0   0   0.0   0   0    0   0  0  0.0
+2           Pro2   2  0   0   0   0.0   0   0    0    0  0  0.0
 GenerateInclusions
 Selection_Type Random
 TypeID     1  2    
-Density    0  0.0  
+Density    1  0.0  
 Inclusion-Inclusion-Int
-1    1    1   2  0.2   -0.5
+1    1    1   2  3   -2
 
 
 

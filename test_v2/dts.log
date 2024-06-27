@@ -1,5 +1,5 @@
 ;--------- this state is initiated by this command ---------------------------------  
-../dts_src/DTS   -in   in.dts   -top   VF.tsi   -e   0   
+../dts_src/DTS   -in   in.dts   -top   VF.tsi   -e   2000   
 ;--------- this part can be used as an input.dts file ---------------------------------  
  Run_Tag = dts
 ;-- abstract classes
@@ -8,7 +8,7 @@ Integrator_Type = MC_Simulation
  MinfaceAngle = -0.5
  Temprature = 1 0
  Box_Centering_F = 0
- Set_Steps = 1 0
+ Set_Steps = 1 2000
 Boundary = PBC
 VertexPositionIntegrator = MetropolisAlgorithm 1 1 0.05
 AlexanderMove = MetropolisAlgorithm 1
@@ -19,14 +19,14 @@ VisualizationFormat = VTUFileFormat VTU_F 100
 CurvatureMethod = ShapeOperator_1
 EnergyMethod = FreeDTS1.0_FF
  Kappa = 20 0 0
- Edge_Parameters = 200 0 0
+ Edge_Parameters = 10 0 0
  VertexArea = 0 0.7 0 0
 ConstraintBetweenGroups = No
 InclusionInducedForceOnVertex = No
 ExternalFieldOnVectorFields = NoExternalField
 InclusionConversion = No
-Dynamic_Box = No
+Dynamic_Box = IsotropicFrameTension 5 -3 XY
 DynamicTopology = ConstantTopology
-OpenEdgeEvolution = No
+OpenEdgeEvolution = EvolutionWithConstantVertex 1 1
 TimeSeriesData_Period = 100
 ;------------------------------------------  

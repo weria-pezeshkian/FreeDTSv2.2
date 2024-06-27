@@ -44,7 +44,7 @@ public:
     inline Vec3D&                   Link2ReferenceBox()             {return m_Box;}
     inline const bool               GetHasCrossedPBC()  const       {return m_MeshCrossedPBC;}
     std::vector <InclusionType*>    GetInclusionType()     const    {return m_pInclusionType;}
-    inline const int               GetNoVFPerVertex()  const       {return m_No_VectorFields_Per_V;} // returning the number of vector field per vertex
+    inline  int&                    GetNoVFPerVertex()         {return m_No_VectorFields_Per_V;} // returning the number of vector field per vertex
 
     
     

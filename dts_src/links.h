@@ -33,7 +33,6 @@ public:
         inline Vec3D GetNormal()                 const      {return m_Normal;}
     	inline Vec3D GetBe()                     const     	{return m_Be;}
     	inline double GetHe()                    const      {return m_He;}
-      //  inline double GetLinkSide()                 const      {return m_LinkSide;}
         inline double GetIntEnergy()             const      {return m_IntEnergy;}
         inline double GetEdgeSize()              const      {return m_EdgeSize;}
         inline Vec3D GetEdgeVector()             const      {return m_EdgeVector;}
@@ -55,6 +54,8 @@ public:
     void Flip();
     bool Flip(links *pedge);
     bool Reverse_Flip(links *pedge);
+    double GetVFIntEnergy();
+    double GetVFIntEnergy(int layer);
 
     void UpdateMirrorFlag(bool v);
     void UpdateSimTimeStep(int v);
@@ -80,7 +81,6 @@ private:
     links   *m_neighborlink2; /// the link is 1->2   this is 3->1
     bool m_Show;
     bool m_mirorflag;
-  //  int m_LinkSide;
     Vec3D m_Normal;    // average of the two trinagule normal for edge links, it is
     Vec3D m_Be;
     double m_He;
@@ -96,10 +96,10 @@ public:
 public:
     bool SetCopy();            // Copies the key ellements into the old type
     bool Reverse2PreviousCopy();  // reverse the edge to the value set at the time of MakeCopy()
-    bool Copy_InteractionEnergy();            // Copies the key ellements into the old type
-    bool Reverse_InteractionEnergy();            // Copies the key ellements into the old type
-    bool Copy_VHInteractionEnergy();            // Copies the key ellements into the old type
-    bool Reverse_VHInteractionEnergy();            // Copies the key ellements into the old type
+    bool Copy_InteractionEnergy();            // Copies the the inclsuion interacion energy
+    bool Reverse_InteractionEnergy();            // Reverse the the inclsuion interacion energy
+    bool Copy_VFInteractionEnergy();            // Copies the vector field interactions
+    bool Reverse_VFInteractionEnergy();            // Reverse the vector field interactions
 
     void ConstantMesh_Copy();
     void ReverseConstantMesh_Copy();
