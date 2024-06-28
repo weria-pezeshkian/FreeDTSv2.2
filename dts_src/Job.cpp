@@ -37,13 +37,9 @@ Job::Job(const std::vector<std::string> &argument) {
         exit(0);
     }
 #ifndef _OPENMP
-    
     // Perform a normal simulation on a single CPU if OpenMP is not enabled
-    std::cout<<" trying to make state \n";
     State T_state(argument);
-    std::cout<<" state is created \n";
     T_state.Initialize();
-    std::cout<<" state is initalized \n";
     T_state.GetSimulation()->do_Simulation();
     
 #else

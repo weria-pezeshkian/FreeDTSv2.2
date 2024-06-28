@@ -36,11 +36,18 @@ public:
   void UpdateGlobalDirection(const Vec3D & lg_dir);
   bool UpdateGlobalDirectionFromLocal();
   bool UpdateLocalDirectionFromGlobal();
-
-
+  
+    void Copy_Direction(){
+        m_OldLDirection = m_LDirection;
+    };
+    void Reverse_Direction(){
+        m_LDirection = m_OldLDirection;
+    };
 private:
     int m_ID;
     Vec3D m_LDirection;      /// its direction in the local frame
+   Vec3D m_OldLDirection;      /// its direction in the local frame
+
     Vec3D m_GDirection;       /// its direction in the global frame
     vertex *m_pvertex;
 

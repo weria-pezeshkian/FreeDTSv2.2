@@ -142,59 +142,63 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToRemoveALink(){
             if(!v3->GetInclusion()->UpdateGlobalDirectionFromLocal())
                 return false;
         }
-
+        // check if the g_direction for vector field can be found
+        if(!v1->UpdateVFGlobalDirectionFromLocalDirection()){
+            return false;
+        }
+        if(!v2->UpdateVFGlobalDirectionFromLocalDirection()){
+            return false;
+        }
+        if(!v3->UpdateVFGlobalDirectionFromLocalDirection()){
+            return false;
+        }
         // we kill a link and update the geomotry
         KillALink(plink);
 
         // updating the local inc direction from the global one
-        if (v1->VertexOwnInclusion() || v2->VertexOwnInclusion() || v3->VertexOwnInclusion()) {
-            Vec3D LD1, LD2, LD3;
+        bool inc_direction = true;
+        bool vf_direction = true;
             if(v1->VertexOwnInclusion()){
-                LD1 = (v1->GetInclusion())->GetGDirection();
-                LD1 = (v1->GetG2LTransferMatrix())*LD1;
-                if(LD1.isbad()){
-                    CreateALink(v1);
-                    return false;
-                }
-                LD1(2) = 0;
-                LD1.normalize();
+                inc_direction = v1->GetInclusion()->UpdateLocalDirectionFromGlobal();
             }
             if(v2->VertexOwnInclusion()){
-                LD2 = (v2->GetInclusion())->GetGDirection();
-                LD2 = (v2->GetG2LTransferMatrix())*LD2;
-                if(LD2.isbad()){
-                    CreateALink(v1);
-                    return false;
-                }
-                LD2(2) = 0;
-                LD2.normalize();
+                inc_direction = v2->GetInclusion()->UpdateLocalDirectionFromGlobal();
             }
             if(v3->VertexOwnInclusion()){
-                LD3 = (v3->GetInclusion())->GetGDirection();
-                LD3 = (v3->GetG2LTransferMatrix())*LD3;
-                if(LD3.isbad()){
-                    CreateALink(v1);
-                    return false;
-                }
-                LD3(2) = 0;
-                LD3.normalize();
+                inc_direction = v3->GetInclusion()->UpdateLocalDirectionFromGlobal();
             }
-//-- this should happen at the end, otherwise this early links get bad number
-            if(v1->VertexOwnInclusion())
-                v1->GetInclusion()->UpdateLocalDirection(LD1);
-            if(v2->VertexOwnInclusion())
-                v2->GetInclusion()->UpdateLocalDirection(LD2);
-            if(v3->VertexOwnInclusion())
-                v3->GetInclusion()->UpdateLocalDirection(LD3);
+        // update local from global for vector fields
+        vf_direction = v1->UpdateVFLocalDirectionFromGlobalDirection();
+        vf_direction = v2->UpdateVFLocalDirectionFromGlobalDirection();
+        vf_direction = v3->UpdateVFLocalDirectionFromGlobalDirection();
+    
+    // if local could not be updated from global
+        if(!vf_direction || !inc_direction){
+            v1->ReverseVFLocalDirection();
+            v2->ReverseVFLocalDirection();
+            v3->ReverseVFLocalDirection();
+            if(v1->VertexOwnInclusion()){
+                v1->GetInclusion()->Reverse_Direction();
+            }
+            if(v2->VertexOwnInclusion()){
+                v2->GetInclusion()->Reverse_Direction();
+            }
+            if(v3->VertexOwnInclusion()){
+                v3->GetInclusion()->Reverse_Direction();
+            }
+            CreateALink(v1);
+            return false;
         }
- 
+
+    
         // new energy
-               enew = m_pState->GetEnergyCalculator()->SingleVertexEnergy(v1);
-               enew += m_pState->GetEnergyCalculator()->SingleVertexEnergy(v2);
-               enew += m_pState->GetEnergyCalculator()->SingleVertexEnergy(v3);
-               enew += v1->CalculateBindingEnergy(v1);
-               enew += v2->CalculateBindingEnergy(v2);
-               enew += v3->CalculateBindingEnergy(v3);
+            enew = m_pState->GetEnergyCalculator()->SingleVertexEnergy(v1);
+            enew += m_pState->GetEnergyCalculator()->SingleVertexEnergy(v2);
+            enew += m_pState->GetEnergyCalculator()->SingleVertexEnergy(v3);
+            enew += (m_pState->GetEnergyCalculator())->CalculateVectorFieldMembraneBindingEnergy(v1);
+            enew += (m_pState->GetEnergyCalculator())->CalculateVectorFieldMembraneBindingEnergy(v2);
+            enew += (m_pState->GetEnergyCalculator())->CalculateVectorFieldMembraneBindingEnergy(v3);
+
 
         
         {
@@ -239,42 +243,28 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToRemoveALink(){
         else{
             // reject the move
                 CreateALink(v1);
-                if(v1->VertexOwnInclusion())
-                {
-                    Tensor2  G2L = v1->GetG2LTransferMatrix();
-                    Vec3D LD = G2L*((v1->GetInclusion())->GetGDirection());
-                    if(fabs(LD(2))>0.00001){
-                        std::cout<<" something is wrong here, this should not happen. vector should be on the plane \n";
-                    }
-                    (v1->GetInclusion())->UpdateLocalDirection(LD);
-                }
-                if(v2->VertexOwnInclusion())
-                {
-                    Tensor2  G2L = v2->GetG2LTransferMatrix();
-                    Vec3D LD = G2L*((v2->GetInclusion())->GetGDirection());
-                    if(fabs(LD(2))>0.00001){
-                        std::cout<<" something is wrong here, this should not happen. vector should be on the plane \n";
-                    }
-                    (v2->GetInclusion())->UpdateLocalDirection(LD);
-                }
-                if(v3->VertexOwnInclusion())
-                {
-                    Tensor2  G2L = v3->GetG2LTransferMatrix();
-                    Vec3D LD = G2L*((v3->GetInclusion())->GetGDirection());
-                    if(fabs(LD(2))>0.00001){
-                        std::cout<<" something is wrong here, this should not happen. vector should be on the plane \n";
-                    }
-                    (v3->GetInclusion())->UpdateLocalDirection(LD);
-                }
+            v1->ReverseVFLocalDirection();
+            v2->ReverseVFLocalDirection();
+            v3->ReverseVFLocalDirection();
+            if(v1->VertexOwnInclusion()){
+                v1->GetInclusion()->Reverse_Direction();
+            }
+            if(v2->VertexOwnInclusion()){
+                v2->GetInclusion()->Reverse_Direction();
+            }
+            if(v3->VertexOwnInclusion()){
+                v3->GetInclusion()->Reverse_Direction();
+            }
             
             {
             double e = m_pState->GetEnergyCalculator()->SingleVertexEnergy(v1);
             e = m_pState->GetEnergyCalculator()->SingleVertexEnergy(v2);
             e = m_pState->GetEnergyCalculator()->SingleVertexEnergy(v3);
-                
-            e = v1->CalculateBindingEnergy(v1);
-            e = v2->CalculateBindingEnergy(v2);
-            e = v3->CalculateBindingEnergy(v3);
+
+            e += (m_pState->GetEnergyCalculator())->CalculateVectorFieldMembraneBindingEnergy(v1);
+            e += (m_pState->GetEnergyCalculator())->CalculateVectorFieldMembraneBindingEnergy(v2);
+            e += (m_pState->GetEnergyCalculator())->CalculateVectorFieldMembraneBindingEnergy(v3);
+
             
                 std::vector <links *> nvl1 = v1->GetVLinkList();
                     for (std::vector<links *>::iterator it = nvl1.begin() ; it != nvl1.end(); ++it){
@@ -356,7 +346,16 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
         if(!(v3->GetInclusion())->UpdateGlobalDirectionFromLocal())
             return false;
     }
-    
+    // check if the g_direction for vector field can be found
+    if(!v1->UpdateVFGlobalDirectionFromLocalDirection()){
+        return false;
+    }
+    if(!v2->UpdateVFGlobalDirectionFromLocalDirection()){
+        return false;
+    }
+    if(!v3->UpdateVFGlobalDirectionFromLocalDirection()){
+        return false;
+    }
     eold += v1->GetEnergy();
     eold += v2->GetEnergy();
     eold += v3->GetEnergy();
@@ -392,56 +391,50 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
      links *newlink = CreateALink(v1);
   //  return true;
     //----   for constant global direction type of moves
-    if (v1->VertexOwnInclusion() || v2->VertexOwnInclusion() || v3->VertexOwnInclusion()) {
-        Vec3D LD1, LD2, LD3;
+    // updating the local inc direction from the global one
+    bool inc_direction = true;
+    bool vf_direction = true;
         if(v1->VertexOwnInclusion()){
-            LD1 = (v1->GetInclusion())->GetGDirection();
-            LD1 = (v1->GetG2LTransferMatrix())*LD1;
-            if(LD1.isbad()){
-                KillALink(newlink);
-                return false;
-            }
-            LD1(2) = 0;
-            LD1.normalize();
+            inc_direction = v1->GetInclusion()->UpdateLocalDirectionFromGlobal();
         }
         if(v2->VertexOwnInclusion()){
-            LD2 = (v2->GetInclusion())->GetGDirection();
-            LD2 = (v2->GetG2LTransferMatrix())*LD2;
-            if(LD2.isbad()){
-                //== reject the move
-                KillALink(newlink);
-                return false;
-            }
-            LD2(2) = 0;
-            LD2.normalize();
+            inc_direction = v2->GetInclusion()->UpdateLocalDirectionFromGlobal();
         }
         if(v3->VertexOwnInclusion()){
-            LD3 = (v3->GetInclusion())->GetGDirection();
-            LD3 = (v3->GetG2LTransferMatrix())*LD3;
-            if(LD3.isbad()){
-                //== reject the move
-                KillALink(newlink);
-                return false;
-            }
-            LD3(2) = 0;
-            LD3.normalize();
+            inc_direction = v3->GetInclusion()->UpdateLocalDirectionFromGlobal();
         }
-//-- this should happen at the end, otherwise this early links get bad number
-        if(v1->VertexOwnInclusion())
-        (v1->GetInclusion())->UpdateLocalDirection(LD1);
-        if(v2->VertexOwnInclusion())
-        (v2->GetInclusion())->UpdateLocalDirection(LD2);
-        if(v3->VertexOwnInclusion())
-        (v3->GetInclusion())->UpdateLocalDirection(LD3);
+    // update local from global for vector fields
+    vf_direction = v1->UpdateVFLocalDirectionFromGlobalDirection();
+    vf_direction = v2->UpdateVFLocalDirectionFromGlobalDirection();
+    vf_direction = v3->UpdateVFLocalDirectionFromGlobalDirection();
+
+// if local could not be updated from global
+    if(!vf_direction || !inc_direction){
+        v1->ReverseVFLocalDirection();
+        v2->ReverseVFLocalDirection();
+        v3->ReverseVFLocalDirection();
+        if(v1->VertexOwnInclusion()){
+            v1->GetInclusion()->Reverse_Direction();
+        }
+        if(v2->VertexOwnInclusion()){
+            v2->GetInclusion()->Reverse_Direction();
+        }
+        if(v3->VertexOwnInclusion()){
+            v3->GetInclusion()->Reverse_Direction();
+        }
+        KillALink(newlink);
+        return false;
     }
+
     
     enew = m_pState->GetEnergyCalculator()->SingleVertexEnergy(v1);
     enew += m_pState->GetEnergyCalculator()->SingleVertexEnergy(v2);
     enew += m_pState->GetEnergyCalculator()->SingleVertexEnergy(v3);
     // vector field contributions
-    enew += v1->CalculateBindingEnergy(v1);
-    enew += v2->CalculateBindingEnergy(v2);
-    enew += v3->CalculateBindingEnergy(v3);
+    enew += (m_pState->GetEnergyCalculator())->CalculateVectorFieldMembraneBindingEnergy(v1);
+    enew += (m_pState->GetEnergyCalculator())->CalculateVectorFieldMembraneBindingEnergy(v2);
+    enew += (m_pState->GetEnergyCalculator())->CalculateVectorFieldMembraneBindingEnergy(v3);
+
 
 
     //=== inclusion interaction energy
@@ -486,36 +479,26 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
     else
     {
         KillALink(newlink);
-            if(v1->VertexOwnInclusion()){
-                Tensor2  G2L = v1->GetG2LTransferMatrix();
-                Vec3D LD = G2L*((v1->GetInclusion())->GetGDirection());
-                if(fabs(LD(2))>0.00001){
-                    std::cout<<" something is wrong here, this should not happen. vector should be on the plane \n";
-                }
-                (v1->GetInclusion())->UpdateLocalDirection(LD);
-            }
-            if(v2->VertexOwnInclusion()){
-                Tensor2  G2L = v2->GetG2LTransferMatrix();
-                Vec3D LD = G2L*((v2->GetInclusion())->GetGDirection());
-                if(fabs(LD(2))>0.00001){
-                    std::cout<<" something is wrong here, this should not happen. vector should be on the plane \n";
-                }
-                (v2->GetInclusion())->UpdateLocalDirection(LD);
-            }
-            if(v3->VertexOwnInclusion()){
-                Tensor2  G2L = v3->GetG2LTransferMatrix();
-                Vec3D LD = G2L*((v3->GetInclusion())->GetGDirection());
-                if(fabs(LD(2))>0.00001){
-                    std::cout<<" something is wrong here, this should not happen. vector should be on the plane \n";
-                }
-                (v3->GetInclusion())->UpdateLocalDirection(LD);
-            }
+        v1->ReverseVFLocalDirection();
+        v2->ReverseVFLocalDirection();
+        v3->ReverseVFLocalDirection();
+        if(v1->VertexOwnInclusion()){
+            v1->GetInclusion()->Reverse_Direction();
+        }
+        if(v2->VertexOwnInclusion()){
+            v2->GetInclusion()->Reverse_Direction();
+        }
+        if(v3->VertexOwnInclusion()){
+            v3->GetInclusion()->Reverse_Direction();
+        }
+        
         double e = m_pState->GetEnergyCalculator()->SingleVertexEnergy(v1);
         e = m_pState->GetEnergyCalculator()->SingleVertexEnergy(v2);
         e = m_pState->GetEnergyCalculator()->SingleVertexEnergy(v3);
-        e = v1->CalculateBindingEnergy(v1);
-        e = v2->CalculateBindingEnergy(v2);
-        e = v3->CalculateBindingEnergy(v3);
+        e += (m_pState->GetEnergyCalculator())->CalculateVectorFieldMembraneBindingEnergy(v1);
+        e += (m_pState->GetEnergyCalculator())->CalculateVectorFieldMembraneBindingEnergy(v2);
+        e += (m_pState->GetEnergyCalculator())->CalculateVectorFieldMembraneBindingEnergy(v3);
+
         {
             for (std::vector<links *>::iterator it = nvl1.begin() ; it != nvl1.end(); ++it){
                 e = m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(*it);

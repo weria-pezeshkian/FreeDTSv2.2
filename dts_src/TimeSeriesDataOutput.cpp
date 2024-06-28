@@ -45,6 +45,9 @@ and false if the periodic condition is not met or if there is an error writing t
 //--> write step and energy
     m_TimeSeriesFile<<step<<"   "<<m_pState->GetEnergyCalculator()->GetEnergy()<<"   ";
 
+    
+//    m_TimeSeriesFile<<step<<"   "<<m_pState->GetEnergyCalculator()->GetEnergy()<<"   ";
+
 //--->write box side length
     if(m_pState->GetDynamicBox()->GetDerivedDefaultReadName()!= NoBoxChange::GetDefaultReadName() ){
         m_TimeSeriesFile<<(*(m_pState->GetMesh()->GetBox()))(0)<<"  ";

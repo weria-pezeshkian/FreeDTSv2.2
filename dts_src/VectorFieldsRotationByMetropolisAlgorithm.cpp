@@ -99,7 +99,7 @@ bool VectorFieldsRotationByMetropolisAlgorithm::RotationMove(int layer, vertex *
     Dr.normalize();
     p_vf->UpdateLocalDirection(Dr);
     
-    double en_2 = p_vf->CalculateMembraneBindingEnergy(p_vertex);
+    double en_2 = (m_pState->GetEnergyCalculator())->CalculateVectorFieldMembraneBindingEnergy(p_vf,p_vertex);
     new_energy += en_2;
 
     //-- interaction energy should be calculated here

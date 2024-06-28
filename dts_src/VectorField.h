@@ -27,12 +27,15 @@ public:
     ~VectorField();
 
     inline Vec3D GetLDirection() { return m_LDirection; } //Gets the direction of the vector field in the local frame.
+    inline Vec3D GetGDirection() { return m_GDirection; } //Gets the direction of the vector field in the local frame.
+
     inline InclusionType* GetInclusionType() { return m_IncType; } //Gets the direction of the vector field in the local frame.
     inline double GetMembraneBindingEnergy() { return m_MembraneBindingEnergy; } 
-    
+    inline int GetLayer() { return m_Layer; }
+
     void UpdateLocalDirection(const Vec3D& lo_dir); //Updates the direction of the vector field in the local frame.
     void UpdateGlobalDirection(const Vec3D& lg_dir); //Updates the direction of the vector field in the global frame.
-    double CalculateMembraneBindingEnergy(vertex *p_vertex);
+    //double CalculateMembraneBindingEnergy(vertex *p_vertex);
     void UpdateMembraneBindingEnergy(const double &en);
     void Add2MembraneBindingEnergy(const double &en);
     
@@ -42,9 +45,16 @@ public:
     void Reverse_BindingEnergy(){
         m_MembraneBindingEnergy = m_OldMembraneBindingEnergy;
     };
-
+    void Copy_Direction(){
+        m_OldLDirection = m_LDirection;
+    };
+    void Reverse_Direction(){
+        m_LDirection = m_OldLDirection;
+    };
+    
 private:
     Vec3D m_LDirection;         ///< Direction of the vector field in the local frame.
+    Vec3D m_OldLDirection;         // a copy for local direction
     Vec3D m_GDirection;         ///< Direction of the vector field in the global frame.
     InclusionType* m_IncType;   ///< Pointer to the inclusion type associated with this vector field.
     double m_MembraneBindingEnergy;

@@ -34,7 +34,8 @@ public:
     double SingleVertexEnergy(vertex *p);
     double TwoInclusionsInteractionEnergy(links *);
     double TwoVectorFieldInteractionEnergy(int vf_layer, links * p_edge);
-
+    double CalculateVectorFieldMembraneBindingEnergy(VectorField* p_vf, vertex *p_vertex);
+    double CalculateVectorFieldMembraneBindingEnergy(vertex *p_vertex);
 private:
     double SurfVertexBendingAndStretchingEnergy(vertex * pver);
     double EdgeVertexBendingAndStretchingEnergy(vertex * pver);
@@ -47,6 +48,7 @@ private:
     double F2(vertex *v1, vertex *v2,std::vector<double>);
     double F11(vertex *v1, vertex *v2,std::vector<double>);
     double InteractionFunction(double N2, double A, double B, double theta);
+
 
 private:
     State* m_pState;

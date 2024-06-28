@@ -109,6 +109,9 @@ public:
     bool UpdateVoxelAfterAVertexMove(); // update the voxel after the move has happened.
     double SquareDistanceFromAVertex(vertex* pv2);
     double SquareDistanceOfAVertexFromAPoint(double X, double Y, double Z, vertex* pv2);
+    bool UpdateVFGlobalDirectionFromLocalDirection();   // check if the global direction of the vector fields can be obtianed from local
+    bool UpdateVFLocalDirectionFromGlobalDirection();   // check if the global direction of the vector fields can be obtianed from local
+    bool ReverseVFLocalDirection();
 
     
     friend std::ostream& operator<<(std::ostream& os, const vertex& obj);

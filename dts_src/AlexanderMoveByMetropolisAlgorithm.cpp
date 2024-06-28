@@ -181,12 +181,10 @@ bool AlexanderMoveByMetropolisAlgorithm::FlipOneEdge(int step, links *p_edge, do
     new_energy += (m_pState->GetEnergyCalculator())->SingleVertexEnergy(v2);
     new_energy += (m_pState->GetEnergyCalculator())->SingleVertexEnergy(v3);
     new_energy += (m_pState->GetEnergyCalculator())->SingleVertexEnergy(v4);
-    new_energy += v1->CalculateBindingEnergy(v1);
-    new_energy += v2->CalculateBindingEnergy(v2);
-    new_energy += v3->CalculateBindingEnergy(v3);
-    new_energy += v4->CalculateBindingEnergy(v4);
-
-
+    new_energy += (m_pState->GetEnergyCalculator())->CalculateVectorFieldMembraneBindingEnergy(v1);
+    new_energy += (m_pState->GetEnergyCalculator())->CalculateVectorFieldMembraneBindingEnergy(v2);
+    new_energy += (m_pState->GetEnergyCalculator())->CalculateVectorFieldMembraneBindingEnergy(v3);
+    new_energy += (m_pState->GetEnergyCalculator())->CalculateVectorFieldMembraneBindingEnergy(v4);
 
 //-- interaction energy should be calculated here
     for (std::vector<links *>::iterator it = Affected_links.begin() ; it != Affected_links.end(); ++it){

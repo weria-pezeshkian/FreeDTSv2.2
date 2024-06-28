@@ -147,13 +147,11 @@ double Energy::CalculateAllLocalEnergy()
 
     int number_of_vectorfields = m_pState->GetMesh()->GetNoVFPerVertex();
     
-    
-    
     for (std::vector<vertex *>::const_iterator it = pAllVertices.begin() ; it != pAllVertices.end(); ++it) {
         
         E += SingleVertexEnergy(*it);
         //---- this is for the vector fields; in VertexVectorFields the vectorfield energy will be set. such a function does not set the binding energy in the vectorfield class
-        E += (*it)->CalculateBindingEnergy(*it);
+        E += CalculateVectorFieldMembraneBindingEnergy(*it);
     }
      for (std::vector<links *>::const_iterator it = pRight_L.begin() ; it != pRight_L.end(); ++it) {
          
@@ -560,6 +558,87 @@ double Energy::Geo_Theta(vertex *v1, vertex *v2) {
         double theta = acos(S_an);
 
     return theta;
+}
+double Energy::CalculateVectorFieldMembraneBindingEnergy(VectorField* p_vf, vertex *p_vertex){
+    
+    double en = 0;
+    int layer = p_vf->GetLayer();
+    en += m_pState->GetExternalFieldOnVectorFields()->GetCouplingEnergy(layer, p_vf, p_vertex);
+
+    Vec3D l_direction = p_vf->GetLDirection();
+    InclusionType* inc_type = p_vf->GetInclusionType();
+if(p_vertex->GetVertexType() == 0) {
+    double c1 = p_vertex->GetP1Curvature();
+    double c2 = p_vertex->GetP2Curvature();
+
+    double mean_times2 = c1 + c2;
+    double gussian = c1 * c1;
+    double area = p_vertex->GetArea();
+    
+    double k0 = inc_type->ITk;
+    double kg = inc_type->ITkg;
+    double k1 = inc_type->ITk1;
+    double k2 = inc_type->ITk2;
+    double c0 = inc_type->ITc0;
+    double cp10 = inc_type->ITc1;
+    double cn20 = inc_type->ITc2;
+    //--- kappa/2*(2H-c0)^2-kgK+
+    double ev = k0 * (mean_times2-c0) * (mean_times2-c0) - kg * gussian;
+    en += ev * area;
+    
+//--> if the k1 and k2 are zero, we do not need to calculate the rest
+    if(k1 != 0 || k2 != 0){  // k1/2(cp-cp0)^2+k2/2(cn-cn0)^2
+    
+        double Cos = l_direction(0);
+        double Sin = l_direction(1);
+        double Cp = c1 * Cos * Cos + c2 * Sin * Sin;
+        double Cn = c1 * Cos * Cos + c2 * Sin * Sin;
+        double Delta_Cp = Cp - cp10;
+        double Delta_Cn = Cn - cn20;
+        en += (k1 * Delta_Cp * Delta_Cp + k2 * Delta_Cn * Delta_Cn) * area;
+    }
+}
+else if( p_vertex->GetVertexType() == 1) {
+    
+    double geo_c = p_vertex->GetGeodesicCurvature();
+    double norm_c = p_vertex->GetNormalCurvature();
+    double length = p_vertex->GetLength();
+    
+        double lambda = inc_type->ITelambda;
+        double kg     = inc_type->ITekg;
+        double kn     = inc_type->ITekn;
+        double cn0    = inc_type->ITecn;
+        
+        en += (lambda + kg*geo_c*geo_c)*length;
+        
+        if(kn != 0) {
+            
+            double Cos = l_direction(0);
+            kn = kn*Cos*Cos;
+            double Delta_norm_c = (norm_c-cn0);
+            en += (kn*Delta_norm_c*Delta_norm_c)*length;
+        }
+    
+}
+else{
+    
+    std::cout<<" error-> this is unexpected 903 \n";
+}
+    p_vf->UpdateMembraneBindingEnergy(en);
+    
+    return en;
+}
+double Energy::CalculateVectorFieldMembraneBindingEnergy(vertex *p_vertex){
+    
+    double T_en = 0;
+    int no_vf = p_vertex->GetNumberOfVF();
+    
+    for(int i = 0; i<no_vf; i++) {
+        T_en += CalculateVectorFieldMembraneBindingEnergy(p_vertex->GetVectorField(i), p_vertex);
+    }
+    
+    return T_en;
+    
 }
 std::string Energy::CurrentState(){
     

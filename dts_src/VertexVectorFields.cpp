@@ -90,7 +90,7 @@ std::string VertexVectorFields::GetVectorFieldsStream(){
     
     return str_data;
 }
-double VertexVectorFields::CalculateBindingEnergy(vertex *p_vertex){
+/*double VertexVectorFields::CalculateBindingEnergy(vertex *p_vertex){
     double T_en = 0;
     
     for (std::vector<VectorField*>::iterator it = m_VectorFields.begin(); it != m_VectorFields.end(); ++it) {
@@ -100,7 +100,7 @@ double VertexVectorFields::CalculateBindingEnergy(vertex *p_vertex){
     }
     
     return T_en;
-}
+}*/
 double VertexVectorFields::GetBindingEnergy(){
  
     double en = 0;

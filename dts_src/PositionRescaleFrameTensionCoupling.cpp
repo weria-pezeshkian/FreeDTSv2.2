@@ -195,7 +195,7 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
     int number_of_vectorfields = m_pState->GetMesh()->GetNoVFPerVertex();
     for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it) {
         new_energy += (m_pState->GetEnergyCalculator())->SingleVertexEnergy(*it);
-        new_energy += (*it)->CalculateBindingEnergy(*it);
+        new_energy += (m_pState->GetEnergyCalculator())->CalculateVectorFieldMembraneBindingEnergy(*it);
     }
     for (std::vector<links *>::iterator it = m_pRightL.begin() ; it != m_pRightL.end(); ++it) {
         new_energy += (m_pState->GetEnergyCalculator())->TwoInclusionsInteractionEnergy(*it);

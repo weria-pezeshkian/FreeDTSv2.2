@@ -36,6 +36,9 @@ public:
     virtual double TwoInclusionsInteractionEnergy(links *) = 0;
     virtual double TwoVectorFieldInteractionEnergy(int layer, links *) = 0;
     virtual double SingleVertexEnergy(vertex *p) = 0;
+    virtual double CalculateVectorFieldMembraneBindingEnergy(VectorField* p_vf, vertex *p_vertex) = 0;
+    virtual double CalculateVectorFieldMembraneBindingEnergy(vertex *p_vertex) = 0;
+    
     virtual std::string CurrentState() = 0;
 
     

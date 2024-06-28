@@ -65,13 +65,13 @@ public:
      * @return A string representing the vector fields data.
      */
     std::string GetVectorFieldsStream();
-    double CalculateBindingEnergy(vertex *p_vertex);
+    //double CalculateBindingEnergy(vertex *p_vertex);
     double GetBindingEnergy();
 
     void Copy_VFsBindingEnergy();
     void Reverse_VFsBindingEnergy();
 
-private:
+protected:
     std::vector<VectorField *> m_VectorFields;
     int m_NoFields;
     MESH *m_pMesh;

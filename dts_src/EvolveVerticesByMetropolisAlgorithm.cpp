@@ -190,11 +190,11 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
     }
     //---> calculate new energies
     new_energy = (m_pState->GetEnergyCalculator())->SingleVertexEnergy(pvertex);
-    new_energy += pvertex->CalculateBindingEnergy(pvertex);
+    new_energy += (m_pState->GetEnergyCalculator())->CalculateVectorFieldMembraneBindingEnergy(pvertex);
 
     for (std::vector<vertex *>::const_iterator it = vNeighbourV.begin() ; it != vNeighbourV.end(); ++it){
         new_energy += (m_pState->GetEnergyCalculator())->SingleVertexEnergy(*it);
-        new_energy += (*it)->CalculateBindingEnergy(*it);
+        new_energy += (m_pState->GetEnergyCalculator())->CalculateVectorFieldMembraneBindingEnergy(*it);
 
     }
     //-- interaction energy should be calculated here

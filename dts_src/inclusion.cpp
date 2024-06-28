@@ -32,9 +32,14 @@ bool inclusion::UpdateGlobalDirectionFromLocal(){
 }
 bool inclusion::UpdateLocalDirectionFromGlobal(){
     
+    m_OldLDirection = m_LDirection;
     m_LDirection = (m_pvertex->GetG2LTransferMatrix())*m_GDirection;
-    if(m_LDirection.isbad())
+    m_LDirection(2) = 0;
+    m_LDirection.normalize();
+    if(m_LDirection.isbad()){
+        m_LDirection = m_OldLDirection;
         return false;
+    }
 
     return true;
 }
