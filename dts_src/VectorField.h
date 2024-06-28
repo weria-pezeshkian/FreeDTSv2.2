@@ -23,7 +23,7 @@ public:
      * @param inctype Pointer to the inclusion type associated with this vector field.
      */
     VectorField();
-    VectorField(InclusionType* inctype, double x, double y);
+    VectorField(int layer, InclusionType* inctype, double x, double y);
     ~VectorField();
 
     inline Vec3D GetLDirection() { return m_LDirection; } //Gets the direction of the vector field in the local frame.
@@ -48,7 +48,7 @@ private:
     Vec3D m_GDirection;         ///< Direction of the vector field in the global frame.
     InclusionType* m_IncType;   ///< Pointer to the inclusion type associated with this vector field.
     double m_MembraneBindingEnergy;
-    
+    int m_Layer;
     double m_OldMembraneBindingEnergy;
 
 };

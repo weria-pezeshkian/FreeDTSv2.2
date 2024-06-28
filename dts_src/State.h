@@ -106,10 +106,14 @@
 #include "ActiveTwoStateInclusion.h"
 //--- force from inc to ver
 #include "AbstractForceonVerticesfromInclusions.h"
+#include "AbstractForceonVerticesfromVectorFields.h"
 #include "Constant_NematicForce.h"
+#include "Constant_NematicForceByVectorFields.h"
 //--- interaction with external fields
 #include "AbstractExternalFieldOnVectorFields.h"
+#include "AbstractExternalFieldOnInclusions.h"
 #include "ConstantExternalField.h"
+#include "ConstantExternalFieldOnVectorFields.h"
 //--- rigid boundries
 #include "AbstractBoundary.h"
 #include "RigidWallTypes.h"
@@ -168,9 +172,11 @@ inline AbstractTotalAreaCoupling        *GetTotalAreaCoupling()                 
 inline AbstractVolumeCoupling           *GetVolumeCoupling()                            {return m_pVolumeCoupling;}
 inline AbstractGlobalCurvature          *GetGlobalCurvature()                           {return m_pCoupleGlobalCurvature;}
 inline AbstractForceonVerticesfromInclusions *GetForceonVerticesfromInclusions()    {return m_pForceonVerticesfromInclusions;}
+inline AbstractForceonVerticesfromVectorFields *GetForceonVerticesfromVectorFields()    {return m_pForceonVerticesfromVectorFields;}
 inline AbstractExternalFieldOnVectorFields *GetExternalFieldOnVectorFields()        {return m_pExternalFieldOnVectorFields;}
-inline VAHGlobalMeshProperties              *GetVAHGlobalMeshProperties()        {return m_pVAHCalculator;}
+inline AbstractExternalFieldOnInclusions *GetExternalFieldOnInclusions()        {return m_pExternalFieldOnInclusions;}
 
+inline VAHGlobalMeshProperties              *GetVAHGlobalMeshProperties()        {return m_pVAHCalculator;}
 //---- supplementary integrators
 inline AbstractDynamicBox               *GetDynamicBox()                                {return m_pDynamicBox;}
 inline AbstractDynamicTopology          *GetDynamicTopology()                           {return m_pDynamicTopology;}
@@ -206,7 +212,10 @@ private:
     AbstractInclusionConversion* m_pInclusionConversion;
     Restart *m_pRestart;
     AbstractForceonVerticesfromInclusions *m_pForceonVerticesfromInclusions;
+    AbstractForceonVerticesfromVectorFields *m_pForceonVerticesfromVectorFields;
+
     AbstractExternalFieldOnVectorFields *m_pExternalFieldOnVectorFields;
+    AbstractExternalFieldOnInclusions *m_pExternalFieldOnInclusions;
 //--- Integrators of different degree of freedom
     AbstractAlexanderMove               *m_pAlexanderMove;
     AbstractVertexPositionIntegrator    *m_pVertexPositionIntegrator;

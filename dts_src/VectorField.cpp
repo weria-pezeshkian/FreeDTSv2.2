@@ -6,7 +6,7 @@
 VectorField::VectorField()  {
 
 }
-VectorField::VectorField(InclusionType *inctype, double x, double y) : m_IncType(inctype) {
+VectorField::VectorField(int layer, InclusionType *inctype, double x, double y) : m_IncType(inctype), m_Layer(layer) {
     
     m_LDirection(0) = x;
     m_LDirection(1) = y;
@@ -38,6 +38,9 @@ void VectorField::Add2MembraneBindingEnergy(const double &en){
 double VectorField::CalculateMembraneBindingEnergy(vertex *p_vertex){
     
     double en = 0;
+    
+   // en += m_pState->GetForceonVerticesfromVectorFields()->GetCouplingEnergy(m_Layer, this, p_vertex);
+
     
 if(p_vertex->GetVertexType() == 0) {
     double c1 = p_vertex->GetP1Curvature();

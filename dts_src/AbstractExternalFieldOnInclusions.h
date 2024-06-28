@@ -1,5 +1,5 @@
-#if !defined(AFX_AbstractExternalFieldOnVectorFields_H)
-#define AFX_AbstractExternalFieldOnVectorFields_H
+#if !defined(AFX_AbstractExternalFieldOnInclusions_H)
+#define AFX_AbstractExternalFieldOnInclusions_H
 #include <iostream>
 #include "vertex.h"
 
@@ -13,36 +13,34 @@ This class is a Abstract class for curvature calculations.
 ========================================================
 */
 class State;
-class  AbstractExternalFieldOnVectorFields {
+class  AbstractExternalFieldOnInclusions {
 public:
-    AbstractExternalFieldOnVectorFields(){
+    AbstractExternalFieldOnInclusions(){
         
     }
-    virtual ~ AbstractExternalFieldOnVectorFields(){
+    virtual ~ AbstractExternalFieldOnInclusions(){
         
     }
-    virtual double GetCouplingEnergy(int layer, VectorField* p_vf, vertex *pvertex) = 0;
+    virtual double GetCouplingEnergy(vertex *pvertex) = 0;
     virtual std::string CurrentState() = 0;
     virtual inline std::string GetDerivedDefaultReadName() = 0;
-    inline static std::string GetBaseDefaultReadName() {return "ExternalFieldOnVectorFields";}
+    inline static std::string GetBaseDefaultReadName() {return "ExternalFieldOnInclusions";}
 
     
 private:
     
 };
 //---- a class for no box change
-class NoExternalFieldOnVectorFields : public AbstractExternalFieldOnVectorFields {
+class NoExternalFieldOnInclusions : public AbstractExternalFieldOnInclusions {
 public:
-    NoExternalFieldOnVectorFields(){
+    NoExternalFieldOnInclusions(){
         
     }
-    ~NoExternalFieldOnVectorFields(){
+    ~NoExternalFieldOnInclusions(){
         
     }
     inline std::string GetDerivedDefaultReadName()  {return "No";};
-    inline static std::string GetDefaultReadName() {return "No";}
-
-    double GetCouplingEnergy(int layer, VectorField* p_vf, vertex *pvertex){
+    double GetCouplingEnergy(vertex *pvertex){
         return 0;
     }
     std::string CurrentState(){

@@ -28,7 +28,9 @@ State::State(std::vector<std::string> argument) :
       m_pCoupleGlobalCurvature(new NoGlobalCurvature(m_pVAHCalculator)),
       m_pTotalAreaCoupling(new NoTotalAreaCoupling(m_pVAHCalculator)),
       m_pForceonVerticesfromInclusions(new NoForce),  // Initialize ForceonVerticesfromInclusions
-      m_pExternalFieldOnVectorFields(new NoExternalField),  // Initialize ExternalFieldOnVectorFields
+      m_pForceonVerticesfromVectorFields(new NoVFForce),  // Initialize ForceonVerticesfromvectorfields
+      m_pExternalFieldOnVectorFields(new NoExternalFieldOnVectorFields),  // Initialize ExternalFieldOnVectorFields
+      m_pExternalFieldOnInclusions(new NoExternalFieldOnInclusions),  // Initialize ExternalFieldOnVectorFields
       m_pApplyConstraintBetweenGroups(new NoConstraint),  // Initialize ApplyConstraintBetweenGroups
       m_pBoundary(new PBCBoundary),  // Initialize Boundary
 
@@ -90,7 +92,9 @@ State::~State()
     delete m_pCoupleGlobalCurvature;
     delete m_pTotalAreaCoupling;
     delete m_pForceonVerticesfromInclusions;
+    delete m_pForceonVerticesfromVectorFields;
     delete m_pExternalFieldOnVectorFields;
+    delete m_pExternalFieldOnInclusions;
     delete m_pApplyConstraintBetweenGroups;
     delete m_pBoundary;
     delete m_pVertexPositionIntegrator;
@@ -597,6 +601,33 @@ while (input >> firstword) {
             }
         }
 //-- end of energy
+   //--- extenal force on fields and inclsuions
+        else if(firstword == AbstractExternalFieldOnVectorFields::GetBaseDefaultReadName()) {  // ConstantFieldOnVectorFields
+            
+            input >> str >> type;
+            getline(input,rest);
+            if(type == ConstantExternalFieldOnVectorFields::GetDefaultReadName() ){
+                
+                m_pExternalFieldOnVectorFields = new ConstantExternalFieldOnVectorFields(rest);
+            }
+            else if(type == NoExternalFieldOnVectorFields::GetDefaultReadName() ){
+                m_pExternalFieldOnVectorFields = new NoExternalFieldOnVectorFields;
+
+            }
+        }
+        else if(firstword == AbstractExternalFieldOnInclusions::GetBaseDefaultReadName() ) { // "ConstantField"
+            
+            input >> str >> type;
+            if(type == ConstantExternalField::GetDefaultReadName() ){
+                double k,x,y,z;
+                input>>str>>k>>x>>y>>z;
+                m_pExternalFieldOnInclusions = new ConstantExternalField(k,x,y,z);
+            }
+
+            getline(input,rest);
+
+        }
+//-------
         else if( firstword == "MC_Moves" ) {
             
             getline(input, str);
@@ -631,6 +662,17 @@ while (input >> firstword) {
                 std::cout<<" unknown ForceFromInclusions method "<<std::endl;
             }
             getline(input,rest);
+        }
+//---- force from vector fields on the vertices
+        else if(firstword == AbstractForceonVerticesfromVectorFields::GetBaseDefaultReadName()) {
+            input >> str >> type;
+            getline(input,rest);
+            if(type == Constant_NematicForceByVectorFields::GetDefaultReadName()){  // Constant_NematicForce
+                m_pForceonVerticesfromVectorFields = new Constant_NematicForceByVectorFields(rest);
+            }
+            else {
+                std::cout<<" unknown ForceFrom vector fields method "<<std::endl;
+            }
         }
         else if(firstword == "Dynamic_Topology")
         {
@@ -694,13 +736,6 @@ while (input >> firstword) {
                 m_NumberOfErrors++;
                 return false;
             }
-        }
-        else if(firstword == "ConstantField") {
-            double k,x,y,z;
-            input>>str>>k>>x>>y>>z;
-            m_pExternalFieldOnVectorFields = new ConstantExternalField(k,x,y,z);
-            getline(input,rest);
-
         }
         else if(firstword == "Voxel_Size"){
             double lx,ly,lz;

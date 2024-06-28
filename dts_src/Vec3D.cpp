@@ -35,8 +35,10 @@ Vec3D Vec3D::operator*(const Vec3D& other) const {
 }
 void Vec3D::normalize(){
     double norm = std::sqrt(m_X*m_X + m_Y*m_Y + m_Z*m_Z);
-    if(norm==0)
-    return;
+    
+    if(norm == 0){
+        return;
+    }
     
     m_X = m_X/norm;
     m_Y = m_Y/norm;

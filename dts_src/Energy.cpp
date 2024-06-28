@@ -21,7 +21,7 @@ double Energy::SingleVertexEnergy(vertex *p_vertex) {
     
     double Energy=0.0;
 //---> note, if the vertex has no inclusion, this will return zero by default
-    Energy += m_pState->GetExternalFieldOnVectorFields()->GetCouplingEnergy(p_vertex);
+    Energy += m_pState->GetExternalFieldOnInclusions()->GetCouplingEnergy(p_vertex);
     
     if(p_vertex->m_VertexType == 0) {
     
@@ -203,7 +203,7 @@ double Energy::TwoInclusionsInteractionEnergy(links * p_edge) {
         double e_int = 0;
     switch (FunctionType) {
         case 0:{
-            e_int = -ff[0];
+            e_int = 0;
              break;
         }
          case 1: {
@@ -433,7 +433,7 @@ double Energy::TwoVectorFieldInteractionEnergy(int vf_layer, links * p_edge) {
     Vec3D d1 = VF1->GetLDirection();
     Vec3D d2 = VF2->GetLDirection();
     int id1 = VF1->GetInclusionType()->ITid;
-    int id2 = VF1->GetInclusionType()->ITid;
+    int id2 = VF2->GetInclusionType()->ITid;
     PairInt pair_ab = m_pInt->GetPairInt(id1,id2);
     std::vector <double> ff = pair_ab.Varibale;
     //---> get the type of function that they interact, it is an intger
@@ -448,7 +448,7 @@ double Energy::TwoVectorFieldInteractionEnergy(int vf_layer, links * p_edge) {
         }
          case 1: {
              
-             double theta = (ff[2] != 0) ? AngleDiff_ParallelTransport(d1, d1, p_edge) : 0.0;
+             double theta = (ff[2] != 0) ? AngleDiff_ParallelTransport(d1, d2, p_edge) : 0.0;
              e_int = -ff[1] + ff[2] * cos(double(ff[0]) * theta);
              break;
          }

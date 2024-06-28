@@ -63,7 +63,7 @@ bool VertexVectorFields::Initialize(int no_v, std::string data, MESH *pMesh) {
         InclusionType* inc_type = all_incType[inc_type_id];
 
         // Allocate a new VectorField object and add it to the vector.
-        m_VectorFields.push_back(new VectorField(inc_type, x, y));
+        m_VectorFields.push_back(new VectorField(i, inc_type, x, y));
     }
 
     return true;

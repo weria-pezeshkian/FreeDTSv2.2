@@ -142,6 +142,8 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
     // if we do this here, the force is from inital configuration
     // while if we do it after the move, it will be from final configurations
     double dE_force_from_inc = 0;
+    double dE_force_from_vectorfields = 0;
+
     for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it){
         double x = (*it)->GetVXPos();
         double y = (*it)->GetVYPos();
@@ -152,6 +154,7 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
         
         Vec3D DX(dx,dy, dz);
         dE_force_from_inc  += m_pState->GetForceonVerticesfromInclusions()->Energy_of_Force( *it, DX);
+        dE_force_from_vectorfields += m_pState->GetForceonVerticesfromVectorFields()->Energy_of_Force( *it, DX);
     }
     
     (*m_pBox)(0) *= lx;

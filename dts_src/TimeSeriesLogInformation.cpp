@@ -68,7 +68,8 @@ void TimeSeriesLogInformation::WriteStartingState(){
     m_TimeSeriesFile<<m_pState->GetVertexPositionUpdate()->CurrentState()<<std::endl;
     m_TimeSeriesFile<<m_pState->GetAlexanderMove()->CurrentState()<<std::endl;
     m_TimeSeriesFile<<m_pState->GetInclusionPoseUpdate()->CurrentState()<<std::endl;
-    
+    m_TimeSeriesFile<<m_pState->GetVectorFieldsRotationUpdate()->CurrentState()<<std::endl;
+
     m_TimeSeriesFile<<m_pState->GetNonbinaryTrajectory()->CurrentState()<<std::endl;
     m_TimeSeriesFile<<m_pState->GetBinaryTrajectory()->CurrentState()<<std::endl;
     m_TimeSeriesFile<<m_pState->GetVisualization()->CurrentState()<<std::endl;
@@ -78,13 +79,19 @@ void TimeSeriesLogInformation::WriteStartingState(){
     
     m_TimeSeriesFile<<m_pState->GetApplyConstraintBetweenGroups()->CurrentState()<<std::endl;
     m_TimeSeriesFile<<m_pState->GetForceonVerticesfromInclusions()->CurrentState()<<std::endl;
+    m_TimeSeriesFile<<m_pState->GetForceonVerticesfromVectorFields()->CurrentState()<<std::endl;
     m_TimeSeriesFile<<m_pState->GetExternalFieldOnVectorFields()->CurrentState()<<std::endl;
+    m_TimeSeriesFile<<m_pState->GetExternalFieldOnInclusions()->CurrentState()<<std::endl;
     m_TimeSeriesFile<<m_pState->GetInclusionConversion()->CurrentState()<<std::endl;
 
     m_TimeSeriesFile<<m_pState->GetDynamicBox()->CurrentState()<<std::endl;
     m_TimeSeriesFile<<m_pState->GetDynamicTopology()->CurrentState()<<std::endl;
     m_TimeSeriesFile<<m_pState->GetOpenEdgeEvolution()->CurrentState()<<std::endl;
     m_TimeSeriesFile<<m_pState->GetTimeSeriesDataOutput()->CurrentState()<<std::endl;
+    
+
+    
+    
 
 
     m_TimeSeriesFile<<";------------------------------------------  "<<std::endl;

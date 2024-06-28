@@ -37,7 +37,7 @@ public:
 
 private:
 
-    bool RotationMove(int layer, vertex *p_vertex, double dx, double dy, double thermal);
+    bool RotationMove(int layer, vertex *p_vertex, double dx,  double thermal);
     
 private:
     std::vector<links*> GetEdgesWithInteractionChange(links* p_link);

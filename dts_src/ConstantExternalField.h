@@ -6,9 +6,9 @@
  2024
 */
 #include "vertex.h"
-#include "AbstractExternalFieldOnVectorFields.h"
+#include "AbstractExternalFieldOnInclusions.h"
 
-class ConstantExternalField : public AbstractExternalFieldOnVectorFields {
+class ConstantExternalField : public AbstractExternalFieldOnInclusions {
 
 public:
     ConstantExternalField(double k, double x, double y, double z);
