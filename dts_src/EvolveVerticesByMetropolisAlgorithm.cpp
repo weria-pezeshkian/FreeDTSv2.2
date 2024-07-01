@@ -306,7 +306,7 @@ bool EvolveVerticesByMetropolisAlgorithm::VertexMoveIsFine(vertex* pvertex, doub
     std::vector <vertex *> npvertex = pvertex->GetVNeighbourVertex();
     for (std::vector<vertex *>::iterator it = npvertex.begin() ; it != npvertex.end(); ++it){
         double dist2 = (*it)->SquareDistanceOfAVertexFromAPoint(new_x, new_y, new_z, *it);
-            if(dist2<mindist2 || dist2>maxdist2)
+            if(dist2 < mindist2 || dist2 > maxdist2)
             return false;
     }
 //---> now check it within the voxel cells
@@ -348,8 +348,8 @@ std::cout << pvertex->GetVoxel()->GetXIndex()<<" "<<pvertex->GetVoxel()->GetYInd
         for(int s=-1;s<2;s++){
             std::vector <vertex *> CV = new_pvox->GetANeighbourCell(n, m, s)->GetContentObjects();
             for (std::vector<vertex *>::iterator it = CV.begin() ; it != CV.end(); ++it){
-                if(*it!=pvertex){
-                    if((*it)->SquareDistanceOfAVertexFromAPoint(new_x, new_y, new_z, *it)<mindist2)
+                if(*it != pvertex){
+                    if((*it)->SquareDistanceOfAVertexFromAPoint(new_x, new_y, new_z, *it) < mindist2)
                         return false;
                 }
                 

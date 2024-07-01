@@ -393,7 +393,9 @@ bool vertex::UpdateVoxelAfterAVertexMove(){
         return false;
     }
     //Voxel<vertex>::GetANeighbourCell
+    m_pVoxel->RemoveObjectFromContentList(this);
     m_pVoxel = m_pVoxel->GetANeighbourCell(i, j, k);
+    m_pVoxel->AddtoContentList(this);
 
     return true;
 }
