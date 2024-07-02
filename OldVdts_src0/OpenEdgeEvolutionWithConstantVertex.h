@@ -1,13 +1,14 @@
 #if !defined(AFX_OpenEdgeEvolutionWithConstantVertex_H_INCLUDED_)
 #define AFX_OpenEdgeEvolutionWithConstantVertex_H_INCLUDED_
-#include "AbstractOpenEdgeEvolution.h"
-#include "AbstractSimulation.h"
+#include "OpenEdgeEvolution.h"
 #include "inclusion.h"
 #include "triangle.h"
 #include "vertex.h"
 #include "links.h"
 #include "SimDef.h"
 #include "MESH.h"
+#include "RNG.h"
+#include "Energy.h"
 /*
  Weria Pezeshkian (weria.pezeshkian@gmail.com)
  Copyright (c) Weria Pezeshkian
@@ -25,24 +26,28 @@
  */
 
 class State;
-class OpenEdgeEvolutionWithConstantVertex : public AbstractOpenEdgeEvolution { // to use for polymorphism
+class OpenEdgeEvolutionWithConstantVertex: public OpenEdgeEvolution { // to use for
 public:
-    OpenEdgeEvolutionWithConstantVertex(int period, double rate, State *pState);
+    OpenEdgeEvolutionWithConstantVertex();
+    OpenEdgeEvolutionWithConstantVertex(int rate, State *pState);
     ~OpenEdgeEvolutionWithConstantVertex();
+    inline int GetRate() {return m_Rate;}
 
 public:
     void Initialize();
-    bool Move(int step);
-    std::string CurrentState();
-
-    
-    inline  std::string GetDerivedDefaultReadName() {return "EvolutionWithConstantVertex";}
-    inline static std::string GetDefaultReadName() {return "EvolutionWithConstantVertex";}
+    void MC_Move(RNG* rng, double lmin, double lmax, double maxangle);
     
 private:
-    bool MCAttemptedToAddALink();
-    bool MCAttemptedToRemoveALink();
-
+    std::vector<triangle>       m_GhostT; // Some trinagles for initial storing
+    std::vector<links>          m_GhostL;
+    std::vector<triangle*>      m_pGhostT; // Some trinagles ....
+    std::vector<links*>         m_pGhostL;  // some edges for  ...
+    int m_Rate;
+    MESH* m_pMESH;
+    Vec3D * m_pBox;
+    State *m_pState;
+    Energy *m_pEnergyCalculator;
+    double m_Beta;
 
     void RemoveFromLinkList(links* z, std::vector<links*> &vect);
     void RemoveFromVertexList(vertex* z, std::vector<vertex*> &vect);
@@ -50,13 +55,11 @@ private:
     void AddtoLinkList(links* z, std::vector<links*> &vect);
     void AddtoVertexList(vertex* z, std::vector<vertex*> &vect);
     void AddtoTriangleList(triangle* z, std::vector<triangle*> &vect);
-    bool Linkisvalid(vertex *);
+    bool Linkisvalid(vertex *, double lmin, double lmax, double maxangle);
     double  SystemEnergy();
 
-   //  void MC_Move(double lmin, double lmax, double maxangle);
 
-
-    // the main hard part of the code. 
+    // the main hard part of the code. 4 interesting function
 private:  // this functions could be in princeple public, but no need for now
     
     links* CreateALink(vertex *);    // creates a link between two connected edge at the edge
@@ -64,34 +67,6 @@ private:  // this functions could be in princeple public, but no need for now
     triangle* CloseATriangleHole(vertex *v1);  //if an edge contains only three links, it will close it
     bool KillATriangle(links *l1);      // kills a triangle anywhere
 
-private:
-    State *m_pState;
-    int m_Period;
-    double m_NumberOfMovePerStep;   // how many updates should be made per step
     
-    std::vector<links*>&          m_pEdgeL;
-    std::vector<links*>&          m_pGhostL;
-    std::vector<links*>&          m_pRightL;
-    std::vector<links*>&          m_pLeftL;
-    std::vector<links*>&          m_pActiveL;
-    std::vector<vertex*>&         m_pEdgeV;
-    std::vector<vertex*>&         m_pSurfV; // all the active vertices  surf
-    std::vector<triangle*>&       m_pGhostT;
-    std::vector<triangle*>&       m_pActiveT;
-    MESH *m_pMesh;
-    Vec3D *m_pBox;
-    
-    double &m_Beta;
-    double &m_DBeta;
-    double &m_MinLength2;
-    double &m_MaxLength2;
-    double &m_MinAngle;
-    int &m_No_VectorFields_Per_V;
-
-private:
-    bool do_Simulation(){
-        std::cout<<" ---> error, 999o1o this should have been called \n";
-        return false;
-    }
 };
 #endif
