@@ -484,15 +484,18 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
         }
     }
 
-    enew += m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(v1->m_pPrecedingEdgeLink);
-    for( int vf_layer = 0; vf_layer< m_No_VectorFields_Per_V; vf_layer++) {
-        enew +=  (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, v1->m_pPrecedingEdgeLink);
-    }
+    if(!ClosingAHole){
+
+        enew += m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(v1->m_pPrecedingEdgeLink);
+        for( int vf_layer = 0; vf_layer< m_No_VectorFields_Per_V; vf_layer++) {
+            enew +=  (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, v1->m_pPrecedingEdgeLink);
+        }
         // the new created link
-    enew += m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(newlink);
+        enew += m_pState->GetEnergyCalculator()->TwoInclusionsInteractionEnergy(newlink);
     
-    for( int vf_layer = 0; vf_layer< m_No_VectorFields_Per_V; vf_layer++) {
-        enew +=  (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, newlink);
+        for( int vf_layer = 0; vf_layer< m_No_VectorFields_Per_V; vf_layer++) {
+            enew +=  (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, newlink);
+        }
     }
 
     double diff_energy = enew - eold;
