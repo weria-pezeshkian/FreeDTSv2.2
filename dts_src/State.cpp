@@ -670,6 +670,9 @@ while (input >> firstword) {
             if(type == Constant_NematicForceByVectorFields::GetDefaultReadName()){  // Constant_NematicForce
                 m_pForceonVerticesfromVectorFields = new Constant_NematicForceByVectorFields(rest);
             }
+            else if(type == NoVFForce::GetDefaultReadName()){
+                
+            }
             else {
                 std::cout<<" unknown ForceFrom vector fields method "<<std::endl;
             }

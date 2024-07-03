@@ -108,7 +108,7 @@ for (int step = m_Initial_Step; step <= m_Final_Step; step++){
 //----> print info about the simulation, e.g., rate,
    // time_t currentTime;
    // time(&currentTime);
-    if (step%50 == 0) {
+    if (step%100 == 0) {
         PrintRate(step, true, true);
     }
 

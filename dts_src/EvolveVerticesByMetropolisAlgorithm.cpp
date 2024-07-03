@@ -201,8 +201,12 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
 
     for (std::vector<links *>::iterator it = Affected_links.begin() ; it != Affected_links.end(); ++it){
         new_energy += (m_pState->GetEnergyCalculator())->TwoInclusionsInteractionEnergy(*it);
-        for( int vf_layer = 0; vf_layer< m_pState->GetMesh()->GetNoVFPerVertex(); vf_layer++){
-          new_energy +=  (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, *it);
+        
+        if(pvertex->GetNumberOfVF() != 0 ){
+            for( int vf_layer = 0; vf_layer< m_pState->GetMesh()->GetNoVFPerVertex(); vf_layer++){
+                
+                new_energy +=  (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, *it);
+        }
         }
     }
     //---> get energy for ApplyConstraintBetweenGroups
@@ -431,14 +435,14 @@ std::vector<links*> EvolveVerticesByMetropolisAlgorithm::GetEdgesWithInteraction
     std::vector<vertex *> neighbor_vertices = p_vertex->GetVNeighbourVertex();
     for (std::vector<vertex *>::iterator it = neighbor_vertices.begin() ; it != neighbor_vertices.end(); ++it)
     {
-          //  if((*it)->VertexOwnInclusion()) {  // due to vector fields
+            if((*it)->VertexOwnInclusion() || p_vertex->GetNumberOfVF() != 0 ) {  // due to vector fields
                 std::vector<links *> ltem = (*it)->GetVLinkList();
                 all_temlinks.insert(all_temlinks.end(), ltem.begin(), ltem.end());
                 // note, this is even need it if the p_vertex vertex is not an edge vertex
                 if((*it)->m_VertexType == 1){
                     all_temlinks.push_back((*it)->m_pPrecedingEdgeLink);
                 }
-          //  }
+            }
     }
 
     

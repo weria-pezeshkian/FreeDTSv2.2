@@ -103,6 +103,10 @@ std::string VertexVectorFields::GetVectorFieldsStream(){
 }*/
 double VertexVectorFields::GetBindingEnergy(){
  
+    if(m_NoFields == 0 ){
+        return 0;
+    }
+        
     double en = 0;
     for (std::vector<VectorField*>::iterator it = m_VectorFields.begin(); it != m_VectorFields.end(); ++it) {
         en += (*it)->GetMembraneBindingEnergy();
@@ -112,6 +116,9 @@ double VertexVectorFields::GetBindingEnergy(){
 }
 void VertexVectorFields::Copy_VFsBindingEnergy(){
     
+    if(m_NoFields == 0 ){
+        return;
+    }
     for (std::vector<VectorField*>::iterator it = m_VectorFields.begin(); it != m_VectorFields.end(); ++it) {
         (*it)->Copy_BindingEnergy();
     }
@@ -119,6 +126,9 @@ void VertexVectorFields::Copy_VFsBindingEnergy(){
 }
 void VertexVectorFields::Reverse_VFsBindingEnergy(){
     
+    if(m_NoFields == 0 ){
+        return;
+    }
     for (std::vector<VectorField*>::iterator it = m_VectorFields.begin(); it != m_VectorFields.end(); ++it) {
         (*it)->Reverse_BindingEnergy();
     }

@@ -16,6 +16,7 @@ links::links(int id, vertex *v1, vertex *v2, triangle *t1) {
     m_LinkType = 0;
     m_Be = 0;
     m_He = 0;
+    m_Number_of_VectorField_Layers = 0;
 }
 links::links(int id) {
     m_IntEnergy = 0;
@@ -27,6 +28,7 @@ links::links(int id) {
     m_LinkType = 0;
     m_Be = 0;
     m_He = 0;
+    m_Number_of_VectorField_Layers = 0;
 }
 
 links::~links() {
@@ -51,6 +53,7 @@ void links::InitializeVFIntEnergy(int no_vf){
     for (int i = 0; i<no_vf; i++){
         m_VFieldIntEnergy.push_back(0);
     }
+    m_Number_of_VectorField_Layers = no_vf;
     return;
 }
 
@@ -63,6 +66,11 @@ double links::GetVFIntEnergy() {
      *
      * @return The total vector field interaction energy.
      */
+    
+    if(m_Number_of_VectorField_Layers == 0){
+        return 0;
+    }
+    
     double en = 0.0; // Initialize total energy to zero
 
     // Iterate through the vector using iterators and accumulate the total energy
@@ -74,7 +82,7 @@ double links::GetVFIntEnergy() {
 }
 double links::GetVFIntEnergy(int layer) {
 
-    if( layer >= m_VFieldIntEnergy.size()){
+    if( layer >= m_Number_of_VectorField_Layers){
         std::cout<<"---> iligal action \n";
         return 0;
     }
@@ -91,11 +99,17 @@ bool links::Copy_InteractionEnergy(){
 }
 bool links::Copy_VFInteractionEnergy(){
     
+    if(m_Number_of_VectorField_Layers == 0){
+        return true;
+    }
     m_OldVFieldIntEnergy = m_VFieldIntEnergy;
     return true;
 }
 bool links::Reverse_VFInteractionEnergy(){
     
+    if(m_Number_of_VectorField_Layers == 0){
+        return true;
+    }
     m_VFieldIntEnergy = m_OldVFieldIntEnergy;
     if(m_mirorflag){
         m_mirorlink->UpdateVFIntEnergy(m_OldVFieldIntEnergy);

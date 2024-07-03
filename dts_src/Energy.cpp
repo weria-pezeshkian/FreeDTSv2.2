@@ -118,7 +118,7 @@ double Energy::EdgeVertexBendingAndStretchingEnergy(vertex *p_vertex)
         double kn     = p_inc->m_IncType->ITekn;
         double cn0    = p_inc->m_IncType->ITecn;
         
-        en += (lambda + kg*geo_c*geo_c)*length;
+        en += (lambda + kg * geo_c * geo_c) * length;
         
         if(kn != 0) {
             
@@ -130,7 +130,7 @@ double Energy::EdgeVertexBendingAndStretchingEnergy(vertex *p_vertex)
             en += (kn*Delta_norm_c*Delta_norm_c)*length;
         }
         else{  // I do not understand what does this means. 
-            en += kn*norm_c*norm_c*length;
+            en += kn * norm_c * norm_c * length;
         }
     }
 
@@ -568,6 +568,7 @@ double Energy::CalculateVectorFieldMembraneBindingEnergy(VectorField* p_vf, vert
 
     Vec3D l_direction = p_vf->GetLDirection();
     InclusionType* inc_type = p_vf->GetInclusionType();
+    
 if(p_vertex->GetVertexType() == 0) {
     double c1 = p_vertex->GetP1Curvature();
     double c2 = p_vertex->GetP2Curvature();
@@ -610,7 +611,7 @@ else if( p_vertex->GetVertexType() == 1) {
         double kn     = inc_type->ITekn;
         double cn0    = inc_type->ITecn;
         
-        en += (lambda + kg*geo_c*geo_c)*length;
+        en += (lambda + kg*geo_c*geo_c) * length;
         
         if(kn != 0) {
             

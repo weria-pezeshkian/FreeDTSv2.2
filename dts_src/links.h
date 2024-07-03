@@ -123,7 +123,7 @@ private:
     double m_OldEdgeSize;    // size of the edge
     int m_OldLinkType;  // 0 surface link; 1 edge link;
     std::vector<double> m_OldVFieldIntEnergy;    // interaction energy of the vector fields
-
+    int m_Number_of_VectorField_Layers;
 
 };
 
