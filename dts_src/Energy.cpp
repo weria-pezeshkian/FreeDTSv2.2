@@ -105,9 +105,10 @@ double Energy::EdgeVertexBendingAndStretchingEnergy(vertex *p_vertex)
     }
     
     if(!p_vertex->VertexOwnInclusion()) {
+        // e = lammda + k * k_g*k_g + k2 * k_n*k_n
+        double en_b = m_Lambda + m_Kappa_Geo * geo_c * geo_c + m_Kappa_Norm * norm_c * norm_c;
         
-        double en_b = m_Lambda+m_Kappa_Geo*geo_c*geo_c+m_Kappa_Norm*norm_c*norm_c;
-        en += en_b*length;
+        en += en_b * length;
     }
     else {
         

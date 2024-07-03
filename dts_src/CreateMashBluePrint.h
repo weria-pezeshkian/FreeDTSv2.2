@@ -23,11 +23,11 @@ struct Triangle_Map {    // Data structure for triangle map (not triangle object
     int id, v1, v2, v3;
 };
 
-struct Inclusion_Map {    // Data structure for inclusion map (not triangle object)
+struct Inclusion_Map {    // Data structure for inclusion map 
     double x, y;
     int id, vid, tid;
 };
-struct VectorField_Map {    // Data structure for inclusion map (not triangle object)
+struct VectorField_Map {    // Data structure for vector field map
     std::string data_line;
 };
 

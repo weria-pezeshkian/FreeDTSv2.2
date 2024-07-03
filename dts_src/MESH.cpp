@@ -82,7 +82,6 @@ bool MESH::GenerateMesh(MeshBluePrint meshblueprint)
   //  for (std::vector<InclusionType>::iterator it = m_InclusionType.begin() ; it != m_InclusionType.end(); ++it)
     //    m_pInclusionType.push_back(&(*it));
     
-    
     // Making vertices
     for (std::vector<Vertex_Map>::iterator it = (meshblueprint.bvertex).begin() ; it != (meshblueprint.bvertex).end(); ++it)
     {
@@ -331,6 +330,7 @@ bool MESH::GenerateMesh(MeshBluePrint meshblueprint)
     // Ensure the size of meshblueprint.bvectorfields matches the number of active vertices
     if (m_No_VectorFields_Per_V !=0 && meshblueprint.bvectorfields.size() != m_pActiveV.size()) {
         std::cerr << "Error: Mismatch between vector fields data and active vertices count.\n";
+        std::cerr << "---- active vertices: "<<m_pActiveV.size()<<"  vector field data "<<meshblueprint.bvectorfields.size()<<"\n";
         return false;
     }
 
@@ -366,8 +366,9 @@ bool MESH::GenerateMesh(MeshBluePrint meshblueprint)
 //===========================================================
 // Note, the converted blue print will not have the exclusions
 //
-MeshBluePrint MESH::Convert_Mesh_2_BluePrint(MESH *mesh)
-{
+MeshBluePrint MESH::Convert_Mesh_2_BluePrint(MESH *mesh) {
+    
+    
     MeshBluePrint BluePrint;
     std::vector<Vertex_Map> bvertex;       // a vector of all vertices (only the blueprint not the object) in the mesh
     std::vector<Triangle_Map> btriangle;   // a vector of all triangles (only the blueprint not the object) in the mesh
@@ -388,6 +389,8 @@ MeshBluePrint MESH::Convert_Mesh_2_BluePrint(MESH *mesh)
         tvm.id = (*it)->GetVID();
         tvm.domain = (*it)->GetGroup();
         bvertex.push_back(tvm);
+        
+        //--- vector fields
         VectorField_Map tem_vf;
         tem_vf.data_line = (*it)->GetVectorFieldsStream();
         bvectorfields.push_back(tem_vf);
@@ -417,6 +420,8 @@ MeshBluePrint MESH::Convert_Mesh_2_BluePrint(MESH *mesh)
         binclusion.push_back(tim);
 
     }
+    //--- note vector fields are written in the vertex section
+    
     // Add other map into the mesh map
     BluePrint.bvertex = bvertex;
     BluePrint.btriangle = btriangle;

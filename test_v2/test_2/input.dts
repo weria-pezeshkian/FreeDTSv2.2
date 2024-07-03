@@ -18,7 +18,7 @@ VectorFieldsForceOnVertex = Constant_NematicForce 2 -2
 ExternalFieldOnVectorFields = ConstantFieldOnVectorFields 5 1  0  0  5  1  0 0  
 VisualizationFormat = VTUFileFormat VTU_F 1000
 NonbinaryTrajectory = TSI TrajTSI 1000
-Restart_Period = 5000
+Restart_Period = 200
 INCLUSION
 Define 2 Inclusions
 SRotation   Type   K    KG   KP   KL   C0     C0P   C0L  lambda   lkg   lkn    cn0
