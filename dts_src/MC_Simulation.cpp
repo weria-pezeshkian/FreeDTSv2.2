@@ -136,15 +136,22 @@ void  MC_Simulation::PrintRate(int step, bool clean, bool clear){
     double  emove_rate =  100 * (m_pState->GetAlexanderMove()->GetAcceptanceRate(clean));
     double  imove_rate =  100 * (m_pState->GetInclusionPoseUpdate()->GetAcceptanceRate(clean));
     double  bmove_rate =  100 * (m_pState->GetDynamicBox()->GetAcceptanceRate(clean));
+    double  vfmove_rate = 100 * (m_pState->GetVectorFieldsRotationUpdate()->GetAcceptanceRate(clean));
 
     std::cout<<"Step = "<<step<<"/"<<m_Final_Step<<std::flush;
     std::cout << std::fixed << std::setprecision(1);
     std::cout<<" Rates: "<<std::flush;
     std::cout<<" vertex move = "<<vmove_rate<<"%"<<std::flush;
     std::cout<<"; alexander move = "<<emove_rate<<"%"<<std::flush;
-    std::cout<<"; inclusion move = "<<imove_rate<<"%"<<std::flush;
-    if(m_pState->GetDynamicBox()->GetDerivedDefaultReadName() != "No")
-    std::cout<<"; Box Move = "<<bmove_rate<<"%"<<std::flush;
+    if(m_pState->GetMesh()->GetInclusion().size() != 0){
+        std::cout<<"; inclusion move = "<<imove_rate<<"%"<<std::flush;
+    }
+    if(m_pState->GetMesh()->GetNoVFPerVertex() != 0){
+        std::cout<<"; vector fields move = "<<vfmove_rate<<"%"<<std::flush;
+    }
+    if(m_pState->GetDynamicBox()->GetDerivedDefaultReadName() != "No"){
+        std::cout<<"; Box Move = "<<bmove_rate<<"%"<<std::flush;
+    }
     if(clear){
         std::cout << '\r';
         std::cout << "\033[K";

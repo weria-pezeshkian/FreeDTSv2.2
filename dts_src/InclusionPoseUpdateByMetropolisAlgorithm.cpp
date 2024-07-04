@@ -55,9 +55,8 @@ bool InclusionPoseUpdateByMetropolisAlgorithm::EvolveOneStep(int step){
         inclusion *p_inc = m_pInclusion[r_inc_id];
         double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
         double dx=1-2*(m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
-        double dy=1-2*(m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
         
-        if(RotationMove(p_inc,thermal, m_DR*dx, m_DR*dy)){
+        if(RotationMove(p_inc, m_DR*dx, thermal)){
             m_AcceptedMoves++;
         }
         m_NumberOfAttemptedMoves++;
@@ -162,8 +161,9 @@ bool InclusionPoseUpdateByMetropolisAlgorithm::KawasakiMove(inclusion* p_inc, li
     return true;
 
 }
-bool InclusionPoseUpdateByMetropolisAlgorithm::RotationMove(inclusion *p_inc, double dx, double dy, double temp) {
-    
+//bool InclusionPoseUpdateByMetropolisAlgorithm::RotationMove(inclusion *p_inc, double dx, double dy, double temp) {
+bool InclusionPoseUpdateByMetropolisAlgorithm::RotationMove(inclusion *p_inc, double dx, double temp) {
+
     /**
      * @brief Perform a rotational move on the inclusion using the Metropolis algorithm.
      *
@@ -191,14 +191,18 @@ bool InclusionPoseUpdateByMetropolisAlgorithm::RotationMove(inclusion *p_inc, do
     // Copy interaction energies and get old energy
     for (std::vector<links *>::iterator it = Affected_links.begin() ; it != Affected_links.end(); ++it){
         (*it)->Copy_InteractionEnergy();
-        old_energy += 2*(*it)->GetIntEnergy();
+        old_energy += 2 * (*it)->GetIntEnergy();
     }
     
 //-- perfrom the move
-    Vec3D local_d = p_inc->GetLDirection();
-    Vec3D new_d ( local_d(0) + dx, local_d(1) + dy, 0);
-    new_d.normalize();
-    p_inc->UpdateLocalDirection(new_d);
+     Vec3D local_d = p_inc->GetLDirection();
+     Vec3D Dr(local_d(1), -local_d(0), 0);
+     Dr = local_d + (Dr * dx);
+     Dr.normalize();
+     p_inc->UpdateLocalDirection(Dr);
+     
+    
+    
     
     new_energy += (m_pState->GetEnergyCalculator())->SingleVertexEnergy(ver);
 

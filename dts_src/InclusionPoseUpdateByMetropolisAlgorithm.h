@@ -49,7 +49,7 @@ private:
      * @return True if the move is accepted, false otherwise.
      */
     bool KawasakiMove(inclusion* p_inc, links* d_links, double thermal);
-    bool RotationMove(inclusion* p_inc, double dx, double dy, double thermal);
+    bool RotationMove(inclusion* p_inc, double dx, double thermal);
     
 private:
     std::vector<links*> GetEdgesWithInteractionChange(links* p_link);

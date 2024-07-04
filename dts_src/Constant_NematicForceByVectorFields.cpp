@@ -18,6 +18,10 @@ Constant_NematicForceByVectorFields::~Constant_NematicForceByVectorFields() {
 }
 double Constant_NematicForceByVectorFields::Energy_of_Force(vertex *p_vertex, Vec3D dx) {
     
+    if( p_vertex->GetNumberOfVF() == 0){
+        return 0;
+    }
+    
     if(  m_F0.size() != p_vertex->GetNumberOfVF() ){
         std::cout<<"---> error: data provided for constant nematic force is not enough \n";
         return 0;
