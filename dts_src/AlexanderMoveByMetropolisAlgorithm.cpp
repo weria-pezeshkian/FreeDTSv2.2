@@ -455,7 +455,7 @@ std::vector<links*> AlexanderMoveByMetropolisAlgorithm::GetEdgesWithInteractionC
     std::vector <links*> temlinklist;
     
 // Gather edges from v1 if it owns an inclusion
-        //if(v1->VertexOwnInclusion())
+        if(v1->VertexOwnInclusion() || v1->GetNumberOfVF() != 0  )
         {
             
             std::vector<links *> ltem = v1->GetVLinkList();
@@ -464,7 +464,7 @@ std::vector<links*> AlexanderMoveByMetropolisAlgorithm::GetEdgesWithInteractionC
             if(v1->m_VertexType==1)
             temlinklist.push_back(v1->m_pPrecedingEdgeLink);
         }
-        //if(v2->VertexOwnInclusion())
+        if(v2->VertexOwnInclusion() || v2->GetNumberOfVF() != 0  )
         {
             
             std::vector<links *> ltem=v2->GetVLinkList();
@@ -472,7 +472,7 @@ std::vector<links*> AlexanderMoveByMetropolisAlgorithm::GetEdgesWithInteractionC
             if(v2->m_VertexType==1)
             temlinklist.push_back(v2->m_pPrecedingEdgeLink);
         }
-        //if(v3->VertexOwnInclusion())
+        if(v3->VertexOwnInclusion() || v3->GetNumberOfVF() != 0  )
         {
             
             std::vector<links *> ltem = v3->GetVLinkList();
@@ -480,7 +480,7 @@ std::vector<links*> AlexanderMoveByMetropolisAlgorithm::GetEdgesWithInteractionC
             if(v3->m_VertexType==1)
             temlinklist.push_back(v3->m_pPrecedingEdgeLink);
         }
-        //if(v4->VertexOwnInclusion())
+        if(v4->VertexOwnInclusion() || v4->GetNumberOfVF() != 0  )
         {
             std::vector<links *> ltem=v4->GetVLinkList();
             temlinklist.insert(temlinklist.end(), ltem.begin(), ltem.end());

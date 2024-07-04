@@ -447,7 +447,9 @@ double vertex::SquareDistanceOfAVertexFromAPoint(double X, double Y, double Z, v
 }
 bool vertex::UpdateVFGlobalDirectionFromLocalDirection(){
 
-    
+    if(m_NoFields == 0){
+        return true;
+    }
     for (std::vector<VectorField*>::iterator it = m_VectorFields.begin(); it != m_VectorFields.end(); ++it) {
         Vec3D l_d = (*it)->GetLDirection();
         Vec3D g_d = m_T_Local_2_Global * l_d;
@@ -461,8 +463,10 @@ bool vertex::UpdateVFGlobalDirectionFromLocalDirection(){
     return true;
 }
 bool vertex::UpdateVFLocalDirectionFromGlobalDirection(){
-
     
+    if(m_NoFields == 0){
+        return true;
+    }
     for (std::vector<VectorField*>::iterator it = m_VectorFields.begin(); it != m_VectorFields.end(); ++it) {
         
         (*it)->Copy_Direction();
@@ -480,6 +484,9 @@ bool vertex::UpdateVFLocalDirectionFromGlobalDirection(){
 }
 bool vertex::ReverseVFLocalDirection(){
     
+    if(m_NoFields == 0){
+        return true;
+    }
     for (std::vector<VectorField*>::iterator it = m_VectorFields.begin(); it != m_VectorFields.end(); ++it) {
         (*it)->Reverse_Direction();
     }

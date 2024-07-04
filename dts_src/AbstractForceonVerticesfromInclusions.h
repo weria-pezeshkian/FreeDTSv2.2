@@ -38,7 +38,8 @@ public:
         
     }
     
-    virtual inline std::string GetDerivedDefaultReadName()  {return "No";}
+    inline std::string GetDerivedDefaultReadName()  {return "No";}
+    inline static std::string GetDefaultReadName()  {return "No";}
 
     
     double Energy_of_Force(vertex *p, Vec3D dx){
