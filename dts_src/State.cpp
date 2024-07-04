@@ -322,7 +322,7 @@ while (input >> firstword) {
 
             getline(input,rest);
         }
-        else if(firstword == "Temprature"){
+        else if(firstword == "Temperature"){
             
             double beta,delta_beta;
             input>>str>>beta>>delta_beta;
@@ -620,8 +620,16 @@ while (input >> firstword) {
             input >> str >> type;
             if(type == ConstantExternalField::GetDefaultReadName() ){
                 double k,x,y,z;
-                input>>str>>k>>x>>y>>z;
+                input>>k>>x>>y>>z;
                 m_pExternalFieldOnInclusions = new ConstantExternalField(k,x,y,z);
+            }
+            else if(type == "No"){
+                
+            }
+            else{
+                std::cout<<" unknown External Field On Inclusions method "<<std::endl;
+                m_NumberOfErrors++;
+                return false;
             }
 
             getline(input,rest);
@@ -650,16 +658,20 @@ while (input >> firstword) {
             m_pVertexPositionIntegrator->UpdateFreezGroupName(str);
             getline(input,rest);
         }
-        else if(firstword == "ForceFromInclusions")
-        {
+        else if(firstword == AbstractForceonVerticesfromInclusions::GetBaseDefaultReadName()) { //InclusionInducedForceOnVertex
             input >> str >> type;
             if(type == Constant_NematicForce::GetDefaultReadName()){  // Constant_NematicForce
-                double f0; //(d,p,n)
-                input>>str>>f0;
+                double f0; // force value
+                input>>f0;
                 m_pForceonVerticesfromInclusions = new Constant_NematicForce(f0);
             }
+            else if(firstword == NoForce::GetDefaultReadName()){  // No
+                
+            }
             else {
-                std::cout<<" unknown ForceFromInclusions method "<<std::endl;
+                std::cout<<" unknown Force From Inclusions method "<<std::endl;
+                m_NumberOfErrors++;
+                return false;
             }
             getline(input,rest);
         }
@@ -674,7 +686,9 @@ while (input >> firstword) {
                 
             }
             else {
-                std::cout<<" unknown ForceFrom vector fields method "<<std::endl;
+                std::cout<<" unknown Force From vector fields method "<<std::endl;
+                m_NumberOfErrors++;
+                return false;
             }
         }
         else if(firstword == "Dynamic_Topology")

@@ -44,5 +44,6 @@ double ConstantExternalField::GetCouplingEnergy(vertex *pvertex) {
 std::string ConstantExternalField::CurrentState(){
     
     std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
+    state += " "+Nfunction::D2S(m_FieldStrength) +" "+ Nfunction::D2S(m_FieldDirection(0))+" "+ Nfunction::D2S(m_FieldDirection(1))+" "+ Nfunction::D2S(m_FieldDirection(2));
     return state;
 }
