@@ -65,6 +65,9 @@ and false if the periodic condition is not met or if there is an error writing t
     if (m_pState->GetOpenEdgeEvolution()->GetDerivedDefaultReadName() != "No") {
         m_TimeSeriesFile <<m_pState->GetOpenEdgeEvolution()->GetEdgeSize() <<" ";
     }
+    if (m_pState->GetDynamicTopology()->GetDerivedDefaultReadName() != "No") {
+        m_TimeSeriesFile <<m_pState->GetDynamicTopology()->GetSurfaceGenus()<<"  ";
+    }
     m_TimeSeriesFile<<std::endl;
     
     return true;
@@ -112,6 +115,10 @@ bool TimeSeriesDataOutput::OpenFile(bool clearfile) {
         if (m_pState->GetOpenEdgeEvolution()->GetDerivedDefaultReadName() != "No") {
             m_TimeSeriesFile << " edge_size ";
         }
+        if (m_pState->GetDynamicTopology()->GetDerivedDefaultReadName() != "No") {
+            m_TimeSeriesFile << " surface_genus ";
+        }
+
         m_TimeSeriesFile << std::endl;
     }
 

@@ -91,23 +91,24 @@ for (int step = m_Initial_Step; step <= m_Final_Step; step++){
         m_pState->GetInclusionPoseUpdate()->EvolveOneStep(step);
         //--- run vector fields
         m_pState->GetVectorFieldsRotationUpdate()->EvolveOneStep(step);
+
 //----> Run the supplementary integrators
        //--- update the box side
          m_pState->GetDynamicBox()->ChangeBoxSize(step); // we may need the final step as well to check if the update of move size should be done
         //--- update edge of mesh open edge
          m_pState->GetOpenEdgeEvolution()->Move(step);
+        //--- update the mesh topology
+        m_pState->GetDynamicTopology()->MCMove(step);
         //---- convert inclusions
         m_pState->GetInclusionConversion()->Exchange(step);
     
-        if(!CheckMesh(step)){
-            std::cout<<"---> error, the mesh does not meet the requirment for MC sim \n";
-        }
 
-        //--- update the mesh topology
-        //m_pState->GetDynamicTopology()->MCMove();
 //----> print info about the simulation, e.g., rate,
    // time_t currentTime;
    // time(&currentTime);
+    if(!CheckMesh(step)){
+        std::cout<<"---> error, the mesh does not meet the requirment for MC sim \n";
+    }
     if (step%100 == 0) {
         PrintRate(step, true, true);
     }

@@ -28,6 +28,9 @@ public:
     
     
     inline static std::string GetBaseDefaultReadName() {return "AlexanderMove";}
+    inline static std::string GetErrorMessage(std::string s) {
+        return "---> error: unknown AlexanderMove type -- \n";
+    }
     void SetMoveRate(double rate){
         m_NumberOfMovePerStep = rate;
         return;

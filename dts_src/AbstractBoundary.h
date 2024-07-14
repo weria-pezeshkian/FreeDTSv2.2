@@ -24,6 +24,9 @@ public:
     virtual std::string CurrentState() = 0;
     virtual inline std::string GetDerivedDefaultReadName() {return "";}
     inline static std::string GetBaseDefaultReadName() {return "Boundary";}
+    inline static std::string GetErrorMessage(std::string info) {
+        return "---> error: unknown AlexanderMove type -- \n";
+    }
     
 
 };

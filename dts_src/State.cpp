@@ -261,7 +261,6 @@ bool State::ReadInputFile(std::string file)
         std::cerr << "----> Error: the input file with the name " << filename << " does not exist" << std::endl;
         return false;
     }
-
     std::ifstream input(filename);
     if (!input) {
         std::cerr << "----> Error: failed to open the input file " << filename << std::endl;
@@ -271,23 +270,23 @@ bool State::ReadInputFile(std::string file)
     
 std::string firstword, rest, str, type;
 while (input >> firstword) {
-    if (input.eof()) break;
+    
+        if (input.eof()) break;
 
-    if(firstword.size() !=0  && firstword[0] == ';'){
-        getline(input,rest);
-        continue;
-    }
-//-- State class variable
-        if(firstword == "Run_Tag")
-        {
-            input>>str>>m_GeneralOutputFilename;
+        if(firstword.size() !=0  && firstword[0] == ';'){
             getline(input,rest);
+            continue;
         }
 //-- simulation (Integrator) block
-        else if(firstword == AbstractSimulation::GetBaseDefaultReadName()) { // "Integrator_Type"
+        if(firstword == AbstractSimulation::GetBaseDefaultReadName()) { // "Integrator_Type"
             input >> str >> type;
             if(type == MC_Simulation::GetDefaultReadName()){
                 m_pSimulation = new MC_Simulation(this);
+            }
+            else {
+                std::cout<<AbstractSimulation::GetErrorMessage(type)<<std::endl;
+                m_NumberOfErrors++;
+                return false;
             }
             getline(input,rest);
         }
@@ -520,6 +519,23 @@ while (input >> firstword) {
 
         }
 // end open edge treatment
+        else if(firstword == AbstractDynamicTopology::GetBaseDefaultReadName()){
+            input >> str >> type;
+            if (type == Three_Edge_Scission::GetDefaultReadName() ) {
+                int period = 0;
+                input >>  period;
+
+                m_pDynamicTopology = new Three_Edge_Scission(period, this);
+            }
+            else if(type == ConstantTopology::GetDefaultReadName()){
+                m_pDynamicTopology = new ConstantTopology;
+            }
+            else{
+                std::cout<<AbstractDynamicTopology::GetErrorMessage(type);
+            }
+            // Consume remaining input line
+            getline(input, rest);
+        }
 // InclusionConversion and ActiveTwoStateInclusion
         else if(firstword == AbstractInclusionConversion::GetBaseDefaultReadName()) {
             input >> str >> type;
@@ -691,25 +707,18 @@ while (input >> firstword) {
                 return false;
             }
         }
-        else if(firstword == "Dynamic_Topology")
-        {
-            int period = 0;
-
-            input >> str >> type >> period;
-
-            if (type == "Scission_By3Edges") {
-                
-                m_pDynamicTopology = new Three_Edge_Scission(period, this);
-            }
-            // Consume remaining input line
-            getline(input, rest);
-        }
         else if(firstword == "TimeSeriesData_Period") { // TimeSeriesData
             int period;
             input>>str>>period;
             m_pTimeSeriesDataOutput->UpdatePeriod(period);
             getline(input,rest);
         }
+//-- State class variable
+        else if(firstword == "Run_Tag"){
+            
+                input>>str>>m_GeneralOutputFilename;
+                getline(input,rest);
+            }
         else if(firstword == "Restart_Period")
         {
             int period;
@@ -1076,58 +1085,6 @@ bool State::ReadInclusionType(std::ifstream& input) {
 
     return true;
 }
-/*
-bool State::ReadInclusionType(std::ifstream& input) {
-    std::string firstword, rest, str1, str2, TypeNames;
-    int N, TypeID, NoType;
-    double Kappa, KappaG, KappaP, KappaL, C0, C0P, C0N;
-
-    // Store inclusion types in a vector
-    std::vector<InclusionType> all_InclusionType;
-
-    // Add a default inclusion type
-    InclusionType emptyIncType;
-    all_InclusionType.push_back(emptyIncType);
-
-    // Read the header line
-    input >> str1 >> NoType >> str2;
-    getline(input, rest);
-    getline(input, rest); // Discard the header line
-
-    // Check if the header line indicates inclusion type definition
-    if (str1 == "Define" || str1 == "define" || str1 == "DEFINE") {
-        for (int i = 0; i < NoType; i++) {
-            input >> N >> TypeNames >> Kappa >> KappaG >> KappaP >> KappaL >> C0 >> C0P >> C0N;
-            std::string edgedata;
-            getline(input, edgedata);
-            std::vector<std::string> edge_data = Nfunction::split(edgedata);
-
-            // Parse edge data if available
-            double lam = 0, ekg = 0, ekn = 0, ecn = 0;
-            if (edge_data.size() >= 4) {
-                lam = Nfunction::String_to_Double(edge_data[0]);
-                ekg = Nfunction::String_to_Double(edge_data[1]);
-                ekn = Nfunction::String_to_Double(edge_data[2]);
-                ecn = Nfunction::String_to_Double(edge_data[3]);
-            }
-
-            // Create inclusion type and add to vector
-            InclusionType incType(TypeNames, i + 1, N, Kappa/2, KappaG, KappaP/2, KappaL/2, C0, C0P, C0N, lam, ekg, ekn, ecn);
-            all_InclusionType.push_back(incType);
-        }
-    }
-
-    // Set inclusion types in the mesh object
-    m_Mesh.m_InclusionType = all_InclusionType;
-
-    // Set pointers to inclusion types
-    m_Mesh.m_pInclusionType.clear();
-    for (size_t i = 0; i < m_Mesh.m_InclusionType.size(); ++i) {
-        m_Mesh.m_pInclusionType.push_back(&m_Mesh.m_InclusionType[i]);
-    }
-
-    return true;
-}*/
 std::string State::CurrentState(){
 
     std::string state = " Run_Tag = "+ m_GeneralOutputFilename;

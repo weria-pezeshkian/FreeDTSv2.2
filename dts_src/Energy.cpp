@@ -32,7 +32,7 @@ double Energy::SingleVertexEnergy(vertex *p_vertex) {
         Energy += EdgeVertexBendingAndStretchingEnergy(p_vertex);
     }
     else{
-        std::cout<<" this is unexpected 666 \n";
+        std::cout<<"---> error (developer) this is unexpected e6p5748 \n";
     }
 
     p_vertex->UpdateEnergy(Energy);
@@ -248,8 +248,8 @@ double Energy::TwoInclusionsInteractionEnergy(links * p_edge) {
 double Energy::InteractionFunction(double N, double A, double B, double theta) {
     
         double e = 0;
-        e=1+cos(double(N)*theta);
-        e=-A+B*e;
+        e = cos( double(N) * theta );
+        e = -A + B * e;
 
     return e;
 }
