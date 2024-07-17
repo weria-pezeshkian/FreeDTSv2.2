@@ -440,19 +440,19 @@ while (input >> firstword) {
         }
 //---- end Volume_Constraint
 //---- global curvature
-        else if(firstword == "GlobalCurvature") {
+        else if(firstword == AbstractGlobalCurvature::GetBaseDefaultReadName()) {
             m_pVAHCalculator->MakeGlobalCurvatureActive();
             m_pVAHCalculator->MakeAreaActive();
-
-            double k,gc0;
-            input>>str>>type>>k>>gc0;
+            input>>str>>type;
             if(type == CouplingGlobalCurvatureToHarmonicPotential::GetDefaultReadName()) {
+                double k,gc0;
+                input>>k>>gc0;
                 m_pCoupleGlobalCurvature = new CouplingGlobalCurvatureToHarmonicPotential(m_pVAHCalculator,k,gc0);
             }
-            else if(type == "No") {
+            else if(type == NoGlobalCurvature::GetDefaultReadName()) {
             }
             else {
-                std::cout<<"---> error: unknown for global curvature: "<< type<<"\n";
+                std::cout<<AbstractGlobalCurvature::GetErrorMessage(type)<<"\n";
                 m_NumberOfErrors++;
                 return false;
             }

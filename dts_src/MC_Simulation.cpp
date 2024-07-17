@@ -134,9 +134,19 @@ for (int step = m_Initial_Step; step <= m_Final_Step; step++){
     double t_a = 0;
     m_pState->GetVAHGlobalMeshProperties()->CalculateGlobalVariables(vol,t_a,g_c);
     vol -= m_pState->GetVAHGlobalMeshProperties()->GetTotalVolume();
-    
+    g_c -= m_pState->GetVAHGlobalMeshProperties()->GetTotalMeanCurvature();
+    t_a -= m_pState->GetVAHGlobalMeshProperties()->GetTotalArea();
+
     if(fabs(vol) > 0.0001){
-        std::cout<<" volume leak\n";
+        std::cout<<fabs(vol)<<" volume leak\n";
+    }
+    if(fabs(g_c) > 0.0001)
+    {
+        std::cout<<fabs(g_c)<<" global curvature leak\n";
+    }
+    if(fabs(t_a) > 0.0001)
+    {
+        std::cout<<fabs(t_a)<<" total area leak\n";
     }
         
     return true;
