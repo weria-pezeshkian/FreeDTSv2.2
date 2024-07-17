@@ -413,7 +413,10 @@ while (input >> firstword) {
             }
 //---- Volume_Constraint data
         else if(firstword == AbstractVolumeCoupling::GetBaseDefaultReadName())   { // Volume_Constraint
-            
+                        
+            m_pVAHCalculator->MakeVolumeActive();
+            m_pVAHCalculator->MakeAreaActive();
+
             input >> str >> type;
             if(type == VolumeCouplingSecondOrder::GetDefaultReadName()) { // SecondOrderCoupling
                 
@@ -438,6 +441,9 @@ while (input >> firstword) {
 //---- end Volume_Constraint
 //---- global curvature
         else if(firstword == "GlobalCurvature") {
+            m_pVAHCalculator->MakeGlobalCurvatureActive();
+            m_pVAHCalculator->MakeAreaActive();
+
             double k,gc0;
             input>>str>>type>>k>>gc0;
             if(type == CouplingGlobalCurvatureToHarmonicPotential::GetDefaultReadName()) {
@@ -455,7 +461,7 @@ while (input >> firstword) {
         }
 // -- global area coupling
         else if(firstword == "TotalAreaCoupling"){
-            
+            m_pVAHCalculator->MakeAreaActive();
             input>>str>>type;
 
             if(type ==  CouplingTotalAreaToHarmonicPotential::GetDefaultReadName()){
@@ -979,11 +985,12 @@ bool State::Initialize(){
     m_pInclusionConversion->Initialize(this);
     m_pDynamicTopology->Initialize();
     m_pOpenEdgeEvolution->Initialize();
-
-     m_pTotalAreaCoupling->Initialize(this);
-     m_pVolumeCoupling->Initialize(this);
-    m_pCoupleGlobalCurvature->Initialize(this);
+    
+    
     m_pVAHCalculator->Initialize(this);
+    m_pTotalAreaCoupling->Initialize(this);
+    m_pVolumeCoupling->Initialize(this);
+    m_pCoupleGlobalCurvature->Initialize(this);
    // m_pForceonVerticesfromInclusions this does not have one
     m_pApplyConstraintBetweenGroups->Initialize();
     m_pSimulation->Initialize();

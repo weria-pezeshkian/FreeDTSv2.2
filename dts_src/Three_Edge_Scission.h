@@ -37,9 +37,11 @@ struct pair_pot_triangle {    // data structure for a pair of potential_triangle
         std::vector <triangle *> ConnectingTriangles;
 
 };
-struct pair_triangle {    // data structure for a pair of potential_triangle
-        links* l1;
-        links* l2;
+struct fussion_site {    // data structure for a pair of triangle
+    links* l1;
+    links* l2;
+    double dist[3][3];
+    int no_conf;
         
 };
 class Three_Edge_Scission :  public AbstractDynamicTopology { // to use for polymorphism
@@ -69,11 +71,11 @@ private:
     bool ScissionByMC(pair_pot_triangle &pair_t, double thermal);
     
     //--- functions for fussions
-    bool FussionByMove(pair_triangle &pair_tri, double thermal);
-    bool CheapScane(links *l1, links *l2);
-    bool BuildScane(links *l1, links *l2);
+    bool FussionByMove(fussion_site &pair_tri, double thermal);
+    bool CheapScane(links *l1, links *l2, fussion_site &p_T);
+    bool BuildScane(fussion_site &p_T);
 
-    std::vector<pair_triangle> FindPotentialFussionSites();
+    std::vector<fussion_site> FindPotentialFussionSites();
 
 
 private:

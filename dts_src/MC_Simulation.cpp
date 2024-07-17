@@ -128,6 +128,16 @@ for (int step = m_Initial_Step; step <= m_Final_Step; step++){
         
         std::cout<<"---> possible source of code error: energy leak... "<<energy_leak<<" with real energy of "<<Final_energy<<"  and stored energy of "<<m_pState->GetEnergyCalculator()->GetEnergy()<<"\n";
     }
+    // check for volume
+    double vol = 0;
+    double g_c = 0;
+    double t_a = 0;
+    m_pState->GetVAHGlobalMeshProperties()->CalculateGlobalVariables(vol,t_a,g_c);
+    vol -= m_pState->GetVAHGlobalMeshProperties()->GetTotalVolume();
+    
+    if(fabs(vol) > 0.0001){
+        std::cout<<" volume leak\n";
+    }
         
     return true;
 }

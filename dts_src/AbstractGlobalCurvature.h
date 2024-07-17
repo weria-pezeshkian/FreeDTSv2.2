@@ -28,7 +28,7 @@ public:
     virtual  double CalculateEnergyChange(double delta_area, double delta_curvature) = 0;
     virtual std::string CurrentState() = 0;
     virtual inline std::string GetDerivedDefaultReadName() = 0;
-    inline static std::string GetBaseDefaultReadName() {return "GlobalCurvature";}
+    inline static std::string GetBaseDefaultReadName() {return "GlobalCurvatureCoupling";}
 
 protected:
     VAHGlobalMeshProperties *m_pVAH;
