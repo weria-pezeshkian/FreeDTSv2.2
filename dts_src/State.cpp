@@ -31,6 +31,7 @@ State::State(std::vector<std::string> argument) :
       m_pForceonVerticesfromVectorFields(new NoVFForce),  // Initialize ForceonVerticesfromvectorfields
       m_pExternalFieldOnVectorFields(new NoExternalFieldOnVectorFields),  // Initialize ExternalFieldOnVectorFields
       m_pExternalFieldOnInclusions(new NoExternalFieldOnInclusions),  // Initialize ExternalFieldOnVectorFields
+      m_pVertexAdhesionToSubstrate(new NoVertexAdhesionCoupling),  // Initialize ExternalFieldOnVectorFields
       m_pApplyConstraintBetweenGroups(new NoConstraint),  // Initialize ApplyConstraintBetweenGroups
       m_pBoundary(new PBCBoundary),  // Initialize Boundary
 
@@ -95,6 +96,7 @@ State::~State()
     delete m_pForceonVerticesfromVectorFields;
     delete m_pExternalFieldOnVectorFields;
     delete m_pExternalFieldOnInclusions;
+    delete m_pVertexAdhesionToSubstrate;
     delete m_pApplyConstraintBetweenGroups;
     delete m_pBoundary;
     delete m_pVertexPositionIntegrator;
@@ -413,11 +415,11 @@ while (input >> firstword) {
             }
 //---- Volume_Constraint data
         else if(firstword == AbstractVolumeCoupling::GetBaseDefaultReadName())   { // Volume_Constraint
-                        
-            m_pVAHCalculator->MakeVolumeActive();
-            m_pVAHCalculator->MakeAreaActive();
-
             input >> str >> type;
+            if(type != "No"){
+                m_pVAHCalculator->MakeVolumeActive();
+                m_pVAHCalculator->MakeAreaActive();
+            }
             if(type == VolumeCouplingSecondOrder::GetDefaultReadName()) { // SecondOrderCoupling
                 
                 double dp,k,vt;
@@ -441,9 +443,14 @@ while (input >> firstword) {
 //---- end Volume_Constraint
 //---- global curvature
         else if(firstword == AbstractGlobalCurvature::GetBaseDefaultReadName()) {
-            m_pVAHCalculator->MakeGlobalCurvatureActive();
-            m_pVAHCalculator->MakeAreaActive();
+
             input>>str>>type;
+            
+            if(type != "No"){
+                m_pVAHCalculator->MakeGlobalCurvatureActive();
+                m_pVAHCalculator->MakeAreaActive();
+            }
+            
             if(type == CouplingGlobalCurvatureToHarmonicPotential::GetDefaultReadName()) {
                 double k,gc0;
                 input>>k>>gc0;
@@ -461,9 +468,10 @@ while (input >> firstword) {
         }
 // -- global area coupling
         else if(firstword == "TotalAreaCoupling"){
-            m_pVAHCalculator->MakeAreaActive();
             input>>str>>type;
-
+            if(type != "No"){
+                m_pVAHCalculator->MakeAreaActive();
+            }
             if(type ==  CouplingTotalAreaToHarmonicPotential::GetDefaultReadName()){
                 double gamma , k0;
                 input>>k0>>gamma;
@@ -655,6 +663,26 @@ while (input >> firstword) {
             }
 
             getline(input,rest);
+
+        }
+        else if(firstword == AbstractVertexAdhesionToSubstrate::GetBaseDefaultReadName() ) { // "ConstantField"
+            
+            input >> str >> type;
+            if(type == SphericalVertexSubstrate::GetDefaultReadName() ){
+
+                getline(input,rest);
+                m_pVertexAdhesionToSubstrate = new SphericalVertexSubstrate(rest);
+            }
+            else if(type == "No"){
+                getline(input,rest);
+            }
+            else{
+                std::cout<<" unknown AdhesionToSubstrate method "<<std::endl;
+                m_NumberOfErrors++;
+                getline(input,rest);
+                return false;
+            }
+
 
         }
 //-------

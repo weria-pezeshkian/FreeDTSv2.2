@@ -114,6 +114,9 @@
 #include "AbstractExternalFieldOnInclusions.h"
 #include "ConstantExternalField.h"
 #include "ConstantExternalFieldOnVectorFields.h"
+//--- interaction with Substrate
+#include "AbstractVertexAdhesionToSubstrate.h"
+#include "SphericalVertexSubstrate.h"
 //--- rigid boundries
 #include "AbstractBoundary.h"
 #include "RigidWallTypes.h"
@@ -175,7 +178,8 @@ inline AbstractForceonVerticesfromInclusions *GetForceonVerticesfromInclusions()
 inline AbstractForceonVerticesfromVectorFields *GetForceonVerticesfromVectorFields()    {return m_pForceonVerticesfromVectorFields;}
 inline AbstractExternalFieldOnVectorFields *GetExternalFieldOnVectorFields()        {return m_pExternalFieldOnVectorFields;}
 inline AbstractExternalFieldOnInclusions *GetExternalFieldOnInclusions()        {return m_pExternalFieldOnInclusions;}
-
+    
+inline AbstractVertexAdhesionToSubstrate *GetVertexAdhesionToSubstrate()        {return m_pVertexAdhesionToSubstrate;}
 inline VAHGlobalMeshProperties              *GetVAHGlobalMeshProperties()        {return m_pVAHCalculator;}
 //---- supplementary integrators
 inline AbstractDynamicBox               *GetDynamicBox()                                {return m_pDynamicBox;}
@@ -216,6 +220,9 @@ private:
 
     AbstractExternalFieldOnVectorFields *m_pExternalFieldOnVectorFields;
     AbstractExternalFieldOnInclusions *m_pExternalFieldOnInclusions;
+    
+    AbstractVertexAdhesionToSubstrate *m_pVertexAdhesionToSubstrate;
+
 //--- Integrators of different degree of freedom
     AbstractAlexanderMove               *m_pAlexanderMove;
     AbstractVertexPositionIntegrator    *m_pVertexPositionIntegrator;
