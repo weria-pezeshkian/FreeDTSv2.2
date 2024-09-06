@@ -673,6 +673,11 @@ while (input >> firstword) {
                 getline(input,rest);
                 m_pVertexAdhesionToSubstrate = new SphericalVertexSubstrate(rest);
             }
+            else if(type == FlatVertexSubstrate::GetDefaultReadName() ){
+
+                getline(input,rest);
+                m_pVertexAdhesionToSubstrate = new FlatVertexSubstrate(rest);
+            }
             else if(type == "No"){
                 getline(input,rest);
             }

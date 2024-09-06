@@ -117,6 +117,7 @@
 //--- interaction with Substrate
 #include "AbstractVertexAdhesionToSubstrate.h"
 #include "SphericalVertexSubstrate.h"
+#include "FlatVertexSubstrate.h"
 //--- rigid boundries
 #include "AbstractBoundary.h"
 #include "RigidWallTypes.h"
