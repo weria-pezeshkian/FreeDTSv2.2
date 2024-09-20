@@ -15,6 +15,7 @@ State::State(std::vector<std::string> argument) :
 // make voxels
       m_pVoxelization(new Voxelization<vertex>()),
       m_pSimulation(new MC_Simulation(this)),
+      m_pNonequilibriumCommands(new NonequilibriumCommands(this)),
       m_pTimeSeriesDataOutput(new TimeSeriesDataOutput(this)),  // Initialize TimeSeriesDataOutput
       m_pTimeSeriesLogInformation(new TimeSeriesLogInformation(this)),  // Initialize TimeSeriesLogInformation
       m_pRestart(new Restart(this)),  // Initialize Restart
@@ -111,6 +112,7 @@ State::~State()
     delete m_pEnergyCalculator;
     delete m_pSimulation;
     delete m_pVoxelization;
+    delete m_pNonequilibriumCommands;
 }
 bool State::ExploreArguments(std::vector<std::string> &argument){
     /*
@@ -595,6 +597,10 @@ while (input >> firstword) {
                 return false;
             }
             getline(input,rest);
+        }
+        else if(firstword == "NonequilibriumCommands"){
+            getline(input,rest);
+            m_pNonequilibriumCommands->LoadCommand(rest);
         }
 // end boundry condition
 //ConstraintBetweenGroups

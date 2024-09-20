@@ -129,7 +129,8 @@
 #include "RNG.h"
 #include "VAHGlobalMeshProperties.h"
 #include "InclusionType.h"
-
+//---  additional moves
+#include "NonequilibriumCommands.h"
 
 struct ParallelReplicaData {  // data structure for turning on and off certain moves
     ParallelReplicaData(){State = false;}
@@ -187,6 +188,8 @@ inline AbstractDynamicBox               *GetDynamicBox()                        
 inline AbstractDynamicTopology          *GetDynamicTopology()                           {return m_pDynamicTopology;}
 inline AbstractOpenEdgeEvolution        *GetOpenEdgeEvolution()                         {return m_pOpenEdgeEvolution;}
 inline AbstractInclusionConversion      *GetInclusionConversion()                       {return m_pInclusionConversion;}
+
+inline NonequilibriumCommands           *GetNonequilibriumCommands()                    {return m_pNonequilibriumCommands;}
 
 
 inline AbstractBoundary                 *GetBoundary()                                  {return m_pBoundary;}
@@ -257,6 +260,8 @@ private:
     AbstractCurvature             *m_pCurvatureCalculations;
     AbstractSimulation            *m_pSimulation;
     AbstractEnergy                *m_pEnergyCalculator;
+    
+    NonequilibriumCommands        *m_pNonequilibriumCommands;
 
 //--- accessory objects
     RNG      *m_RandomNumberGenerator;

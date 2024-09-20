@@ -102,6 +102,8 @@ for (int step = m_Initial_Step; step <= m_Final_Step; step++){
         //---- convert inclusions
         m_pState->GetInclusionConversion()->Exchange(step);
     
+        //---- NonequilibriumCommands
+        m_pState->GetNonequilibriumCommands()->Run(step);
 
 //----> print info about the simulation, e.g., rate,
    // time_t currentTime;
