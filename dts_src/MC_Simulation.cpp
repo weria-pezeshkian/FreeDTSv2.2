@@ -130,7 +130,9 @@ for (int step = m_Initial_Step; step <= m_Final_Step; step++){
         
         std::cout<<"---> possible source of code error: energy leak... "<<energy_leak<<" with real energy of "<<Final_energy<<"  and stored energy of "<<m_pState->GetEnergyCalculator()->GetEnergy()<<"\n";
     }
-    // check for volume
+
+    
+    
     double vol = 0;
     double g_c = 0;
     double t_a = 0;
@@ -139,13 +141,16 @@ for (int step = m_Initial_Step; step <= m_Final_Step; step++){
     g_c -= m_pState->GetVAHGlobalMeshProperties()->GetTotalMeanCurvature();
     t_a -= m_pState->GetVAHGlobalMeshProperties()->GetTotalArea();
 
-    if(fabs(vol) > 0.0001){
+    if (m_pState->GetVAHGlobalMeshProperties()->VolumeIsActive())
+    if(fabs(vol) > 0.0001 ){
         std::cout<<fabs(vol)<<" volume leak\n";
     }
+    if (m_pState->GetVAHGlobalMeshProperties()->GlobalCurvatureIsActive())
     if(fabs(g_c) > 0.0001)
     {
         std::cout<<fabs(g_c)<<" global curvature leak\n";
     }
+    if (m_pState->GetVAHGlobalMeshProperties()->AreaIsActive())
     if(fabs(t_a) > 0.0001)
     {
         std::cout<<fabs(t_a)<<" total area leak\n";

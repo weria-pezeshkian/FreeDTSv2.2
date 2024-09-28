@@ -582,14 +582,20 @@ while (input >> firstword) {
             if(type == TwoFlatParallelWall::GetDefaultReadName()){   // " "TwoFlatParallelWall" "
                 double thickness;
                 char direction;
-                input>>str>>thickness>>direction;
+                input>>thickness>>direction;
                 m_pBoundary = new TwoFlatParallelWall(this, thickness,direction);
             }
             else if(type == EllipsoidalShell::GetDefaultReadName()){   // " "EllipsoidalShell" "
                 double thickness, r, a, b, c;
-                input>> str >> thickness >> r >> a >> b >> c;
+                input >> thickness >> r >> a >> b >> c;
                 
                 m_pBoundary = new EllipsoidalShell(this, thickness, r, a, b, c);
+            }
+            else if(type == EllipsoidalCore::GetDefaultReadName()){   // " "EllipsoidalShell" "
+                double  r, a, b, c;
+                input >>  r >> a >> b >> c;
+                
+                m_pBoundary = new EllipsoidalCore(this, r, a, b, c);
             }
             else {
                 std::cout<<"---> error: unknown Boundary type: "<<type<<std::endl;

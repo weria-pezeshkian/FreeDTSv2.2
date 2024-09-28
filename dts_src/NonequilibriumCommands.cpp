@@ -31,6 +31,11 @@ bool NonequilibriumCommands::LoadCommand(std::string strcommand) {
 
     if (command_arguments[0] == "ExpandEllipsoidalCoreWall") {
         // Convert the second argument to an integer (e.g., X value)
+        if (command_arguments.size() < 3) {
+            std::cout << "  error-> NonequilibriumCommands ExpandEllipsoidalCoreWall: not enough arguments in the input file" << std::endl;
+            return false;
+        }
+
         int Rate = Nfunction::String_to_Int(command_arguments[1]);
         double Dr = Nfunction::String_to_Double(command_arguments[2]);
 
