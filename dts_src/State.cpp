@@ -500,8 +500,15 @@ while (input >> firstword) {
                 input >> period >> force >> direction;
                 m_pDynamicBox = new PositionRescaleFrameTensionCoupling(period, force, direction, this);
             }
-            else if(type == "No") {
-                    
+            else if (type == PositionRescaleAnisotropicFrameTensionCoupling::GetDefaultReadName()) {
+                double force_1 = 0;
+                double force_2 = 0;
+                double force_3 = 0;
+                input >> period >> force_1 >> force_2 >> force_3 >> direction;
+                m_pDynamicBox = new PositionRescaleAnisotropicFrameTensionCoupling(period, force_1, force_2, force_3, direction, this);
+            }
+            else if(type == NoBoxChange::GetDefaultReadName()) {
+                    // has been assigned above
             }
             else{
                 std::cout<<"--> error: unknown dynamic box method: "<<type<<std::endl;
