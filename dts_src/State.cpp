@@ -348,10 +348,15 @@ while (input >> firstword) {
 //---- position update
         else if(firstword == AbstractVertexPositionIntegrator::GetBaseDefaultReadName()) {
             input>>str>>type;
-            if(type == EvolveVerticesByMetropolisAlgorithm::GetDefaultReadName()){  // EvolveVerticesByMetropolisAlgorithm
+            if(type == EvolveVerticesByMetropolisAlgorithm::GetDefaultReadName()){  // MetropolisAlgorithm
                 double rate_surf,rate_edge,dr;
                 input >> rate_surf >> rate_edge >> dr;
                 m_pVertexPositionIntegrator = new EvolveVerticesByMetropolisAlgorithm(this, rate_surf, rate_edge, dr);
+            }
+           else if (type == EvolveVerticesByMetropolisAlgorithmWithOpenMPType1::GetDefaultReadName()){  // MetropolisAlgorithmWithOpenMPType1
+                double rate_surf,rate_edge,dr;
+                input >> rate_surf >> rate_edge >> dr;
+                m_pVertexPositionIntegrator = new EvolveVerticesByMetropolisAlgorithmWithOpenMPType1(this, rate_surf, rate_edge, dr);
             }
             else{
                 std::cout<<"---> error: unknown method for vertex move "<<type<<"\n";

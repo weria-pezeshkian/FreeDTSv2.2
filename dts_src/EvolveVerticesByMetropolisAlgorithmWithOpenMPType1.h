@@ -1,5 +1,5 @@
-#ifndef EVOLVE_VERTICES_BY_METROPOLIS_ALGORITHM_H
-#define EVOLVE_VERTICES_BY_METROPOLIS_ALGORITHM_H
+#ifndef EVOLVE_VERTICES_BY_METROPOLIS_ALGORITHM_OPENMP_1_H
+#define EVOLVE_VERTICES_BY_METROPOLIS_ALGORITHM_OPENMP_1_H
 
 
 #include "SimDef.h"
@@ -9,19 +9,19 @@
 #include "AbstractSimulation.h"
 
 class State;
-class EvolveVerticesByMetropolisAlgorithm : public AbstractVertexPositionIntegrator {
+class EvolveVerticesByMetropolisAlgorithmWithOpenMPType1 : public AbstractVertexPositionIntegrator {
 public:
-    EvolveVerticesByMetropolisAlgorithm(State *pState);
-    EvolveVerticesByMetropolisAlgorithm(State *pState, double rate_surf, double rate_edge, double dr);
-    ~EvolveVerticesByMetropolisAlgorithm();
+    EvolveVerticesByMetropolisAlgorithmWithOpenMPType1(State *pState);
+    EvolveVerticesByMetropolisAlgorithmWithOpenMPType1(State *pState, double rate_surf, double rate_edge, double dr);
+    ~EvolveVerticesByMetropolisAlgorithmWithOpenMPType1();
     void Initialize();
     bool EvolveOneStep(int step);
     std::string CurrentState();
-    inline  std::string GetDerivedDefaultReadName() {return "MetropolisAlgorithm";}
-    inline static std::string GetDefaultReadName() {return "MetropolisAlgorithm";}
+    inline  std::string GetDerivedDefaultReadName() {return "MetropolisAlgorithmOpenMP";}
+    inline static std::string GetDefaultReadName() {return "MetropolisAlgorithmOpenMP";}
 
 private:
-    bool EvolveOneVertex(int step, vertex *pvertex, double dx, double dy, double dz,double temp);
+    bool EvolveOneVertex(int step, vertex *pvertex, double dx, double dy, double dz,double temp, double &en);
     bool VertexMoveIsFine(vertex* pvertex, double dx,double dy, double dz,  double mindist2, double maxdist2);
     bool CheckFacesAfterAVertexMove(vertex* p_vertex);
     std::vector<links*> GetEdgesWithInteractionChange(vertex* p_vertex);
@@ -33,7 +33,7 @@ private:
     std::vector<vertex*>&        m_pSurfV;
     std::vector<vertex*>&       m_pEdgeV;
     Vec3D *m_pBox;
-    
+    int m_Total_ThreadsNo;
     double &m_Beta;
     double &m_DBeta;
     double &m_MinLength2;

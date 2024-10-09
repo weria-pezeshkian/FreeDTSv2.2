@@ -54,11 +54,14 @@
 #include "MESH.h"
 #include "Nfunction.h"
 //--- system evolution
+//-------vertex movies
 #include "AbstractVertexPositionIntegrator.h"
+#include "EvolveVerticesByMetropolisAlgorithm.h"
+#include "EvolveVerticesByMetropolisAlgorithmWithOpenMPType1.h"
+//--- edge 
 #include "AbstractAlexanderMove.h"
 #include "AbstractInclusionPoseIntegrator.h"
 #include "AbstractVectorFieldsRotationMove.h"
-#include "EvolveVerticesByMetropolisAlgorithm.h"
 #include "AlexanderMoveByMetropolisAlgorithm.h"
 #include "InclusionPoseUpdateByMetropolisAlgorithm.h"
 #include "VectorFieldsRotationByMetropolisAlgorithm.h"
