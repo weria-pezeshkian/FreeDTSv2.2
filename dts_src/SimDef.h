@@ -99,7 +99,7 @@
 #define DEVELOPMENT_MODE Disabled  // Test mode status
 
 // Random number generator configuration
-#define RNGTYPE UNIFROMTYPE0  // Random number generator type
+#define RNGTYPE UNIFORMTYPE1  // Random number generator type
 
 
 //Precisions

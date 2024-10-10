@@ -57,38 +57,67 @@ bool EvolveVerticesByMetropolisAlgorithmWithOpenMPType1::EvolveOneStep(int step)
     int no_steps_edge = no_edge_v*m_NumberOfMovePerStep_Edge;
     int no_steps_surf = no_surf_v*m_NumberOfMovePerStep_Surf;
 double diff_energy = 0;
-#pragma omp parallel for num_threads(m_Total_ThreadsNo) // Specify the number of threads
-for (int i = 0; i < no_steps_surf; i++) {
-    int r_vid = m_pState->GetRandomNumberGenerator()->IntRNG(no_surf_v);
-    vertex *pvertex = m_pSurfV[r_vid];
 
-    if (m_FreezGroupName == pvertex->GetGroupName()) {
-        continue; // Skip frozen group names
-    }
 
-    double dx = 1 - 2 * (m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
-    double dy = 1 - 2 * (m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
-    double dz = 1 - 2 * (m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
 
-    if (!m_pState->GetBoundary()->MoveHappensWithinTheBoundary(dx, dy, dz, pvertex)) {
-        continue; // Skip moves outside the boundary
-    }
+//#pragma omp parallel for num_threads(m_Total_ThreadsNo) schedule(dynamic) // Specify the number of threads
 
-    double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
-    double tem_en = 0;
-    // Attempt to evolve the vertex and atomically update accepted moves
-    if (EvolveOneVertex(step, pvertex, m_DR * dx, m_DR * dy, m_DR * dz, thermal, tem_en)) {
+omp_set_num_threads(m_Total_ThreadsNo);
+no_steps_surf = no_steps_surf/m_Total_ThreadsNo;
+no_steps_surf = 100/m_Total_ThreadsNo;
+#pragma omp parallel
+{
+    // Each thread gets its own random number generator
+
+    // Local counters for accepted moves and energy
+    int local_AcceptedMoves = 0;
+    double local_diff_energy = 0.0;
+
+    #pragma omp for
+    for (int i = 0; i < no_steps_surf; i++) 
+    {
+        int r_vid = m_pState->GetRandomNumberGenerator()->IntRNG(no_surf_v); // Use thread-local RNG
+        vertex *pvertex = m_pSurfV[r_vid];
+
+        // Skip if vertex is in the frozen group
+        if (m_FreezGroupName == pvertex->GetGroupName()) {
+            continue;
+        }
+
+        double dx = 1 - 2 * m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
+        double dy = 1 - 2 * m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
+        double dz = 1 - 2 * m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
+
+        // Check if the move is within the boundary
+        if (!m_pState->GetBoundary()->MoveHappensWithinTheBoundary(dx, dy, dz, pvertex)) {
+            continue;
+        }
+
+        double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
+        double tem_en = 0;
+
+        // Attempt to evolve the vertex and update local counters
+        if (EvolveOneVertex(step, pvertex, m_DR * dx, m_DR * dy, m_DR * dz, thermal, tem_en)) {
+            local_AcceptedMoves++;
+            local_diff_energy += tem_en;
+        }
+
+        // Increment attempted moves for this thread
         #pragma omp atomic
-          m_AcceptedMoves++;
-        #pragma omp atomic
-          diff_energy += tem_en;
-
+        m_NumberOfAttemptedMoves++;
     }
 
-    // Atomically increment the number of attempted moves
+    // Combine local results into shared variables
     #pragma omp atomic
-    m_NumberOfAttemptedMoves++;
+    m_AcceptedMoves += local_AcceptedMoves; // Update the global count of accepted moves
+
+    // Use a critical section to avoid race conditions when updating diff_energy
+    #pragma omp critical
+    {
+        diff_energy += local_diff_energy;
+    }
 }
+
     double tem_en = 0;
     for (int i = 0; i< no_steps_edge;i++) {
       
@@ -117,6 +146,8 @@ for (int i = 0; i < no_steps_surf; i++) {
 #else
     std::cerr << "---> Error: OpenMP is not available, but the program requires it. Please recompile with OpenMP support.\n";
     exit(EXIT_FAILURE); // Exit with a non-zero value to indicate failure
+    
+    return false;
 #endif
 }
 bool EvolveVerticesByMetropolisAlgorithmWithOpenMPType1::EvolveOneVertex(int step, vertex *pvertex, double dx, double dy, double dz,double temp, double &changed_en){
@@ -248,6 +279,7 @@ bool EvolveVerticesByMetropolisAlgorithmWithOpenMPType1::EvolveOneVertex(int ste
     
     //--> only elatsic energy
     double diff_energy = new_energy - old_energy;
+            changed_en = diff_energy;
     //std::cout<<diff_energy<<" dif en \n";
     //--> sum of all the energies
     double tot_diff_energy = diff_energy + dE_Cgroup + dE_force_from_inc + dE_force_from_vector_fields + dE_volume + dE_t_area + dE_g_curv ;
@@ -255,7 +287,7 @@ bool EvolveVerticesByMetropolisAlgorithmWithOpenMPType1::EvolveOneVertex(int ste
     //---> accept or reject the move
     if(U <= 0 || exp(-U) > temp ) {
         // move is accepted
-        changed_en = diff_energy;
+     // (m_pState->GetEnergyCalculator())->AddToTotalEnergy(diff_energy);        
         //---> if vertex is out of the voxel, update its voxel
         if(!pvertex->CheckVoxel()){
             pvertex->UpdateVoxelAfterAVertexMove();

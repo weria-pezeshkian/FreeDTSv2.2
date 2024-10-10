@@ -1022,7 +1022,7 @@ bool State::Initialize(){
 
         }
     
-        m_RandomNumberGenerator->Initialize();
+       // m_RandomNumberGenerator->Initialize();
         // Generate mesh from the mesh blueprint
         m_Mesh.GenerateMesh(mesh_blueprint);
         m_pVoxelization->SetBox(m_pMesh->GetBox());
