@@ -512,6 +512,12 @@ while (input >> firstword) {
                 input >> period >> force_1 >> force_2 >> force_3 >> direction;
                 m_pDynamicBox = new PositionRescaleAnisotropicFrameTensionCoupling(period, force_1, force_2, force_3, direction, this);
             }
+            else if (type == BoxSizeCouplingToHarmonicPotential::GetDefaultReadName()) {
+                double k = 0;
+                double a0 = 0;
+                input >> period >> k >> a0  >> direction;
+                m_pDynamicBox = new BoxSizeCouplingToHarmonicPotential(period, k, a0, direction, this);
+            }
             else if(type == NoBoxChange::GetDefaultReadName()) {
                     // has been assigned above
             }

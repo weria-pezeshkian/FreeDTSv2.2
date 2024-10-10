@@ -86,6 +86,7 @@
 #include "AbstractDynamicBox.h"
 #include "PositionRescaleFrameTensionCoupling.h"
 #include "PositionRescaleAnisotropicFrameTensionCoupling.h"
+#include "BoxSizeCouplingToHarmonicPotential.h"
 //-- dynamic topology
 #include "AbstractDynamicTopology.h"
 #include "Three_Edge_Scission.h"
