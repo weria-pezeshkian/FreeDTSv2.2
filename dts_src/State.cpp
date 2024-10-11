@@ -195,6 +195,13 @@ bool State::ExploreArguments(std::vector<std::string> &argument){
         else if(flag == THREAD_FLAG){
             
             m_Total_no_Threads = Nfunction::String_to_Int(argument[i+1]);
+            #ifdef _OPENMP
+            if(omp_get_num_procs()<m_Total_no_Threads){
+                std::cout<<"---> warning, the number of requested threads is larger then the total physical cores \n";
+            }
+            #endif
+            //std::cout<<omp_get_num_procs()<<"\n";
+
         }
         else if(flag == INDEX_FLAG){   // get the index file and also check if the file exist
             m_IndexFileName = argument[i+1];

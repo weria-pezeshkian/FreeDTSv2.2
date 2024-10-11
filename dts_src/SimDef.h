@@ -105,3 +105,8 @@
 //Precisions
 
 #define TSI_Precisions  "18.10"
+
+
+
+// For OpenMP
+#define Backoff_Factor   5   // ns

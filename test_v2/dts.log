@@ -1,5 +1,5 @@
 ;--------- this state is initiated by this command ---------------------------------  
-../dts_src/DTS   -in   input.dts   -top   sys1.tsi   
+../dts_src/DTS   -in   input.dts   -top   top.top   -nt   8   -e   4000   
 ;--------- this part can be used as an input.dts file ---------------------------------  
  Run_Tag = dts
 ;-- abstract classes
@@ -8,9 +8,9 @@ Integrator_Type = MC_Simulation
  MinfaceAngle = -0.5
  Temprature = 1 0
  Box_Centering_F = 0
- Set_Steps = 1 5e+06
+ Set_Steps = 1 4000
 Boundary = PBC
-VertexPositionIntegrator = MetropolisAlgorithm 1 1 0.05
+VertexPositionIntegrator = MetropolisAlgorithmOpenMP 1 1 0.05
 AlexanderMove = MetropolisAlgorithm 1
 InclusionPoseIntegrator = MetropolisAlgorithm 1 1
 VectorFieldsRotation = MetropolisAlgorithm 1 0.1
@@ -23,14 +23,18 @@ EnergyMethod = FreeDTS1.0_FF
  Edge_Parameters = 5 0 0
  VertexArea = 0 0.7 0 0
 ConstraintBetweenGroups = No
-InclusionInducedForceOnVertex = Constant_NematicForce -2
+InclusionInducedForceOnVertex = No
 VectorFieldsForceOnVertex = No
 ExternalFieldOnVectorFields = No
-ExternalFieldOnInclusions = ConstantExternalField 5 1 0 0
+ExternalFieldOnInclusions = No
 InclusionConversion = No
-Dynamic_Box = IsotropicFrameTension 5 1 XY
-DynamicTopology = ConstantTopology
-OpenEdgeEvolution = EvolutionWithConstantVertex 5 0.1
+VertexAdhesionToSubstrate = No
+VolumeCoupling = No
+GlobalCurvatureCoupling = No
+TotalAreaCoupling = No
+Dynamic_Box = No
+DynamicTopology = No
+OpenEdgeEvolution = No
 TimeSeriesData_Period = 100
 Restart_Period  =  1000
 ;------------------------------------------  

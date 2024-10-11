@@ -1,7 +1,7 @@
 Integrator_Type = MC_Simulation
  Min_Max_Lenghts = 1 3
  MinfaceAngle = -0.5
- Temprature = 1 0
+ Temperature = 1 0
  Box_Centering_F = 0
  Set_Steps = 1 5000000
  EnergyMethod = FreeDTS1.0_FF
@@ -9,13 +9,13 @@ Integrator_Type = MC_Simulation
  Edge_Parameters = 5 0 0
  VertexArea = 0 0.7 0 0
 TimeSeriesData_Period = 100
-VertexPositionIntegrator = MetropolisAlgorithm 1 1 0.05
+VertexPositionIntegrator = MetropolisAlgorithmOpenMP 1 1 0.05
 AlexanderMove = MetropolisAlgorithm 1
-InclusionPoseIntegrator = MetropolisAlgorithm   1 1 
-Dynamic_Box =   IsotropicFrameTension 5 1 XY
-OpenEdgeEvolution =   EvolutionWithConstantVertex 5 0.1
-InclusionInducedForceOnVertex = Constant_NematicForce -2  
-ExternalFieldOnInclusions = ConstantExternalField 5 1  0  0   
+;InclusionPoseIntegrator = MetropolisAlgorithm   1 1 
+;Dynamic_Box =   IsotropicFrameTension 5 1 XY
+;OpenEdgeEvolution =   EvolutionWithConstantVertex 5 0.1
+;InclusionInducedForceOnVertex = Constant_NematicForce -2  
+;ExternalFieldOnInclusions = ConstantExternalField 5 1  0  0   
 VisualizationFormat = VTUFileFormat VTU_F 1000
 NonbinaryTrajectory = TSI TrajTSI 1000
 Restart_Period = 1000
@@ -28,4 +28,4 @@ Selection_Type Random
 TypeID       1
 Density      0
 Inclusion-Inclusion-Int
-1    1    1   2  4   -4
+1    1    1   2  4   0

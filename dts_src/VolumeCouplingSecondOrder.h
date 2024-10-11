@@ -23,11 +23,14 @@ and calculates the total energy change due to volume modifications.
 
 ========================================================
 */
+#ifdef _OPENMP
+    #include <omp.h>
+#endif
+#include "AbstractVolumeCoupling.h"
 #include "SimDef.h"
 #include "vertex.h"
 #include "triangle.h"
 #include "links.h"
-#include "AbstractVolumeCoupling.h"
 
 
 class State;
@@ -80,6 +83,10 @@ private:
     double m_TargetV;     // Target reduced volume
     double m_DeltaP;      // Pressure difference
     double m_6SQPI;       // Precomputed constant 1/(6*sqrt(pi))
+    
+#ifdef _OPENMP
+    omp_lock_t m_Lock;  // OpenMP lock for thread-safe updates
+#endif
 
 };
 
