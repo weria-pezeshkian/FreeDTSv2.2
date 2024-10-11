@@ -27,6 +27,10 @@ vertex::vertex(MESH* pMesh, int id, double x, double y, double z) : m_pMesh(pMes
     m_PrincipalCurvature_1 = 0;
     m_PrincipalCurvature_2 = 0;
     
+#ifdef _OPENMP
+omp_init_lock(&m_Lock);
+#endif
+    
 }
 vertex::vertex(MESH* pMesh, int id) : m_pMesh(pMesh) {
 
@@ -45,9 +49,15 @@ vertex::vertex(MESH* pMesh, int id) : m_pMesh(pMesh) {
     m_VLength = 0;                       // length of the vertex
     m_PrincipalCurvature_1 = 0;
     m_PrincipalCurvature_2 = 0;
+    
+#ifdef _OPENMP
+omp_init_lock(&m_Lock);
+#endif
 }
 vertex::~vertex(){
-    
+#ifdef _OPENMP
+omp_destroy_lock(&m_Lock);
+#endif
     // destructor
 }
 void vertex::UpdateGroupName(std::string group_name){
@@ -503,3 +513,56 @@ bool vertex::ReverseVFLocalDirection(){
 
     return true;
 }
+#ifdef _OPENMP
+bool vertex::CheckLockVertex(){
+return omp_test_lock(&m_Lock);
+}
+void vertex::LockVertex(){
+
+omp_set_lock(&m_Lock);
+
+return;
+}
+bool vertex::UnlockVertex(){
+
+omp_unset_lock(&m_Lock);
+
+return true;
+}
+void vertex::LockNeighbourVertex(){
+    for (std::vector<vertex*>::iterator it = m_VNeighbourVertex.begin(); it != m_VNeighbourVertex.end(); ++it) {
+    	(*it)->LockVertex();
+    }
+
+return;
+}
+bool vertex::CheckLockNeighbourVertex() {
+    int N = 0;
+    int neighbourCount = m_VNeighbourVertex.size();
+
+    // Attempt to lock all neighboring vertices
+    for (int i = 0; i < neighbourCount; i++) {
+        vertex* neighborVertex = m_VNeighbourVertex[i];
+
+        // Try to lock the neighbor
+        if (!neighborVertex->CheckLockVertex()) {
+            // Failed to lock one of the neighbors, unlock previously locked ones
+            for (int j = 0; j < N; j++) {
+                m_VNeighbourVertex[j]->UnlockVertex();
+            }
+            return false; // Return failure since we couldn't lock all neighbors
+        }
+
+        N++; // Track how many vertices we've successfully locked
+    }
+
+    return true; // Successfully locked all neighbors
+}
+void vertex::UnlockNeighbourVertex(){
+    for (std::vector<vertex*>::iterator it = m_VNeighbourVertex.begin(); it != m_VNeighbourVertex.end(); ++it) {
+    	(*it)->UnlockVertex();
+    }
+
+return;
+}
+#endif // #ifdef _OPENMP

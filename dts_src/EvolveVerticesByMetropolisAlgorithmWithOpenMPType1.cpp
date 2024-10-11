@@ -1,6 +1,8 @@
 
 
 #include <stdio.h>
+#include <thread>   // For std::this_thread::sleep_for
+#include <chrono>   // For std::chrono::milliseconds
 #ifdef _OPENMP
 # include <omp.h>
 #endif
@@ -56,92 +58,184 @@ bool EvolveVerticesByMetropolisAlgorithmWithOpenMPType1::EvolveOneStep(int step)
     int no_edge_v = m_pEdgeV.size();
     int no_steps_edge = no_edge_v*m_NumberOfMovePerStep_Edge;
     int no_steps_surf = no_surf_v*m_NumberOfMovePerStep_Surf;
-double diff_energy = 0;
 
 
 
-//#pragma omp parallel for num_threads(m_Total_ThreadsNo) schedule(dynamic) // Specify the number of threads
 
-omp_set_num_threads(m_Total_ThreadsNo);
-no_steps_surf = no_steps_surf/m_Total_ThreadsNo;
-no_steps_surf = 100/m_Total_ThreadsNo;
-#pragma omp parallel
-{
-    // Each thread gets its own random number generator
-
-    // Local counters for accepted moves and energy
+omp_set_num_threads(m_Total_ThreadsNo); // Set the number of threads
+double diff_energy = 0.0;
+int backoff_factor_nanoseconds = 5;   // 100 nanoseconds
+// Use OpenMP to parallelize the outer loop with dynamic scheduling
+#pragma omp parallel for schedule(dynamic) num_threads(m_Total_ThreadsNo)
+for (int i = 0; i < no_steps_surf; i++) {
+    // Each thread has its own local counters
     int local_AcceptedMoves = 0;
     double local_diff_energy = 0.0;
 
-    #pragma omp for
-    for (int i = 0; i < no_steps_surf; i++) 
-    {
-        int r_vid = m_pState->GetRandomNumberGenerator()->IntRNG(no_surf_v); // Use thread-local RNG
-        vertex *pvertex = m_pSurfV[r_vid];
+    vertex *pvertex;
 
-        // Skip if vertex is in the frozen group
-        if (m_FreezGroupName == pvertex->GetGroupName()) {
-            continue;
+    // Try to lock a random vertex and its neighbors
+    
+    	/*int r_vid = m_pState->GetRandomNumberGenerator()->IntRNG(no_surf_v); // Thread-local RNG
+    	pvertex = m_pSurfV[r_vid];
+    while (true) {
+        if (pvertex->CheckLockVertex()) {
+            if (!pvertex->CheckLockNeighbourVertex()) {
+                pvertex->UnlockVertex();  // Unlock the vertex if neighbors can't be locked
+            } else {
+                break;  // Successfully locked vertex and neighbors, break the loop
+            }
         }
+    std::this_thread::sleep_for(std::chrono::nanoseconds(backoff_factor_nanoseconds));
+    }*/
+    
 
-        double dx = 1 - 2 * m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
-        double dy = 1 - 2 * m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
-        double dz = 1 - 2 * m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
-
-        // Check if the move is within the boundary
-        if (!m_pState->GetBoundary()->MoveHappensWithinTheBoundary(dx, dy, dz, pvertex)) {
-            continue;
+    while (true) {
+    
+        int r_vid = m_pState->GetRandomNumberGenerator()->IntRNG(no_surf_v); // Thread-local RNG
+    	pvertex = m_pSurfV[r_vid];
+        if (pvertex->CheckLockVertex()) {
+            if (!pvertex->CheckLockNeighbourVertex()) {
+                pvertex->UnlockVertex();  // Unlock the vertex if neighbors can't be locked
+            } else {
+                break;  // Successfully locked vertex and neighbors, break the loop
+            }
         }
-
-        double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
-        double tem_en = 0;
-
-        // Attempt to evolve the vertex and update local counters
-        if (EvolveOneVertex(step, pvertex, m_DR * dx, m_DR * dy, m_DR * dz, thermal, tem_en)) {
-            local_AcceptedMoves++;
-            local_diff_energy += tem_en;
-        }
-
-        // Increment attempted moves for this thread
-        #pragma omp atomic
-        m_NumberOfAttemptedMoves++;
     }
+
+    // Skip if vertex is in the frozen group
+    if (m_FreezGroupName == pvertex->GetGroupName()) {
+        pvertex->UnlockVertex();
+        pvertex->UnlockNeighbourVertex();
+        continue;
+    }
+
+    // Generate random move vectors
+    double dx = 1 - 2 * m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
+    double dy = 1 - 2 * m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
+    double dz = 1 - 2 * m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
+
+    // Check if the move is within the boundary
+    if (!m_pState->GetBoundary()->MoveHappensWithinTheBoundary(dx, dy, dz, pvertex)) {
+        pvertex->UnlockVertex();
+        pvertex->UnlockNeighbourVertex();
+        continue;
+    }
+
+    double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
+    double tem_en = 0.0;
+
+    // Evolve the vertex and update local counters if successful
+    if (EvolveOneVertex(step, pvertex, m_DR * dx, m_DR * dy, m_DR * dz, thermal, tem_en)) {
+        local_AcceptedMoves++;
+        local_diff_energy += tem_en;
+    }
+
+    // Unlock the vertex and its neighbors
+    pvertex->UnlockVertex();
+    pvertex->UnlockNeighbourVertex();
 
     // Combine local results into shared variables
     #pragma omp atomic
-    m_AcceptedMoves += local_AcceptedMoves; // Update the global count of accepted moves
+    m_AcceptedMoves += local_AcceptedMoves;
 
-    // Use a critical section to avoid race conditions when updating diff_energy
-    #pragma omp critical
-    {
-        diff_energy += local_diff_energy;
-    }
+    // Atomic update to shared diff_energy variable
+    #pragma omp atomic
+    diff_energy += local_diff_energy;
 }
 
-    double tem_en = 0;
-    for (int i = 0; i< no_steps_edge;i++) {
-      
-        int r_vid = m_pState->GetRandomNumberGenerator()->IntRNG(no_edge_v);
-        vertex *pvertex = m_pEdgeV[r_vid];
-        if( m_FreezGroupName == pvertex->GetGroupName()){
-            continue;
-        }
-        double dx=1-2*(m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
-        double dy=1-2*(m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
-        double dz=1-2*(m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
-        if(!m_pState->GetBoundary()->MoveHappensWithinTheBoundary(dx,dy,dz, pvertex)){
-            continue;
-        }
-        
-        double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
+// Add total energy from the local diff_energy calculated by each thread
+m_pState->GetEnergyCalculator()->AddToTotalEnergy(diff_energy);
+m_NumberOfAttemptedMoves += no_steps_surf;
 
-        if(EvolveOneVertex(step, pvertex, m_DR*dx, m_DR*dy, m_DR*dz,thermal, tem_en)){
-            m_AcceptedMoves++;
+
+omp_set_num_threads(m_Total_ThreadsNo); // Set the number of threads
+ diff_energy = 0.0;
+
+// Use OpenMP to parallelize the outer loop with dynamic scheduling
+#pragma omp parallel for schedule(dynamic) num_threads(m_Total_ThreadsNo)
+for (int i = 0; i < no_steps_edge; i++) {
+    // Each thread has its own local counters
+    int local_AcceptedMoves = 0;
+    double local_diff_energy = 0.0;
+
+    vertex *pvertex;
+
+    // Try to lock a random vertex and its neighbors
+    /*int r_vid = m_pState->GetRandomNumberGenerator()->IntRNG(no_edge_v); // Thread-local RNG
+    	pvertex = m_pEdgeV[r_vid];
+    while (true) {
+        if (pvertex->CheckLockVertex()) {
+            if (!pvertex->CheckLockNeighbourVertex()) {
+                pvertex->UnlockVertex();  // Unlock the vertex if neighbors can't be locked
+            } else {
+                break;  // Successfully locked vertex and neighbors, break the loop
+            }
         }
-        m_NumberOfAttemptedMoves++;
-    }
+    std::this_thread::sleep_for(std::chrono::nanoseconds(backoff_factor_nanoseconds));
+    }*/
     
- (m_pState->GetEnergyCalculator())->AddToTotalEnergy(diff_energy);        
+    
+    while (true) {
+        int r_vid = m_pState->GetRandomNumberGenerator()->IntRNG(no_edge_v);
+        pvertex = m_pEdgeV[r_vid];
+
+        if (pvertex->CheckLockVertex()) {
+            if (!pvertex->CheckLockNeighbourVertex()) {
+                pvertex->UnlockVertex();  // Unlock the vertex if neighbors can't be locked
+            } else {
+                break;  // Successfully locked vertex and neighbors, break the loop
+            }
+        }
+    }
+
+    // Skip if vertex is in the frozen group
+    if (m_FreezGroupName == pvertex->GetGroupName()) {
+        pvertex->UnlockVertex();
+        pvertex->UnlockNeighbourVertex();
+        continue;
+    }
+
+    // Generate random move vectors
+    double dx = 1 - 2 * m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
+    double dy = 1 - 2 * m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
+    double dz = 1 - 2 * m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
+
+    // Check if the move is within the boundary
+    if (!m_pState->GetBoundary()->MoveHappensWithinTheBoundary(dx, dy, dz, pvertex)) {
+        pvertex->UnlockVertex();
+        pvertex->UnlockNeighbourVertex();
+        continue;
+    }
+
+    double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
+    double tem_en = 0.0;
+
+    // Evolve the vertex and update local counters if successful
+    if (EvolveOneVertex(step, pvertex, m_DR * dx, m_DR * dy, m_DR * dz, thermal, tem_en)) {
+        local_AcceptedMoves++;
+        local_diff_energy += tem_en;
+    }
+
+    // Unlock the vertex and its neighbors
+    pvertex->UnlockVertex();
+    pvertex->UnlockNeighbourVertex();
+
+    // Combine local results into shared variables
+    #pragma omp atomic
+    m_AcceptedMoves += local_AcceptedMoves;
+
+    // Atomic update to shared diff_energy variable
+    #pragma omp atomic
+    diff_energy += local_diff_energy;
+}
+
+// Add total energy from the local diff_energy calculated by each thread
+m_pState->GetEnergyCalculator()->AddToTotalEnergy(diff_energy);
+m_NumberOfAttemptedMoves += no_steps_surf;
+
+
+
     return true;
 #else
     std::cerr << "---> Error: OpenMP is not available, but the program requires it. Please recompile with OpenMP support.\n";

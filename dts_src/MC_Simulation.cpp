@@ -61,6 +61,11 @@ bool MC_Simulation::do_Simulation(){
     std::cout<<" We have reached simulation run loop!  \n";
 #endif
     std::clock_t start = std::clock();
+    
+    double startwall_time = omp_get_wtime();
+// Your OpenMP parallel code here
+
+
     std::cout<<"------>   Simulation will be performed from "<<m_Initial_Step<<" to "<<m_Final_Step<<" steps\n";
 for (int step = m_Initial_Step; step <= m_Final_Step; step++){
         
@@ -117,9 +122,13 @@ for (int step = m_Initial_Step; step <= m_Final_Step; step++){
 
 } // for(int step=GetInitialStep(); step<GetFinalStep(); step++)
     std::clock_t end = std::clock();
+    
+    double endwall_time = omp_get_wtime();
+    endwall_time = endwall_time - startwall_time;
+    
     double elapsed_secs = double(end - start) / CLOCKS_PER_SEC;
     std::cout<<"---- Simulation has ended ----\n";
-    std::cout<<" The run took: "<<Nfunction::ConvertSecond2Time(elapsed_secs)<<"\n";
+    std::cout<<" The run took: "<<Nfunction::ConvertSecond2Time(elapsed_secs)<<"thread time and  "<<Nfunction::ConvertSecond2Time(endwall_time)<<" wall time \n";
 
 
     m_pState->GetCurvatureCalculator()->Initialize();
