@@ -4,6 +4,8 @@
 #ifdef _OPENMP
 # include <omp.h>
 #endif
+#include <thread>   // For std::this_thread::sleep_for
+#include <chrono>   // For std::chrono::milliseconds
 #include "AlexanderMoveByMetropolisAlgorithmWithOpenMP.h"
 #include "State.h"
 AlexanderMoveByMetropolisAlgorithmWithOpenMP::AlexanderMoveByMetropolisAlgorithmWithOpenMP(State* pState) :
@@ -61,17 +63,38 @@ bool AlexanderMoveByMetropolisAlgorithmWithOpenMP::EvolveOneStep(int step) {
             double tem_en = 0.0;
 
             // Generate a random edge
+            std::vector <vertex *> l4vertices;
+            links* p_edge;
+            while (true) {
             int r_lid = m_pState->GetRandomNumberGenerator()->IntRNG(no_edges);
-            links* p_link = m_pSurfL[r_lid];
+            p_edge = m_pSurfL[r_lid];
+            l4vertices.clear();
+            /// open mp
+            vertex *v1 = p_edge->GetV1();
+            vertex *v2 = p_edge->GetV2();
+            vertex *v3 = p_edge->GetV3();
+            vertex *v4 = p_edge->GetMirrorLink()->GetV3();
+            l4vertices.push_back(v1);
+            l4vertices.push_back(v2);
+            l4vertices.push_back(v3);
+            l4vertices.push_back(v4);
+
+                    if (vertex::CheckLockVectorVertex(l4vertices)) {
+                        break;
+                    }
+               // std::this_thread::sleep_for(std::chrono::nanoseconds(Backoff_Factor));
+                }
+            
 
             // Generate a random thermal value
             double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
 
             // Perform the flip operation and accumulate local counters if successful
-            if (FlipOneEdge(step, p_link, thermal, tem_en)) {
+            if (FlipOneEdge(step, p_edge, thermal, tem_en)) {
                 local_AcceptedMoves++;
                 local_diff_energy += tem_en;
             }
+            vertex::UnockVectorVertex(l4vertices);
         }
 
         // Thread-local results are automatically reduced to global values
@@ -133,7 +156,9 @@ bool AlexanderMoveByMetropolisAlgorithmWithOpenMP::FlipOneEdge(int step, links *
     old_energy += v3->GetBindingEnergy();
     old_energy += v4->GetBindingEnergy();
 
-
+    
+ 
+    
 //-- get the energy for interaction
     std::vector<links*> Affected_links = GetEdgesWithInteractionChange(p_edge);
     
@@ -250,8 +275,7 @@ bool AlexanderMoveByMetropolisAlgorithmWithOpenMP::FlipOneEdge(int step, links *
     //---> accept or reject the move
     if(U <= 0 || exp(-U) > temp ) {
         // move is accepted
-        (m_pState->GetEnergyCalculator())->AddToTotalEnergy(diff_energy);
-        
+        changed_en = diff_energy;
         //---> global variables
         if(m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()){
              m_pState->GetVolumeCoupling()->UpdateArea_Volume(old_Tarea, old_Tvolume, new_Tarea, new_Tvolume);
@@ -263,6 +287,7 @@ bool AlexanderMoveByMetropolisAlgorithmWithOpenMP::FlipOneEdge(int step, links *
     else {
 //---> reverse the changes that has been made to the system
         p_edge->Reverse_Flip(p_edge);
+        changed_en = 0;
 
         //---> reverse the triangles
         t1->ReverseConstantMesh_Copy();

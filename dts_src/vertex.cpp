@@ -565,4 +565,28 @@ void vertex::UnlockNeighbourVertex(){
 
 return;
 }
+bool vertex::CheckLockVectorVertex(const std::vector<vertex*>& V_ver) {
+    // Attempt to lock all neighboring vertices
+    for (size_t i = 0; i < V_ver.size(); ++i) {
+        vertex* pVer = V_ver[i];
+
+        // Try to lock the neighbor
+        if (!pVer->CheckLockVertex()) {
+            // Failed to lock one of the neighbors, unlock previously locked ones
+            for (size_t j = 0; j < i; ++j) {
+                V_ver[j]->UnlockVertex();
+            }
+            return false; // Return failure since we couldn't lock all neighbors
+        }
+    }
+
+    return true; // Successfully locked all
+}
+void vertex::UnockVectorVertex(std::vector <vertex *> V_ver){
+    for (std::vector<vertex*>::iterator it = V_ver.begin(); it != V_ver.end(); ++it) {
+        (*it)->UnlockVertex();
+    }
+    return;
+}
+
 #endif // #ifdef _OPENMP

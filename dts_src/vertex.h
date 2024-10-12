@@ -206,6 +206,8 @@ bool UnlockVertex();
 void LockNeighbourVertex();
 void UnlockNeighbourVertex();
 bool CheckLockNeighbourVertex();
+    static bool CheckLockVectorVertex(const std::vector<vertex*>&);
+    static void UnockVectorVertex(std::vector <vertex *>);
 private:
 omp_lock_t m_Lock;
 #endif

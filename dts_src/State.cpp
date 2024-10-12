@@ -381,6 +381,11 @@ while (input >> firstword) {
                     input >> rate;
                     m_pAlexanderMove = new AlexanderMoveByMetropolisAlgorithm(this, rate);
                 }
+                else if(type == AlexanderMoveByMetropolisAlgorithmWithOpenMP::GetDefaultReadName()){  // MetropolisAlgorithm
+                    double rate;
+                    input >> rate;
+                    m_pAlexanderMove = new AlexanderMoveByMetropolisAlgorithmWithOpenMP(this, rate);
+                }
                 else{
                     std::cout<<"---> error: unknown method for Alexander move "<<type<<"\n";
                     m_NumberOfErrors++;

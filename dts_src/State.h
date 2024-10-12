@@ -60,10 +60,13 @@
 #include "EvolveVerticesByMetropolisAlgorithmWithOpenMPType1.h"
 //--- edge 
 #include "AbstractAlexanderMove.h"
-#include "AbstractInclusionPoseIntegrator.h"
-#include "AbstractVectorFieldsRotationMove.h"
 #include "AlexanderMoveByMetropolisAlgorithm.h"
+#include "AlexanderMoveByMetropolisAlgorithmWithOpenMP.h"
+// ---- inclusions
+#include "AbstractInclusionPoseIntegrator.h"
 #include "InclusionPoseUpdateByMetropolisAlgorithm.h"
+//--- vector field
+#include "AbstractVectorFieldsRotationMove.h"
 #include "VectorFieldsRotationByMetropolisAlgorithm.h"
 //---
 //--- I/O

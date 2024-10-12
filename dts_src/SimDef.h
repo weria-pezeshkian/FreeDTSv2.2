@@ -109,4 +109,4 @@
 
 
 // For OpenMP
-#define Backoff_Factor   5   // ns
+#define Backoff_Factor   1   // ns
