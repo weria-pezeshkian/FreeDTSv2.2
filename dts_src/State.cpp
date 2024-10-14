@@ -199,6 +199,7 @@ bool State::ExploreArguments(std::vector<std::string> &argument){
             if(omp_get_num_procs()<m_Total_no_Threads){
                 std::cout<<"---> warning, the number of requested threads is larger then the total physical cores \n";
             }
+            omp_set_num_threads(m_Total_no_Threads); // Set the number of threads
             #endif
             //std::cout<<omp_get_num_procs()<<"\n";
 

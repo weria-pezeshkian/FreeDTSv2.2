@@ -47,7 +47,7 @@ bool AlexanderMoveByMetropolisAlgorithmWithOpenMP::EvolveOneStep(int step) {
     int no_edges = m_pSurfL.size();
     int no_steps = no_edges * m_NumberOfMovePerStep;
 
-    omp_set_num_threads(m_Total_ThreadsNo); // Set the number of threads
+ //   omp_set_num_threads(m_Total_ThreadsNo); // Set the number of threads
     double diff_energy = 0.0;
 
     // Use OpenMP parallel with reduction to accumulate values without atomics
@@ -65,24 +65,20 @@ bool AlexanderMoveByMetropolisAlgorithmWithOpenMP::EvolveOneStep(int step) {
             // Generate a random edge
             std::vector <vertex *> l4vertices;
             links* p_edge;
-            while (true) {
             int r_lid = m_pState->GetRandomNumberGenerator()->IntRNG(no_edges);
             p_edge = m_pSurfL[r_lid];
-            l4vertices.clear();
+            while (true) {
+                l4vertices.clear();
             /// open mp
-            vertex *v1 = p_edge->GetV1();
-            vertex *v2 = p_edge->GetV2();
-            vertex *v3 = p_edge->GetV3();
-            vertex *v4 = p_edge->GetMirrorLink()->GetV3();
-            l4vertices.push_back(v1);
-            l4vertices.push_back(v2);
-            l4vertices.push_back(v3);
-            l4vertices.push_back(v4);
+                l4vertices.push_back(p_edge->GetV1());
+                l4vertices.push_back(p_edge->GetV2());
+                l4vertices.push_back(p_edge->GetV3());
+                l4vertices.push_back(p_edge->GetMirrorLink()->GetV3());
 
                     if (vertex::CheckLockVectorVertex(l4vertices)) {
                         break;
                     }
-               // std::this_thread::sleep_for(std::chrono::nanoseconds(Backoff_Factor));
+                std::this_thread::sleep_for(std::chrono::nanoseconds(Backoff_Factor));
                 }
             
 

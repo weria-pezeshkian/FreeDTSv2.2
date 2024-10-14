@@ -62,7 +62,7 @@ bool EvolveVerticesByMetropolisAlgorithmWithOpenMPType1::EvolveOneStep(int step)
 
 
 
-    omp_set_num_threads(m_Total_ThreadsNo);  // Set the number of threads
+    //omp_set_num_threads(m_Total_ThreadsNo);  // Set the number of threads
     double diff_energy = 0.0;
     int total_AcceptedMoves = 0;
 

@@ -1,6 +1,8 @@
 #ifndef VOXELIZATION_H_INCLUDED
 #define VOXELIZATION_H_INCLUDED
-
+#ifdef _OPENMP
+# include <omp.h>
+#endif
 #include "SimDef.h"
 #include "Vec3D.h"
 /*
