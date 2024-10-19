@@ -10,16 +10,9 @@ VolumeCouplingSecondOrder::VolumeCouplingSecondOrder(VAHGlobalMeshProperties *VH
     m_DeltaP = DeltaP;  // Set the pressure difference
     double pi = acos(-1);  // Calculate Pi
     m_6SQPI = 1.0 / (6.0 * sqrt(pi));  // Calculate 1 / (6 * sqrt(Pi))
-#ifdef _OPENMP
-        omp_init_lock(&m_Lock);  // Initialize the lock
-#endif
 }
 
 VolumeCouplingSecondOrder::~VolumeCouplingSecondOrder() {
-    
-#ifdef _OPENMP
-    omp_destroy_lock(&m_Lock);  // Destroy the lock when done
-#endif
 
 }
 // Initialize the volume and total area
@@ -91,21 +84,6 @@ double VolumeCouplingSecondOrder::Energy(double volume, double area){
         double v0 = m_6SQPI*SQA*SQA*SQA;
         double v =volume/v0;
         return  -m_DeltaP*volume+m_KV*(v-m_TargetV)*(v-m_TargetV);
-}
-void VolumeCouplingSecondOrder::UpdateArea_Volume(double oldarea, double oldvolume, double newarea, double newvolume) {
-    #ifdef _OPENMP
-        omp_set_lock(&m_Lock);  // Lock before updating shared variables
-
-        // Update m_TotalVolume and m_TotalArea
-        m_TotalVolume += newvolume - oldvolume;
-        m_TotalArea += newarea - oldarea;
-
-        omp_unset_lock(&m_Lock);  // Unlock after updating shared variables
-    #else
-        // If OpenMP is not available, update normally without locks
-        m_TotalVolume += newvolume - oldvolume;
-        m_TotalArea += newarea - oldarea;
-   #endif
 }
 std::string VolumeCouplingSecondOrder::CurrentState(){
     

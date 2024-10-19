@@ -23,9 +23,6 @@ and calculates the total energy change due to volume modifications.
 
 ========================================================
 */
-#ifdef _OPENMP
-    #include <omp.h>
-#endif
 #include "AbstractVolumeCoupling.h"
 #include "SimDef.h"
 #include "vertex.h"
@@ -67,10 +64,6 @@ public:
     // Calculate the change in energy due to changes in area and volume
     double GetEnergyChange(double oldarea, double oldvolume, double newarea, double newvolume);
     
-    // Update the total area and volume based on changes
-    void UpdateArea_Volume(double oldarea, double oldvolume, double newarea, double newvolume);
-
-    
 private:
     // Calculate the volume of a single triangle element
   //  double CalculateSingleTriangleVolume(triangle *pTriangle);
@@ -84,9 +77,7 @@ private:
     double m_DeltaP;      // Pressure difference
     double m_6SQPI;       // Precomputed constant 1/(6*sqrt(pi))
     
-#ifdef _OPENMP
-    omp_lock_t m_Lock;  // OpenMP lock for thread-safe updates
-#endif
+
 
 };
 

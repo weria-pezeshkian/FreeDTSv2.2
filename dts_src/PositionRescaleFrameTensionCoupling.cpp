@@ -252,9 +252,10 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
         
         //---> global variables
         if(m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()){
-             m_pState->GetVolumeCoupling()->UpdateArea_Volume(old_Tarea, old_Tvolume, new_Tarea, new_Tvolume);
-            m_pState->GetTotalAreaCoupling()->UpdateTotalArea(old_Tarea, new_Tarea);
-            m_pState->GetGlobalCurvature()->UpdateEnergyChange(new_Tarea-old_Tarea, new_Tcurvature-old_Tcurvature);
+           
+            m_pState->GetVAHGlobalMeshProperties()->Add2Volume(new_Tvolume - old_Tvolume);
+            m_pState->GetVAHGlobalMeshProperties()->Add2TotalArea(new_Tarea - old_Tarea);
+            m_pState->GetVAHGlobalMeshProperties()->Add2GlobalCurvature(new_Tcurvature - old_Tcurvature);
         }
         return true;
     }
@@ -527,7 +528,9 @@ void PositionRescaleFrameTensionCoupling::SetDirection(std::string direction){
     }
     else{
         // Print an error message if the direction is unknown
-        std::cout << "---> Error: direction of the box change is unknown\n";    }
+        std::cout << "---> Error: direction of the box change is unknown\n";
+        exit(0);
+    }
     
     return;
 }

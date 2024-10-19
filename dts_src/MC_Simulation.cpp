@@ -62,7 +62,9 @@ bool MC_Simulation::do_Simulation(){
 #endif
     std::clock_t start = std::clock();
     
+#ifdef _OPENMP
     double startwall_time = omp_get_wtime();
+#endif
 // Your OpenMP parallel code here
 
 
@@ -123,13 +125,16 @@ for (int step = m_Initial_Step; step <= m_Final_Step; step++){
 } // for(int step=GetInitialStep(); step<GetFinalStep(); step++)
     std::clock_t end = std::clock();
     
-    double endwall_time = omp_get_wtime();
-    endwall_time = endwall_time - startwall_time;
+
     
     double elapsed_secs = double(end - start) / CLOCKS_PER_SEC;
     std::cout<<"---- Simulation has ended ----\n";
-    std::cout<<" The run took: "<<Nfunction::ConvertSecond2Time(elapsed_secs)<<"thread time and  "<<Nfunction::ConvertSecond2Time(endwall_time)<<" wall time \n";
-
+    std::cout<<" The run took: "<<Nfunction::ConvertSecond2Time(elapsed_secs)<<"thread time and  ";
+#ifdef _OPENMP
+    double endwall_time = omp_get_wtime();
+    endwall_time = endwall_time - startwall_time;
+    std::cout<<Nfunction::ConvertSecond2Time(endwall_time)<<" wall time \n";
+#endif
 
     m_pState->GetCurvatureCalculator()->Initialize();
     double Final_energy = m_pState->GetEnergyCalculator()->CalculateAllLocalEnergy();
