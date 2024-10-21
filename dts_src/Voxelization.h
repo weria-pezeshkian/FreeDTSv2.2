@@ -228,18 +228,23 @@ bool VoxelizeOpenMP(std::vector<Type *> all_pObjects) {
         m_AllVoxel = new Voxel<Type>***[m_Nx];
 
         // Parallelize voxel creation
-        #pragma omp parallel for collapse(2) private(voxel_id)
-        for (int i = 0; i < m_Nx; ++i) {
-            m_AllVoxel[i] = new Voxel<Type>**[m_Ny];
-            for (int j = 0; j < m_Ny; ++j) {
-                m_AllVoxel[i][j] = new Voxel<Type>*[m_Nz];
-                for (int k = 0; k < m_Nz; ++k) {
-                    voxel_id = i * m_Ny * m_Nz + j * m_Nz + k;
-                    m_AllVoxel[i][j][k] = new Voxel<Type>(voxel_id, i, j, k, m_Nx, m_Ny, m_Nz);
-                }
+    // First allocate memory sequentially to avoid race conditions
+    for (int i = 0; i < m_Nx; ++i) {
+        m_AllVoxel[i] = new Voxel<Type>**[m_Ny];
+        for (int j = 0; j < m_Ny; ++j) {
+            m_AllVoxel[i][j] = new Voxel<Type>*[m_Nz];
+        }
+    }
+    // Now parallelize the voxel creation safely
+    #pragma omp parallel for collapse(3)
+    for (int i = 0; i < m_Nx; ++i) {
+        for (int j = 0; j < m_Ny; ++j) {
+            for (int k = 0; k < m_Nz; ++k) {
+                int voxel_id = i * m_Ny * m_Nz + j * m_Nz + k;
+                m_AllVoxel[i][j][k] = new Voxel<Type>(voxel_id, i, j, k, m_Nx, m_Ny, m_Nz);
             }
         }
-
+    }
         #if DEBUG_MODE == Enabled
         std::cout << " We created new voxels \n";
         #endif

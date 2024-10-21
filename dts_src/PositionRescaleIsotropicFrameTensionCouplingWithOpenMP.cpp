@@ -74,7 +74,6 @@ bool PositionRescaleIsotropicFrameTensionCouplingWithOpenMP::ChangeBoxSize(int s
         m_pState->GetVoxelization()->UpdateVoxelSize(1.2, 1.2, 1.2);
         m_pState->GetVoxelization()->VoxelizeOpenMP(m_pActiveV);
     }
-    
 //---> find the size of box change; isotropic method (here all the other methods can be performed)
     double dx = 1 - 2 * (m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
     dx *= m_DR;
@@ -209,19 +208,19 @@ bool PositionRescaleIsotropicFrameTensionCouplingWithOpenMP::AnAtemptToChangeBox
 
 //--- calculate new energies
     int number_of_vectorfields = m_pState->GetMesh()->GetNoVFPerVertex();
-#pragma omp parallel for
+//#pragma omp parallel for
     for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it) {
         new_energy += (m_pState->GetEnergyCalculator())->SingleVertexEnergy(*it);
         new_energy += (m_pState->GetEnergyCalculator())->CalculateVectorFieldMembraneBindingEnergy(*it);
     }
-#pragma omp parallel for
+//#pragma omp parallel for
     for (std::vector<links *>::iterator it = m_pRightL.begin() ; it != m_pRightL.end(); ++it) {
         new_energy += (m_pState->GetEnergyCalculator())->TwoInclusionsInteractionEnergy(*it);
         for (int i = 0; i<number_of_vectorfields; i++){
             new_energy += (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(i, *it);
         }
     }
-#pragma omp parallel for
+//#pragma omp parallel for
     for (std::vector<links *>::iterator it = m_pEdgeL.begin() ; it != m_pEdgeL.end(); ++it) {
         new_energy += (m_pState->GetEnergyCalculator())->TwoInclusionsInteractionEnergy(*it);
         for (int i = 0; i<number_of_vectorfields; i++){
@@ -284,21 +283,21 @@ bool PositionRescaleIsotropicFrameTensionCouplingWithOpenMP::AnAtemptToChangeBox
         (*m_pBox)(0) *= 1/lx;
         (*m_pBox)(1) *= 1/ly;
         (*m_pBox)(2) *= 1/lz;
-#pragma omp parallel for
+//#pragma omp parallel for
         for (std::vector<triangle *>::iterator it = m_pActiveT.begin() ; it != m_pActiveT.end(); ++it){
             (*it)->ReverseConstantMesh_Copy();
         }
-#pragma omp parallel for
+//#pragma omp parallel for
         for (std::vector<links *>::iterator it = m_pRightL.begin() ; it != m_pRightL.end(); ++it){
             (*it)->ReverseConstantMesh_Copy();
             (*it)->Reverse_VFInteractionEnergy();
         }
-#pragma omp parallel for
+//#pragma omp parallel for
         for (std::vector<links *>::iterator it = m_pEdgeL.begin() ; it != m_pEdgeL.end(); ++it){
             (*it)->ReverseConstantMesh_Copy();
             (*it)->Reverse_VFInteractionEnergy();
         }
-#pragma omp parallel for
+//#pragma omp parallel for
         for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it){
             (*it)->ReverseConstantMesh_Copy();
             (*it)->Reverse_VFsBindingEnergy();
