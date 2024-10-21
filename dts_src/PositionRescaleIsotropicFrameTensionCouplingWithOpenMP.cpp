@@ -72,7 +72,7 @@ bool PositionRescaleIsotropicFrameTensionCouplingWithOpenMP::ChangeBoxSize(int s
     double voxel_lz = m_pState->GetVoxelization()->GetZSideVoxel();
     if(voxel_lx < 1.05 || voxel_ly < 1.05 || voxel_lz < 1.05) {
         m_pState->GetVoxelization()->UpdateVoxelSize(1.2, 1.2, 1.2);
-        m_pState->GetVoxelization()->Voxelize(m_pActiveV);
+        m_pState->GetVoxelization()->VoxelizeOpenMP(m_pActiveV);
     }
     
 //---> find the size of box change; isotropic method (here all the other methods can be performed)
@@ -305,54 +305,79 @@ bool PositionRescaleIsotropicFrameTensionCouplingWithOpenMP::VertexMoveIsFine(do
         return false;
     }
     
-    //--- if the Stretching is positive, so the distances should be fine
-    if(lx>=1 && ly>=1 && lz>=1)
+    // If the stretching is positive, distances should be fine
+    if (lx >= 1 && ly >= 1 && lz >= 1) {
         return true;
-    
-    //--- checking the distance between each pair
-    Voxel<vertex>  ****voxels = m_pState->GetVoxelization()->GetAllVoxel();
+    }
+
+    // Get voxel data
+    Voxel<vertex> ****voxels = m_pState->GetVoxelization()->GetAllVoxel();
     int Nx = m_pState->GetVoxelization()->GetXVoxelNumber();
     int Ny = m_pState->GetVoxelization()->GetYVoxelNumber();
     int Nz = m_pState->GetVoxelization()->GetZVoxelNumber();
 
-    for (int i = 0; i < Nx; ++i) {
-    for (int j = 0; j < Ny; ++j) {
-    for (int k = 0; k < Nz; ++k) {
-        
-        std::vector<vertex*> voxel_ver = (voxels[i][j][k])->GetContentObjects();
-            
-        //--- check distances within the same voxel
-        for (std::vector<vertex*>::iterator it1 = voxel_ver.begin(); it1 != voxel_ver.end(); ++it1) {
-            for (std::vector<vertex*>::iterator it2 = it1 + 1; it2 != voxel_ver.end(); ++it2) {
-                    double l2 = StretchedDistanceSquardBetweenTwoVertices(*it1, *it2, lx, ly, lz);
-                    if (l2 < m_MinLength2) {
-                        return false;
-                    }
-                }
-        }
-        // check distances of vertex from neighbouring voxels
-            for (int n = 0; n < 2; ++n)
-            for (int m = 0; m < 2; ++m)
-            for (int s = 0; s < 2; ++s)
-              if(n != 0 || m != 0 || s!=0) {
-                    std::vector<vertex*> voxel_ver2 = (voxels[i][j][k])->GetANeighbourCell(n,m,s)->GetContentObjects();
+    // Shared flag to track if an invalid move is found
+    bool valid = true;
 
-                    for (std::vector<vertex *>::iterator it1 = voxel_ver.begin() ; it1 != voxel_ver.end(); ++it1) {
-                        for (std::vector<vertex *>::iterator it2 = voxel_ver2.begin() ; it2 != voxel_ver2.end(); ++it2) {
-                            if(it1 != it2){
-                                double l2 = StretchedDistanceSquardBetweenTwoVertices(*it1, *it2, lx, ly, lz);
-                                if (l2 < m_MinLength2) {
-                                    return false;
+    // Parallelize the voxel processing loops using OpenMP
+    #pragma omp parallel for collapse(3) shared(valid)
+    for (int i = 0; i < Nx; ++i) {
+        for (int j = 0; j < Ny; ++j) {
+            for (int k = 0; k < Nz; ++k) {
+                // Skip checking if an invalid move has already been found
+                if (!valid) continue;
+
+                std::vector<vertex*> voxel_ver = (voxels[i][j][k])->GetContentObjects();
+
+                // Check distances within the same voxel
+                for (std::vector<vertex*>::iterator it1 = voxel_ver.begin(); it1 != voxel_ver.end(); ++it1) {
+                    for (std::vector<vertex*>::iterator it2 = it1 + 1; it2 != voxel_ver.end(); ++it2) {
+                        double l2 = StretchedDistanceSquardBetweenTwoVertices(*it1, *it2, lx, ly, lz);
+                        if (l2 < m_MinLength2) {
+                            #pragma omp critical
+                            {
+                                valid = false;
+                            }
+                            break;
+                        }
+                    }
+                    if (!valid) break; // Exit inner loop if invalid move is found
+                }
+                if (!valid) continue; // Skip further checks if invalid move is found
+
+                // Check distances from neighboring voxels
+                for (int n = 0; n < 2; ++n) {
+                    for (int m = 0; m < 2; ++m) {
+                        for (int s = 0; s < 2; ++s) {
+                            if (n != 0 || m != 0 || s != 0) {
+                                std::vector<vertex*> voxel_ver2 = (voxels[i][j][k])->GetANeighbourCell(n, m, s)->GetContentObjects();
+
+                                for (std::vector<vertex*>::iterator it1 = voxel_ver.begin(); it1 != voxel_ver.end(); ++it1) {
+                                    for (std::vector<vertex*>::iterator it2 = voxel_ver2.begin(); it2 != voxel_ver2.end(); ++it2) {
+                                        if (it1 != it2) {
+                                            double l2 = StretchedDistanceSquardBetweenTwoVertices(*it1, *it2, lx, ly, lz);
+                                            if (l2 < m_MinLength2) {
+                                                #pragma omp critical
+                                                {
+                                                    valid = false;
+                                                }
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if (!valid) break; // Exit inner loop if invalid move is found
                                 }
-                        }//  if(it1 != it2){
+                                if (!valid) break; // Exit middle loop if invalid move is found
+                            }
+                        }
+                        if (!valid) break; // Exit outer loop if invalid move is found
                     }
                 }
-            }// for (int s = 0; s < 2; ++s) {
+            }
+        }
     }
-    }
-    }
-    
-    return true;
+
+    return valid;  // Return true if no invalid distances were found, false otherwise
 }
 bool PositionRescaleIsotropicFrameTensionCouplingWithOpenMP::CheckLinkLength(double lx,double ly, double lz){
     /**
@@ -368,21 +393,43 @@ bool PositionRescaleIsotropicFrameTensionCouplingWithOpenMP::CheckLinkLength(dou
      * @return True if all links are within the acceptable length range, false otherwise.
      */
     
+    // A shared flag to indicate if we find an invalid link length
+    bool valid = true;
+
+    // Parallelize the first loop over m_pEdgeL
+    #pragma omp parallel for shared(valid)
     for (std::vector<links *>::iterator it = m_pEdgeL.begin(); it != m_pEdgeL.end(); ++it) {
+        if (!valid) continue;  // Early exit if a failure has already been detected
+
         double l2 = StretchedDistanceSquardBetweenTwoVertices((*it)->GetV1(), (*it)->GetV2(), lx, ly, lz);
+        
+        // Check if the link length is outside acceptable bounds
         if (l2 < m_MinLength2 || l2 > m_MaxLength2) {
-            return false;
+            #pragma omp critical  // Ensure only one thread sets the flag at a time
+            {
+                valid = false;
+            }
         }
     }
 
+    // Parallelize the second loop over m_pRightL
+    #pragma omp parallel for shared(valid)
     for (std::vector<links *>::iterator it = m_pRightL.begin(); it != m_pRightL.end(); ++it) {
+        if (!valid) continue;  // Early exit if a failure has already been detected
+
         double l2 = StretchedDistanceSquardBetweenTwoVertices((*it)->GetV1(), (*it)->GetV2(), lx, ly, lz);
+
+        // Check if the link length is outside acceptable bounds
         if (l2 < m_MinLength2 || l2 > m_MaxLength2) {
-            return false;
+            #pragma omp critical  // Ensure only one thread sets the flag at a time
+            {
+                valid = false;
+            }
         }
     }
 
-    return true;
+    return valid;
+
 }
 double PositionRescaleIsotropicFrameTensionCouplingWithOpenMP::StretchedDistanceSquardBetweenTwoVertices(vertex * v1,vertex * v2, double lx, double ly, double lz){
     /**

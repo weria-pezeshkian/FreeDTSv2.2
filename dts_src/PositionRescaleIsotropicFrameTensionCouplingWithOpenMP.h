@@ -21,8 +21,8 @@ public:
     void Initialize();
     bool ChangeBoxSize(int step);
 
-    inline  std::string GetDerivedDefaultReadName()  {return "IsotropicFrameTension";}
-    inline  static std::string GetDefaultReadName()  {return "IsotropicFrameTension";}
+    inline  std::string GetDerivedDefaultReadName()  {return "IsotropicFrameTensionOpenMP";}
+    inline  static std::string GetDefaultReadName()  {return "IsotropicFrameTensionOpenMP";}
     std::string CurrentState();
 
 private:

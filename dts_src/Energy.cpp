@@ -48,7 +48,7 @@ double Energy::SurfVertexBendingAndStretchingEnergy(vertex * p_vertex){
     double c2 = p_vertex->GetP2Curvature();
 
     double mean_times2 = c1 + c2;
-    double gussian = c1 * c1;
+    double gussian = c1 * c2;
     double area = p_vertex->GetArea();
     
     // energy for area coupling K*(area-a0)^2
@@ -82,7 +82,7 @@ double Energy::SurfVertexBendingAndStretchingEnergy(vertex * p_vertex){
             double Cos = local_direction(0);
             double Sin = local_direction(1);
             double Cp = c1 * Cos * Cos + c2 * Sin * Sin;
-            double Cn = c1 * Cos * Cos + c2 * Sin * Sin;
+            double Cn = c2 * Cos * Cos + c1 * Sin * Sin;
             double Delta_Cp = Cp - cp10;
             double Delta_Cn = Cn - cn20;
             en += (k1 * Delta_Cp * Delta_Cp + k2 * Delta_Cn * Delta_Cn) * area;
@@ -595,7 +595,7 @@ if(p_vertex->GetVertexType() == 0) {
         double Cos = l_direction(0);
         double Sin = l_direction(1);
         double Cp = c1 * Cos * Cos + c2 * Sin * Sin;
-        double Cn = c1 * Cos * Cos + c2 * Sin * Sin;
+        double Cn = c2 * Cos * Cos + c1 * Sin * Sin;
         double Delta_Cp = Cp - cp10;
         double Delta_Cn = Cn - cn20;
         en += (k1 * Delta_Cp * Delta_Cp + k2 * Delta_Cn * Delta_Cn) * area;

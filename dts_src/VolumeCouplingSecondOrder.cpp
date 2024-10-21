@@ -73,17 +73,16 @@ double VolumeCouplingSecondOrder::CalculateSingleTriangleVolume(triangle *pTrian
 }*/
 double VolumeCouplingSecondOrder::GetEnergyChange(double oldarea, double oldvolume, double newarea, double newvolume){
 
-    double E1 =Energy(m_TotalVolume,m_TotalArea);
-    double E2 =Energy(m_TotalVolume+newvolume-oldvolume,m_TotalArea+newarea-oldarea);
-    return E2-E1;
+    double E2 = Energy(m_TotalVolume + newvolume - oldvolume, m_TotalArea + newarea - oldarea)
+    E2 -= Energy(m_TotalVolume , m_TotalArea);
+    return E2;
 }
 double VolumeCouplingSecondOrder::Energy(double volume, double area){
    // m_6SQPI = 1.0/(6.0*sqrt(pi));   /// 1/6pi^1/2
-        double E=0;
         double SQA = sqrt(area);
         double v0 = m_6SQPI*SQA*SQA*SQA;
-        double v =volume/v0;
-        return  -m_DeltaP*volume+m_KV*(v-m_TargetV)*(v-m_TargetV);
+        double v = volume/v0 - m_TargetV;
+        return  -m_DeltaP*volume + m_KV*v*v;
 }
 std::string VolumeCouplingSecondOrder::CurrentState(){
     
