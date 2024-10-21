@@ -575,7 +575,7 @@ if(p_vertex->GetVertexType() == 0) {
     double c2 = p_vertex->GetP2Curvature();
 
     double mean_times2 = c1 + c2;
-    double gussian = c1 * c1;
+    double gussian = c1 * c2;
     double area = p_vertex->GetArea();
     
     double k0 = inc_type->ITk;

@@ -518,6 +518,11 @@ while (input >> firstword) {
                 input >> period >> force >> direction;
                 m_pDynamicBox = new PositionRescaleFrameTensionCoupling(period, force, direction, this);
             }
+            else if (type == PositionRescaleIsotropicFrameTensionCouplingWithOpenMP::GetDefaultReadName()) {
+                    
+                input >> period >> force >> direction;
+                m_pDynamicBox = new PositionRescaleIsotropicFrameTensionCouplingWithOpenMP(period, force, direction, this);
+            }
             else if (type == PositionRescaleAnisotropicFrameTensionCoupling::GetDefaultReadName()) {
                 double force_1 = 0;
                 double force_2 = 0;

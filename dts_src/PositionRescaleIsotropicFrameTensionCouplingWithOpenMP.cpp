@@ -128,17 +128,21 @@ bool PositionRescaleIsotropicFrameTensionCouplingWithOpenMP::AnAtemptToChangeBox
         old_Tarea =  m_pState->GetVAHGlobalMeshProperties()->GetTotalArea();
         old_Tcurvature =  m_pState->GetVAHGlobalMeshProperties()->GetTotalMeanCurvature();
     }
+#pragma omp parallel for
     for (std::vector<triangle *>::iterator it = m_pActiveT.begin() ; it != m_pActiveT.end(); ++it){
         (*it)->ConstantMesh_Copy();
     }
+#pragma omp parallel for
     for (std::vector<links *>::iterator it = m_pRightL.begin() ; it != m_pRightL.end(); ++it){
         (*it)->ConstantMesh_Copy();
         (*it)->Copy_VFInteractionEnergy();
     }
+#pragma omp parallel for
     for (std::vector<links *>::iterator it = m_pEdgeL.begin() ; it != m_pEdgeL.end(); ++it){
         (*it)->ConstantMesh_Copy();
         (*it)->Copy_VFInteractionEnergy();
     }
+#pragma omp parallel for
     for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it){
         (*it)->ConstantMesh_Copy();
         (*it)->Copy_VFsBindingEnergy();
@@ -148,7 +152,7 @@ bool PositionRescaleIsotropicFrameTensionCouplingWithOpenMP::AnAtemptToChangeBox
     // while if we do it after the move, it will be from final configurations
     double dE_force_from_inc = 0;
     double dE_force_from_vectorfields = 0;
-
+#pragma omp parallel for
     for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it){
         double x = (*it)->GetVXPos();
         double y = (*it)->GetVYPos();
@@ -165,18 +169,22 @@ bool PositionRescaleIsotropicFrameTensionCouplingWithOpenMP::AnAtemptToChangeBox
     (*m_pBox)(0) *= lx;
     (*m_pBox)(1) *= ly;
     (*m_pBox)(2) *= lz;
+#pragma omp parallel for
     for (std::vector<vertex*>::iterator it =  m_pActiveV.begin(); it != m_pActiveV.end(); ++it) {
         (*it)->ScalePos(lx,ly,lz);
     }
     //-- Update geometry
+#pragma omp parallel for
     for (std::vector<triangle *>::iterator it = m_pActiveT.begin() ; it != m_pActiveT.end(); ++it){
         (*it)->UpdateNormal_Area(m_pBox);
     }
 
     if(!CheckFaces()){
+#pragma omp parallel for
         for (std::vector<vertex*>::iterator it =  m_pActiveV.begin(); it != m_pActiveV.end(); ++it) {
             (*it)->ScalePos(1.0/lx,1.0/ly,1.0/lz);
         }
+#pragma omp parallel for
         for (std::vector<triangle *>::iterator it = m_pActiveT.begin() ; it != m_pActiveT.end(); ++it){
             (*it)->ReverseConstantMesh_Copy();
         }
@@ -184,12 +192,15 @@ bool PositionRescaleIsotropicFrameTensionCouplingWithOpenMP::AnAtemptToChangeBox
     }
     //--- lets now do the move
   //  m_pState->GetCurvatureCalculator()->Initialize();
+#pragma omp parallel for
     for (std::vector<links *>::iterator it = m_pRightL.begin() ; it != m_pRightL.end(); ++it){
         (*it)->UpdateShapeOperator(m_pBox);
     }
+#pragma omp parallel for
     for (std::vector<links *>::iterator it = m_pEdgeL.begin() ; it != m_pEdgeL.end(); ++it){
         (*it)->UpdateEdgeVector(m_pBox);  //
     }
+#pragma omp parallel for
     for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it){
         (m_pState->GetCurvatureCalculator())->UpdateVertexCurvature(*it);
     }
@@ -198,16 +209,19 @@ bool PositionRescaleIsotropicFrameTensionCouplingWithOpenMP::AnAtemptToChangeBox
 
 //--- calculate new energies
     int number_of_vectorfields = m_pState->GetMesh()->GetNoVFPerVertex();
+#pragma omp parallel for
     for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it) {
         new_energy += (m_pState->GetEnergyCalculator())->SingleVertexEnergy(*it);
         new_energy += (m_pState->GetEnergyCalculator())->CalculateVectorFieldMembraneBindingEnergy(*it);
     }
+#pragma omp parallel for
     for (std::vector<links *>::iterator it = m_pRightL.begin() ; it != m_pRightL.end(); ++it) {
         new_energy += (m_pState->GetEnergyCalculator())->TwoInclusionsInteractionEnergy(*it);
         for (int i = 0; i<number_of_vectorfields; i++){
             new_energy += (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(i, *it);
         }
     }
+#pragma omp parallel for
     for (std::vector<links *>::iterator it = m_pEdgeL.begin() ; it != m_pEdgeL.end(); ++it) {
         new_energy += (m_pState->GetEnergyCalculator())->TwoInclusionsInteractionEnergy(*it);
         for (int i = 0; i<number_of_vectorfields; i++){
@@ -270,17 +284,21 @@ bool PositionRescaleIsotropicFrameTensionCouplingWithOpenMP::AnAtemptToChangeBox
         (*m_pBox)(0) *= 1/lx;
         (*m_pBox)(1) *= 1/ly;
         (*m_pBox)(2) *= 1/lz;
+#pragma omp parallel for
         for (std::vector<triangle *>::iterator it = m_pActiveT.begin() ; it != m_pActiveT.end(); ++it){
             (*it)->ReverseConstantMesh_Copy();
         }
+#pragma omp parallel for
         for (std::vector<links *>::iterator it = m_pRightL.begin() ; it != m_pRightL.end(); ++it){
             (*it)->ReverseConstantMesh_Copy();
             (*it)->Reverse_VFInteractionEnergy();
         }
+#pragma omp parallel for
         for (std::vector<links *>::iterator it = m_pEdgeL.begin() ; it != m_pEdgeL.end(); ++it){
             (*it)->ReverseConstantMesh_Copy();
             (*it)->Reverse_VFInteractionEnergy();
         }
+#pragma omp parallel for
         for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it){
             (*it)->ReverseConstantMesh_Copy();
             (*it)->Reverse_VFsBindingEnergy();
@@ -515,20 +533,21 @@ bool PositionRescaleIsotropicFrameTensionCouplingWithOpenMP::CheckFaceAngleOfOne
 }
 
 bool PositionRescaleIsotropicFrameTensionCouplingWithOpenMP::CheckFaces() {
-    // Function to check if the angle between the faces of all links in the m_pRightL list
-    // satisfies the minimum angle condition.
-    
-    // Iterate through all links in the m_pRightL vector.
-    for (std::vector<links*>::iterator it = m_pRightL.begin(); it != m_pRightL.end(); ++it) {
-        // For each link, check if the face angle condition is satisfied using CheckFaceAngleOfOneLink function.
-        // If any link does not satisfy the condition, return false.
-        if (!CheckFaceAngleOfOneLink(*it)) {
-            return false;
+    bool all_satisfy = true; // This will hold the final result
+
+    // Get the number of links in the m_pRightL vector
+    int numLinks = m_pRightL.size();
+
+    // Parallelize the loop with OpenMP
+    #pragma omp parallel for reduction(&&:all_satisfy)
+    for (int i = 0; i < numLinks; ++i) {
+        // If any link fails the check, set all_satisfy to false
+        if (!CheckFaceAngleOfOneLink(m_pRightL[i])) {
+            all_satisfy = false;
         }
     }
 
-    // If all links satisfy the face angle condition, return true.
-    return true;
+    return all_satisfy; // Return the final result
 }
 void PositionRescaleIsotropicFrameTensionCouplingWithOpenMP::SetDirection(std::string direction){
     /**
