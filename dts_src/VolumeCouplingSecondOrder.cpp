@@ -73,7 +73,7 @@ double VolumeCouplingSecondOrder::CalculateSingleTriangleVolume(triangle *pTrian
 }*/
 double VolumeCouplingSecondOrder::GetEnergyChange(double oldarea, double oldvolume, double newarea, double newvolume){
 
-    double E2 = Energy(m_TotalVolume + newvolume - oldvolume, m_TotalArea + newarea - oldarea)
+    double E2 = Energy(m_TotalVolume + newvolume - oldvolume, m_TotalArea + newarea - oldarea);
     E2 -= Energy(m_TotalVolume , m_TotalArea);
     return E2;
 }
