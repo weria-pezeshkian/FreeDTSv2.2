@@ -9,8 +9,8 @@ Integrator_Type = MC_Simulation
  Edge_Parameters = 5 0 0
  VertexArea = 0 0.7 0 0
 TimeSeriesData_Period = 100
-VertexPositionIntegrator = MetropolisAlgorithmOpenMP 1 0 0.05
-AlexanderMove = MetropolisAlgorithmOpenMP 1
+VertexPositionIntegrator = MetropolisAlgorithmOpenMP 0 0 0.05
+AlexanderMove = MetropolisAlgorithmOpenMP 0
 ;InclusionPoseIntegrator = MetropolisAlgorithm   1 1 
 Dynamic_Box =  IsotropicFrameTensionOpenMP  5 1 XY
 ;OpenEdgeEvolution =   EvolutionWithConstantVertex 5 0.1
@@ -26,6 +26,6 @@ SRotation   Type   K    KG   KP   KL   C0     C0P   C0L  lambda   lkg   lkn    c
 GenerateInclusions
 Selection_Type Random
 TypeID       1
-Density      0
+Density      1
 Inclusion-Inclusion-Int
 1    1    1   2  4   0

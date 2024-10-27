@@ -65,6 +65,7 @@
 // ---- inclusions
 #include "AbstractInclusionPoseIntegrator.h"
 #include "InclusionPoseUpdateByMetropolisAlgorithm.h"
+#include "InclusionPoseUpdateByMetropolisAlgorithmOpenMP.h"
 //--- vector field
 #include "AbstractVectorFieldsRotationMove.h"
 #include "VectorFieldsRotationByMetropolisAlgorithm.h"

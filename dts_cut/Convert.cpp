@@ -32,7 +32,7 @@ Convert::Convert(std::vector <std::string> argument)
     m_Zoom(1) = 1;
     m_Zoom(2) = 1;
     m_center = false;
-    m_CutType = "direction";
+    m_CutType = "line";
     m_Translate(0)=0; m_Translate(1)=0; m_Translate(2)=0;
     m_NoVF = 0;
     Nfunction f;
@@ -128,8 +128,51 @@ Convert::Convert(std::vector <std::string> argument)
 
     std::vector<Vertex_Map> newVlist;
     std::vector<Vertex_Map> RemVlist;
+    
+if(m_CutType == "line"){
+
+    int v0;
+    std::cin>>v0;
+    
+    
+
+    for (std::vector<Vertex_Map>::iterator it = bvertex.begin() ; it != bvertex.end(); ++it){
+        double x = it->x -m_Box(0)/2;
+        double y = it->y -m_Box(1)/2;
+        double z = it->z -m_Box(2)/2;
+        Vec3D X(x,y,z);
+        
+        double cos = X.dot(X,Dir);
+        if(cos>dmax)
+            dmax = cos;
+        
+        if(cos<dmin)
+            dmin = cos;
+    }
+        
+        double size = dmax-dmin;
+        size = size*(1-cutsize);
+        
+    for (std::vector<Vertex_Map>::iterator it = bvertex.begin() ; it != bvertex.end(); ++it){
+            double x = it->x -m_Box(0)/2;
+            double y = it->y -m_Box(1)/2;
+            double z = it->z -m_Box(2)/2;
+            Vec3D X(x,y,z);
+            double cos = X.dot(X,Dir);
+            double f = cos - dmin;
+            if(size<f)
+            {
+            RemVlist.push_back(*it);
+            }
+            else
+            {
+            newVlist.push_back(*it);
+            }
+            
+        }
+}
 //======================== make the cut
-if(m_CutType == "direction"){
+else if(m_CutType == "direction"){
     double cutsize = 0.2;
     Vec3D Dir(1,0,0);
     std::cout<<" enter the direction vector: \n";

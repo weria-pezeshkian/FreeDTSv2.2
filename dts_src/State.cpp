@@ -403,6 +403,11 @@ while (input >> firstword) {
                         input >> rate_kawa>> rate_angle;
                         m_pInclusionPoseIntegrator  = new InclusionPoseUpdateByMetropolisAlgorithm(this, rate_kawa, rate_angle);  // Initialize InclusionPoseIntegrator
                     }
+                    else if(type == InclusionPoseUpdateByMetropolisAlgorithmOpenMP::GetDefaultReadName()){  // MetropolisAlgorithm
+                        double rate_kawa, rate_angle;
+                        input >> rate_kawa>> rate_angle;
+                        m_pInclusionPoseIntegrator  = new InclusionPoseUpdateByMetropolisAlgorithmOpenMP(this, rate_kawa, rate_angle);  // Initialize InclusionPoseIntegrator
+                    }
                     else{
                         std::cout<<"---> error: unknown method for Alexander move "<<type<<"\n";
                         m_NumberOfErrors++;
