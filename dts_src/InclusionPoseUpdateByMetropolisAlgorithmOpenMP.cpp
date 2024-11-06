@@ -1,6 +1,9 @@
 
 
 #include <stdio.h>
+#ifdef _OPENMP
+# include <omp.h>
+#endif
 #include "State.h"
 #include "InclusionPoseUpdateByMetropolisAlgorithmOpenMP.h"
 
@@ -29,7 +32,7 @@ bool InclusionPoseUpdateByMetropolisAlgorithmOpenMP::Initialize() {
     return true;
 }
 bool InclusionPoseUpdateByMetropolisAlgorithmOpenMP::EvolveOneStep(int step){
-    
+#ifdef _OPENMP
     int no_incs = m_pInclusion.size();
     int no_steps_angle = no_incs*m_NumberOfMovePerStep_Angle;
     int no_steps_kawa = no_incs* m_NumberOfMovePerStep_Kawasaki;
@@ -38,6 +41,22 @@ bool InclusionPoseUpdateByMetropolisAlgorithmOpenMP::EvolveOneStep(int step){
     
       int r_inc_id = m_pState->GetRandomNumberGenerator()->IntRNG(no_incs);
       inclusion *p_inc = m_pInclusion[r_inc_id];
+      
+     /* while (true) {
+          int r_vid = m_pState->GetRandomNumberGenerator()->IntRNG(no_edge_v);
+          pvertex = m_pEdgeV[r_vid];
+
+          if (pvertex->CheckLockVertex()) {
+              if (!pvertex->CheckLockNeighbourVertex()) {
+                  pvertex->UnlockVertex();  // Unlock the vertex if neighbors can't be locked
+              } else {
+                  break;  // Successfully locked vertex and neighbors, break the loop
+              }
+          }
+      }
+      */
+      
+      
       double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
       
       std::vector <links*> linklist = p_inc->Getvertex()->GetVLinkList();
@@ -63,6 +82,12 @@ bool InclusionPoseUpdateByMetropolisAlgorithmOpenMP::EvolveOneStep(int step){
       }
     
     return true;
+#else
+    std::cerr << "---> Error: OpenMP is not available, but the program requires it. Please recompile with OpenMP support.\n";
+    exit(EXIT_FAILURE); // Exit with a non-zero value to indicate failure
+    
+    return false;
+#endif
 }
 bool InclusionPoseUpdateByMetropolisAlgorithmOpenMP::KawasakiMove(inclusion* p_inc, links * d_links, double temp) {
     /**
