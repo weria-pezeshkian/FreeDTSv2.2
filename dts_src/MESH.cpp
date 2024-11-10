@@ -506,6 +506,7 @@ bool MESH::CheckMesh(double min_l, double max_l, double min_angle, Voxelization<
         double dist2 = p_v1->SquareDistanceFromAVertex(p_v2);
         if(dist2 < min_l || dist2 > max_l){
             
+            std::cout<<"---> error: bad edge length: length of an edge is "<<dist2<<"\n";
             return false;
         }
     }

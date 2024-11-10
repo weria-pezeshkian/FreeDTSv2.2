@@ -27,7 +27,7 @@ public:
     
 private:
     void ExpandEllipsoidalCoreWall(int rate, double dr);
-
+    void ChangeTemperatureWithConstantRate(int rate, double DT);
     
     
 private:
