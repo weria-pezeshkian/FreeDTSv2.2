@@ -831,7 +831,7 @@ while (input >> firstword) {
                 input >> str >> type;
                 getline(input,rest);
                 if(type == UserDefinedForceonVertices::GetDefaultReadName()){  // Constant_NematicForce
-                    m_pForceonVertices = new UserDefinedForceonVertices(rest);
+                    m_pForceonVertices = new UserDefinedForceonVertices(this, rest);
                 }
                 else if(type == NoForceonVertices::GetDefaultReadName()){
                     
@@ -1106,7 +1106,8 @@ bool State::Initialize(){
         m_pVectorFieldsRotationIntegrator->Initialize();
 //----> boundry of the simulations
         m_pBoundary->Initialize();
-
+        m_pForceonVertices->Initialize();
+    
 //-----> box change
         m_pDynamicBox->Initialize();
     

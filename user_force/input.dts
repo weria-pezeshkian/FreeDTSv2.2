@@ -6,11 +6,12 @@ VertexArea               = 0 0 0 0
 VertexPositionIntegrator = MetropolisAlgorithmOpenMP 1 1 0.05
 AlexanderMove            = MetropolisAlgorithmOpenMP 0.2
 ;so that the volume/area/GC will be printed in the out
-VolumeCoupling           = SecondOrder 0 0 0.77
-GlobalCurvatureCoupling  = HarmonicPotential 0 0.3
-TotalAreaCoupling        = HarmonicPotential 0 0.34
+;VolumeCoupling           = SecondOrder 0 0 0.77
+;GlobalCurvatureCoupling  = HarmonicPotential 0 0.3
+;TotalAreaCoupling        = HarmonicPotential 0 0.34
 ;output managment
+ForceOnVertices  = User  3 248   187 1000 
 VisualizationFormat      = VTUFileFormat VTU_F 1000
 NonbinaryTrajectory      = TSI TrajTSI 1000
-TimeSeriesData_Period    = 20000
+TimeSeriesData_Period    = 1000
 Restart_Period           = 1000

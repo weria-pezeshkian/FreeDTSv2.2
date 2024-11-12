@@ -11,9 +11,10 @@
 #include "AbstractForceonVertices.h"
 class UserDefinedForceonVertices : public AbstractForceonVertices{
 public:
-    UserDefinedForceonVertices(std::string inputs);
+    UserDefinedForceonVertices(State *pState, std::string inputs);
     ~UserDefinedForceonVertices();
     double Energy_of_Force(vertex *p, Vec3D dx);
+    void Initialize();
     std::string CurrentState();
     inline  std::string GetDerivedDefaultReadName()  {return "User";}
     inline static std::string GetDefaultReadName() {return "User";}
@@ -21,6 +22,13 @@ public:
 private:
     Vec3D GetForce(vertex *pv);
     std::string m_Inputs;
+    State *m_pState;
+    vertex *m_pV1;
+    vertex *m_pV2;
+    vertex *m_pV3;
+    double m_K;
+
+    std::vector<vertex*> m_pallV;
 
 };
 

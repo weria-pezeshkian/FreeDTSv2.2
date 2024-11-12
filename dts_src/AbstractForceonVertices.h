@@ -21,6 +21,7 @@ public:
         
     }
     virtual double Energy_of_Force(vertex *p, Vec3D dx) = 0;
+    virtual void Initialize() = 0;
     virtual inline std::string GetDerivedDefaultReadName() = 0;
     virtual std::string CurrentState() = 0;
     inline static std::string GetBaseDefaultReadName() {return "ForceOnVertices";}
@@ -41,7 +42,9 @@ public:
     inline std::string GetDerivedDefaultReadName()  {return "No";}
     inline static std::string GetDefaultReadName()  {return "No";}
 
-    
+    void Initialize(){
+        return;
+    }
     double Energy_of_Force(vertex *p, Vec3D dx){
         return 0;
     }

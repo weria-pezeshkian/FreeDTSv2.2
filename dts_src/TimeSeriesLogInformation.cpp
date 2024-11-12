@@ -80,6 +80,8 @@ void TimeSeriesLogInformation::WriteStartingState(){
     m_TimeSeriesFile<<m_pState->GetApplyConstraintBetweenGroups()->CurrentState()<<std::endl;
     m_TimeSeriesFile<<m_pState->GetForceonVerticesfromInclusions()->CurrentState()<<std::endl;
     m_TimeSeriesFile<<m_pState->GetForceonVerticesfromVectorFields()->CurrentState()<<std::endl;
+    m_TimeSeriesFile<<m_pState->GetForceonVertices()->CurrentState()<<std::endl;
+
     m_TimeSeriesFile<<m_pState->GetExternalFieldOnVectorFields()->CurrentState()<<std::endl;
     m_TimeSeriesFile<<m_pState->GetExternalFieldOnInclusions()->CurrentState()<<std::endl;
     m_TimeSeriesFile<<m_pState->GetInclusionConversion()->CurrentState()<<std::endl;
