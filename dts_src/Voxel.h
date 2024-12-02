@@ -67,7 +67,20 @@ public:
     inline const int GetXNoVoxel()                   const { return m_Nx; }
     inline const int GetYNoVoxel()                   const { return m_Ny; }
     inline const int GetZNoVoxel()                   const { return m_Nz; }
-    inline std::vector<Type*> GetContentObjects()        { return m_List; }    //all the objects, e.g., vertices in the voxel
+   
+    
+    
+std::vector<Type*> GetContentObjects() {
+#ifdef _OPENMP
+        omp_set_lock(&m_Lock);  // Lock before accessing shared variable
+        std::vector<Type*> result = m_List;  // Copy the list for thread safety
+        omp_unset_lock(&m_Lock);  // Unlock after accessing shared variable
+        return result;  // Return the copied list
+#else
+        return m_List;  // No need for locking if OpenMP is not enabled
+#endif
+}
+
 
 public:
     void AddtoContentList(Type * p_obj){ // adding a new vertex/point, when the vertex enters the domain
