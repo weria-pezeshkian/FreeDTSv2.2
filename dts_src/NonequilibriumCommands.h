@@ -30,6 +30,8 @@ private:
     void ChangeTemperatureWithConstantRate(int rate, double DT);
     void ThinningEllipsoidalShell(int rate, double dr);
     void IncrementHarmonicPotentialBetweenTwoGroups(int Rate, double Dr);
+    void IncrementVolumeCouplingSecondOrder(int Rate, double Dr);
+
 private:
     State* m_pState;
     int m_ActiveSimStep;

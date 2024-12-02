@@ -22,12 +22,12 @@ void UserDefinedForceonVertices::Initialize(){
 double UserDefinedForceonVertices::Energy_of_Force(vertex *pv, Vec3D dx) {
     
 
-    Vec3D Force = GetForce(pv);
+    Vec3D Force = CalculateForce(pv);
     double E = -Vec3D::dot(dx , Force);
     
     return E;
 }
-Vec3D UserDefinedForceonVertices::GetForce(vertex *pv) { // gives force in the local coordinate
+Vec3D UserDefinedForceonVertices::CalculateForce(vertex *pv) { // gives force in the local coordinate
 
     if(m_pV1 != pv && m_pV2 != pv && m_pV3 != pv){
         return 0;

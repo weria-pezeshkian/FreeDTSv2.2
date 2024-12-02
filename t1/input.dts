@@ -1,0 +1,17 @@
+Integrator_Type          = MC_Simulation
+Set_Steps                = 1 20000
+Temperature              = 1 0
+Kappa                    = 10 0 0
+VertexArea               = 0 0 0 0
+VertexPositionIntegrator = MetropolisAlgorithmOpenMP 1 1 0.05
+AlexanderMove            = MetropolisAlgorithmOpenMP 0.2
+;so that the volume/area/GC will be printed in the out
+VolumeCoupling           = SecondOrder 0 10000 0.95
+NonequilibriumCommands IncrementVolumeCouplingSecondOrder 1000 -0.005
+GlobalCurvatureCoupling  = No HarmonicPotential 60 0.3
+TotalAreaCoupling        = HarmonicPotential 0 0.34
+;output managment
+VisualizationFormat      = VTUFileFormat VTU_F 1000
+NonbinaryTrajectory      = TSI TrajTSI 1000
+TimeSeriesData_Period    = 100
+Restart_Period           = 1000

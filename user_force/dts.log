@@ -1,5 +1,5 @@
 ;--------- this state is initiated by this command ---------------------------------  
-../dts_src/DTS   -in   input.dts   -top   out.tsi   
+../DTS   -in   input.dts   -top   top.top   
 ;--------- this part can be used as an input.dts file ---------------------------------  
  Run_Tag = dts
 ;-- abstract classes
@@ -19,13 +19,13 @@ BinaryTrajectory = NoFile
 VisualizationFormat = VTUFileFormat VTU_F 1000
 CurvatureMethod = ShapeOperator_1
 EnergyMethod = FreeDTS1.0_FF
- Kappa = 10 0 0
+ Kappa = 30 0 0
  Edge_Parameters = 0 0 0
  VertexArea = 0 0 0 0
 ConstraintBetweenGroups = No
 InclusionInducedForceOnVertex = No
 VectorFieldsForceOnVertex = No
-ForceOnVertices = User  3 248   187 1000 
+ForceOnVertices = User  85 437 256  100 
 ExternalFieldOnVectorFields = No
 ExternalFieldOnInclusions = No
 InclusionConversion = No
