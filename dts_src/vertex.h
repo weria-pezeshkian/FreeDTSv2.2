@@ -9,6 +9,8 @@
 #include "Tensor2.h"
 #include "inclusion.h"
 #include "VertexVectorFields.h"
+#include "VertexHarmonicBounds.h"
+
 /*******************
  Weria Pezeshkian (weria.pezeshkian@gmail.com)
  Copyright (c) Weria Pezeshkian
@@ -18,7 +20,7 @@
 class links;
 class triangle;
 class MESH;
-class vertex : public VertexVectorFields {
+class vertex : public VertexVectorFields, public VertexHarmonicBounds {
     
 public:
 	vertex(MESH* pMesh, int id, double x, double y, double z);

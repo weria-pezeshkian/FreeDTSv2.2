@@ -36,7 +36,7 @@ State::State(std::vector<std::string> argument) :
       m_pVertexAdhesionToSubstrate(new NoVertexAdhesionCoupling),  // Initialize ExternalFieldOnVectorFields
       m_pApplyConstraintBetweenGroups(new NoConstraint),  // Initialize ApplyConstraintBetweenGroups
       m_pBoundary(new PBCBoundary),  // Initialize Boundary
-
+      m_pBondedPotentialBetweenVertices(new EmptyBonds),
       //---- Initialize supplementary integrators
       m_pDynamicBox(new NoBoxChange),  // Initialize DynamicBox
       m_pDynamicTopology(new ConstantTopology),  // Initialize DynamicTopology
@@ -488,6 +488,26 @@ while (input >> firstword) {
             getline(input,rest);
         }
 //---- end Volume_Constraint
+//-----  start BondedPotentialBetweenVertices
+        else if(firstword == AbstractBondedPotentialBetweenVertices::GetBaseDefaultReadName())   { // BondedPotentialBetweenVertices
+            input >> str >> type;
+
+            if(type == EmptyBonds::GetDefaultReadName()){
+                // it is already set to 
+            }
+            else if(type == HarmonicBondsList::GetDefaultReadName()) { //
+                
+                std::string file;
+                input>>file;
+             m_pBondedPotentialBetweenVertices = new HarmonicBondsList(this, file);
+            }
+            else {
+                std::cout<<AbstractBondedPotentialBetweenVertices::GetErrorMessage(type)<<"\n";
+                m_NumberOfErrors++;
+                return false;
+            }
+            getline(input,rest);
+        }
 //---- global curvature
         else if(firstword == AbstractGlobalCurvature::GetBaseDefaultReadName()) {
 
@@ -1124,7 +1144,7 @@ bool State::Initialize(){
    // m_pForceonVerticesfromInclusions this does not have one
     m_pApplyConstraintBetweenGroups->Initialize();
     m_pSimulation->Initialize();
-
+    m_pBondedPotentialBetweenVertices->Initialize();
 
 //--- now that the system is ready for simulation, we first write the State into the log file and make one vis 
     m_pTimeSeriesLogInformation->WriteStartingState();

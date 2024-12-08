@@ -108,6 +108,9 @@
 //--- total area coupling
 #include "AbstractTotalAreaCoupling.h"
 #include "CouplingTotalAreaToHarmonicPotential.h"
+//--- bonded potentials
+#include "AbstractBondedPotentialBetweenVertices.h"
+#include "HarmonicBondsList.h"
 //--- Constraint Between vertex Groups
 #include "AbstractApplyConstraintBetweenGroups.h"
 #include "HarmonicPotentialBetweenTwoGroups.h"
@@ -190,6 +193,8 @@ inline AbstractApplyConstraintBetweenGroups *GetApplyConstraintBetweenGroups()  
 inline AbstractTotalAreaCoupling        *GetTotalAreaCoupling()                         {return m_pTotalAreaCoupling;}
 inline AbstractVolumeCoupling           *GetVolumeCoupling()                            {return m_pVolumeCoupling;}
 inline AbstractGlobalCurvature          *GetGlobalCurvature()                           {return m_pCoupleGlobalCurvature;}
+inline AbstractBondedPotentialBetweenVertices    *GetBondedPotentialBetweenVertices()   {return m_pBondedPotentialBetweenVertices;}
+
 inline AbstractForceonVerticesfromInclusions *GetForceonVerticesfromInclusions()    {return m_pForceonVerticesfromInclusions;}
 inline AbstractForceonVertices              *GetForceonVertices()    {return m_pForceonVertices;}
 inline AbstractForceonVerticesfromVectorFields *GetForceonVerticesfromVectorFields()    {return m_pForceonVerticesfromVectorFields;}
@@ -263,13 +268,8 @@ private:
     AbstractVolumeCoupling        *m_pVolumeCoupling;
     AbstractGlobalCurvature       *m_pCoupleGlobalCurvature;
     AbstractTotalAreaCoupling     *m_pTotalAreaCoupling;
-    
-    /*
-     AbstractVolumeCoupling        *m_pVolumeCoupling = new AbstractVolumeCoupling(*m_pVAHCalculator);
-     AbstractGlobalCurvature       *m_pCoupleGlobalCurvature = = new AbstractGlobalCurvature(*m_pVAHCalculator);
-     AbstractTotalAreaCoupling     *m_pTotalAreaCoupling = new AbstractTotalAreaCoupling (*m_pVAHCalculator);
-     
-     */
+    AbstractBondedPotentialBetweenVertices  *m_pBondedPotentialBetweenVertices;
+
     
     
     AbstractBoundary              *m_pBoundary;
