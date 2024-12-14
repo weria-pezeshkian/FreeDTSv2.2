@@ -22,7 +22,8 @@ public:
     virtual void Initialize() = 0;
     virtual std::string CurrentState() = 0;
     virtual inline std::string GetDerivedDefaultReadName() = 0;
-    virtual double GetEnergyForVertexMove(vertex *pvertex) = 0;
+ //   virtual double GetBondEnergyOfVertex(vertex *pvertex) = 0;
+    virtual double GetTotalEnergy() = 0;
     inline static std::string GetBaseDefaultReadName() {return "BondedPotentialBetweenVertices";}
     inline static std::string GetErrorMessage(std::string info) {
         return "---> error: unknown BondedPotentialBetweenVertices type -- \n";
@@ -46,9 +47,13 @@ public:
      
         return;
     }
-    double GetEnergyForVertexMove(vertex *pvertex){
+  /*  double GetBondEnergyOfVertex(vertex *pvertex){
+        return 0;
+    }*/
+    double GetTotalEnergy(){
         return 0;
     }
+
     std::string CurrentState(){
         
         std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();

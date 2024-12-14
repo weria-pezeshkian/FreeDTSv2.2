@@ -15,7 +15,8 @@ public:
     HarmonicBondsList(State *pState, std::string filename);
     ~HarmonicBondsList();
     void Initialize();
-    double GetEnergyForVertexMove(vertex *pvertex);
+  //  double GetBondEnergyOfVertex(vertex *pvertex);
+    double GetTotalEnergy();
     std::string CurrentState();
 
     inline  std::string GetDerivedDefaultReadName()  {return "HarmonicBondsList";}

@@ -139,6 +139,7 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
         old_energy += 2 * (*it)->GetIntEnergy();
         old_energy += 2 * (*it)->GetVFIntEnergy();
     }
+    double bond_energy = -(pvertex->GetBondEnergyOfVertex());
     // --- obtaining global variables that can change by the move. Note, this is not the total volume, only the one that can change.
      double old_Tvolume = 0;
      double old_Tarea = 0;
@@ -222,11 +223,12 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
     double dE_t_area = m_pState->GetTotalAreaCoupling()->CalculateEnergyChange(old_Tarea, new_Tarea);
     double dE_g_curv = m_pState->GetGlobalCurvature()->CalculateEnergyChange(new_Tarea-old_Tarea, new_Tcurvature-old_Tcurvature);
     
+    bond_energy += pvertex->GetBondEnergyOfVertex();
     //--> only elatsic energy
     double diff_energy = new_energy - old_energy;
     //std::cout<<diff_energy<<" dif en \n";
     //--> sum of all the energies
-    double tot_diff_energy = diff_energy + dE_Cgroup + dE_force_on_vertex + dE_force_from_inc + dE_force_from_vector_fields + dE_volume + dE_t_area + dE_g_curv ;
+    double tot_diff_energy = diff_energy + dE_Cgroup + dE_force_on_vertex + dE_force_from_inc + dE_force_from_vector_fields + dE_volume + dE_t_area + dE_g_curv + bond_energy;
     double U = m_Beta * tot_diff_energy - m_DBeta;
     //---> accept or reject the move
     if(U <= 0 || exp(-U) > temp ) {

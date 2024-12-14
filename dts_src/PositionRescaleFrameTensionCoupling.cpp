@@ -138,12 +138,13 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
         (*it)->ConstantMesh_Copy();
         (*it)->Copy_VFsBindingEnergy();
     }
+    double dE_bonds = -(m_pState->GetBondedPotentialBetweenVertices()->GetTotalEnergy());
     //---> for now, only active nematic force: ForceonVerticesfromInclusions
     // if we do this here, the force is from inital configuration
     // while if we do it after the move, it will be from final configurations
     double dE_force_from_inc = 0;
     double dE_force_from_vectorfields = 0;
-
+    
     for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it){
         double x = (*it)->GetVXPos();
         double y = (*it)->GetVYPos();
@@ -224,11 +225,14 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
     double dE_volume =  m_pState->GetVolumeCoupling()->GetEnergyChange(old_Tarea, old_Tvolume, new_Tarea, new_Tvolume);
     double dE_t_area = m_pState->GetTotalAreaCoupling()->CalculateEnergyChange(old_Tarea, new_Tarea);
     double dE_g_curv = m_pState->GetGlobalCurvature()->CalculateEnergyChange(new_Tarea-old_Tarea, new_Tcurvature-old_Tcurvature);
-    
+   
+    //--> bond energy
+    dE_bonds += (m_pState->GetBondedPotentialBetweenVertices()->GetTotalEnergy());
+
     //--> only elatsic energy
     double diff_energy = new_energy - old_energy;
     //--> sum of all the energies
-    double tot_diff_energy = diff_energy + dE_Cgroup + dE_force_from_inc + dE_volume + dE_t_area + dE_g_curv ;
+    double tot_diff_energy = diff_energy + dE_Cgroup + dE_force_from_inc + dE_volume + dE_t_area + dE_g_curv + dE_bonds;
     double NV = m_pActiveV.size();
     
     for (int i=0;i<3;i++) {

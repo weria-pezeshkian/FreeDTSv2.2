@@ -62,24 +62,21 @@ void HarmonicBondsList::Initialize() {
         b.GetV1()->AddBondToList(&b);
         b.GetV2()->AddBondToList(&b);
     }
-    
-    
-    // total bond energy?
-    //??
-}
 
-double HarmonicBondsList::GetEnergyForVertexMove(vertex *pvertex) {
-    double en = 0;
-    
-    
-    // we need this for vertex move or energy class
-    
-    
-    return en;
 }
 std::string HarmonicBondsList::CurrentState(){
     
     std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
     state += " "+m_FileName;
     return state;
+}
+double HarmonicBondsList::GetTotalEnergy(){
+    
+    double en = 0;
+    
+    for (std::vector<bond>::iterator it = m_AllBonds.begin() ; it != m_AllBonds.end(); ++it){
+        en += it->CalculateEnergy();
+    }
+    
+    return en;
 }

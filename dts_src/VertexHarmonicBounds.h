@@ -13,12 +13,12 @@ public:
 
     VertexHarmonicBounds();
     ~VertexHarmonicBounds();
-    inline std::vector<bond *> GetBonds()   {return m_VertexBond;}
-
+    inline std::vector<bond *> GetBonds()   {return m_pVertexBond;}
+    double GetBondEnergyOfVertex();
     void AddBondToList(bond* b);
 
 protected:
-    std::vector<bond *> m_VertexBond;
+    std::vector<bond *> m_pVertexBond;
 
 
 };
