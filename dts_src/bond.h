@@ -53,6 +53,8 @@ private:
     vertex* m_V2;
     double m_K;
     double m_L0;
+    Vec3D *m_pBox; 
+
 };
 
 #endif // BOND_H
