@@ -19,6 +19,7 @@ public:
         m_NumberOfMovePerStep_Angle = 1;
         m_NumberOfMovePerStep_Kawasaki = 1;
         m_DR = 0.1;
+        m_FreezeTypeName = "";
     }
     virtual ~ AbstractInclusionPoseIntegrator(){
         
@@ -35,6 +36,11 @@ public:
     void SetMoveRate(double rate_angle, double rate_kawa){
         m_NumberOfMovePerStep_Angle = rate_angle;
         m_NumberOfMovePerStep_Kawasaki = rate_kawa;
+
+        return;
+    }
+    void SetFreezeTypeName(std::string typename_inc){
+        m_FreezeTypeName = typename_inc;
 
         return;
     }
@@ -62,6 +68,8 @@ protected:
     double m_NumberOfMovePerStep_Angle;   // how many updates should be made per step
     double m_NumberOfMovePerStep_Kawasaki;   // how many updates should be made per step
     double m_DR;
+    
+    std::string m_FreezeTypeName;
 
 };
 

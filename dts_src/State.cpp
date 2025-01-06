@@ -874,6 +874,13 @@ while (input >> firstword) {
                 input>>str>>m_GeneralOutputFilename;
                 getline(input,rest);
             }
+        else if(firstword == "FreezeInclusion")
+        {
+            std::string inc_freez;
+            input>>str>>inc_freez;
+            m_pInclusionPoseIntegrator->SetFreezeTypeName(inc_freez);
+            getline(input,rest);
+        }
         else if(firstword == "Restart_Period")
         {
             int period;

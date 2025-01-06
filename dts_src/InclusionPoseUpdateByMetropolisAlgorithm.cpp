@@ -53,6 +53,11 @@ bool InclusionPoseUpdateByMetropolisAlgorithm::EvolveOneStep(int step){
       
         int r_inc_id = m_pState->GetRandomNumberGenerator()->IntRNG(no_incs);
         inclusion *p_inc = m_pInclusion[r_inc_id];
+        
+        if( m_FreezeTypeName == p_inc->GetInclusionType()->ITName){
+            continue;
+        }
+        
         double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
         double dx=1-2*(m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
         
