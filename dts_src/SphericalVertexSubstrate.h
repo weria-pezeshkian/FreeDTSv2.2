@@ -20,6 +20,8 @@ public:
     inline  std::string GetDerivedDefaultReadName()  {return "SphericalSubstrate";}
     inline static std::string GetDefaultReadName() {return "SphericalSubstrate";}
     
+    friend class NonequilibriumCommands; // Friendship declaration
+
 private:
     Vec3D m_Center;
     double m_Radius;

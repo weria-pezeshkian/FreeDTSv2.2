@@ -4,6 +4,8 @@
 #include <vector>       // Required for std::vector
 #include <functional>   // Required for std::function
 #include <string>       // Required for std::string// A class to change the simulation and system variable on run time. 
+#include "Vec3D.h"
+
 /*
 =======================================================
  developed 2024 by Weria
@@ -31,6 +33,7 @@ private:
     void ThinningEllipsoidalShell(int rate, double dr);
     void IncrementHarmonicPotentialBetweenTwoGroups(int Rate, double Dr);
     void IncrementVolumeCouplingSecondOrder(int Rate, double Dr);
+    void IncrementSphericalSubstrateCenter(int Rate, Vec3D Dirct);
 
 private:
     State* m_pState;

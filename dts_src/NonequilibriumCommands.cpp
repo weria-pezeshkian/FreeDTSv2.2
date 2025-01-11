@@ -1,8 +1,9 @@
+#include <iostream>
+#include <sstream>
 #include "NonequilibriumCommands.h"
 #include "State.h"
 #include "RigidWallTypes.h"
-#include <iostream>
-#include <sstream>
+
 
 NonequilibriumCommands::NonequilibriumCommands(State* pState) {
     m_pState = pState;
@@ -67,6 +68,24 @@ bool NonequilibriumCommands::LoadCommand(std::string strcommand) {
 
         // Use lambda to store the function and argument
         m_FunctionContainer.push_back([this, Rate, Dr]() { IncrementHarmonicPotentialBetweenTwoGroups(Rate, Dr); });
+    }
+    else if (command_arguments[0] == "IncrementSphericalSubstrateCenter") {
+        // Convert the second argument to an integer (e.g., X value)
+        if (command_arguments.size() < 6) {
+            std::cout << "  error-> NonequilibriumCommands IncrementHarmonicPotentialBetweenTwoGroups: not enough arguments in the input file" << std::endl;
+            return false;
+        }
+
+        int Rate = Nfunction::String_to_Int(command_arguments[1]);
+        double Dr = Nfunction::String_to_Double(command_arguments[2]);
+        double nx = Nfunction::String_to_Double(command_arguments[3]);
+        double ny = Nfunction::String_to_Double(command_arguments[4]);
+        double nz = Nfunction::String_to_Double(command_arguments[5]);
+        Vec3D Dirct(nx,ny,nz);
+        Dirct.normalize();
+        Dirct*Dr;
+        // Use lambda to store the function and argument
+        m_FunctionContainer.push_back([this, Rate, Dirct]() { IncrementSphericalSubstrateCenter(Rate, Dirct); });
     }
     else if (command_arguments[0] == "IncrementVolumeCouplingSecondOrder") {
         // Convert the second argument to an integer (e.g., X value)
@@ -190,6 +209,25 @@ void NonequilibriumCommands::IncrementVolumeCouplingSecondOrder(int rate, double
     // Check if the boundary is an EllipsoidalCore
     if (VolumeCouplingSecondOrder* pB = dynamic_cast<VolumeCouplingSecondOrder*>(pVolumeCouplingSecondOrder)) {
             pB->m_TargetV += dr;
+
+    } else {
+        // Error message if the boundary is not an EllipsoidalCore
+        std::cerr << "---> Error: Attempted to expand an IncrementHarmonicPotentialBetweenTwoGroups when not applied." << std::endl;
+    }
+}
+void NonequilibriumCommands::IncrementSphericalSubstrateCenter(int rate, Vec3D Dirct) {
+
+    // Skip steps based on rate
+    if (m_ActiveSimStep % rate != 0) {
+        return;
+    }
+
+    // Get boundary from state
+    AbstractVertexAdhesionToSubstrate* pVertexAdhesionToSubstrate = m_pState->GetVertexAdhesionToSubstrate();
+    
+    // Check if the boundary is an EllipsoidalCore
+    if (SphericalVertexSubstrate* pB = dynamic_cast<SphericalVertexSubstrate*>(pVertexAdhesionToSubstrate)) {
+        pB->m_Center = pB->m_Center + Dirct;
 
     } else {
         // Error message if the boundary is not an EllipsoidalCore
