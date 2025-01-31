@@ -23,6 +23,7 @@ public:
 private:
     double m_AdhesionStrength;
     double m_Z;
+    double m_Depth;
 
 };
 
