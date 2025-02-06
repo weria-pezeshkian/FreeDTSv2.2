@@ -14,6 +14,8 @@ public:
     UserDefinedForceonVertices(State *pState, std::string inputs);
     ~UserDefinedForceonVertices();
     double Energy_of_Force(vertex *p, Vec3D dx);
+    Vec3D  Force(vertex *p);
+
     std::string CurrentState();
     inline  std::string GetDerivedDefaultReadName()  {return "User";}
     inline static std::string GetDefaultReadName() {return "User";}

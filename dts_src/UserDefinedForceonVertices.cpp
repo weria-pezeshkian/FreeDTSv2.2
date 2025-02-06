@@ -27,6 +27,10 @@ double UserDefinedForceonVertices::Energy_of_Force(vertex *pv, Vec3D dx) {
     
     return E;
 }
+Vec3D UserDefinedForceonVertices::Force(vertex *pv) {
+    Vec3D force = CalculateForce(pv);
+    return force;
+}
 Vec3D UserDefinedForceonVertices::CalculateForce(vertex *pv) { // gives force in the local coordinate
 
     if(m_pV1 != pv && m_pV2 != pv && m_pV3 != pv){

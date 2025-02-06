@@ -366,6 +366,11 @@ while (input >> firstword) {
                 input >> rate_surf >> rate_edge >> dr;
                 m_pVertexPositionIntegrator = new EvolveVerticesByMetropolisAlgorithm(this, rate_surf, rate_edge, dr);
             }
+            else if(type == EvolveVerticesByKineticMonteCarlo::GetDefaultReadName()){  // KineticMonteCarlo
+                double Dv,dt;
+                input >>  Dv >> dt;
+                m_pVertexPositionIntegrator = new EvolveVerticesByKineticMonteCarlo(this, Dv, dt);
+            }
            else if (type == EvolveVerticesByMetropolisAlgorithmWithOpenMPType1::GetDefaultReadName()){  // MetropolisAlgorithmWithOpenMPType1
                double rate_surf,rate_edge,dr;
                input >> rate_surf >> rate_edge >> dr;

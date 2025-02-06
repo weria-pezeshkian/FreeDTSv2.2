@@ -31,6 +31,26 @@ double Constant_NematicForce::Energy_of_Force(vertex *pv, Vec3D dx) {
     
     return En;
 }
+Vec3D Constant_NematicForce::Inclusion_Force(vertex *pv) {
+    
+    Vec3D TotalForce(0,0,0);
+    if(!pv->VertexOwnInclusion() ||  m_F0 == 0 )
+        return TotalForce;
+    
+    
+        std::vector <links *> nl = pv->GetVLinkList();
+        for (std::vector<links *>::iterator it = nl.begin() ; it != nl.end(); ++it)
+        {
+            vertex *pv2 = (*it)->GetV2();
+            if(pv2->VertexOwnInclusion()){
+                TotalForce = TotalForce + ActiveNematicForce_1(pv2, pv);
+            }
+        }
+        Tensor2  L2G = pv->GetL2GTransferMatrix();
+        TotalForce = (L2G * TotalForce) * m_F0;  // in the local space F = -zeta*div(Q); E=zeta*div(Q)*dX
+    
+    return TotalForce;
+}
 Vec3D Constant_NematicForce::ActiveNematicForce_1(vertex *v2, vertex *v1) // gives force in the local coordinate
 {
     Vec3D f;

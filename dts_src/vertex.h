@@ -47,7 +47,7 @@ public:
         inline std::vector <vertex *> GetVNeighbourVertex()     {return m_VNeighbourVertex;}
         inline Voxel<vertex> * GetVoxel()     {return m_pVoxel;}
 
-//---> functions to access positions
+//---> functions to access positions and Velocity and possibly forces
         inline double GetVXPos()                            {return m_X;}
         inline double GetVYPos()                            {return m_Y;}
         inline double GetVZPos()                            {return m_Z;}
@@ -55,6 +55,7 @@ public:
         inline double GetYPos()                             {return m_Y;}
         inline double GetZPos()                             {return m_Z;}
         inline  Vec3D GetPos()                              {return   Vec3D(m_X,m_Y,m_Z);}
+        inline  Vec3D GetVelocity()                         {return m_Velocity;}
 
 //---->
         //---> for if the vertex is surface vertex
@@ -111,6 +112,7 @@ public:
   void UpdateGroup(int z);
   void UpdateVoxel(Voxel<vertex> * pVoxel);
   void UpdateDomainID(int domain_id);
+  void UpdateVelocity(const Vec3D &vel);
 
 public:
     bool CheckVoxel();
@@ -132,6 +134,8 @@ private:
     double m_X;       // X coordinate
     double m_Y;       // Y coordinate
     double m_Z;       // Z coordinate
+    Vec3D m_Velocity;       // Velocity
+
     std::vector <triangle *> m_VTraingleList;  // A list holding all the nighbouring triangles
     std::vector <links *> m_VLinkList;      // A list holding all the nighbouring edges (linkss)
     std::vector <vertex *> m_VNeighbourVertex; // A list holding all the nighbouring vertexes

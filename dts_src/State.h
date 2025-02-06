@@ -58,6 +58,7 @@
 #include "AbstractVertexPositionIntegrator.h"
 #include "EvolveVerticesByMetropolisAlgorithm.h"
 #include "EvolveVerticesByMetropolisAlgorithmWithOpenMPType1.h"
+#include "EvolveVerticesByKineticMonteCarlo.h"
 //--- edge 
 #include "AbstractAlexanderMove.h"
 #include "AlexanderMoveByMetropolisAlgorithm.h"

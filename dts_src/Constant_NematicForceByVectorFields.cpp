@@ -44,6 +44,34 @@ double Constant_NematicForceByVectorFields::Energy_of_Force(vertex *p_vertex, Ve
     }
     return En;
 }
+Vec3D Constant_NematicForceByVectorFields::VectorFields_Force(vertex *p_vertex) {
+    
+    Vec3D TotalForce(0,0,0);
+    if( p_vertex->GetNumberOfVF() == 0){
+        return TotalForce;
+    }
+    
+    if(  m_F0.size() != p_vertex->GetNumberOfVF() ){
+        std::cout<<"---> error: data provided for constant nematic force is not enough \n";
+        return TotalForce;
+    }
+    double En = 0;
+    for (int i = 0; i< p_vertex->GetNumberOfVF(); i++){
+        
+        if(m_F0[i] != 0 ){
+            std::vector <links *> nl = p_vertex->GetVLinkList();
+            Vec3D Force;
+            for (std::vector<links *>::iterator it = nl.begin() ; it != nl.end(); ++it) {
+                vertex *p_vertex2 = (*it)->GetV2();
+                Force = Force + ActiveNematicForce_1(i, p_vertex2, p_vertex);
+            }
+       
+            Tensor2  L2G = p_vertex->GetL2GTransferMatrix();
+            TotalForce = TotalForce + (L2G * Force)*m_F0[i];  // in the local space F = -zeta*div(Q); E=zeta*div(Q)*dX
+        }
+    }
+    return TotalForce;
+}
 Vec3D Constant_NematicForceByVectorFields::ActiveNematicForce_1(int layer, vertex *v2, vertex *v1) // gives force in the local coordinate
 {
     Vec3D f;

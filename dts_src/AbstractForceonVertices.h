@@ -21,6 +21,7 @@ public:
         
     }
     virtual double Energy_of_Force(vertex *p, Vec3D dx) = 0;
+    virtual Vec3D Force(vertex *p) = 0;
     virtual void Initialize() = 0;
     virtual inline std::string GetDerivedDefaultReadName() = 0;
     virtual std::string CurrentState() = 0;
@@ -48,6 +49,11 @@ public:
     double Energy_of_Force(vertex *p, Vec3D dx){
         return 0;
     }
+    Vec3D Force(vertex *p){
+        Vec3D f(0,0,0);
+        return f;
+    }
+
     std::string CurrentState(){
         
         std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();

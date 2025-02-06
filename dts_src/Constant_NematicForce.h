@@ -17,7 +17,8 @@ public:
     std::string CurrentState();
     inline  std::string GetDerivedDefaultReadName()  {return "Constant_NematicForce";}
     inline static std::string GetDefaultReadName() {return "Constant_NematicForce";}
-    
+    Vec3D Inclusion_Force(vertex *pv2);
+
 private:
     Vec3D ActiveNematicForce_1(vertex *pv2, vertex *pv1);
     double m_F0;

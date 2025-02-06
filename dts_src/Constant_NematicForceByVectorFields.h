@@ -17,9 +17,11 @@ public:
     std::string CurrentState();
     inline  std::string GetDerivedDefaultReadName()  {return "Constant_NematicForce";}
     inline static std::string GetDefaultReadName() {return "Constant_NematicForce";}
-    
+    Vec3D VectorFields_Force(vertex *pv);
+
 private:
     Vec3D ActiveNematicForce_1(int layer, vertex *pv2, vertex *pv1);
+
     std::vector<double> m_F0;
     double m_ActiveEnergy;
 

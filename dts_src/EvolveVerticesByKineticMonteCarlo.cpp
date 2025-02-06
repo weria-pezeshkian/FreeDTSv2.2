@@ -1,10 +1,10 @@
 
 
 #include <stdio.h>
-#include "EvolveVerticesByMetropolisAlgorithm.h"
+#include "EvolveVerticesByKineticMonteCarlo.h"
 #include "State.h"
 
-EvolveVerticesByMetropolisAlgorithm::EvolveVerticesByMetropolisAlgorithm(State *pState)
+EvolveVerticesByKineticMonteCarlo::EvolveVerticesByKineticMonteCarlo(State *pState)
     : m_pState(pState),
       m_pSurfV(pState->GetMesh()->GetSurfV()),
       m_pEdgeV(pState->GetMesh()->GetEdgeV()),
@@ -14,12 +14,12 @@ EvolveVerticesByMetropolisAlgorithm::EvolveVerticesByMetropolisAlgorithm(State *
       m_MaxLength2(pState->GetSimulation()->GetMaxL2()),
       m_MinAngle(pState->GetSimulation()->GetMinAngle()){
           
-          m_NumberOfMovePerStep_Surf = 1.0;
-          m_NumberOfMovePerStep_Edge = 1.0;
+
           m_DR = 0.05;
-          
+          m_dt = 0.001;
+          m_Dv = 1;
       }
-EvolveVerticesByMetropolisAlgorithm::EvolveVerticesByMetropolisAlgorithm(State *pState, double rate_surf, double rate_edge, double dr)
+EvolveVerticesByKineticMonteCarlo::EvolveVerticesByKineticMonteCarlo(State *pState,  double DV, double dt)
     : m_pState(pState),
       m_pSurfV(pState->GetMesh()->GetSurfV()),
       m_pEdgeV(pState->GetMesh()->GetEdgeV()),
@@ -29,72 +29,116 @@ EvolveVerticesByMetropolisAlgorithm::EvolveVerticesByMetropolisAlgorithm(State *
       m_MaxLength2(pState->GetSimulation()->GetMaxL2()),
       m_MinAngle(pState->GetSimulation()->GetMinAngle()) {
           
-          m_NumberOfMovePerStep_Surf = rate_surf;
-          m_NumberOfMovePerStep_Edge = rate_edge;
-          m_DR = dr;
+
+          m_dt = dt;
+          m_Dv = DV;
       }
-EvolveVerticesByMetropolisAlgorithm::~EvolveVerticesByMetropolisAlgorithm(){
+EvolveVerticesByKineticMonteCarlo::~EvolveVerticesByKineticMonteCarlo(){
 
 }
-void EvolveVerticesByMetropolisAlgorithm::Initialize(){
+void EvolveVerticesByKineticMonteCarlo::Initialize(){
     m_pBox = m_pState->GetMesh()->GetBox();
     m_NumberOfAttemptedMoves = 0;
     m_AcceptedMoves = 0;
+    m_Vel_Standard = sqrt(2*m_Dv*m_dt);
+
+    
+    // initlaize the velocities
+    Vec3D mean(0,0,0);
+    for (std::vector<vertex *>::const_iterator it = m_pSurfV.begin() ; it != m_pSurfV.end(); ++it){
+
+        Vec3D newV = GaussianDistribution_Vec(mean, sqrt(m_Beta));
+       (*it)->UpdateVelocity(newV);
+    }
+    for (std::vector<vertex *>::const_iterator it = m_pEdgeV.begin() ; it != m_pEdgeV.end(); ++it){
+
+        Vec3D newV = GaussianDistribution_Vec(mean, sqrt(m_Beta));
+       (*it)->UpdateVelocity(newV);
+    }
+
 
     return;
 }
-bool EvolveVerticesByMetropolisAlgorithm::EvolveOneStep(int step){
+Vec3D EvolveVerticesByKineticMonteCarlo::GaussianDistribution_Vec(Vec3D Vel, double std){
+    
+    Vec3D local_R_G_Vector;
+    m_pState->GetRandomNumberGenerator()->SetGaussianDistribution( Vel(0),  std);
+    local_R_G_Vector(0) = m_pState->GetRandomNumberGenerator()->GaussianRNG();
+    
+    m_pState->GetRandomNumberGenerator()->SetGaussianDistribution( Vel(1),  std);
+    local_R_G_Vector(1) = m_pState->GetRandomNumberGenerator()->GaussianRNG();
+    
+    m_pState->GetRandomNumberGenerator()->SetGaussianDistribution( Vel(2),  std);
+    local_R_G_Vector(2) = m_pState->GetRandomNumberGenerator()->GaussianRNG();
+    
+    return local_R_G_Vector;
+}
+bool EvolveVerticesByKineticMonteCarlo::EvolveOneStep(int step){
  
     int no_surf_v = m_pSurfV.size();
     int no_edge_v = m_pEdgeV.size();
-    int no_steps_edge = no_edge_v*m_NumberOfMovePerStep_Edge;
-    int no_steps_surf = no_surf_v*m_NumberOfMovePerStep_Surf;
 
-  for (int i = 0; i< no_steps_surf;i++) {
-      int r_vid = m_pState->GetRandomNumberGenerator()->IntRNG(no_surf_v);
-      vertex *pvertex = m_pSurfV[r_vid];
-      
-      if( m_FreezGroupName == pvertex->GetGroupName()){
+    for (std::vector<vertex *>::const_iterator it = m_pSurfV.begin() ; it != m_pSurfV.end(); ++it){
+
+      if( m_FreezGroupName == (*it)->GetGroupName()){
           continue;
       }
-      double dx=1-2*(m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
-      double dy=1-2*(m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
-      double dz=1-2*(m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
-      
-      if(!m_pState->GetBoundary()->MoveHappensWithinTheBoundary(m_DR*dx,m_DR*dy,m_DR*dz, pvertex)){
+        
+        //=== first add all the forces, including active forces
+         Vec3D Forces  = m_pState->GetForceonVerticesfromInclusions()->Inclusion_Force(*it);
+         Forces  = Forces + m_pState->GetForceonVerticesfromVectorFields()->VectorFields_Force(*it);
+         Forces  = Forces + m_pState->GetForceonVertices()->Force(*it);
+        //=============
+
+        
+        Vec3D vel_now = (*it)->GetVelocity() + Forces * m_dt;
+        Vec3D dr = vel_now * m_dt;
+        
+        Vec3D newV = GaussianDistribution_Vec(vel_now, m_Vel_Standard);
+       (*it)->UpdateVelocity(newV);
+
+      if(!m_pState->GetBoundary()->MoveHappensWithinTheBoundary(dr(0), dr(1), dr(2), *it)){
           continue;
       }
       double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
-      if(EvolveOneVertex(step, pvertex, m_DR*dx, m_DR*dy, m_DR*dz,thermal)){
+      if(EvolveOneVertex(step, *it, dr(0), dr(1), dr(2),thermal)){
           m_AcceptedMoves++;
       }
-      m_NumberOfAttemptedMoves++;
     }
-    for (int i = 0; i< no_steps_edge;i++) {
-      
-        int r_vid = m_pState->GetRandomNumberGenerator()->IntRNG(no_edge_v);
-        vertex *pvertex = m_pEdgeV[r_vid];
-        if( m_FreezGroupName == pvertex->GetGroupName()){
-            continue;
-        }
-        double dx=1-2*(m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
-        double dy=1-2*(m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
-        double dz=1-2*(m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
-        if(!m_pState->GetBoundary()->MoveHappensWithinTheBoundary(m_DR*dx,m_DR*dy,m_DR*dz, pvertex)){
-            continue;
-        }
-        
-        double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
+    m_NumberOfAttemptedMoves += m_pSurfV.size();
+    
+    for (std::vector<vertex *>::const_iterator it = m_pEdgeV.begin() ; it != m_pEdgeV.end(); ++it){
 
-        if(EvolveOneVertex(step, pvertex, m_DR*dx, m_DR*dy, m_DR*dz,thermal)){
-            m_AcceptedMoves++;
-        }
-        m_NumberOfAttemptedMoves++;
+      if( m_FreezGroupName == (*it)->GetGroupName()){
+          continue;
+      }
+        
+        //=== first add all the forces, including active forces
+         Vec3D Forces  = m_pState->GetForceonVerticesfromInclusions()->Inclusion_Force(*it);
+         Forces  = Forces + m_pState->GetForceonVerticesfromVectorFields()->VectorFields_Force(*it);
+         Forces  = Forces + m_pState->GetForceonVertices()->Force(*it);
+        //=============
+
+        Vec3D vel_now = (*it)->GetVelocity() + Forces * m_dt;
+        Vec3D dr = vel_now * m_dt;
+        
+        Vec3D newV = GaussianDistribution_Vec(vel_now, m_Vel_Standard);
+       (*it)->UpdateVelocity(newV);
+
+      if(!m_pState->GetBoundary()->MoveHappensWithinTheBoundary( dr(0), dr(1), dr(2), *it)){
+          continue;
+      }
+      double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
+      if(EvolveOneVertex(step, *it, dr(0), dr(1), dr(2),thermal)){
+          m_AcceptedMoves++;
+      }
     }
+    m_NumberOfAttemptedMoves += m_pEdgeV.size();
+    
         
     return true;
 }
-bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pvertex, double dx, double dy, double dz,double temp){
+bool EvolveVerticesByKineticMonteCarlo::EvolveOneVertex(int step, vertex *pvertex, double dx, double dy, double dz,double temp){
     
     double old_energy = 0;
     double new_energy = 0;
@@ -152,10 +196,10 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
         m_pState->GetVAHGlobalMeshProperties()->CalculateAVertexRingContributionToGlobalVariables(pvertex, old_Tvolume, old_Tarea, old_Tcurvature);
     }
     //---> for now, only active nematic force: ForceonVerticesfromInclusions
-    Vec3D Dx(dx,dy,dz);
-    double dE_force_from_inc  = m_pState->GetForceonVerticesfromInclusions()->Energy_of_Force(pvertex, Dx);
-    double dE_force_from_vector_fields  = m_pState->GetForceonVerticesfromVectorFields()->Energy_of_Force(pvertex, Dx);
-    double dE_force_on_vertex  = m_pState->GetForceonVertices()->Energy_of_Force(pvertex, Dx);
+   // Vec3D Dx(dx,dy,dz);
+   // double dE_force_from_inc  = m_pState->GetForceonVerticesfromInclusions()->Energy_of_Force(pvertex, Dx);
+   // double dE_force_from_vector_fields  = m_pState->GetForceonVerticesfromVectorFields()->Energy_of_Force(pvertex, Dx);
+   // double dE_force_on_vertex  = m_pState->GetForceonVertices()->Energy_of_Force(pvertex, Dx);
 
 //----> Move the vertex;
         pvertex->PositionPlus(dx,dy,dz);
@@ -212,6 +256,7 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
         }
     }
     //---> get energy for ApplyConstraintBetweenGroups
+    Vec3D Dx(dx,dy,dz);
     double dE_Cgroup = m_pState->GetApplyConstraintBetweenGroups()->CalculateEnergyChange(pvertex, Dx);
 
 //---> new global variables
@@ -228,7 +273,9 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
     double diff_energy = new_energy - old_energy;
     //std::cout<<diff_energy<<" dif en \n";
     //--> sum of all the energies
-    double tot_diff_energy = diff_energy + dE_Cgroup + dE_force_on_vertex + dE_force_from_inc + dE_force_from_vector_fields + dE_volume + dE_t_area + dE_g_curv + bond_energy;
+ //   double tot_diff_energy = diff_energy + dE_Cgroup + dE_force_on_vertex + dE_force_from_inc + dE_force_from_vector_fields + dE_volume + dE_t_area + dE_g_curv + bond_energy;
+    
+    double tot_diff_energy = diff_energy + dE_Cgroup + dE_volume + dE_t_area + dE_g_curv + bond_energy;
     double U = m_Beta * tot_diff_energy - m_DBeta;
     //---> accept or reject the move
     if(U <= 0 || exp(-U) > temp ) {
@@ -287,7 +334,7 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
 }
 //---> this does not check the angle of the faces. Because this should be done after the move:
 //waste of calculation if we do ith before the move. Unless, we store the values. That also not good because move could get rejected.
-bool EvolveVerticesByMetropolisAlgorithm::VertexMoveIsFine(vertex* pvertex, double dx,double dy, double dz,  double mindist2, double maxdist2){
+bool EvolveVerticesByKineticMonteCarlo::VertexMoveIsFine(vertex* pvertex, double dx,double dy, double dz,  double mindist2, double maxdist2){
 //--->  vertex new position if get accepted
     
         double new_x = pvertex->GetXPos() + dx;
@@ -366,7 +413,7 @@ std::cout << pvertex->GetVoxel()->GetXIndex()<<" "<<pvertex->GetVoxel()->GetYInd
     return true;
 }
 // finding the distance of the current vertex from the pv2; also considering the pbc conditions
-bool EvolveVerticesByMetropolisAlgorithm::CheckFacesAfterAVertexMove(vertex* p_vertex) {
+bool EvolveVerticesByKineticMonteCarlo::CheckFacesAfterAVertexMove(vertex* p_vertex) {
     std::vector<links*> linkList = p_vertex->GetVLinkList();
     for (std::vector<links*>::iterator it = linkList.begin(); it != linkList.end(); ++it) {
         links* link = *it;
@@ -379,7 +426,7 @@ bool EvolveVerticesByMetropolisAlgorithm::CheckFacesAfterAVertexMove(vertex* p_v
 
 //========
 // this function can be deleted any time; it is for test cases only
-double  EvolveVerticesByMetropolisAlgorithm::SystemEnergy()
+double  EvolveVerticesByKineticMonteCarlo::SystemEnergy()
 {
     /*
     MESH* m_pMESH = m_pState->m_pMesh;
@@ -420,14 +467,14 @@ double  EvolveVerticesByMetropolisAlgorithm::SystemEnergy()
      */
     return 0;
 }
-std::string EvolveVerticesByMetropolisAlgorithm::CurrentState(){
+std::string EvolveVerticesByKineticMonteCarlo::CurrentState(){
     
     std::string state = AbstractVertexPositionIntegrator::GetBaseDefaultReadName() +" = "+ GetDerivedDefaultReadName();
     state = state +" "+ Nfunction::D2S(m_NumberOfMovePerStep_Surf) +" "+Nfunction::D2S(m_NumberOfMovePerStep_Edge);
     state = state +" "+ Nfunction::D2S(m_DR);
     return state;
 }
-std::vector<links*> EvolveVerticesByMetropolisAlgorithm::GetEdgesWithInteractionChange(vertex* p_vertex){
+std::vector<links*> EvolveVerticesByKineticMonteCarlo::GetEdgesWithInteractionChange(vertex* p_vertex){
 #if DEVELOPMENT_MODE == Enabled
     std::cout<<" DEVELOPMENT_MODE ID 665656: This function should be made much better\n ";
     // for example, precheck to select only links that both has includioon ...

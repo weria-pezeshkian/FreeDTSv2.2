@@ -117,7 +117,7 @@ bool EvolveVerticesByMetropolisAlgorithmWithOpenMPType1::EvolveOneStep(int step)
             double dz = 1 - 2 * m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
 
             // Check if the move is within the boundary
-            if (!m_pState->GetBoundary()->MoveHappensWithinTheBoundary(dx, dy, dz, pvertex)) {
+            if (!m_pState->GetBoundary()->MoveHappensWithinTheBoundary(m_DR*dx, m_DR*dy, m_DR*dz, pvertex)) {
                 pvertex->UnlockVertex();
                 pvertex->UnlockNeighbourVertex();
                 continue;
@@ -201,7 +201,7 @@ for (int i = 0; i < no_steps_edge; i++) {
     double dz = 1 - 2 * m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
 
     // Check if the move is within the boundary
-    if (!m_pState->GetBoundary()->MoveHappensWithinTheBoundary(dx, dy, dz, pvertex)) {
+    if (!m_pState->GetBoundary()->MoveHappensWithinTheBoundary(m_DR*dx,m_DR*dy,m_DR*dz, pvertex)) {
         pvertex->UnlockVertex();
         pvertex->UnlockNeighbourVertex();
         continue;

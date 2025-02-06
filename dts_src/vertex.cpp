@@ -27,6 +27,11 @@ vertex::vertex(MESH* pMesh, int id, double x, double y, double z) : m_pMesh(pMes
     m_PrincipalCurvature_1 = 0;
     m_PrincipalCurvature_2 = 0;
     
+    m_Velocity(0) = 0;
+    m_Velocity(1) = 0;
+    m_Velocity(2) = 0;
+
+    
 #ifdef _OPENMP
 omp_init_lock(&m_Lock);
 #endif
@@ -38,6 +43,9 @@ vertex::vertex(MESH* pMesh, int id) : m_pMesh(pMesh) {
     m_X=0;
     m_Y=0;
     m_Z=0;
+    m_Velocity(0) = 0;
+    m_Velocity(1) = 0;
+    m_Velocity(2) = 0;
     m_Group = 0;
     m_OwnInclusion = false;
     m_GroupName = "system";
@@ -71,6 +79,10 @@ void vertex::PositionPlus(double dx, double dy, double dz){
     UpdateVYPos(m_Y + dy);
     UpdateVZPos(m_Z + dz);
 
+    return;
+}
+void vertex::UpdateVelocity(const Vec3D &vel){
+    m_Velocity = vel;
     return;
 }
 void vertex::ScalePos(double lx, double ly, double lz){

@@ -47,15 +47,18 @@ public:
 
     // Generates a binary random outcome (true/false)
     bool BinRNG();
+    double GaussianRNG();
+    void SetGaussianDistribution(double mean, double stddev);
 
 private:
     int m_seed;  // Seed for the random number generator
 
     // C++11 random number generator and distribution (used if RNGTYPE == UNIFORMTYPE1)
-#if RNGTYPE == UNIFORMTYPE1
     std::default_random_engine m_generator;  // Random number generator (C++11)
     std::uniform_real_distribution<double> m_uniform_dist;  // Uniform real distribution [0, 1]
-#endif
+    
+    std::normal_distribution<double> m_distribution;
+
 
     // Note: No additional member variables are required for RNGTYPE == UNIFORMTYPE0 since it uses rand()/srand().
 };
