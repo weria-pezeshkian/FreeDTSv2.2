@@ -212,6 +212,10 @@ double Energy::TwoInclusionsInteractionEnergy(links * p_edge) {
 
              break;
          }
+        case 3:{
+              e_int = Filament_int(ff[0], ff[1], ff[2],p_v1, p_v2);
+             break;
+        }
         case 2:{
              m_Angle3D = 0;
              m_Angle2D = 0;
@@ -251,6 +255,16 @@ double Energy::InteractionFunction(double N, double A, double B, double theta) {
         double e = 0;
         e = cos( double(N) * theta );
         e = -A + B * e;
+
+    return e;
+}
+double Energy::Filament_int(double A, double B, double C, vertex* p_v1, vertex* p_v2) {
+    
+        double theta = Geo_Theta(p_v1, p_v2);
+        Vec3D d1 = (p_v1->GetL2GTransferMatrix())*(p_v1->GetInclusion()->GetLDirection());
+        Vec3D d2 = (p_v2->GetL2GTransferMatrix())*(p_v2->GetInclusion()->GetLDirection());
+        double ang_3d = Vec3D::dot(d1,d2);
+        double e = -A + B * cos( 2 * theta ) + C*(1-ang_3d*ang_3d);
 
     return e;
 }

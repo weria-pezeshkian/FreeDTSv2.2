@@ -82,7 +82,7 @@ void vertex::PositionPlus(double dx, double dy, double dz){
     return;
 }
 void vertex::UpdateVelocity(const Vec3D &vel){
-    m_Velocity = vel;
+    m_Velocity = vel;   
     return;
 }
 void vertex::ScalePos(double lx, double ly, double lz){
