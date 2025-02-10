@@ -239,6 +239,8 @@ void CreateMashBluePrint::Read_Mult_QFile(const std::string& topfile)
     double Lx,Ly,Lz;
     int vid = 0;
     int tid = 0;
+    int Old_NV = 0;
+
     for (int fi=0;fi<qfiles.size();fi++)
     {
         std::ifstream Qs;
@@ -284,7 +286,7 @@ void CreateMashBluePrint::Read_Mult_QFile(const std::string& topfile)
                 exit(0);
             }
             Vertex_Map v;
-            v.id=vid;
+            v.id=m_VertexMap.size();
             v.include =true;
             v.x=f.String_to_Double(b[1]);
             v.y=f.String_to_Double(b[2]);
@@ -319,13 +321,14 @@ void CreateMashBluePrint::Read_Mult_QFile(const std::string& topfile)
                 exit(0);
             }
             Triangle_Map t;
-            t.id=tid;
-            t.v1=f.String_to_Int(b[1]);
-            t.v2=f.String_to_Int(b[2]);
-            t.v3=f.String_to_Int(b[3]);
+            t.id=m_TriangleMap.size();
+            t.v1=f.String_to_Int(b[1])+Old_NV;
+            t.v2=f.String_to_Int(b[2])+Old_NV;
+            t.v3=f.String_to_Int(b[3])+Old_NV;
             m_TriangleMap.push_back(t);
             tid++;
         }
+        Old_NV += NV;
         Qs.close();
     }
     
