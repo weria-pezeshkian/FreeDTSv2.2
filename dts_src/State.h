@@ -126,11 +126,13 @@
 #include "AbstractForceonVerticesfromInclusions.h"
 #include "AbstractForceonVerticesfromVectorFields.h"
 #include "Constant_NematicForce.h"
+#include "Constant_NematicForceFromAnInclusionType.h"
 #include "Constant_NematicForceByVectorFields.h"
 //--- interaction with external fields
 #include "AbstractExternalFieldOnVectorFields.h"
 #include "AbstractExternalFieldOnInclusions.h"
 #include "ConstantExternalField.h"
+#include "ConstantExternalFieldOnOneInclusionType.h"
 #include "ConstantExternalFieldOnVectorFields.h"
 //--- interaction with Substrate
 #include "AbstractVertexAdhesionToSubstrate.h"

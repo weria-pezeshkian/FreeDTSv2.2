@@ -758,6 +758,12 @@ while (input >> firstword) {
                 input>>k>>x>>y>>z;
                 m_pExternalFieldOnInclusions = new ConstantExternalField(k,x,y,z);
             }
+            else if(type == ConstantExternalFieldOnOneInclusionType::GetDefaultReadName() ){
+                double k,x,y,z;
+                std::string inctype;
+                input>>inctype>>k>>x>>y>>z;
+                m_pExternalFieldOnInclusions = new ConstantExternalFieldOnOneInclusionType(inctype, k,x,y,z);
+            }
             else if(type == "No"){
                 
             }
@@ -820,7 +826,13 @@ while (input >> firstword) {
         }
         else if(firstword == AbstractForceonVerticesfromInclusions::GetBaseDefaultReadName()) { //InclusionInducedForceOnVertex
             input >> str >> type;
-            if(type == Constant_NematicForce::GetDefaultReadName()){  // Constant_NematicForce
+            if(type == Constant_NematicForceFromAnInclusionType::GetDefaultReadName()){  // Constant_NematicForce
+                double f0; // force value
+                std::string inc_type;
+                input>>f0>>inc_type;
+                m_pForceonVerticesfromInclusions = new Constant_NematicForceFromAnInclusionType(f0,inc_type);
+            }
+            else if(type == Constant_NematicForce::GetDefaultReadName()){  // Constant_NematicForce
                 double f0; // force value
                 input>>f0;
                 m_pForceonVerticesfromInclusions = new Constant_NematicForce(f0);
