@@ -37,7 +37,7 @@ public:
     inline std::vector<triangle*>&     GetGhostT()                {return m_pGhostT;}
 
     inline std::vector<inclusion*>&  GetInclusion()             {return m_pInclusion;}
-    std::map<std::string, std::vector<vertex*> > GetGroups()  const  {return m_Groups;}
+    std::map<std::string, std::vector<vertex*> > &GetGroups()    {return m_Groups;}
 
 
     inline Vec3D                   *GetBox()                        {return m_pBox;}

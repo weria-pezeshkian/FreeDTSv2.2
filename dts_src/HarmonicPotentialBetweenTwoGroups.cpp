@@ -4,7 +4,7 @@
 #include "HarmonicPotentialBetweenTwoGroups.h"
 #include "Nfunction.h"
 #include "State.h"
-HarmonicPotentialBetweenTwoGroups::HarmonicPotentialBetweenTwoGroups(State* pState, double K, double l0, std::string group1,std::string group2,double nx,double ny,double nz) : MESH(*(pState->GetMesh())) {
+HarmonicPotentialBetweenTwoGroups::HarmonicPotentialBetweenTwoGroups(State* pState, double K, double l0, std::string group1,std::string group2,double nx,double ny,double nz) {
     m_K = K/2;
     m_Group1Name = group1;
     m_Group2Name = group2;
@@ -31,11 +31,14 @@ bool HarmonicPotentialBetweenTwoGroups::Initialize() {
      * @return True if initialization is successful, false otherwise.
      */
     
+    
+    std::map<std::string, std::vector<vertex*> >& L_Groups = m_pState->GetMesh()->GetGroups();
+    m_pBox = m_pState->GetMesh()->GetBox();
     // Check if both groups exist in the provided group map
-    if (m_Groups.find(m_Group1Name) != m_Groups.end() && m_Groups.find(m_Group2Name) != m_Groups.end()) {
+    if (L_Groups.find(m_Group1Name) != L_Groups.end() && L_Groups.find(m_Group2Name) != L_Groups.end()) {
         // Retrieve the groups from the map
-        m_pGroup1 = m_Groups.at(m_Group1Name);
-        m_pGroup2 = m_Groups.at(m_Group2Name);
+        m_pGroup1 = L_Groups.at(m_Group1Name);
+        m_pGroup2 = L_Groups.at(m_Group2Name);
     } else {
         std::cout << "---error--> groups for " << GetDefaultReadName() << " do not exist.\n";
         return false;

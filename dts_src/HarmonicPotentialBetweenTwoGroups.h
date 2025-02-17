@@ -11,7 +11,7 @@
  This object is to couple the system to a harmonic potential between two groups, and also change the ...
  */
 class State;
-class HarmonicPotentialBetweenTwoGroups : public AbstractApplyConstraintBetweenGroups, public MESH {
+class HarmonicPotentialBetweenTwoGroups : public AbstractApplyConstraintBetweenGroups {
 public:
     HarmonicPotentialBetweenTwoGroups(State* pState, double K, double l0, std::string group1,std::string group2,double nx,double ny,double nz);
     ~HarmonicPotentialBetweenTwoGroups();
@@ -52,7 +52,7 @@ private:
     Vec3D m_T_Group2COG;
     double m_DE;
     State *m_pState;
-
+    Vec3D *m_pBox;
 
 
 
