@@ -63,8 +63,8 @@ and false if the periodic condition is not met or if there is an error writing t
     if (m_pState->GetVAHGlobalMeshProperties()->GlobalCurvatureIsActive()) {
         m_TimeSeriesFile << m_pState->GetVAHGlobalMeshProperties()->GetTotalMeanCurvature() <<"  ";
     }
-    if (m_pState->GetApplyConstraintBetweenGroups()->GetDerivedDefaultReadName() != "No") {
-        m_TimeSeriesFile << m_pState->GetApplyConstraintBetweenGroups()->GetEnergy()<<"  ";
+    if (m_pState->GetApplyConstraintBetweenGroups()->GetDerivedDefaultReadName() != NoConstraint::GetDefaultReadName()) {
+        m_TimeSeriesFile << m_pState->GetApplyConstraintBetweenGroups()->Output_DataString()<<"  ";
     }
     if (m_pState->GetOpenEdgeEvolution()->GetDerivedDefaultReadName() != "No") {
         m_TimeSeriesFile <<m_pState->GetOpenEdgeEvolution()->GetEdgeSize() <<" ";

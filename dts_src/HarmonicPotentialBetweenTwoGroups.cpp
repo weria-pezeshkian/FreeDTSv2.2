@@ -61,10 +61,18 @@ bool HarmonicPotentialBetweenTwoGroups::Initialize() {
     m_Direction.normalize();
 
     // Calculate the initial distance and energy
-    double dist = m_Direction.dot(m_Direction, m_Group2COG - m_Group1COG);
+    double dist = Vec3D::dot(m_Direction, m_Group2COG - m_Group1COG);
     m_Energy = m_K * (dist - m_L0) * (dist - m_L0);
 
     return true;
+}
+std::string HarmonicPotentialBetweenTwoGroups::Output_DataString(){
+
+    double dist = Vec3D::dot(m_Direction, m_Group2COG - m_Group1COG);
+    double force = -2*m_K * (dist - m_L0);
+    std::string data_output = Nfunction::D2S(m_Energy) + " " + Nfunction::D2S(force)+ "  " + Nfunction::D2S(dist);
+    
+    return data_output;
 }
 bool HarmonicPotentialBetweenTwoGroups::DistanceCheck() {
     /*
@@ -121,7 +129,7 @@ double HarmonicPotentialBetweenTwoGroups::CalculateEnergyChange(vertex* p_vertex
         exit(EXIT_FAILURE);
     }
     
-    double dist = m_Direction.dot(m_Direction,m_T_Group2COG - m_T_Group1COG);
+    double dist = Vec3D::dot(m_Direction,m_T_Group2COG - m_T_Group1COG);
     m_DE = m_K*(dist-m_L0)*(dist-m_L0) - m_Energy;
     
     return m_DE;
@@ -140,7 +148,7 @@ double HarmonicPotentialBetweenTwoGroups::CalculateEnergyChange(double lx, doubl
         exit(EXIT_FAILURE);
     }
     
-    double dist = m_Direction.dot(m_Direction,m_T_Group2COG - m_T_Group1COG);
+    double dist = Vec3D::dot(m_Direction,m_T_Group2COG - m_T_Group1COG);
     m_DE = m_K*(dist-m_L0)*(dist-m_L0) - m_Energy;
     
     return m_DE;
