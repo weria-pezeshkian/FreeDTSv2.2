@@ -1,10 +1,10 @@
 Integrator_Type          = MC_Simulation
-Set_Steps                = 1 40000
+Set_Steps                = 1 1000
 Temperature              = 1 0
 Kappa                    = 40 0 0
 VertexArea               = 10 0.5 0 0
-VertexPositionIntegrator = MetropolisAlgorithmOpenMP 1 1 0.05
-AlexanderMove            = MetropolisAlgorithmOpenMP 0.2
+VertexPositionIntegrator = MetropolisAlgorithm 1 1 0.05
+AlexanderMove            = MetropolisAlgorithm 0.2
 ;so that the volume/area/GC will be printed in the out
 VolumeCoupling           = SecondOrder 0 0 0.77
 GlobalCurvatureCoupling  = HarmonicPotential 0 0.3

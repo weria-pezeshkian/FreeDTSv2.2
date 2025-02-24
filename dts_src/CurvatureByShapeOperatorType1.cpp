@@ -89,44 +89,45 @@ bool CurvatureByShapeOperatorType1::UpdateSurfVertexCurvature(vertex * pvertex){
     Tensor2  SV;
     Tensor2 IT('I');
     Tensor2 P=IT-IT.makeTen(Normal);
-    Tensor2 Pt=P.Transpose(P);
+    Tensor2 Pt=P.Transpose();
     std::vector<links *> NLinks=pvertex->GetVLinkList();
 
-    // what if the edge vertex has one trinagle?
-    for (std::vector<links *>::iterator it = NLinks.begin() ; it != NLinks.end(); ++it) {
-       if((*it)->GetMirrorFlag())
-       {
-           Vec3D ve=(*it)->GetNormal();
-           double we=ve.dot(Normal,ve);
-           Vec3D Be=(*it)->GetBe();
-           double he=(*it)->GetHe();
-           Vec3D Se = P*Be;
+    // Assuming necessary includes and context are already provided
 
-           // ff should be 1 but just for sake of numerical errors
-           double ff=Se.norm();
-           if(ff==0) {
-               std::cout<<"-----> Error: projection is zero error"<<"\n";
-               return false;
-           }
-           else {
-               Se=Se*(1.0/ff);
-           }
-        
-           Tensor2 Q=P.makeTen(Se);
-           SV=SV+(Q)*(we*he);
-       }//if((*it)->GetMirrorFlag())
-       else{
-           std::cout<<"---> error: vertex, with id "<<pvertex->GetVID() <<" is wrongly here \n";
-           return false;
-       }
-    } //     for (std::vector<links *>::iterator it = NLinks.begin() ; it != NLinks.end(); ++it) {
+    // Check if the edge vertex has one triangle
+    for (auto it = NLinks.begin(); it != NLinks.end(); ++it) {
+        links* currentLink = *it; // Store the pointer in a variable to avoid dereferencing multiple times
+        if (currentLink->GetMirrorFlag()) {
+            const Vec3D& ve = currentLink->GetNormal(); // Use reference to avoid copying
+            double we = ve.dot(Normal, ve); // Calculate dot product
+            
+            const Vec3D& Be = currentLink->GetBe(); // Use reference to avoid copying
+            double he = currentLink->GetHe(); // Get the height
+            Vec3D Se = P * Be; // Matrix-vector multiplication
+            
+            double ff = Se.norm(); // Get the norm
+            if (ff == 0) {
+                std::cerr << "-----> Error: projection is zero error" << "\n";
+                return false;
+            } else {
+                Se = Se*(1.0 / ff); // Normalize the vector
+            }
+            
+            Tensor2 Q = P.makeTen(Se); // Create the tensor
+            SV = SV + Q * (we * he); // Update SV
+        } else {
+            std::cerr << "---> error: vertex, with id " << pvertex->GetVID() << " is wrongly here \n";
+            return false;
+        }
+    }
+
 
 
 //==== Find Curvature and local frame
     
     Tensor2 Hous = Householder(Normal);
     Tensor2 LSV;// Local SV
-    LSV=(Hous.Transpose(Hous))*(SV*Hous);    // LSV is the curvature matrix in the local frame, the it is a 2*2 minor matrix since all the 3 component are zero.
+    LSV=(Hous.Transpose())*(SV*Hous);    // LSV is the curvature matrix in the local frame, the it is a 2*2 minor matrix since all the 3 component are zero.
 
     double b=LSV(0,0)+LSV(1,1);
     double c=LSV(0,0)*LSV(1,1)-LSV(1,0)*LSV(0,1);
@@ -173,7 +174,7 @@ bool CurvatureByShapeOperatorType1::UpdateSurfVertexCurvature(vertex * pvertex){
     EigenvMat(2,2)=1;
         
     Tensor2 TransferMatLG=Hous*EigenvMat;   /// This matrix transfers vectors from local coordinate to global coordinate
-    Tensor2 TransferMatGL=TransferMatLG.Transpose(TransferMatLG);   /// This matrix transfers vectors from Global coordinate to local coordinate
+    Tensor2 TransferMatGL=TransferMatLG.Transpose();   /// This matrix transfers vectors from Global coordinate to local coordinate
     pvertex->UpdateL2GTransferMatrix(TransferMatLG);
     pvertex->UpdateG2LTransferMatrix(TransferMatGL);
 
@@ -214,7 +215,7 @@ bool CurvatureByShapeOperatorType1::UpdateEdgeVertexCurvature(vertex * pvertex)
     pvertex->m_Geodesic_Curvature = cg;
     pvertex->m_Normal_Curvature =cn;
     Tensor2 TransferMatGL(Tv,P,Normal);     // P1,P2,N is for other surfaces
-    Tensor2 TransferMatLG=TransferMatGL.Transpose(TransferMatGL);
+    Tensor2 TransferMatLG=TransferMatGL.Transpose();
     pvertex->UpdateL2GTransferMatrix(TransferMatLG);
     pvertex->UpdateG2LTransferMatrix(TransferMatGL);
     

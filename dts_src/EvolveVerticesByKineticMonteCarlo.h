@@ -42,6 +42,7 @@ private:
     
     double m_dt;
     double m_Dv;
+    double m_V0;
     double m_Vel_Standard;
 
     Vec3D GaussianDistribution_Vec(Vec3D Vel, double std);

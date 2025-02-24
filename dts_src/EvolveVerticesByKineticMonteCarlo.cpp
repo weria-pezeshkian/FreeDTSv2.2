@@ -18,6 +18,7 @@ EvolveVerticesByKineticMonteCarlo::EvolveVerticesByKineticMonteCarlo(State *pSta
           m_DR = 0.05;
           m_dt = 0.001;
           m_Dv = 1;
+          m_V0 = 1;
       }
 EvolveVerticesByKineticMonteCarlo::EvolveVerticesByKineticMonteCarlo(State *pState,  double DV, double dt)
     : m_pState(pState),
@@ -71,6 +72,13 @@ Vec3D EvolveVerticesByKineticMonteCarlo::GaussianDistribution_Vec(Vec3D Vel, dou
     m_pState->GetRandomNumberGenerator()->SetGaussianDistribution( Vel(2),  std);
     local_R_G_Vector(2) = m_pState->GetRandomNumberGenerator()->GaussianRNG();
     
+    Vec3D V0(m_V0,m_V0,m_V0);
+    V0 = V0*(1/1.7);
+    if(Vec3D::dot(local_R_G_Vector,local_R_G_Vector)>m_V0*m_V0){
+        local_R_G_Vector = V0 - local_R_G_Vector;
+    }
+    
+    
     return local_R_G_Vector;
 }
 bool EvolveVerticesByKineticMonteCarlo::EvolveOneStep(int step){
@@ -95,7 +103,10 @@ bool EvolveVerticesByKineticMonteCarlo::EvolveOneStep(int step){
         Vec3D dr = vel_now * m_dt;
         
         Vec3D new_vel = GaussianDistribution_Vec(vel_now, m_Vel_Standard);
-       (*it)->UpdateVelocity(new_vel);
+       
+        std::cout<<new_vel<<"\n";
+
+        (*it)->UpdateVelocity(new_vel);
 
       if(!m_pState->GetBoundary()->MoveHappensWithinTheBoundary(dr(0), dr(1), dr(2), *it)){
           continue;

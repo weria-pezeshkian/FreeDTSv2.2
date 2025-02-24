@@ -1,38 +1,35 @@
-#if !defined(AFX_Vec3D_H_8F4421B8_D12D_11D3_CF24_124095086555__INCLUDED_)
-#define AFX_Vec3D_H_8F4421B8_D12D_11D3_CF24_124095086555__INCLUDED_
+#ifndef VEC3D_H
+#define VEC3D_H
 
 #include <iostream>
 #include <cmath>
-/*******************
- Weria Pezeshkian (weria.pezeshkian@gmail.com)
- Copyright (c) Weria Pezeshkian
- An inhouse made  3d vector object.
- *******************/
-//class Vec3D;
-//std::ostream& operator<<(std::ostream& os, const Vec3D& vec);
 
 class Vec3D {
+private:
+    double m_data[3];  // Array-based storage for fast indexing
+
 public:
     Vec3D(double x = 0.0, double y = 0.0, double z = 0.0);
-    double& operator()(const int n);
-    Vec3D operator+(const Vec3D& other) const;
-    Vec3D operator-(const Vec3D& other) const;
-    Vec3D operator*(const Vec3D& other) const;
-    Vec3D operator*(double scalar) const;
-    void operator=(const Vec3D& other);
-    double norm() const;
-    static double dot(const Vec3D& v1, const Vec3D& v2);
-    bool isbad() const; // Function to check if any element is non-finite
-    bool isgood() const;
-    void print();
+    
+    inline double& operator()(int n) { return m_data[n]; }
+    inline const double& operator()(int n) const { return m_data[n]; }
+
+    Vec3D operator+(const Vec3D&) const;
+    Vec3D operator-(const Vec3D&) const;
+    Vec3D operator*(const Vec3D&) const;  // Cross Product
+    Vec3D operator*(double) const;
+    Vec3D& operator=(const Vec3D& other);
+
     void normalize();
-    friend std::ostream& operator<<(std::ostream& os, const Vec3D& vec);
+    double norm() const;
+    
+    static double dot(const Vec3D&, const Vec3D&);
 
+    bool isbad() const;
+    bool isgood() const;
+    void print() const;
 
-private:
-    double m_X;
-    double m_Y;
-    double m_Z;
+    friend std::ostream& operator<<(std::ostream&, const Vec3D&);
 };
 
 #endif
