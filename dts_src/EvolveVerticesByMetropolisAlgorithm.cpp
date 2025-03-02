@@ -140,6 +140,8 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
         old_energy += 2 * (*it)->GetVFIntEnergy();
     }
     double bond_energy = -(pvertex->GetBondEnergyOfVertex());
+    double dE_nonbonded = -(m_pState->GetNonbondedInteractionBetweenVertices()->GetVertexNonBondedEnergy(pvertex));
+
     // --- obtaining global variables that can change by the move. Note, this is not the total volume, only the one that can change.
      double old_Tvolume = 0;
      double old_Tarea = 0;
@@ -156,6 +158,7 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
     double dE_force_from_inc  = m_pState->GetForceonVerticesfromInclusions()->Energy_of_Force(pvertex, Dx);
     double dE_force_from_vector_fields  = m_pState->GetForceonVerticesfromVectorFields()->Energy_of_Force(pvertex, Dx);
     double dE_force_on_vertex  = m_pState->GetForceonVertices()->Energy_of_Force(pvertex, Dx);
+
 
 //----> Move the vertex;
         pvertex->PositionPlus(dx,dy,dz);
@@ -224,11 +227,16 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
     double dE_g_curv = m_pState->GetGlobalCurvature()->CalculateEnergyChange(new_Tarea-old_Tarea, new_Tcurvature-old_Tcurvature);
     
     bond_energy += pvertex->GetBondEnergyOfVertex();
+    
+   dE_nonbonded = (m_pState->GetNonbondedInteractionBetweenVertices()->GetVertexNonBondedEnergy(pvertex));
+
+    
+
     //--> only elatsic energy
     double diff_energy = new_energy - old_energy;
     //std::cout<<diff_energy<<" dif en \n";
     //--> sum of all the energies
-    double tot_diff_energy = diff_energy + dE_Cgroup + dE_force_on_vertex + dE_force_from_inc + dE_force_from_vector_fields + dE_volume + dE_t_area + dE_g_curv + bond_energy;
+    double tot_diff_energy = diff_energy + dE_Cgroup + dE_force_on_vertex + dE_force_from_inc + dE_force_from_vector_fields + dE_volume + dE_t_area + dE_g_curv + bond_energy + dE_nonbonded;
     double U = m_Beta * tot_diff_energy - m_DBeta;
     //---> accept or reject the move
     if(U <= 0 || exp(-U) > temp ) {

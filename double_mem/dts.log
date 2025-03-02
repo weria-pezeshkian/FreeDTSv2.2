@@ -1,5 +1,5 @@
 ;--------- this state is initiated by this command ---------------------------------  
-../dts_src/DTS   -in   input.dts   -top   both.top   -e   100   
+../dts_src/DTS   -in   input.dts   -top   both.top   
 ;--------- this part can be used as an input.dts file ---------------------------------  
  Run_Tag = dts
 ;-- abstract classes
@@ -8,7 +8,7 @@ Integrator_Type = MC_Simulation
  MinfaceAngle = -0.5
  Temprature = 1 0
  Box_Centering_F = 0
- Set_Steps = 1 100
+ Set_Steps = 1 1000
 Boundary = PBC
 VertexPositionIntegrator = MetropolisAlgorithm 1 1 0.05
 AlexanderMove = MetropolisAlgorithm 0.2

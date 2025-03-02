@@ -23,6 +23,8 @@ State::State(std::vector<std::string> argument) :
       m_pVisualizationFile(new WritevtuFiles(this)),  // Initialize WritevtuFiles
       m_pBinaryTrajectory(new NoFile),  // Initialize BinaryTrajectory
 
+    //---- nonbonded interactions
+    m_NonbondedInteractionBetweenVertices(new NoNonbondedInteractionBetweenVertices),
       //---- Initialize constraint components
       m_pVAHCalculator(new VAHGlobalMeshProperties),
       m_pVolumeCoupling(new NoCoupling(m_pVAHCalculator)),
@@ -513,6 +515,26 @@ while (input >> firstword) {
             }
             getline(input,rest);
         }
+    
+//-----  start nonBonded
+            else if(firstword == AbstractNonbondedInteractionBetweenVertices::GetBaseDefaultReadName())   { // BondedPotentialBetweenVertices
+                input >> str >> type;
+
+                if(type == NoNonbondedInteractionBetweenVertices::GetDefaultReadName()){
+                    // it is already set to
+                    getline(input,rest);
+                }
+                else if(type == PolarInteractionBetweenEdgesVertices::GetDefaultReadName()) { //
+                    
+                    getline(input,rest);
+                    m_NonbondedInteractionBetweenVertices = new PolarInteractionBetweenEdgesVertices(this, rest);
+                }
+                else {
+                    std::cout<<AbstractNonbondedInteractionBetweenVertices::GetErrorMessage(type)<<"\n";
+                    m_NumberOfErrors++;
+                    return false;
+                }
+            }
 //---- global curvature
         else if(firstword == AbstractGlobalCurvature::GetBaseDefaultReadName()) {
 
@@ -1178,6 +1200,9 @@ bool State::Initialize(){
     m_pEnergyCalculator->Initialize(m_InputFileName);
 //---> to update each vertex and edge energy. Up to now May 2024, edge energy is not zero when both vertices has inclusions
     m_pEnergyCalculator->UpdateTotalEnergy(m_pEnergyCalculator->CalculateAllLocalEnergy());
+    
+    //-------->
+    m_NonbondedInteractionBetweenVertices->Initialize();
 
     if(m_NumberOfErrors!=0){
         std::cout<<" There were "<<m_NumberOfErrors<<" errors in the input files "<<std::endl;

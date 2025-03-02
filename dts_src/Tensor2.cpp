@@ -113,12 +113,18 @@ Tensor2 Tensor2::Transpose() const {
 }
 
 // Create a tensor from a vector
-Tensor2 Tensor2::makeTen(Vec3D X) {
+Tensor2 Tensor2::makeTen(const Vec3D& X) {
     Tensor2 A;
-    for (int i = 0; i < 3; i++) {
-        A(0, i) = X(0) * X(i);
-        A(1, i) = X(1) * X(i);
-        A(2, i) = X(2) * X(i);
-    }
-    return A;
+
+     // Precompute the components of X
+     const double x0 = X(0);
+     const double x1 = X(1);
+     const double x2 = X(2);
+
+     // Manually unroll the loop for better performance
+     A(0, 0) = x0 * x0; A(0, 1) = x0 * x1; A(0, 2) = x0 * x2;
+     A(1, 0) = x1 * x0; A(1, 1) = x1 * x1; A(1, 2) = x1 * x2;
+     A(2, 0) = x2 * x0; A(2, 1) = x2 * x1; A(2, 2) = x2 * x2;
+
+     return A;
 }

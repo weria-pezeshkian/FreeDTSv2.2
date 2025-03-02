@@ -123,65 +123,60 @@ bool CurvatureByShapeOperatorType1::UpdateSurfVertexCurvature(vertex * pvertex){
 
 
 
-//==== Find Curvature and local frame
-    
+    //==== Compute Curvature and Local Frame
+
     Tensor2 Hous = Householder(Normal);
-    Tensor2 LSV;// Local SV
-    LSV=(Hous.Transpose())*(SV*Hous);    // LSV is the curvature matrix in the local frame, the it is a 2*2 minor matrix since all the 3 component are zero.
+    Tensor2 LSV = Hous.Transpose() * (SV * Hous); // Local curvature matrix (2×2 minor matrix)
 
-    double b=LSV(0,0)+LSV(1,1);
-    double c=LSV(0,0)*LSV(1,1)-LSV(1,0)*LSV(0,1);
+    // Compute eigenvalues of 2×2 symmetric matrix
+    double a = LSV(0,0), b = LSV(0,1), c = LSV(1,1);
+    double trace = a + c;
+    double determinant = a * c - b * b;
+    double delta = trace * trace - 4 * determinant;
 
-    double delta=b*b-4*c;
-    double c1,c2;
-    
-    if(delta>0.0){
-        delta=sqrt(delta);
-        c1=b+delta;
-        c1=0.5*c1;      // c1 always will be larger then c2
-        c2=b-delta;
-        c2=0.5*c2;
-        
-    }
-    else if (fabs(delta)<0.00001){
-        
-        c1=0.5*b;
-        c2=c1;
-
-    }
-    else{
-        c1=1;
-        c2=1;
-        std::cout<<"WARNING: faild to find curvature on vertex "<<pvertex->GetVID()<<"  because delta is "<<delta<<"  c1 and c2 are set to 100 \n";
-        std::cout<<" if you face this too much, you should stop the job and .... \n";
+    double k1, k2;
+    if (delta >= 0.0) {
+        // If delta is positive, compute eigenvalues normally
+        double sqrt_delta = sqrt(delta);
+        k1 = 0.5 * (trace + sqrt_delta); // Larger eigenvalue
+        k2 = 0.5 * (trace - sqrt_delta); // Smaller eigenvalue
+    } else {
+        // Handle small numerical errors when delta is near zero
+        k1 = k2 = 0.5 * trace;
+        std::cerr << "---> WARNING: Failed to find curvature on vertex "
+                  << pvertex->GetVID() << " due to negative delta (" << delta
+                  << "). \n";
     }
 
+    // Compute Eigenvectors for the 2×2 system
     Tensor2 EigenvMat('O');
-    
-    double p=LSV(0,0);
-    double q=LSV(0,1);
+    double v1 = b, v2 = k1 - a;
+    double magnitude = sqrt(v1 * v1 + v2 * v2);
 
-
-    double size=sqrt(q*q+(c1-p)*(c1-p));                   // The Eigenvectors can be calculated using this equation LSV*R=c1*R
-    if(size == 0.0){
-        size = 1;
-        q = 1;
+    // Ensure numerical stability in eigenvector computation
+    if (magnitude < 1e-8) {
+        v1 = 1.0;
+        v2 = 0.0;
+        magnitude = 1.0;
     }
-    EigenvMat(0,0)=q/size;                                  // only one of them needs to be calculated, one is normal vector and the other is perpendicular to first one
-    EigenvMat(1,0)=(c1-p)/size;
-    EigenvMat(0,1)=-EigenvMat(1,0);
-    EigenvMat(1,1)=EigenvMat(0,0);
-    EigenvMat(2,2)=1;
-        
-    Tensor2 TransferMatLG=Hous*EigenvMat;   /// This matrix transfers vectors from local coordinate to global coordinate
-    Tensor2 TransferMatGL=TransferMatLG.Transpose();   /// This matrix transfers vectors from Global coordinate to local coordinate
+
+    EigenvMat(0,0) =  v1 / magnitude;
+    EigenvMat(1,0) =  v2 / magnitude;
+    EigenvMat(0,1) = -EigenvMat(1,0);
+    EigenvMat(1,1) =  EigenvMat(0,0);
+    EigenvMat(2,2) =  1.0;
+
+    // Compute coordinate transformation matrices
+    Tensor2 TransferMatLG = Hous * EigenvMat;  // Local-to-Global
+    Tensor2 TransferMatGL = TransferMatLG.Transpose();  // Global-to-Local
+
     pvertex->UpdateL2GTransferMatrix(TransferMatLG);
     pvertex->UpdateG2LTransferMatrix(TransferMatGL);
 
-    c1=c1/Area;
-    c2=c2/Area;
-    pvertex->UpdateP1Curvature(c1);
-    pvertex->UpdateP2Curvature(c2);
+    // Normalize curvatures by area
+    pvertex->UpdateP1Curvature(k1 / Area);
+    pvertex->UpdateP2Curvature(k2 / Area);
+
 
     return true;
 }
@@ -222,19 +217,16 @@ bool CurvatureByShapeOperatorType1::UpdateEdgeVertexCurvature(vertex * pvertex)
     return true;
     
 }
-Tensor2 CurvatureByShapeOperatorType1::Householder(Vec3D N){
+Tensor2 CurvatureByShapeOperatorType1::Householder(const Vec3D& N){
     
-    Tensor2 Hous;
     Vec3D Zk;
-    Zk(2)=1.0;
-    Zk=Zk+N;
-    Zk=Zk*(1.0/Zk.norm());
-    
+    Zk(2) = 1.0;
+    Zk = Zk + N;
+    Zk.normalize();
     Tensor2 I('I');
-    Tensor2 W=Hous.makeTen(Zk);
-    Hous=(I-W*2)*(-1);
+    Tensor2 W = Tensor2::makeTen(Zk);
     
-    return Hous;
+    return (W*2-I);
 }
 Vec3D CurvatureByShapeOperatorType1::Calculate_Vertex_Normal(vertex *pvertex, double &area){
     // first we obtain the vertex area and normal.
@@ -244,23 +236,23 @@ Vec3D CurvatureByShapeOperatorType1::Calculate_Vertex_Normal(vertex *pvertex, do
     Vec3D Normal;
     
     const std::vector<triangle *>& pNTriangles = pvertex->GetVTraingleList();
-    for (std::vector<triangle *>::const_iterator it = pNTriangles.begin(); it != pNTriangles.end(); ++it) {
-        const Vec3D& Nv = (*it)->GetAreaVector();
-        Normal=Normal+Nv;
-        area+=(*it)->GetArea();
+    for (auto* tri : pvertex->GetVTraingleList()) {
+        const Vec3D& Nv = tri->GetAreaVector();
+        Normal = Normal + Nv;
+        area += tri->GetArea();
     }
-    area=area/3.0;
+    area = area/3.0;
     // Check for non-positive area
-    if(area<=0){
+    if(area < 1e-8 ){
         
         *(m_pState->GetTimeSeriesLog())<<"---> error: vertex, with id "<<pvertex->GetVID() <<" has a negetive or zero area \n";
-        return false;
+        return Normal;
     }
     double normalsize=Normal.norm();
-    if(normalsize == 0){
+    if(normalsize < 1e-8 ){
         
         *(m_pState->GetTimeSeriesLog())<<"---> error: vertex, with id "<<pvertex->GetVID() <<" has zero normal \n";
-        return false;
+        return Normal;
     }
     Normal = Normal*(1.0/normalsize);
     

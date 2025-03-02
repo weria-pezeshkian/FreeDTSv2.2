@@ -1,5 +1,26 @@
 #ifndef TENSOR2_H
 #define TENSOR2_H
+/**
+ * @file Tensor2.h 2025
+ * @brief A class representing a 2nd order tensor (3x3 matrix).
+ *
+ * The Tensor2 class provides a representation for 3x3 matrices (2nd order tensors) and includes
+ * functionality for basic matrix operations such as addition, subtraction, scalar multiplication,
+ * matrix-vector multiplication, and transposition.
+ *
+ *
+ * The class is designed to be initialized with vectors of type Vec3D, and it supports
+ * various constructors including default initialization and special cases such as identity or
+ * zero matrices.
+ *
+ * @note This class uses a fixed-size array for efficient storage and access of matrix elements.
+ *
+ * Usage:
+ * - Create a tensor from three Vec3D vectors representing the rows or columns of the matrix.
+ * - Perform operations such as adding two tensors or multiplying a tensor with a vector.
+ *
+ * @see Vec3D.h for the Vec3D class definition.
+ */
 
 #include "Vec3D.h"
 #include <iostream>
@@ -28,7 +49,7 @@ public:
     Tensor2 Transpose() const; // Transpose the matrix
 
     // Function to create a tensor from a vector
-    Tensor2 makeTen(Vec3D X); // Create tensor from a vector
+    static Tensor2 makeTen(const Vec3D& X); // Create tensor from a vector
 
 private:
     double m_matrix[3][3]; // 3x3 matrix representation

@@ -151,6 +151,10 @@
 #include "InclusionType.h"
 //---  additional moves
 #include "NonequilibriumCommands.h"
+//---  nonbonded energies
+#include "AbstractNonbondedInteractionBetweenVertices.h"
+#include "PolarInteractionBetweenEdgesVertices.h"
+
 
 struct ParallelReplicaData {  // data structure for turning on and off certain moves
     ParallelReplicaData(){State = false;}
@@ -191,6 +195,9 @@ inline AbstractEnergy               *GetEnergyCalculator()                      
 inline AbstractCurvature            *GetCurvatureCalculator()                          {return m_pCurvatureCalculations;}
 //----
 inline AbstractApplyConstraintBetweenGroups *GetApplyConstraintBetweenGroups()                    {return m_pApplyConstraintBetweenGroups;}
+
+//---- nonbonded interactions
+inline AbstractNonbondedInteractionBetweenVertices *GetNonbondedInteractionBetweenVertices()                    {return m_NonbondedInteractionBetweenVertices;}
 
 //---- algorithm mangments
 inline AbstractTotalAreaCoupling        *GetTotalAreaCoupling()                         {return m_pTotalAreaCoupling;}
@@ -274,6 +281,8 @@ private:
     AbstractBondedPotentialBetweenVertices  *m_pBondedPotentialBetweenVertices;
 
     
+//---- nonbonded interactions
+    AbstractNonbondedInteractionBetweenVertices *m_NonbondedInteractionBetweenVertices;
     
     AbstractBoundary              *m_pBoundary;
     AbstractCurvature             *m_pCurvatureCalculations;

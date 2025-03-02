@@ -39,7 +39,7 @@ Vec3D& Vec3D::operator=(const Vec3D& other) {
 }
 // Normalize Vector
 void Vec3D::normalize() {
-    double n = norm();
+    double n = std::sqrt(m_data[0] * m_data[0] + m_data[1] * m_data[1] + m_data[2] * m_data[2]);
     if (n > 0) {
         double inv_n = 1.0 / n; // Pre-calculate the reciprocal
         m_data[0] *= inv_n;

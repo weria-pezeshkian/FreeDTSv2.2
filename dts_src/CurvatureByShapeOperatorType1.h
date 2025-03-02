@@ -42,7 +42,7 @@ public:
     std::string CurrentState();
 
 private:
-    Tensor2 Householder(Vec3D N);
+    Tensor2 Householder(const Vec3D &N);
     Vec3D Calculate_Vertex_Normal(vertex *p, double &area);
     State *m_pState;
     Vec3D *m_pBox;
