@@ -162,6 +162,7 @@ bool State::ExploreArguments(std::vector<std::string> &argument){
     const std::string INDEX_FLAG       = "-ndx";
     const std::string DEFOUT_FLAG      = "-defout";
     const std::string THREAD_FLAG      = "-nt";
+    const std::string ANALYSIS_FLAG    = "-analysis";
 
     for (size_t i=1;i<argument.size();i=i+2)
     {
@@ -194,6 +195,9 @@ bool State::ExploreArguments(std::vector<std::string> &argument){
         else if(flag == SEED_FLAG){
             
             m_RandomNumberGenerator = new RNG(Nfunction::String_to_Int(argument[i+1]));
+        }
+        else if(flag == ANALYSIS_FLAG){
+            m_pSimulation = new Analysis(this,argument[i+1] );
         }
         else if(flag == RESTART_FLAG){
             
@@ -301,6 +305,10 @@ while (input >> firstword) {
             input >> str >> type;
             if(type == MC_Simulation::GetDefaultReadName()){
                 m_pSimulation = new MC_Simulation(this);
+            }
+            else if(type == Analysis::GetDefaultReadName()){
+                input >> str;
+                m_pSimulation = new Analysis(this, str);
             }
             else {
                 std::cout<<AbstractSimulation::GetErrorMessage(type)<<std::endl;

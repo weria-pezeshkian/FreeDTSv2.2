@@ -17,6 +17,31 @@ MESH::MESH() : m_MeshCrossedPBC(false) {
 MESH::~MESH() {
     
 }
+bool MESH::Clear_Mesh(){
+    
+    m_pActiveV.clear();
+    m_pSurfV.clear();
+    m_pEdgeV.clear();
+    m_pActiveL.clear();
+    m_pHL.clear();
+    m_pMHL.clear();
+    m_pEdgeL.clear();
+    m_pActiveT.clear();
+    m_pInclusion.clear();
+    m_pGhostT.clear();
+    m_pGhostL.clear();
+    m_pGhostV.clear();
+    m_Vertex.clear();
+    m_Triangle.clear();
+    m_Links.clear();
+    m_Inclusion.clear();
+    m_GhostT.clear();
+    m_GhostL.clear();
+    m_GhostV.clear();
+
+    
+    return true;
+}
 void MESH::RemoveFromLinkList(links* z, std::vector<links*> &vect){
     vect.erase(std::remove(vect.begin(), vect.end(), z), vect.end());
     return;

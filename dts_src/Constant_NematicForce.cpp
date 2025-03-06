@@ -63,7 +63,7 @@ Vec3D Constant_NematicForce::ActiveNematicForce_1(vertex *v2, vertex *v1) // giv
         Vec3D X2(v2->GetVXPos(),v2->GetVYPos(),v2->GetVZPos());
         Vec3D geodesic_dir=(X2-X1);
         Vec3D *pBox=v1->GetBox();
-        
+
         for (int i=0;i<3;i++)
         {
             if(fabs(geodesic_dir(i))>(*pBox)(i)/2)
@@ -79,6 +79,7 @@ Vec3D Constant_NematicForce::ActiveNematicForce_1(vertex *v2, vertex *v1) // giv
         gdir(2)=0;
         gdir = gdir * (1/(gdir.norm())); // unit vector d in the theory
         // end obtaining geodesic direction
+
         Vec3D gdir_2 = (v2->GetG2LTransferMatrix())*geodesic_dir;
         gdir_2(2)=0;
         gdir_2 = gdir_2 * (1/(gdir_2.norm())); // unit vector d in the theory
@@ -109,7 +110,6 @@ Vec3D Constant_NematicForce::ActiveNematicForce_1(vertex *v2, vertex *v1) // giv
 
         f = f*Delta_T;
     
-
     return f;
 }
 std::string Constant_NematicForce::CurrentState(){

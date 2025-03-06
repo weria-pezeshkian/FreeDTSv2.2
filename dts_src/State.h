@@ -145,6 +145,7 @@
 //--- simulation
 #include "AbstractSimulation.h"
 #include "MC_Simulation.h"
+#include "Analysis.h"
 //--- accessory objects
 #include "RNG.h"
 #include "VAHGlobalMeshProperties.h"
@@ -234,6 +235,10 @@ inline std::vector <std::string> GetCommandLineArgument()                       
 inline std::string               GetRunTag()                                    {return m_GeneralOutputFilename;}
 inline int                       GetThreads_Number()                                {return m_Total_no_Threads;}
 inline ParallelReplicaData       GetParallelReplicaData()                           {return m_Parallel_Replica;}
+    
+inline std::string       GetInputFileName()                           {return m_InputFileName;}
+
+    
 std::string CurrentState();
 
 static void HelpMessage();              // writes a help message
