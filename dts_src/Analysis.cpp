@@ -64,10 +64,13 @@ for (int step = m_Initial_Step; step <= m_Final_Step; step++){
     CenterMesh();
     std::vector<Vec3D > ActiveForce;
     const std::vector<vertex *>& all_vertex = m_pState->GetMesh()->GetActiveV();
+    Vec3D tot_F(0,0,0);
     for (std::vector<vertex *>::const_iterator it = all_vertex.begin() ; it != all_vertex.end(); ++it){
         Vec3D Fr = m_pState->GetForceonVerticesfromInclusions()->Inclusion_Force((*it));
+        tot_F = tot_F + Fr;
         ActiveForce.push_back(Fr);
     }
+    std::cout<<tot_F<<"\n";
     int period = m_pState->GetVisualization()->GetPeriod();
     m_pState->GetVisualization()->ClearVector();
     m_pState->GetVisualization()->AddVector("active", ActiveForce);
