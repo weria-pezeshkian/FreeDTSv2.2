@@ -114,6 +114,8 @@ Vec3D Constant_NematicForce::ActiveNematicForce_1(vertex *v2, vertex *v1) // giv
 }
 Vec3D Constant_NematicForce::ActiveNematicForce_2(vertex *v2, vertex *v1) // gives force in the local coordinate
 {
+    
+
     Vec3D f;
     
     if(!v2->VertexOwnInclusion())
@@ -177,6 +179,15 @@ Vec3D Constant_NematicForce::ActiveNematicForce_2(vertex *v2, vertex *v1) // giv
 }
 Vec3D Constant_NematicForce::ActiveNematicForce_3(vertex *v2, vertex *v1) // gives force in the local coordinate
 {
+    /*
+     
+  Div. Q = -2/d_i * SUM  * sin(theta2 - theta1)*(sin(theta1+theta1-phi)T_1v - cos(theta1+theta1-phi) T_2v)
+     
+     
+     */
+    
+    
+    
     Vec3D f;
     
     if(!v2->VertexOwnInclusion())
@@ -199,27 +210,25 @@ Vec3D Constant_NematicForce::ActiveNematicForce_3(vertex *v2, vertex *v1) // giv
     
          Vec3D gdir = (v1->GetG2LTransferMatrix())*geodesic_dir;
          gdir(2) = 0;
-         gdir.normalize();
+         gdir.normalize();    // geodesic direction in the coordinate of v1
          Vec3D gdir_2 = (v2->GetG2LTransferMatrix())*geodesic_dir;
          gdir_2(2)=0;
-         gdir_2.normalize();
-         Vec3D nem1_d = (v1->GetInclusion())->GetLDirection();
-         Vec3D nem2_d = (v2->GetInclusion())->GetLDirection(); // this needs to be transported to v1
+         gdir_2.normalize(); //geodesic direction in the coordinate of v2
+         Vec3D nem1_d = (v1->GetInclusion())->GetLDirection();   // this is in v1
+         Vec3D nem2_d = (v2->GetInclusion())->GetLDirection(); // this is in v2 and needs to be transported to v1
         // claculate div Q contribution
      
         // we only need sin and cosine
-        Vec3D n(0,0,1);
-        double cos1 = nem1_d.dot(nem1_d,gdir);
-        double sin1 = n.dot(n*gdir,nem1_d);
-        double cos2 = nem2_d.dot(nem2_d,gdir_2);   // cos(Theta_2-phi) in v1
-        double sin2 = n.dot(n * gdir_2 , nem2_d);   // sin(Theta_2-phi) in v1
+        Vec3D n(0,0,1);  // normal in the local coordinate
+        double cos1 = Vec3D::dot(nem1_d , gdir);    //this is the same as cos(Theta_1-phi) in v1
+        double sin1 = Vec3D::dot(n * gdir , nem1_d);        // //this is the same as sin(Theta_1-phi) in v1
+        double cos2 = Vec3D::dot(nem2_d , gdir_2);   // this is the same as cos(Theta_2-phi) in v1
+        double sin2 = Vec3D::dot(n * gdir_2 , nem2_d);   // this is the same as sin(Theta_2-phi) in v1
         double SinDeltaT = sin2 * cos1 - sin1 * cos2;   // sin (theta2 -theta1) after parallel transport
         SinDeltaT = -2*SinDeltaT/d;
         
-
-    
         f(0) = nem1_d(1) * cos2 + nem1_d(0) * sin2;   // sin(theta_1+Theta_2-phi)
-        f(1) = - nem1_d(0) * cos2 + nem1_d(0) * sin2 ;   // -cos(theta_1+Theta_2-phi)
+        f(1) = - nem1_d(0) * cos2 + nem1_d(1) * sin2 ;   // -cos(theta_1+Theta_2-phi)
 
         f = f * SinDeltaT;
     
