@@ -19,17 +19,22 @@ double Constant_NematicForce::Energy_of_Force(vertex *pv, Vec3D dx) {
     
         std::vector <links *> nl = pv->GetVLinkList();
         Vec3D Force;
+       // Vec3D Force1;
         for (std::vector<links *>::iterator it = nl.begin() ; it != nl.end(); ++it)
         {
             vertex *pv2 = (*it)->GetV2();
             if(pv2->VertexOwnInclusion()){
                 Force = Force + m_ForceFunction(pv2, pv);
+               // Force1 = Force1 + ActiveNematicForce_1(pv2, pv);
+
             }
         }
         Tensor2  G2L = pv->GetG2LTransferMatrix();
         Vec3D ldx = G2L * dx;
         En = m_F0 * Vec3D::dot(ldx , Force);  // in the local space F = -zeta*div(Q); E=zeta*div(Q)*dX
     
+   // std::cout<<En<<"  "<<m_F0 * Vec3D::dot(ldx , Force1)<<"\n";
+
     return En;
 }
 Vec3D Constant_NematicForce::Inclusion_Force(vertex *pv) {
