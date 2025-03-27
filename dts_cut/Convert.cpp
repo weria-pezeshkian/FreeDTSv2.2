@@ -129,7 +129,7 @@ Convert::Convert(std::vector <std::string> argument)
     std::vector<Vertex_Map> newVlist;
     std::vector<Vertex_Map> RemVlist;
     
-if(m_CutType == "line"){
+/*if(m_CutType == "line"){
 
     int v0;
     std::cin>>v0;
@@ -172,7 +172,7 @@ if(m_CutType == "line"){
         }
 }
 //======================== make the cut
-else if(m_CutType == "direction"){
+else */if(m_CutType == "direction"){
     double cutsize = 0.2;
     Vec3D Dir(1,0,0);
     std::cout<<" enter the direction vector: \n";
@@ -224,9 +224,9 @@ else if(m_CutType == "vertex"){
     int vid;
     std::cout<<" enter id of the vertex \n";
     std::cin>>vid;
-    double x0 = bvertex[0].x;// -m_Box(0)/2;
-    double y0 = bvertex[0].y; //-m_Box(1)/2;
-    double z0 = bvertex[0].z;// -m_Box(2)/2;
+    double x0 = bvertex[vid].x;// -m_Box(0)/2;
+    double y0 = bvertex[vid].y; //-m_Box(1)/2;
+    double z0 = bvertex[vid].z;// -m_Box(2)/2;
     
     Vec3D A(1,1,1);
     std::cout<<" enter the a b c: \n";
