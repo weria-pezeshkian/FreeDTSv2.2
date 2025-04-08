@@ -93,6 +93,7 @@
 #include "PositionRescaleIsotropicFrameTensionCouplingWithOpenMP.h"
 #include "PositionRescaleAnisotropicFrameTensionCoupling.h"
 #include "BoxSizeCouplingToHarmonicPotential.h"
+#include "BoxSizeCouplingToHarmonicPotentialAnisotropic.h"
 //-- dynamic topology
 #include "AbstractDynamicTopology.h"
 #include "Three_Edge_Scission.h"
@@ -134,6 +135,9 @@
 #include "ConstantExternalField.h"
 #include "ConstantExternalFieldOnOneInclusionType.h"
 #include "ConstantExternalFieldOnVectorFields.h"
+//--- Local Stretching
+#include "AbstractLocalStretching.h"
+#include "AnisotropicStretchingByNematicField.h"
 //--- interaction with Substrate
 #include "AbstractVertexAdhesionToSubstrate.h"
 #include "SphericalVertexSubstrate.h"
@@ -155,6 +159,7 @@
 //---  nonbonded energies
 #include "AbstractNonbondedInteractionBetweenVertices.h"
 #include "PolarInteractionBetweenEdgesVertices.h"
+#include "InteractionBetweenInclusionsIn3D.h"
 
 
 struct ParallelReplicaData {  // data structure for turning on and off certain moves
@@ -200,6 +205,7 @@ inline AbstractApplyConstraintBetweenGroups *GetApplyConstraintBetweenGroups()  
 //---- nonbonded interactions
 inline AbstractNonbondedInteractionBetweenVertices *GetNonbondedInteractionBetweenVertices()                    {return m_NonbondedInteractionBetweenVertices;}
 
+inline AbstractLocalStretching *GetAbstractLocalStretching()                    {return m_pAbstractLocalStretching;}
 //---- algorithm mangments
 inline AbstractTotalAreaCoupling        *GetTotalAreaCoupling()                         {return m_pTotalAreaCoupling;}
 inline AbstractVolumeCoupling           *GetVolumeCoupling()                            {return m_pVolumeCoupling;}
@@ -268,6 +274,8 @@ private:
     AbstractVertexPositionIntegrator    *m_pVertexPositionIntegrator;
     AbstractInclusionPoseIntegrator     *m_pInclusionPoseIntegrator;
     AbstractVectorFieldsRotationMove    *m_pVectorFieldsRotationIntegrator;
+    
+    AbstractLocalStretching             *m_pAbstractLocalStretching;
 //--- IO file managment
     TimeSeriesDataOutput            *m_pTimeSeriesDataOutput;
     TimeSeriesLogInformation        *m_pTimeSeriesLogInformation;
