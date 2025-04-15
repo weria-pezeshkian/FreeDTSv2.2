@@ -13,7 +13,7 @@ void InteractionBetweenInclusionsIn3D::Initialize() {
     std::vector<std::string> data = Nfunction::Split(m_Input_Data);
     
     // Prevent out-of-bounds access
-    if (data.size() < 3) {
+    if (data.size() < 1) {
         std::cerr << "---> error: insufficient input data for "
                   << this->GetDefaultReadName() << ".\n";
         exit(-1);
@@ -30,6 +30,11 @@ void InteractionBetweenInclusionsIn3D::Initialize() {
         exit(-1);
     }
 
+    double vx = m_pState->GetVoxelization()->GetXSideVoxel();
+    double vy = m_pState->GetVoxelization()->GetYSideVoxel();
+    double vz = m_pState->GetVoxelization()->GetZSideVoxel();
+    
+    //std::cout<<vx<<" "<<
 
     return;
 }

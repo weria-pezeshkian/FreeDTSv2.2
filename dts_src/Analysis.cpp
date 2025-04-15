@@ -48,6 +48,8 @@ bool Analysis::do_Simulation(){
     if (m_Path.back() != '/') {  // Ensure trailing slash
         m_Path += "/";
     }
+    std::ofstream edgeFrame;
+    edgeFrame.open("edge.xvg");
 for (int step = m_Initial_Step; step <= m_Final_Step; step++){
         
     std::string TopologyFile = m_Path + gname + Nfunction::Int_to_String(step)+"."+TSIExt;
@@ -55,7 +57,6 @@ for (int step = m_Initial_Step; step <= m_Final_Step; step++){
         std::cout<<"--> warning: "<<TopologyFile<<" does not exist, we skip it \n";
         continue;
     }
-    
     CreateMashBluePrint Create_BluePrint;
     MeshBluePrint mesh_blueprint = Create_BluePrint.MashBluePrintFromInput_Top(InputFileName, TopologyFile);
     m_pState->GetMesh()->Clear_Mesh();
@@ -77,6 +78,24 @@ for (int step = m_Initial_Step; step <= m_Final_Step; step++){
     m_pState->GetVisualization()->WriteAFrame(step*period);
     //m_pState->GetVoxelization()->SetBox(m_pMesh->GetBox());
     //m_pState->GetVoxelization()->Voxelize(m_pState->GetMesh()->GetActiveV());
+    
+    
+    const std::vector<vertex *>& edge_vertex = m_pState->GetMesh()->GetEdgeV();
+    edgeFrame<<"frame "<<step<<"  "<<edge_vertex.size()<<"\n";
+    if (!edge_vertex.empty()) {
+        vertex * oneedgeV = edge_vertex[0];
+        edgeFrame << oneedgeV->GetPos() << "\n";
+        vertex * nextV = oneedgeV->GetEdgeLink()->GetV2();
+        while (true) {
+            if (nextV != oneedgeV) {
+                edgeFrame << nextV->GetPos() << "\n";
+                nextV = nextV->GetEdgeLink()->GetV2();
+            } else {
+                break;
+            }
+        }
+    }
+
     
     std::cout<<step<<" step \n";
     
