@@ -161,9 +161,9 @@ bool MESH::GenerateMesh(MeshBluePrint meshblueprint)
     for (std::vector<Inclusion_Map>::iterator it = (meshblueprint.binclusion).begin() ; it != (meshblueprint.binclusion).end(); ++it)
     {
         
-        if(m_Vertex.size()<it->vid+1 && it->tid > m_InclusionType.size()) {
+        if(m_Vertex.size()<it->vid+1 && it->tid > m_InclusionType.size() && it->tid < 1 ) {
             
-            std::cout<<"----> Error: Inclusion vertex id or type id is out of range "<<std::endl;
+            std::cout<<"----> Error: Inclusion vertex id or type id is out of range. Type "<<it->tid<<"  v-id "<<it->vid<<std::endl;
             exit(0);
         }
         inclusion Tinc(it->id, &(m_InclusionType[it->tid]));
