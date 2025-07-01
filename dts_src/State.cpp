@@ -787,6 +787,10 @@ while (input >> firstword) {
             input >> str >> type;
             if(type == Energy::GetDefaultReadName()){ // "FreeDTS1.0_FF"
                 m_pEnergyCalculator = new Energy(this);  // Initialize EnergyCalculator
+            }else if(type == HMFFEnergy::GetDefaultReadName()){
+                std::string data;
+                getline(input, data);
+                m_pEnergyCalculator = new HMFFEnergy(this, data);
             }
             else {
                 std::cout<<" error---> unknown force field type: "<<type<<std::endl;
@@ -1005,6 +1009,7 @@ while (input >> firstword) {
             double lx,ly,lz;
             input>>str>>lx>>ly>>lz;
             m_pVoxelization->UpdateVoxelSize(lx, ly,  lz);
+            m_pVoxelization->SetDefaultVoxelSize(lx, ly,  lz);
             getline(input,rest);
         }
         else if(firstword == AbstractNonbinaryTrajectory::GetBaseDefaultReadName()) {
