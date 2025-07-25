@@ -211,7 +211,6 @@ double Energy::TwoInclusionsInteractionEnergy(links * p_edge) {
          case 1: {
              double theta = (ff[2] != 0) ? Geo_Theta(p_v1, p_v2) : 0.0;
              e_int = InteractionFunction(ff[0], ff[1], ff[2], theta);
-
              break;
          }
         case 4: {
@@ -617,10 +616,11 @@ double Energy::Geo_Theta(vertex *v1, vertex *v2) {
      * @return The angle (in radians) between the transported vectors.
      */
     
+
         Vec3D X1 = v1->GetPos();
         Vec3D X2 = v2->GetPos();
         Vec3D geodesic_dir=(X2-X1);
-    
+
         for (int i=0;i<3;i++)
         {
             if(fabs(geodesic_dir(i))>  m_Box(i)/2)
@@ -631,6 +631,7 @@ double Energy::Geo_Theta(vertex *v1, vertex *v2) {
                     geodesic_dir(i) = geodesic_dir(i) - m_Box(i);
             }
         }
+
         Vec3D y1=(v1->GetG2LTransferMatrix())*geodesic_dir;
         y1(2)=0;
         y1.normalize();
@@ -644,10 +645,12 @@ double Energy::Geo_Theta(vertex *v1, vertex *v2) {
         double sin1 = n.dot(n*y1,d1);
         double cos2 = y1.dot(y2,d2);
         double sin2 = n.dot(n*y2,d2);
-    
+
         // Compute theta
         double S_an = sin1 * sin2 + cos1 * cos2;
         double theta = acos(S_an);
+
+    
 
     return theta;
 }

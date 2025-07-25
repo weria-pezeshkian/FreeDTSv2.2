@@ -9,6 +9,7 @@ State::State(){
 }
 State::State(std::vector<std::string> argument) :
 
+      m_pMesh(&m_Mesh), // still until the opening of the constractor, this will not be affective
       m_NumberOfErrors(0),
       m_NumberOfWarnings(0),
       //============ Initialization of all files
@@ -20,7 +21,6 @@ State::State(std::vector<std::string> argument) :
       m_pTimeSeriesLogInformation(new TimeSeriesLogInformation(this)),  // Initialize TimeSeriesLogInformation
       m_pRestart(new Restart(this)),  // Initialize Restart
       m_pNonbinaryTrajectory(new Traj_tsi(this)),  // Initialize Traj_tsi
-      m_pVisualizationFile(new WritevtuFiles(this)),  // Initialize WritevtuFiles
       m_pBinaryTrajectory(new NoFile),  // Initialize BinaryTrajectory
 
     //---- nonbonded interactions
@@ -51,7 +51,7 @@ State::State(std::vector<std::string> argument) :
       //--- Initialize accessory objects
       m_pCurvatureCalculations(new CurvatureByShapeOperatorType1(this)),  // Initialize CurvatureCalculations
       m_RandomNumberGenerator(new RNG(1234)),  // Initialize RandomNumberGenerator
-      m_pEnergyCalculator(new Energy(this)),  // Initialize EnergyCalculator
+      //m_pEnergyCalculator(new Energy(this)),  // Initialize EnergyCalculator
 
         // Initialize Simulation
      //--- Local state member variables
@@ -70,7 +70,9 @@ State::State(std::vector<std::string> argument) :
     omp_set_num_threads(m_Total_no_Threads),
 #endif
     //---- Initialize integrators
-    m_pMesh = &m_Mesh;
+    //m_pMesh = &m_Mesh;
+    m_pEnergyCalculator         = new Energy(this);  // Initialize EnergyCalculator
+    m_pVisualizationFile        = new WritevtuFiles(this);  // Initialize WritevtuFiles
     m_pVertexPositionIntegrator = new EvolveVerticesByMetropolisAlgorithm(this);
     m_pAlexanderMove            = new AlexanderMoveByMetropolisAlgorithm(this);         // Initialize AlexanderMove
     m_pInclusionPoseIntegrator  = new InclusionPoseUpdateByMetropolisAlgorithm(this);  // Initialize InclusionPoseIntegrator
