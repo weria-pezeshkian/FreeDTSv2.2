@@ -335,8 +335,8 @@ double Energy::InteractionFive(double N, double A, double B, double C,  links* p
     
     double e = cos( double(N) * theta );
 
-    double cos2T_1 = cos1*cos1 + cos2*cos2 - 1; //2cos(theta1)^2-1+2cos(theta2)^2 -1, with below
-    //double cos2T_1 = cos1*cos1*cos1*cos1 + cos2*cos2*cos2*cos2; //2cos(theta1)^2-1+2cos(theta2)^2 , with below
+    //double cos2T_1 = cos1*cos1 + cos2*cos2 - 1; //2cos(theta1)^2-1+2cos(theta2)^2 -1, with below
+    double cos2T_1 = cos1*cos1*cos1*cos1 + cos2*cos2*cos2*cos2; //2cos(theta1)^2-1+2cos(theta2)^2 , with below
 
     cos2T_1 = 2 * cos2T_1;
     
