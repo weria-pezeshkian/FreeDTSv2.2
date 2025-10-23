@@ -713,9 +713,20 @@ while (input >> firstword) {
             if(type == ActiveTwoStateInclusion::GetDefaultReadName() ){ // "ActiveTwoStateInclusion"
                 
                 std::string inctype1, inctype2;
-                double ep1,ep2,persentage,gama;
-                input>> inctype1>> inctype2>> ep1>> ep2>> persentage>> gama;
-                m_pInclusionConversion = new ActiveTwoStateInclusion(ep1, ep2, persentage, gama, inctype1, inctype2);
+                int period;
+                double ep,persentage,gama;
+                input>> inctype1>> inctype2>> period>> ep>> persentage>> gama;
+                m_pInclusionConversion = new ActiveTwoStateInclusion(period, ep, persentage, gama, inctype1, inctype2);
+
+            }
+            else if(type == EquilibriumInclusionExchangeByChemicalPotential::GetDefaultReadName() ){ // "ActiveTwoStateInclusion"
+                
+                std::string inctype1, inctype2;
+                double mu, rate;
+                int period;
+
+                input>> period>> mu>> inctype1>> inctype2;
+                m_pInclusionConversion = new EquilibriumInclusionExchangeByChemicalPotential (this, period, rate, mu, inctype1, inctype2);
 
             }
             else if(type == NoInclusionConversion::GetDefaultReadName()){ // No

@@ -121,6 +121,7 @@
 //--- Inclusion exchange
 #include "AbstractInclusionConversion.h"
 #include "ActiveTwoStateInclusion.h"
+#include "EquilibriumInclusionExchangeByChemicalPotential.h"
 //--- force on ver
 #include "AbstractForceonVertices.h"
 #include "UserDefinedForceonVertices.h"
