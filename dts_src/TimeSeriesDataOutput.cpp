@@ -75,6 +75,10 @@ and false if the periodic condition is not met or if there is an error writing t
     if (m_pState->GetBoundary()->GetDerivedDefaultReadName() != "PBC") {
         m_TimeSeriesFile <<m_pState->GetBoundary()->CurrentStateParameters()<<"  ";
     }
+    if (m_pState->GetInclusionConversion()->GetDerivedDefaultReadName() != NoInclusionConversion::GetDefaultReadName()) {
+        // should be added
+       // m_TimeSeriesFile <<m_pState->GetInclusionConversion()->CurrentState()<<"  ";
+    }
     m_TimeSeriesFile<<std::endl;
     
     return true;
@@ -135,6 +139,10 @@ bool TimeSeriesDataOutput::OpenFile(bool clearfile) {
         }
         if (m_pState->GetBoundary()->GetDerivedDefaultReadName() != "PBC") {
             m_TimeSeriesFile <<" Boundary Info ";
+        }
+        if (m_pState->GetInclusionConversion()->GetDerivedDefaultReadName() != NoInclusionConversion::GetDefaultReadName()) {
+            // should be added
+            m_TimeSeriesFile <<" InclusionConversion ";
         }
         m_TimeSeriesFile << std::endl;
     }

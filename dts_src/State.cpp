@@ -725,7 +725,7 @@ while (input >> firstword) {
                 double mu, rate;
                 int period;
 
-                input>> period>> mu>> inctype1>> inctype2;
+                input>> period>> rate>> mu>> inctype1>> inctype2;
                 m_pInclusionConversion = new EquilibriumInclusionExchangeByChemicalPotential (this, period, rate, mu, inctype1, inctype2);
 
             }
