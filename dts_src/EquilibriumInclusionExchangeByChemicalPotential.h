@@ -11,10 +11,26 @@ class State;
 
 /**
  * @class EquilibriumInclusionExchangeByChemicalPotential
- * @brief Performs equilibrium inclusion conversion based on chemical potential.
+ * @brief Performs inclusion exchanges between two types based on chemical potential equilibrium.
  *
- * This class implements an exchange algorithm that adjusts inclusion types
- * according to a target chemical potential between two states.
+ * This class implements an algorithm that exchanges inclusions between two
+ * specified types within a simulation mesh according to a target chemical potential.
+ * The exchanges are probabilistic and guided by the energetics of the system,
+ * ensuring that the process respects equilibrium thermodynamics.
+ *
+ * The class handles:
+ *  - Initialization of inclusion lists of the target types.
+ *  - Calculation of the number of attempted moves per exchange cycle.
+ *  - Evaluation of the energy change for each potential inclusion swap.
+ *  - Probabilistic acceptance or rejection of each swap using a Monte Carlo scheme.
+ *  - Tracking the current number of inclusions of each type.
+ *
+ * Exchanges are performed at user-defined intervals (`m_Period`) and with
+ * user-defined intensity (`m_Rate`). Chemical potential differences (`m_Mu`)
+ * drive the exchange process to reach equilibrium.
+ *
+ * @note The algorithm assumes that only two inclusion types are involved.
+ *       Attempting to initialize with more than two types will result in undefined behavior.
  *
  * @author
  * Weria Pezeshkian
@@ -25,11 +41,15 @@ class EquilibriumInclusionExchangeByChemicalPotential : public AbstractInclusion
 public:
     /**
      * @brief Constructor
-     * @param period   Exchange cycle period (simulation steps)
-     * @param rate       rate, how many
-     * @param mu          Chemical potential difference
-     * @param type1    Name of the first inclusion type
-     * @param type2    Name of the second inclusion type
+     * @param pstate Pointer to the current simulation state
+     * @param period Number of simulation steps between successive exchange attempts
+     * @param rate Fraction of inclusions to attempt swapping per cycle
+     * @param mu Chemical potential difference between the two inclusion types
+     * @param type1 Name of the first inclusion type
+     * @param type2 Name of the second inclusion type
+     *
+     * Initializes the object with simulation parameters and target inclusion types.
+     * Sets up counters and links to the state-dependent thermodynamic parameters.
      */
     EquilibriumInclusionExchangeByChemicalPotential(State *pstate, int period,
                                                     double rate,
@@ -49,7 +69,16 @@ public:
         return GetDefaultReadName();
     }
 
-    
+    /**
+     * @brief Attempts a single inclusion swap based on the Monte Carlo acceptance criterion.
+     * @param p_inc Pointer to the inclusion to attempt swapping
+     * @param thermal Random number between 0 and 1 for probabilistic acceptance
+     * @return true if the move was accepted, false if rejected
+     *
+     * This method computes the energy change of swapping the inclusion type and
+     * uses the chemical potential difference to determine the acceptance probability.
+     * If accepted, the system energy is updated; otherwise, the inclusion is reverted.
+     */
     bool TryForOneInclusion(inclusion * pinc, double thermal);
 
 private:

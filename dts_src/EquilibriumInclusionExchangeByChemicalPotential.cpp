@@ -4,17 +4,22 @@
 #include "EquilibriumInclusionExchangeByChemicalPotential.h"
 #include "Nfunction.h"
 #include "State.h"
- /*
-  * @file EquilibriumInclusionExchangeByChemicalPotential.cpp
-  * @brief Implementation of the EquilibriumInclusionExchangeByChemicalPotential class methods.
-  *
-  * This file contains the implementation of the methods declared in the EquilibriumInclusionExchangeByChemicalPotential class.
-  * The class is responsible for exchanging inclusion types between two states based on a chemical potential.
-  * The exchange is not done based on the energetic of the states. It is active, but energy get updated after the exchange
-  * It initializes the inclusion exchange process, performs exchanges at defined intervals, and manages energy calculations.
-  *
-  * @author Weria Pezeshkian (weria.pezeshkian@gmail.com)
-  */
+/*
+ * @file EquilibriumInclusionExchangeByChemicalPotential.cpp
+ * @brief Implements the EquilibriumInclusionExchangeByChemicalPotential class methods.
+ *
+ * This file provides the definitions of the methods declared in the
+ * EquilibriumInclusionExchangeByChemicalPotential class. The class handles
+ * the exchange of inclusion types between two states based on their chemical
+ * potentials. Exchanges are performed according to the energetics of the states,
+ * ensuring an equilibrium process.
+ *
+ * Key responsibilities include initializing the inclusion exchange process,
+ * performing exchanges at specified intervals, and managing associated
+ * energy calculations.
+ *
+ * @author Weria Pezeshkian (weria.pezeshkian@gmail.com)
+ */
 
 EquilibriumInclusionExchangeByChemicalPotential::EquilibriumInclusionExchangeByChemicalPotential(State *pstate, int period, double rate, double chemicalpotential, std::string t_name1, std::string t_name2) :
                         m_pState(pstate),
@@ -61,9 +66,7 @@ bool EquilibriumInclusionExchangeByChemicalPotential::Exchange(int step){
     
     if( step%m_Period !=0 )
         return false;
-    
-    // in the old version it was as: double eta = 2*double(m_N-m_DeltaN0)/double(m_N+m_DeltaN0)-1;
-    
+        
     for (int i = 0; i< m_NumberOfMoves;i++) {
       
         int r_inc_id = m_pState->GetRandomNumberGenerator()->IntRNG(m_N);
@@ -85,9 +88,9 @@ bool EquilibriumInclusionExchangeByChemicalPotential::TryForOneInclusion(inclusi
     double new_energy = 0.0;
     int n1 = 0;
     int n2 = 0;
-    InclusionType* Type1;  // tempapory to keep type1
+    InclusionType* Type1;  // temp to keep type1
     InclusionType* Type2;
-    double chem = 0 ;
+    double chem = m_Mu ;
     vertex * pver = p_inc->Getvertex();      // Current vertex of the inclusion
     double en = pver->GetEnergy();
     old_energy = en;
@@ -106,7 +109,7 @@ bool EquilibriumInclusionExchangeByChemicalPotential::TryForOneInclusion(inclusi
         n2 = m_N2;
         Type1 = m_pIncType1;
         Type2 = m_pIncType2;
-        chem = -m_Mu;
+        chem = -m_Mu;   // because m_Mu is chemical potentail of m_N1
     }
     else{
         p_inc->m_IncType  = m_pIncType1;
@@ -114,9 +117,6 @@ bool EquilibriumInclusionExchangeByChemicalPotential::TryForOneInclusion(inclusi
         n2 = m_N1;
         Type1 = m_pIncType2;
         Type2 = m_pIncType1;
-        chem = m_Mu;
-
-
     }
     
     //--- now, lets update energy
@@ -131,8 +131,6 @@ bool EquilibriumInclusionExchangeByChemicalPotential::TryForOneInclusion(inclusi
     double pre_factor = n1/(m_N - n1 + 1);
     double U = m_Beta * diff_energy - m_DBeta;
     
-    // std::cout<<m_N<<"  "<<m_N1<<"  "<<m_Mu<<"\n";
-
     //---> accept or reject the move
     if(pre_factor * exp(-U) > thermal ) {
         

@@ -228,7 +228,7 @@ bool EvolveVerticesByMetropolisAlgorithm::EvolveOneVertex(int step, vertex *pver
     
     bond_energy += pvertex->GetBondEnergyOfVertex();
     
-   dE_nonbonded = (m_pState->GetNonbondedInteractionBetweenVertices()->GetVertexNonBondedEnergy(pvertex));
+   dE_nonbonded += (m_pState->GetNonbondedInteractionBetweenVertices()->GetVertexNonBondedEnergy(pvertex));
 
     
 
