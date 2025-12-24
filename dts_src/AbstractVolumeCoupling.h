@@ -51,7 +51,7 @@ public:
     virtual double GetEnergyChange(double oldarea, double oldvolume, double newarea, double newvolume) = 0;
 
     // Retrieve the default name of the derived class for logging or identification purposes
-    virtual inline std::string GetDerivedDefaultReadName() = 0;
+    virtual std::string GetDerivedDefaultReadName() const = 0;
 
     // Retrieve the base class default name for logging or identification purposes
     inline static std::string GetBaseDefaultReadName() { return "VolumeCoupling"; }
@@ -69,25 +69,37 @@ private:
 class NoCoupling : public AbstractVolumeCoupling {
 public:
     // Constructor that initializes the base class with global mesh properties
-    NoCoupling(VAHGlobalMeshProperties *VHA) : AbstractVolumeCoupling(VHA) {
+    NoCoupling(VAHGlobalMeshProperties *VHA)
+        : AbstractVolumeCoupling(VHA)
+    {
     }
 
     // Destructor
-    ~NoCoupling() {
+    ~NoCoupling() override {
     }
 
     // Return the derived class name for identification purposes
-    virtual inline std::string GetDerivedDefaultReadName() { return "No"; }
+    std::string GetDerivedDefaultReadName() const override {
+        return "No";
+    }
 
     // Implementations of the virtual methods with no operation (no coupling)
-    void Initialize(State* pState) { return; }
-  //  void CalculateVolumeOfAVertexRing(vertex *pVertex, double &vol, double &area) { return; }
-  //  void CalculateVolumeofALinkTriangles(links *p_link, double &vol, double &area) { return; }
-    double GetCouplingEnergy() { return 0; }
-    double GetEnergyChange(double oldarea, double oldvolume, double newarea, double newvolume) { return 0; }
+    void Initialize(State* pState) override {
+        // Nothing to initialize for "NoCoupling"
+    }
+
+    double GetCouplingEnergy() override {
+        return 0.0;
+    }
+
+    double GetEnergyChange(double oldarea, double oldvolume,
+                           double newarea, double newvolume) override {
+        return 0.0;
+    }
+
     // Retrieve the current state as a string
-    std::string CurrentState() {
-        return GetBaseDefaultReadName() + " = " + this->GetDerivedDefaultReadName();
+    std::string CurrentState() override {
+        return GetBaseDefaultReadName() + " = " + GetDerivedDefaultReadName();
     }
 };
 

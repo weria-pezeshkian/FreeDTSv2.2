@@ -104,8 +104,6 @@
 #include "OpenEdgeEvolutionWithConstantVertex.h"
 //-- volume coupling
 #include "AbstractVolumeCoupling.h"
-#include "Apply_Osmotic_Pressure.h"
-#include "VolumeCouplingSecondOrder.h"
 //-- global curvature
 #include "AbstractGlobalCurvature.h"
 #include "CouplingGlobalCurvatureToHarmonicPotential.h"
@@ -122,6 +120,7 @@
 #include "AbstractInclusionConversion.h"
 #include "ActiveTwoStateInclusion.h"
 #include "EquilibriumInclusionExchangeByChemicalPotential.h"
+#include "EquilibriumExchangeOfManyInclusionsByChemicalPotential.h"
 //--- force on ver
 #include "AbstractForceonVertices.h"
 #include "UserDefinedForceonVertices.h"

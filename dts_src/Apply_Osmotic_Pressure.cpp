@@ -1,6 +1,8 @@
 #include "Apply_Osmotic_Pressure.h"
 #include "State.h"
 #include "Nfunction.h"
+#include "VolumeCouplingFactory.h"
+
 /*
  
  Delta E_osmos = -RT[c_in*V_ini*Log (V/V_ini) - c_out * (V-V_ini)]
@@ -107,3 +109,47 @@ double Apply_Osmotic_Pressure::Energy(double volume, double area){
     std::cout<<" this function has not been completed 234 \n";
     return 0;
 }
+
+static class ApplyOsmoticPressureRegister {
+    
+    // -----------------------------------------------------------------------------
+    // Static registry for Apply_Osmotic_Pressure
+    //
+    // This code automatically registers the Apply_Osmotic_Pressure class with the
+    // VolumeCouplingFactory at program startup. The factory can then create instances
+    // of Apply_Osmotic_Pressure dynamically from input streams, without requiring
+    // explicit knowledge of the derived class in the calling code.
+    //
+    // How it works:
+    // 1. The static class `ApplyOsmoticPressureRegister` defines a `Create` function
+    //    that reads parameters (gamma, P0) from an input stream and constructs a
+    //    new Apply_Osmotic_Pressure object.
+    // 2. The constructor of the static object calls `Register` on the factory,
+    //    associating the class's default name (returned by GetDefaultReadName())
+    //    with the `Create` function.
+    // 3. Because the object is static, this registration happens automatically
+    //    before main() executes, enabling polymorphic creation of volume couplings.
+    //
+    // Usage:
+    //   VolumeCouplingFactory::Instance().Create("OsmoticPressure", input, vah);
+    //   will invoke this Create function and return a new Apply_Osmotic_Pressure.
+    //
+    // -----------------------------------------------------------------------------
+    
+    static AbstractVolumeCoupling* Create(
+        std::istream& input,
+        VAHGlobalMeshProperties* vah)
+    {
+        double gamma, P0;
+        input >> gamma >> P0;
+        return new Apply_Osmotic_Pressure(vah, gamma, P0);
+    }
+
+public:
+    ApplyOsmoticPressureRegister() {
+        VolumeCouplingFactory::Instance().Register(
+            Apply_Osmotic_Pressure::GetDefaultReadName(),
+            Create
+        );
+    }
+} ApplyOsmoticPressureRegisterObject;

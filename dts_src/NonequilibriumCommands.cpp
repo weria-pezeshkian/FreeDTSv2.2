@@ -3,6 +3,7 @@
 #include "NonequilibriumCommands.h"
 #include "State.h"
 #include "RigidWallTypes.h"
+#include "VolumeCouplingSecondOrder.h"
 
 
 NonequilibriumCommands::NonequilibriumCommands(State* pState) {

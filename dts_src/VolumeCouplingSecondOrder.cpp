@@ -1,6 +1,7 @@
 #include "VolumeCouplingSecondOrder.h"
 #include "State.h"
 #include "Nfunction.h"
+#include "VolumeCouplingFactory.h"
 
 // Constructor
 VolumeCouplingSecondOrder::VolumeCouplingSecondOrder(VAHGlobalMeshProperties *VHA,  double DeltaP,  double K, double targetV)
@@ -93,3 +94,47 @@ std::string VolumeCouplingSecondOrder::CurrentState(){
 double VolumeCouplingSecondOrder::GetCouplingEnergy(){
     return Energy(m_TotalVolume, m_TotalArea);
 }
+// -------- static registration for VolumeCouplingSecondOrder --------
+static class VolumeCouplingSecondOrderRegister {
+    
+    // -----------------------------------------------------------------------------
+    // Static registry for VolumeCouplingSecondOrder
+    //
+    // This code automatically registers the VolumeCouplingSecondOrder class with the
+    // VolumeCouplingFactory at program startup. The factory can then create instances
+    // of VolumeCouplingSecondOrder dynamically from input streams, without requiring
+    // explicit knowledge of the derived class in the calling code.
+    //
+    // How it works:
+    // 1. The static class `VolumeCouplingSecondOrderRegister` defines a `Create` function
+    //    that reads parameters (dp, k, vt) from an input stream and constructs a
+    //    new VolumeCouplingSecondOrder object.
+    // 2. The constructor of the static object calls `Register` on the factory,
+    //    associating the class's default name (returned by GetDefaultReadName())
+    //    with the `Create` function.
+    // 3. Because the object is static, this registration happens automatically
+    //    before main() executes, enabling polymorphic creation of volume couplings.
+    //
+    // Usage:
+    //   VolumeCouplingFactory::Instance().Create("SecondOrder", input, vah);
+    //   will invoke this Create function and return a new VolumeCouplingSecondOrder.
+    //
+    // -----------------------------------------------------------------------------
+    static AbstractVolumeCoupling* Create(
+        std::istream& input,
+        VAHGlobalMeshProperties* vah)
+    {
+        double dp, k, vt;
+        input >> dp >> k >> vt;
+
+        return new VolumeCouplingSecondOrder(vah, dp, k, vt);
+    }
+
+public:
+    VolumeCouplingSecondOrderRegister() {
+        VolumeCouplingFactory::Instance().Register(
+            VolumeCouplingSecondOrder::GetDefaultReadName(),
+            Create
+        );
+    }
+} VolumeCouplingSecondOrderRegisterObject;

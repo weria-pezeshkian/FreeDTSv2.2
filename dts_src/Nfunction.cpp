@@ -141,7 +141,10 @@ std::vector<std::string> Nfunction::Split(const std::string& str)
 
     return words; // Return the vector of words
 }
-bool Nfunction::CopyBinaryFile(const std::string& inputFilename, const std::string& outputFilename, const std::streamsize bufferSize) {
+bool Nfunction::CopyBinaryFile(const std::string& inputFilename,
+                               const std::string& outputFilename,
+                               const std::streamsize bufferSize)
+{
     std::ifstream inFile(inputFilename, std::ios::binary);
     std::ofstream outFile(outputFilename, std::ios::binary);
 
@@ -154,14 +157,16 @@ bool Nfunction::CopyBinaryFile(const std::string& inputFilename, const std::stri
         std::cerr << "Error: Unable to open output file: " << outputFilename << std::endl;
         return false;
     }
-    char buffer[bufferSize];
+
+    // Use a vector instead of VLA
+    std::vector<char> buffer(bufferSize);
 
     while (true) {
-        inFile.read(buffer, bufferSize);
+        inFile.read(buffer.data(), bufferSize);
         std::streamsize bytesRead = inFile.gcount();
 
         if (bytesRead > 0) {
-            outFile.write(buffer, bytesRead);
+            outFile.write(buffer.data(), bytesRead);
         }
 
         if (inFile.eof()) {

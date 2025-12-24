@@ -4,6 +4,7 @@
 #include "MESH.h"
 #include "CreateMashBluePrint.h"
 #include "State.h"
+#include "VolumeCouplingFactory.h"
 State::State(){
     
 }
@@ -491,32 +492,28 @@ while (input >> firstword) {
                 }
             }
 //---- Volume_Constraint data
-        else if(firstword == AbstractVolumeCoupling::GetBaseDefaultReadName())   { // Volume_Constraint
-            input >> str >> type;
-            if(type != "No"){
-                m_pVAHCalculator->MakeVolumeActive();
-                m_pVAHCalculator->MakeAreaActive();
+            else if(firstword == AbstractVolumeCoupling::GetBaseDefaultReadName()) {
+
+                input >> str >> type;
+
+                if(type != "No") {
+                    m_pVAHCalculator->MakeVolumeActive();
+                    m_pVAHCalculator->MakeAreaActive();
+                }
+
+                m_pVolumeCoupling =
+                    VolumeCouplingFactory::Instance()
+                        .Create(type, input, m_pVAHCalculator);
+
+                if(!m_pVolumeCoupling && type != "No") {
+                    std::cout << "---> error: unknown volume coupling type "
+                              << type << "\n";
+                    m_NumberOfErrors++;
+                    return false;
+                }
+
+                getline(input, rest);
             }
-            if(type == VolumeCouplingSecondOrder::GetDefaultReadName()) { // SecondOrderCoupling
-                
-                double dp,k,vt;
-                input>>dp>>k>>vt;
-                m_pVolumeCoupling = new VolumeCouplingSecondOrder(m_pVAHCalculator, dp,  k, vt);
-            }
-            else if(type == Apply_Osmotic_Pressure::GetDefaultReadName()){ // Osmotic_Pressure
-                double gamma,P0;
-                input>>gamma>>P0;
-                m_pVolumeCoupling = new Apply_Osmotic_Pressure(m_pVAHCalculator, gamma, P0 );
-            }
-            else if(type == "No"){
-            }
-            else {
-                std::cout<<"---> error: unknown volume coupling type "<<type<<"\n";
-                m_NumberOfErrors++;
-                return false;
-            }
-            getline(input,rest);
-        }
 //---- end Volume_Constraint
 //-----  start BondedPotentialBetweenVertices
         else if(firstword == AbstractBondedPotentialBetweenVertices::GetBaseDefaultReadName())   { // BondedPotentialBetweenVertices
@@ -717,6 +714,7 @@ while (input >> firstword) {
                 double ep,persentage,gama;
                 input>> inctype1>> inctype2>> period>> ep>> persentage>> gama;
                 m_pInclusionConversion = new ActiveTwoStateInclusion(period, ep, persentage, gama, inctype1, inctype2);
+                getline(input,rest);
 
             }
             else if(type == EquilibriumInclusionExchangeByChemicalPotential::GetDefaultReadName() ){ // "ActiveTwoStateInclusion"
@@ -727,18 +725,27 @@ while (input >> firstword) {
 
                 input>> period>> rate>> mu>> inctype1>> inctype2;
                 m_pInclusionConversion = new EquilibriumInclusionExchangeByChemicalPotential (this, period, rate, mu, inctype1, inctype2);
+                getline(input,rest);
+
+            }
+            else if(type == EquilibriumExchangeOfManyInclusionsByChemicalPotential::GetDefaultReadName() ){ // "ActiveTwoStateInclusion"
+                
+                std::string info;
+                getline(input,info);
+                m_pInclusionConversion = new EquilibriumExchangeOfManyInclusionsByChemicalPotential (this, info);
 
             }
             else if(type == NoInclusionConversion::GetDefaultReadName()){ // No
                  m_pInclusionConversion = new NoInclusionConversion;
+                getline(input,rest);
             }
             else{
                  std::cout<<"---> error: unknown Inclusion Conversion method "<<std::endl;
                  m_NumberOfErrors++;
+                 getline(input,rest);
                  return false;
             }
                 
-            getline(input,rest);
         }
 // end InclusionConversion
 // boundry condition
