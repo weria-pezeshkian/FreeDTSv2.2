@@ -3,29 +3,15 @@
 #include "Def.h"
 #include "Nfunction.h"
 #include "Vec3D.h"
+#include "mesh_maps.h"
+
 /*
  Weria Pezeshkian (weria.pezeshkian@gmail.com)
  Copyright (c) Weria Pezeshkian
  This class makes initial TS files for DTS simulations. The output could be both q or tsi file format.
  currently 3 types of morphologies are generated.
  */
-struct Vertex_Map {    // data structure for vertex map (not vertex object)
-    double x,y,z;
-    int id,domain;
-};
-struct Triangle_Map {    // data structure for triangle map (not triangle object)
-    int id,v1,v2,v3;
-};
-struct Inclusion_Map {    // data structure for inclusion map (not triangle object)
-    double x,y;
-    int id,vid,tid;
-};
-struct MeshBluePrint {    // data structure for the mesh blue print
-    std::vector<Vertex_Map> bvertex;       // a vector of all vertices (only the blueprint not the object) in the mesh
-    std::vector<Triangle_Map> btriangle;   // a vector of all triangles (only the blueprint not the object) in the mesh
-    std::vector<Inclusion_Map> binclusion; // a vector of all inclusions (only the blueprint not the object) in the mesh
-    Vec3D simbox;
-};
+
 class Generate
 {
 public:
@@ -58,18 +44,20 @@ public:
     Vec3D m_Box;
     std::string m_Type;
     int m_N;      // number of the meshes for different morphology
-    
+    int m_Ny;      // number of v in Y direction for channel pbc high gen
+
     bool m_Healthy;
     std::string m_GeneralOutputFilename; //  a general file flag for specific run
     
     int m_genus;   // topological genus of the surface
     int m_noUpperCreatedHole;
     int m_noLowerCreatedHole;
+    void WriteQFile(std::string filename , MeshBluePrint blueprint);
+    void WriteTSI( std::string filename,  MeshBluePrint blueprint);
+
 private:
     void ExploreArguments();         // updates variables based on the command line arguments
     void HelpMessage();              // writes a help message
-    void WriteTSI(std::string filename , MeshBluePrint blueprint);
-    void WriteQFile(std::string filename , MeshBluePrint blueprint);
     std::string m_tsiPrecision;
     
     

@@ -6,6 +6,8 @@
  */
 #include <fstream>
 #include "Generate.h"
+#include "HighTopologyStructure_ChannelPBC.h"
+
 Generate::Generate()
 {
 }
@@ -51,6 +53,11 @@ Generate::Generate(std::vector <std::string> argument)
     else if (m_Type == "high_genpbc" || m_Type == "High_genpbc"  )
     {
         HighTopologyStructurePBC();
+    }
+    else if (m_Type == "high_gen_channelPBC"  )
+    {
+        HighTopologyStructure_ChannelPBC p;
+        p.Generate_Shape(m_genus, m_Ny,m_Box, m_OutputFilename);
     }
     else
     {
@@ -1714,6 +1721,11 @@ void Generate::ExploreArguments()
             m_Box(2) = f.String_to_Double(m_Argument.at(i+3));
             i++;
             i++;
+
+        }
+        else if(Arg1=="-Ny")
+        {
+            m_Ny = f.String_to_Int(m_Argument.at(i+1));
 
         }
         else if(Arg1=="-type")
