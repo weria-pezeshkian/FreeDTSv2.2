@@ -7,7 +7,7 @@
 #include "SimDef.h"
 #include "AbstractInclusionConversion.h"
 #include "inclusion.h"
-class State;
+//class State;
 
 /**
  * @class EquilibriumInclusionExchangeByChemicalPotential
@@ -51,7 +51,7 @@ public:
      * Initializes the object with simulation parameters and target inclusion types.
      * Sets up counters and links to the state-dependent thermodynamic parameters.
      */
-    EquilibriumInclusionExchangeByChemicalPotential(State *pstate, int period,
+    EquilibriumInclusionExchangeByChemicalPotential(int period,
                                                     double rate,
                                                     double mu,
                                                     std::string type1,
@@ -59,7 +59,7 @@ public:
 
     ~EquilibriumInclusionExchangeByChemicalPotential() override;
 
-    void Initialize(State* pState) override;
+    void Initialize() override;
     bool Exchange(int step) override;
 
     std::string CurrentState() override;
@@ -98,9 +98,8 @@ private:
 
     InclusionType* m_pIncType1;     ///< Pointer to type 1 definition
     InclusionType* m_pIncType2;     ///< Pointer to type 2 definition
-    double &m_Beta;
-    double &m_DBeta;
-    State* m_pState;                ///< Pointer to simulation state
+    double *m_Beta;
+    double *m_DBeta;
 };
 
 #endif // EQUILIBRIUM_INCLUSION_EXCHANGE_BY_CHEMICAL_POTENTIAL_H

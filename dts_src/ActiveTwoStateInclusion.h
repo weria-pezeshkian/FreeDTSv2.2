@@ -33,7 +33,7 @@ public:
 	 ~ActiveTwoStateInclusion();
 
 
-    void Initialize(State *pstate);
+    void Initialize();
     bool Exchange(int step);
     inline  std::string GetDerivedDefaultReadName()  {return "ActiveTwoStateInclusion";}
     inline static std::string GetDefaultReadName() {return "ActiveTwoStateInclusion";}
@@ -57,8 +57,6 @@ private:
     InclusionType *m_pIncType2; ///< Pointer to the second inclusion type.
     ///
     ///
-private:
-    State* m_pState; ///< Pointer to the  state class.
 
 
 };

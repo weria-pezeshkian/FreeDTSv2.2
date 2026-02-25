@@ -51,11 +51,11 @@ public:
      * Initializes the object with simulation parameters and target inclusion types.
      * Sets up counters and links to the state-dependent thermodynamic parameters.
      */
-    EquilibriumExchangeOfManyInclusionsByChemicalPotential(State *pstate, std::string info);
+    EquilibriumExchangeOfManyInclusionsByChemicalPotential(std::string info);
 
     ~EquilibriumExchangeOfManyInclusionsByChemicalPotential() override;
 
-    void Initialize(State* pState) override;
+    void Initialize() override;
     bool Exchange(int step) override;
 
     std::string CurrentState() override;
@@ -96,9 +96,8 @@ private:
 
     InclusionType* m_pIncType1;     ///< Pointer to type 1 definition
     InclusionType* m_pIncType2;     ///< Pointer to type 2 definition
-    double &m_Beta;
-    double &m_DBeta;
-    State* m_pState;                ///< Pointer to simulation state
+    double *m_Beta;
+    double *m_DBeta;
 };
 
 #endif // EquilibriumExchangeOfManyInclusionsByChemicalPotential_H

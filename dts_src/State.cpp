@@ -5,6 +5,8 @@
 #include "CreateMashBluePrint.h"
 #include "State.h"
 #include "VolumeCouplingFactory.h"
+#include "FactoryInclusionConversionMethod.h"
+
 State::State(){
     
 }
@@ -496,25 +498,51 @@ while (input >> firstword) {
 
                 input >> str >> type;
 
-                if(type != "No") {
+                if(type == "No") {
+                    // Keep the existing NoInclusionConversion
+                    std::getline(input, rest);
+                }
+                else{
                     m_pVAHCalculator->MakeVolumeActive();
                     m_pVAHCalculator->MakeAreaActive();
-                }
-
-                m_pVolumeCoupling =
+                    m_pVolumeCoupling =
                     VolumeCouplingFactory::Instance()
                         .Create(type, input, m_pVAHCalculator);
-
-                if(!m_pVolumeCoupling && type != "No") {
-                    std::cout << "---> error: unknown volume coupling type "
-                              << type << "\n";
-                    m_NumberOfErrors++;
-                    return false;
+                    
+                    if(!m_pVolumeCoupling) {
+                        std::cout << "---> error: unknown volume coupling type "
+                        << type << "\n";
+                        m_NumberOfErrors++;
+                        return false;
+                    }
                 }
 
                 getline(input, rest);
             }
 //---- end Volume_Constraint
+    // InclusionConversion and ActiveTwoStateInclusion
+    
+            else if(firstword == AbstractInclusionConversion::GetBaseDefaultReadName()) {
+                input >> str >> type;
+                
+                if(type == "No") {
+                    // Keep the existing NoInclusionConversion
+                    std::getline(input, rest);
+                }
+                else{
+                    m_pInclusionConversion =
+                    FactoryInclusionConversionMethod::Instance().Create(type, input);
+                    
+                    if(!m_pInclusionConversion) {
+                        std::cout << "---> error: unknown Inclusion Conversion method '" << type << "'" << std::endl;
+                        m_NumberOfErrors++;
+                        std::getline(input, rest);
+                        return false;
+                    }
+                    m_pInclusionConversion->AssignState(this);
+                }
+            }
+    // end InclusionConversion
 //-----  start BondedPotentialBetweenVertices
         else if(firstword == AbstractBondedPotentialBetweenVertices::GetBaseDefaultReadName())   { // BondedPotentialBetweenVertices
             input >> str >> type;
@@ -703,51 +731,6 @@ while (input >> firstword) {
             // Consume remaining input line
             getline(input, rest);
         }
-// InclusionConversion and ActiveTwoStateInclusion
-        else if(firstword == AbstractInclusionConversion::GetBaseDefaultReadName()) {
-            input >> str >> type;
-            
-            if(type == ActiveTwoStateInclusion::GetDefaultReadName() ){ // "ActiveTwoStateInclusion"
-                
-                std::string inctype1, inctype2;
-                int period;
-                double ep,persentage,gama;
-                input>> inctype1>> inctype2>> period>> ep>> persentage>> gama;
-                m_pInclusionConversion = new ActiveTwoStateInclusion(period, ep, persentage, gama, inctype1, inctype2);
-                getline(input,rest);
-
-            }
-            else if(type == EquilibriumInclusionExchangeByChemicalPotential::GetDefaultReadName() ){ // "ActiveTwoStateInclusion"
-                
-                std::string inctype1, inctype2;
-                double mu, rate;
-                int period;
-
-                input>> period>> rate>> mu>> inctype1>> inctype2;
-                m_pInclusionConversion = new EquilibriumInclusionExchangeByChemicalPotential (this, period, rate, mu, inctype1, inctype2);
-                getline(input,rest);
-
-            }
-            else if(type == EquilibriumExchangeOfManyInclusionsByChemicalPotential::GetDefaultReadName() ){ // "ActiveTwoStateInclusion"
-                
-                std::string info;
-                getline(input,info);
-                m_pInclusionConversion = new EquilibriumExchangeOfManyInclusionsByChemicalPotential (this, info);
-
-            }
-            else if(type == NoInclusionConversion::GetDefaultReadName()){ // No
-                 m_pInclusionConversion = new NoInclusionConversion;
-                getline(input,rest);
-            }
-            else{
-                 std::cout<<"---> error: unknown Inclusion Conversion method "<<std::endl;
-                 m_NumberOfErrors++;
-                 getline(input,rest);
-                 return false;
-            }
-                
-        }
-// end InclusionConversion
 // boundry condition
         else if(firstword == AbstractBoundary::GetBaseDefaultReadName() ){ // " Boundary "
             input >> str >> type;
@@ -1240,7 +1223,7 @@ bool State::Initialize(){
         m_pDynamicBox->Initialize();
     
 //----> inclsuion exchange, active inclsuion exchange
-    m_pInclusionConversion->Initialize(this);
+    m_pInclusionConversion->Initialize();
     m_pDynamicTopology->Initialize();
     m_pOpenEdgeEvolution->Initialize();
     

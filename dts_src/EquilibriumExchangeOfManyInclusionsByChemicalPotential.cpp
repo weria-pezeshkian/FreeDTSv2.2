@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include "EquilibriumExchangeOfManyInclusionsByChemicalPotential.h"
+#include "FactoryInclusionConversionMethod.h"
 #include "Nfunction.h"
 #include "State.h"
 /*
@@ -21,10 +22,8 @@
  * @author Weria Pezeshkian (weria.pezeshkian@gmail.com)
  */
 
-EquilibriumExchangeOfManyInclusionsByChemicalPotential::EquilibriumExchangeOfManyInclusionsByChemicalPotential(State *pstate, std::string info) :                   m_pState(pstate),
+EquilibriumExchangeOfManyInclusionsByChemicalPotential::EquilibriumExchangeOfManyInclusionsByChemicalPotential(std::string info) :                   
                         m_Input_Data(info),
-                        m_Beta(pstate->GetSimulation()->GetBeta()),
-                        m_DBeta(pstate->GetSimulation()->GetDBeta()),
                         m_N2(0),
                         m_N1(0)
 {
@@ -53,7 +52,11 @@ EquilibriumExchangeOfManyInclusionsByChemicalPotential::EquilibriumExchangeOfMan
 EquilibriumExchangeOfManyInclusionsByChemicalPotential::~EquilibriumExchangeOfManyInclusionsByChemicalPotential() {
     
 }
-void EquilibriumExchangeOfManyInclusionsByChemicalPotential::Initialize(State *pstate) {
+void EquilibriumExchangeOfManyInclusionsByChemicalPotential::Initialize() {
+    
+    
+    m_Beta = &(m_pState->GetSimulation()->GetBeta());
+    m_DBeta = &(m_pState->GetSimulation()->GetDBeta());
     
     const std::vector<inclusion *>& pAllInclusion = m_pState->GetMesh()->GetInclusion();
     for (std::vector<inclusion *>::const_iterator it = pAllInclusion.begin() ; it != pAllInclusion.end(); ++it){
@@ -142,7 +145,7 @@ bool EquilibriumExchangeOfManyInclusionsByChemicalPotential::TryForOneInclusion(
     
     double diff_energy = new_energy - old_energy - chem ;
     double pre_factor = n1/(m_N - n1 + 1);
-    double U = m_Beta * diff_energy - m_DBeta;
+    double U = *m_Beta * diff_energy - *m_DBeta;
     
     //---> accept or reject the move
     if(pre_factor * exp(-U) > thermal ) {
@@ -179,3 +182,25 @@ std::string EquilibriumExchangeOfManyInclusionsByChemicalPotential::CurrentState
 
     return state;
 }
+static class EquilibriumExchangeOfManyInclusionsByChemicalPotentialRegister {
+
+    // Static create function for the factory
+    static AbstractInclusionConversion* Create(std::istream& input)
+    {
+        std::string info;
+        getline(input,info);
+
+        // Construct and return a new object
+        return new EquilibriumExchangeOfManyInclusionsByChemicalPotential(info);
+    }
+
+public:
+    // Constructor automatically registers the class with the factory
+    EquilibriumExchangeOfManyInclusionsByChemicalPotentialRegister() {
+        FactoryInclusionConversionMethod::Instance().Register(
+            "EquilibriumExchangeOfManyInclusions", // string identifier for the factory
+            Create                      // the creator function
+        );
+    }
+
+} EquilibriumExchangeOfManyInclusionsByChemicalPotentialRegisterObject; // static instance triggers registration

@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include "EquilibriumInclusionExchangeByChemicalPotential.h"
+#include "FactoryInclusionConversionMethod.h"
 #include "Nfunction.h"
 #include "State.h"
 /*
@@ -21,15 +22,12 @@
  * @author Weria Pezeshkian (weria.pezeshkian@gmail.com)
  */
 
-EquilibriumInclusionExchangeByChemicalPotential::EquilibriumInclusionExchangeByChemicalPotential(State *pstate, int period, double rate, double chemicalpotential, std::string t_name1, std::string t_name2) :
-                        m_pState(pstate),
+EquilibriumInclusionExchangeByChemicalPotential::EquilibriumInclusionExchangeByChemicalPotential(int period, double rate, double chemicalpotential, std::string t_name1, std::string t_name2) :
                         m_Period(period),
                         m_Rate(rate),
                         m_Mu(chemicalpotential),
                         m_TypeName_1(t_name1),
                         m_TypeName_2(t_name2),
-                        m_Beta(pstate->GetSimulation()->GetBeta()),
-                        m_DBeta(pstate->GetSimulation()->GetDBeta()),
                         m_N2(0),
                         m_N1(0)
 {
@@ -40,8 +38,10 @@ EquilibriumInclusionExchangeByChemicalPotential::EquilibriumInclusionExchangeByC
 EquilibriumInclusionExchangeByChemicalPotential::~EquilibriumInclusionExchangeByChemicalPotential() {
     
 }
-void EquilibriumInclusionExchangeByChemicalPotential::Initialize(State *pstate) {
+void EquilibriumInclusionExchangeByChemicalPotential::Initialize() {
     
+    m_Beta = &(m_pState->GetSimulation()->GetBeta());
+    m_DBeta = &(m_pState->GetSimulation()->GetDBeta());
     const std::vector<inclusion *>& pAllInclusion = m_pState->GetMesh()->GetInclusion();
     for (std::vector<inclusion *>::const_iterator it = pAllInclusion.begin() ; it != pAllInclusion.end(); ++it){
         if((*it)->m_IncType->ITName == m_TypeName_1){
@@ -129,8 +129,7 @@ bool EquilibriumInclusionExchangeByChemicalPotential::TryForOneInclusion(inclusi
     
     double diff_energy = new_energy - old_energy - chem ;
     double pre_factor = n1/(m_N - n1 + 1);
-    double U = m_Beta * diff_energy - m_DBeta;
-    
+    double U = (*m_Beta) * diff_energy - (*m_DBeta);
     //---> accept or reject the move
     if(pre_factor * exp(-U) > thermal ) {
         
@@ -170,3 +169,39 @@ std::string EquilibriumInclusionExchangeByChemicalPotential::CurrentState(){
 
     return state;
 }
+// -----------------------------------------------------------------------------
+/*
+    Static registration for EquilibriumInclusionExchangeByChemicalPotential
+    Automatically registers the class with FactoryInclusionConversionMethod
+    so it can be created dynamically from input streams.
+*/
+// -----------------------------------------------------------------------------
+
+static class EquilibriumInclusionExchangeByChemicalPotentialRegister {
+
+    // Static create function for the factory
+    static AbstractInclusionConversion* Create(std::istream& input)
+    {
+        std::string inctype1, inctype2;
+        double mu, rate;
+        int period;
+
+        input>> period>> rate>> mu>> inctype1>> inctype2;
+
+        std::string rest;
+        std::getline(input, rest); // consume remaining line
+
+        // Construct and return a new object
+        return new EquilibriumInclusionExchangeByChemicalPotential(period, rate, mu, inctype1, inctype2);
+    }
+
+public:
+    // Constructor automatically registers the class with the factory
+    EquilibriumInclusionExchangeByChemicalPotentialRegister() {
+        FactoryInclusionConversionMethod::Instance().Register(
+            "EquilibriumExchange", // string identifier for the factory
+            Create                      // the creator function
+        );
+    }
+
+} EquilibriumInclusionExchangeByChemicalPotentialRegisterObject; // static instance triggers registration

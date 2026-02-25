@@ -21,20 +21,22 @@ public:
     virtual ~ AbstractInclusionConversion(){
         
     }
-    virtual void Initialize(State *pstate) = 0;
+    virtual void Initialize() = 0;
     virtual bool Exchange(int step) = 0;
     virtual std::string CurrentState() = 0;
     virtual inline std::string GetDerivedDefaultReadName() = 0;
     
     inline static std::string GetBaseDefaultReadName() {return "InclusionConversion";}
 
-    
+    void AssignState(State* state) {
+        m_pState = state;
+    }
     
     
 protected:
     double m_NumberOfAttemptedMoves;
     double m_AcceptedMoves;
-    
+    State *m_pState = nullptr;
 };
 //---- a class for no box change
 class NoInclusionConversion : public AbstractInclusionConversion {
@@ -50,7 +52,7 @@ public:
 
 
     
-    void Initialize(State *pstate){
+    void Initialize(){
         return;
     }
     

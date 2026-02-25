@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include "ActiveTwoStateInclusion.h"
+#include "FactoryInclusionConversionMethod.h"
 #include "Nfunction.h"
 #include "State.h"
  /*
@@ -28,9 +29,8 @@ ActiveTwoStateInclusion::ActiveTwoStateInclusion(int period, double ep, double p
 {
     
 }
-void ActiveTwoStateInclusion::Initialize(State *pstate) {
+void ActiveTwoStateInclusion::Initialize() {
     
-    m_pState = pstate;
     const std::vector<inclusion *>& pAllInclusion = m_pState->GetMesh()->GetInclusion();
     for (std::vector<inclusion *>::const_iterator it = pAllInclusion.begin() ; it != pAllInclusion.end(); ++it){
         if((*it)->m_IncType->ITName == m_TypeName_1){
@@ -132,3 +132,40 @@ bool ActiveTwoStateInclusion::Exchange(int step){
     
     return true;
 }
+// -----------------------------------------------------------------------------
+/*
+    Static registration for ActiveTwoStateInclusion
+    Automatically registers the class with FactoryInclusionConversionMethod
+    so it can be created dynamically from input streams.
+*/
+// -----------------------------------------------------------------------------
+
+static class ActiveTwoStateInclusionRegister {
+
+    // Static create function for the factory
+    static AbstractInclusionConversion* Create(std::istream& input)
+    {
+        std::string inctype1, inctype2;
+        int period;
+        double ep, percentage, gamma;
+
+        // Read parameters from the input stream
+        input >> inctype1 >> inctype2 >> period >> ep >> percentage >> gamma;
+
+        std::string rest;
+        std::getline(input, rest); // consume remaining line
+
+        // Construct and return a new object
+        return new ActiveTwoStateInclusion(period, ep, percentage, gamma, inctype1, inctype2);
+    }
+
+public:
+    // Constructor automatically registers the class with the factory
+    ActiveTwoStateInclusionRegister() {
+        FactoryInclusionConversionMethod::Instance().Register(
+            "ActiveTwoStateInclusion", // string identifier for the factory
+            Create                      // the creator function
+        );
+    }
+
+} ActiveTwoStateInclusionRegisterObject; // static instance triggers registration
