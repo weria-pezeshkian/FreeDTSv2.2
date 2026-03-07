@@ -1,5 +1,6 @@
 #include "OpenEdgeEvolutionWithConstantVertex.h"
 #include "State.h"
+#include "FactoryOpenEdgeEvolutionMethod.h"
 /*
  Weria Pezeshkian (weria.pezeshkian@gmail.com)
  Copyright (c) Weria Pezeshkian
@@ -1068,4 +1069,50 @@ std::string OpenEdgeEvolutionWithConstantVertex::CurrentState(){
 
     return state;
 }
+// -----------------------------------------------------------------------------
+/*
+    Static registration for ActiveTwoStateInclusion
+    Automatically registers the class with FactoryInclusionConversionMethod
+    so it can be created dynamically from input streams.
+*/
+//
+class RegistryOpenEdgeEvolutionWithConstantVertex
+{
+public:
 
+    RegistryOpenEdgeEvolutionWithConstantVertex()
+    {
+        FactoryOpenEdgeEvolutionMethod::Instance().Register(
+            OpenEdgeEvolutionWithConstantVertex::GetDefaultReadName(),
+            Create);
+    }
+
+private:
+
+    static AbstractOpenEdgeEvolution* Create(
+        std::istream& input,
+        State* state)
+    {
+        int period = 0;
+        double rate = 0;
+
+        input >> period >> rate;
+        std::string rest;
+        std::getline(input, rest);   // consume rest of line
+        
+        return new OpenEdgeEvolutionWithConstantVertex(
+            period,
+            rate,
+            state);   // state is always last
+    }
+};
+/*
+---------------------------------------------------------------
+Static Registration Object
+---------------------------------------------------------------
+*/
+namespace
+{
+    RegistryOpenEdgeEvolutionWithConstantVertex
+        register_OpenEdgeEvolutionWithConstantVertex;
+}

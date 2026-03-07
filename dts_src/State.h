@@ -101,7 +101,6 @@
 #include "Three_Edge_Scission.h"
 //-- open edge treatment
 #include "AbstractOpenEdgeEvolution.h"
-#include "OpenEdgeEvolutionWithConstantVertex.h"
 //-- volume coupling
 #include "AbstractVolumeCoupling.h"
 //-- global curvature

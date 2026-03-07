@@ -140,32 +140,46 @@ bool ActiveTwoStateInclusion::Exchange(int step){
 */
 // -----------------------------------------------------------------------------
 
-static class ActiveTwoStateInclusionRegister {
+namespace
+{
 
-    // Static create function for the factory
+class ActiveTwoStateInclusionRegister
+{
+public:
+
+    ActiveTwoStateInclusionRegister()
+    {
+        FactoryInclusionConversionMethod::Instance().Register(
+            ActiveTwoStateInclusion::GetDefaultReadName(),
+            Create);
+    }
+
+private:
+
     static AbstractInclusionConversion* Create(std::istream& input)
     {
         std::string inctype1, inctype2;
         int period;
         double ep, percentage, gamma;
 
-        // Read parameters from the input stream
+        // Read parameters from input
         input >> inctype1 >> inctype2 >> period >> ep >> percentage >> gamma;
 
         std::string rest;
-        std::getline(input, rest); // consume remaining line
+        std::getline(input, rest);   // consume rest of line
 
-        // Construct and return a new object
-        return new ActiveTwoStateInclusion(period, ep, percentage, gamma, inctype1, inctype2);
+        return new ActiveTwoStateInclusion(
+            period,
+            ep,
+            percentage,
+            gamma,
+            inctype1,
+            inctype2);
     }
+};
 
-public:
-    // Constructor automatically registers the class with the factory
-    ActiveTwoStateInclusionRegister() {
-        FactoryInclusionConversionMethod::Instance().Register(
-            "ActiveTwoStateInclusion", // string identifier for the factory
-            Create                      // the creator function
-        );
-    }
 
-} ActiveTwoStateInclusionRegisterObject; // static instance triggers registration
+// Static instance → triggers registration at program start
+ActiveTwoStateInclusionRegister register_ActiveTwoStateInclusion;
+
+}

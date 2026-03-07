@@ -6,6 +6,7 @@
 #include "State.h"
 #include "VolumeCouplingFactory.h"
 #include "FactoryInclusionConversionMethod.h"
+#include "FactoryOpenEdgeEvolutionMethod.h"
 
 State::State(){
     
@@ -543,6 +544,35 @@ while (input >> firstword) {
                 }
             }
     // end InclusionConversion
+    // open edge treatment
+            else if(firstword == AbstractOpenEdgeEvolution::GetBaseDefaultReadName())
+            {
+                input >> str >> type;
+
+                if(type == NoEvolution::GetDefaultReadName()) {
+                    // Keep the existing NoEvolution
+                    std::getline(input, rest);
+                }
+                else{
+                    m_pOpenEdgeEvolution =
+                    FactoryOpenEdgeEvolutionMethod::Instance().Create(
+                                                                      type,
+                                                                      input,
+                                                                      this);
+                    
+                    if(!m_pOpenEdgeEvolution)
+                    {
+                        std::cout << "---> error: unknown Open Edge Evolution type: "
+                        << type << "\n";
+                        m_NumberOfErrors++;
+                        std::getline(input, rest);
+                        return false;
+                    }
+                    
+                }
+            }
+    // end open edge treatment
+    
 //-----  start BondedPotentialBetweenVertices
         else if(firstword == AbstractBondedPotentialBetweenVertices::GetBaseDefaultReadName())   { // BondedPotentialBetweenVertices
             input >> str >> type;
@@ -692,28 +722,6 @@ while (input >> firstword) {
             getline(input, rest);
         }
 // end dynamic box
-// open edge treatment
-        else if(firstword == AbstractOpenEdgeEvolution::GetBaseDefaultReadName()){ // "OpenEdgeEvolution"
-            
-            // OpenEdgeEvolution =  EvolutionWithConstantVertex period rate
-            input >> str >> type;
-            if (type == OpenEdgeEvolutionWithConstantVertex::GetDefaultReadName()) { // "EvolutionWithConstantVertex"
-                int period = 0;
-                double rate = 0;
-                input >>  period>> rate;
-                m_pOpenEdgeEvolution = new OpenEdgeEvolutionWithConstantVertex(period, rate, this);
-            }
-            else if(type == NoEvolution::GetDefaultReadName()){
-                
-            }
-            else {
-                
-                std::cout<<"---> error: unknown Open Edge Evolution type: "<<type<<"\n";
-            }
-            getline(input,rest);
-
-        }
-// end open edge treatment
         else if(firstword == AbstractDynamicTopology::GetBaseDefaultReadName()){
             input >> str >> type;
             if (type == Three_Edge_Scission::GetDefaultReadName() ) {
