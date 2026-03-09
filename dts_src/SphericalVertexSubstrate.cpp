@@ -1,5 +1,5 @@
 #include "SphericalVertexSubstrate.h"
-
+#include "FactoryVertexAdhesionToSubstrateMethod.h"
 
 SphericalVertexSubstrate::SphericalVertexSubstrate(std::string datastream) {
 
@@ -32,3 +32,30 @@ std::string SphericalVertexSubstrate::CurrentState(){
     state += " "+Nfunction::D2S(m_AdhesionStrength) +" "+ Nfunction::D2S(m_Radius)+" "+ Nfunction::D2S(m_Center(0))+" "+ Nfunction::D2S(m_Center(1))+" "+ Nfunction::D2S(m_Center(2));
     return state;
 }
+namespace
+{
+
+class SphericalVertexSubstrateRegister
+{
+public:
+    SphericalVertexSubstrateRegister()
+    {
+        // Use static function to get the name
+        FactoryVertexAdhesionToSubstrateMethod::Instance().Register(
+        SphericalVertexSubstrate::GetDefaultReadName(),
+            Create);
+    }
+
+private:
+    static AbstractVertexAdhesionToSubstrate* Create(std::istream& input)
+    {
+        std::string rest;
+        std::getline(input, rest);  // read the rest of the line
+        return new SphericalVertexSubstrate(rest);
+    }
+};
+
+// Static instance → triggers registration at program start
+SphericalVertexSubstrateRegister register_SphericalVertexSubstrate;
+
+} // anonymous namespace

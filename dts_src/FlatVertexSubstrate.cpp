@@ -1,4 +1,5 @@
 #include "FlatVertexSubstrate.h"
+#include "FactoryVertexAdhesionToSubstrateMethod.h"
 
 
 FlatVertexSubstrate::FlatVertexSubstrate(std::string datastream) {
@@ -41,3 +42,30 @@ std::string FlatVertexSubstrate::CurrentState(){
     state += " "+Nfunction::D2S(m_AdhesionStrength) +" "+ Nfunction::D2S(m_Z);
     return state;
 }
+namespace
+{
+
+class FlatVertexSubstrateRegister
+{
+public:
+    FlatVertexSubstrateRegister()
+    {
+        // Use static function to get the name
+        FactoryVertexAdhesionToSubstrateMethod::Instance().Register(
+            FlatVertexSubstrate::GetDefaultReadName(),
+            Create);
+    }
+
+private:
+    static AbstractVertexAdhesionToSubstrate* Create(std::istream& input)
+    {
+        std::string rest;
+        std::getline(input, rest);  // read the rest of the line
+        return new FlatVertexSubstrate(rest);
+    }
+};
+
+// Static instance → triggers registration at program start
+FlatVertexSubstrateRegister register_FlatVertexSubstrate;
+
+} // anonymous namespace

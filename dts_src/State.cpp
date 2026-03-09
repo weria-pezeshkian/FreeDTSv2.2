@@ -7,7 +7,7 @@
 #include "VolumeCouplingFactory.h"
 #include "FactoryInclusionConversionMethod.h"
 #include "FactoryOpenEdgeEvolutionMethod.h"
-
+#include "FactoryVertexAdhesionToSubstrateMethod.h"
 State::State(){
     
 }
@@ -850,7 +850,31 @@ while (input >> firstword) {
             getline(input,rest);
 
         }
-        else if(firstword == AbstractVertexAdhesionToSubstrate::GetBaseDefaultReadName() ) { // "ConstantField"
+        else if(firstword == AbstractVertexAdhesionToSubstrate::GetBaseDefaultReadName())
+        {
+            input >> str >> type;
+
+            if(type == "No")
+            {
+                getline(input, rest);
+                return true;
+            }
+
+            delete m_pVertexAdhesionToSubstrate;
+
+            m_pVertexAdhesionToSubstrate =
+                FactoryVertexAdhesionToSubstrateMethod::Instance()
+                    .Create(type, input);
+
+            if(!m_pVertexAdhesionToSubstrate)
+            {
+                std::cout << "unknown AdhesionToSubstrate method: " << type << "\n";
+                m_NumberOfErrors++;
+                getline(input, rest);
+                return false;
+            }
+        }
+        /*else if(firstword == AbstractVertexAdhesionToSubstrate::GetBaseDefaultReadName() ) { // "ConstantField"
             
             input >> str >> type;
             if(type == SphericalVertexSubstrate::GetDefaultReadName() ){
@@ -874,7 +898,7 @@ while (input >> firstword) {
             }
 
 
-        }
+        }*/
 //-------
         else if( firstword == "MC_Moves" ) {
             
