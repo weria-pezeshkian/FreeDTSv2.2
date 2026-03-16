@@ -6,7 +6,7 @@
 # University of Copenhagen
 
 cd dts_src
-g++ -c -O3 -std=c++11 *.cpp
+g++ -c -O3 -std=c++17 *.cpp
 g++ -o DTS *.o
 mv DTS ../
 cd ..
