@@ -98,7 +98,6 @@
 #include "BoxSizeCouplingToHarmonicPotentialAnisotropic.h"
 //-- dynamic topology
 #include "AbstractDynamicTopology.h"
-#include "Three_Edge_Scission.h"
 //-- open edge treatment
 #include "AbstractOpenEdgeEvolution.h"
 //-- volume coupling

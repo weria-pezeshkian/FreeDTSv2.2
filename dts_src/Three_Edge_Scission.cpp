@@ -5,7 +5,7 @@
 #include "Three_Edge_Scission.h"
 #include "State.h"
 #include "MESH.h"
-
+#include "FactoryDynamicTopologyMethod.h"
 /*
  Weria Pezeshkian (weria.pezeshkian@gmail.com)
  Copyright (c) Weria Pezeshkian
@@ -1026,3 +1026,47 @@ std::string Three_Edge_Scission::CurrentState(){
      (m_pState->GetEnergyCalculator())->TwoInclusionsInteractionEnergy(*it);
  }
  */
+/*
+    Static registration for Three_Edge_Scission
+    Automatically registers the class with FactoryDynamicTopologyMethod
+    so it can be created dynamically from input streams.
+*/
+//
+class RegistryThree_Edge_Scission
+{
+public:
+
+    RegistryThree_Edge_Scission()
+    {
+        FactoryDynamicTopologyMethod::Instance().Register(
+            Three_Edge_Scission::GetDefaultReadName(),
+            Create);
+    }
+
+private:
+
+    static AbstractDynamicTopology* Create(
+        std::istream& input,
+        State* state)
+    {
+        int period = 0;
+        input >>  period;
+        
+        std::string rest;
+        std::getline(input, rest);   // consume rest of line
+        
+        return new Three_Edge_Scission(
+            period,
+            state);   // state is always last
+    }
+};
+/*
+---------------------------------------------------------------
+Static Registration Object
+---------------------------------------------------------------
+*/
+namespace
+{
+    RegistryThree_Edge_Scission
+        register_Three_Edge_Scission;
+}

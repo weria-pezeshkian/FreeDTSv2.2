@@ -31,7 +31,8 @@ public:
     virtual inline std::string GetDerivedDefaultReadName() {return "";}
     inline static std::string GetBaseDefaultReadName() {return "DynamicTopology";}
     inline static std::string GetErrorMessage(std::string s) {
-        return "---> error: unknown topology change type -- \n";
+        s =  "---> error: unknown dynamic topology method: <" + s + ">\n" ;
+        return s;
     }
 protected:
     double m_NumberOfAttemptedMoves;

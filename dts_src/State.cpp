@@ -8,6 +8,7 @@
 #include "FactoryInclusionConversionMethod.h"
 #include "FactoryOpenEdgeEvolutionMethod.h"
 #include "FactoryVertexAdhesionToSubstrateMethod.h"
+#include "FactoryDynamicTopologyMethod.h"
 State::State(){
     
 }
@@ -572,7 +573,30 @@ while (input >> firstword) {
                 }
             }
     // end open edge treatment
-    
+                else if(firstword == AbstractDynamicTopology::GetBaseDefaultReadName()){
+                input >> str >> type;
+                
+                if(type == ConstantTopology::GetDefaultReadName()) {
+                    // Keep the existing ConstantTopology
+                    std::getline(input, rest);
+                }
+                else{
+                    m_pDynamicTopology =
+                    FactoryDynamicTopologyMethod::Instance().Create(
+                                                                    type,
+                                                                    input,
+                                                                    this);
+                    
+                    if(!m_pDynamicTopology)
+                    {
+                        std::cout<<AbstractDynamicTopology::GetErrorMessage(type);
+                        m_NumberOfErrors++;
+                        std::getline(input, rest);
+                        return false;
+                    }
+                    
+                }
+            }
 //-----  start BondedPotentialBetweenVertices
         else if(firstword == AbstractBondedPotentialBetweenVertices::GetBaseDefaultReadName())   { // BondedPotentialBetweenVertices
             input >> str >> type;
@@ -717,24 +741,6 @@ while (input >> firstword) {
                 m_NumberOfErrors++;
                 return false;
 
-            }
-            // Consume remaining input line
-            getline(input, rest);
-        }
-// end dynamic box
-        else if(firstword == AbstractDynamicTopology::GetBaseDefaultReadName()){
-            input >> str >> type;
-            if (type == Three_Edge_Scission::GetDefaultReadName() ) {
-                int period = 0;
-                input >>  period;
-
-                m_pDynamicTopology = new Three_Edge_Scission(period, this);
-            }
-            else if(type == ConstantTopology::GetDefaultReadName()){
-                m_pDynamicTopology = new ConstantTopology;
-            }
-            else{
-                std::cout<<AbstractDynamicTopology::GetErrorMessage(type);
             }
             // Consume remaining input line
             getline(input, rest);

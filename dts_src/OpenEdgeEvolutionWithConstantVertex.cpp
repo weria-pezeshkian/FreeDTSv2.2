@@ -1071,8 +1071,8 @@ std::string OpenEdgeEvolutionWithConstantVertex::CurrentState(){
 }
 // -----------------------------------------------------------------------------
 /*
-    Static registration for ActiveTwoStateInclusion
-    Automatically registers the class with FactoryInclusionConversionMethod
+    Static registration for OpenEdgeEvolutionWithConstantVertex
+    Automatically registers the class with FactoryOpenEdgeEvolutionMethod
     so it can be created dynamically from input streams.
 */
 //
