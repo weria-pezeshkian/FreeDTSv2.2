@@ -36,6 +36,7 @@ public:
     double TwoVectorFieldInteractionEnergy(int vf_layer, links * p_edge);
     double CalculateVectorFieldMembraneBindingEnergy(VectorField* p_vf, vertex *p_vertex);
     double CalculateVectorFieldMembraneBindingEnergy(vertex *p_vertex);
+
 private:
     double SurfVertexBendingAndStretchingEnergy(vertex * pver);
     double EdgeVertexBendingAndStretchingEnergy(vertex * pver);

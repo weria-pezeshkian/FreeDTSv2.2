@@ -1,4 +1,4 @@
-#include "OpenEdgeEvolutionWithConstantVertex.h"
+#include "OpenSurfacePhoenixWithConstantVertexAtEquilibrium.h"
 #include "State.h"
 #include "FactoryOpenEdgeEvolutionMethod.h"
 /*
@@ -14,7 +14,7 @@
  
  */
 
-OpenEdgeEvolutionWithConstantVertex::OpenEdgeEvolutionWithConstantVertex(int period, double rate, State *pState ) :
+OpenSurfacePhoenixWithConstantVertexAtEquilibrium::OpenSurfacePhoenixWithConstantVertexAtEquilibrium(int period, double rate, State *pState ) :
                                                     m_pState(pState),
                                                     m_pEdgeL(pState->GetMesh()->GetEdgeL()),
                                                     m_pGhostL(pState->GetMesh()->GetGhostL()),
@@ -36,10 +36,10 @@ OpenEdgeEvolutionWithConstantVertex::OpenEdgeEvolutionWithConstantVertex(int per
 {
     m_EdgeSize = m_pEdgeL.size();
 }
-OpenEdgeEvolutionWithConstantVertex::~OpenEdgeEvolutionWithConstantVertex(){
+OpenSurfacePhoenixWithConstantVertexAtEquilibrium::~OpenSurfacePhoenixWithConstantVertexAtEquilibrium(){
     
 }
-void OpenEdgeEvolutionWithConstantVertex::Initialize(){
+void OpenSurfacePhoenixWithConstantVertexAtEquilibrium::Initialize(){
     
     m_pBox = m_pState->GetMesh()->GetBox();
     m_pMesh = m_pState->GetMesh();
@@ -50,22 +50,24 @@ void OpenEdgeEvolutionWithConstantVertex::Initialize(){
 
     return;
 }
-bool OpenEdgeEvolutionWithConstantVertex::Move(int step) {
+bool OpenSurfacePhoenixWithConstantVertexAtEquilibrium::Move(int step) {
+
 
     if(step % m_Period != 0 || m_pEdgeL.size() == 0 )
         return false;
    
-    int N = m_pEdgeL.size();
-    N = int(m_NumberOfMovePerStep*double(N));
-    for (int i = 0; i< N ;i++) {
+    for (int i = 0; i< m_NumberOfMovePerStep ;i++) {
 
         if(m_pEdgeL.size() == 0 )
             break;
+        
         if(MCAttemptedToAddALink()){
             m_AcceptedMoves++;
+
         }
         if(MCAttemptedToRemoveALink()){
             m_AcceptedMoves++;
+
         }
         m_NumberOfAttemptedMoves++;
         m_NumberOfAttemptedMoves++;
@@ -74,7 +76,7 @@ bool OpenEdgeEvolutionWithConstantVertex::Move(int step) {
 
     return true;
 }
-bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToRemoveALink(){
+bool OpenSurfacePhoenixWithConstantVertexAtEquilibrium::MCAttemptedToRemoveALink(){
     
     
     if( m_pEdgeL.size() == 0 )
@@ -162,18 +164,18 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToRemoveALink(){
         bool inc_direction = true;
         bool vf_direction = true;
             if(v1->VertexOwnInclusion()){
-                inc_direction = v1->GetInclusion()->UpdateLocalDirectionFromGlobal();
+                inc_direction &= v1->GetInclusion()->UpdateLocalDirectionFromGlobal();
             }
             if(v2->VertexOwnInclusion()){
-                inc_direction = v2->GetInclusion()->UpdateLocalDirectionFromGlobal();
+                inc_direction &= v2->GetInclusion()->UpdateLocalDirectionFromGlobal();
             }
             if(v3->VertexOwnInclusion()){
-                inc_direction = v3->GetInclusion()->UpdateLocalDirectionFromGlobal();
+                inc_direction &= v3->GetInclusion()->UpdateLocalDirectionFromGlobal();
             }
         // update local from global for vector fields
-        vf_direction = v1->UpdateVFLocalDirectionFromGlobalDirection();
-        vf_direction = v2->UpdateVFLocalDirectionFromGlobalDirection();
-        vf_direction = v3->UpdateVFLocalDirectionFromGlobalDirection();
+        vf_direction &= v1->UpdateVFLocalDirectionFromGlobalDirection();
+        vf_direction &= v2->UpdateVFLocalDirectionFromGlobalDirection();
+        vf_direction &= v3->UpdateVFLocalDirectionFromGlobalDirection();
     
     // if local could not be updated from global
         if(!vf_direction || !inc_direction){
@@ -308,12 +310,13 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToRemoveALink(){
     return true; // MCAttemptedToRemoveALink(){
 } // MCAttemptedToRemoveALink(){
 
-bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
+bool OpenSurfacePhoenixWithConstantVertexAtEquilibrium::MCAttemptedToAddALink(){
     
     // an atempt to create a link                       //       v3
                                                         //      /   \
                                                       //     v1-----v2
-    
+
+
     
     bool ClosingAHole = false; // a flag to check if v2-1 link exist, so this means the chosen hole will be closed
     
@@ -401,6 +404,7 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
         eold += 2 * (v1->m_pPrecedingEdgeLink)->GetVFIntEnergy();
     }
 
+
     // create a link (this also updates the gemotry)
     // Only one of these two will be valid
     links *newlink;
@@ -419,18 +423,18 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
     bool inc_direction = true;
     bool vf_direction = true;
         if(v1->VertexOwnInclusion()){
-            inc_direction = v1->GetInclusion()->UpdateLocalDirectionFromGlobal();
+            inc_direction &= v1->GetInclusion()->UpdateLocalDirectionFromGlobal();
         }
         if(v2->VertexOwnInclusion()){
-            inc_direction = v2->GetInclusion()->UpdateLocalDirectionFromGlobal();
+            inc_direction &= v2->GetInclusion()->UpdateLocalDirectionFromGlobal();
         }
         if(v3->VertexOwnInclusion()){
-            inc_direction = v3->GetInclusion()->UpdateLocalDirectionFromGlobal();
+            inc_direction &= v3->GetInclusion()->UpdateLocalDirectionFromGlobal();
         }
     // update local from global for vector fields
-    vf_direction = v1->UpdateVFLocalDirectionFromGlobalDirection();
-    vf_direction = v2->UpdateVFLocalDirectionFromGlobalDirection();
-    vf_direction = v3->UpdateVFLocalDirectionFromGlobalDirection();
+    vf_direction &= v1->UpdateVFLocalDirectionFromGlobalDirection();
+    vf_direction &= v2->UpdateVFLocalDirectionFromGlobalDirection();
+    vf_direction &= v3->UpdateVFLocalDirectionFromGlobalDirection();
 
 // if local could not be updated from global
     if(!vf_direction || !inc_direction){
@@ -504,6 +508,7 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
     double diff_energy = enew - eold;
     double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
 
+
     if(exp(-m_Beta  *diff_energy + m_DBeta ) > thermal ) {
         
         m_pState->GetEnergyCalculator()->AddToTotalEnergy(diff_energy);
@@ -571,7 +576,7 @@ bool OpenEdgeEvolutionWithConstantVertex::MCAttemptedToAddALink(){
 // an atempt to create a link                       //        v3                      v3
 // between v1 and v2                                // ml3  /   \  ml2---> ml3,l3  // T \\  l2, ml2   ml3(v1,v3)  ml2(v3,v2)
                                                   //     v1      v2               v1---->v2
-links* OpenEdgeEvolutionWithConstantVertex::CreateALink(vertex *v1) {           //     l1
+links* OpenSurfacePhoenixWithConstantVertexAtEquilibrium::CreateALink(vertex *v1) {           //     l1
 // l1 will be created and
     
     if(m_pGhostT.size()<1 && m_pGhostL.size()<3){
@@ -624,7 +629,7 @@ links* OpenEdgeEvolutionWithConstantVertex::CreateALink(vertex *v1) {           
     m_pGhostL.erase(m_pGhostL.begin());   // three times for l1,l2,l1
     m_pGhostL.erase(m_pGhostL.begin());   // three times for l1,l2,l1
     m_pGhostL.erase(m_pGhostL.begin());    // three times for l1,l2,l1
-    AddtoLinkList(l1, m_pEdgeL);
+    AddtoLinkList(l1, m_pEdgeL);          // l1 is the created link
     AddtoLinkList(l1, m_pActiveL);
     AddtoLinkList(l2, m_pActiveL);
     AddtoLinkList(l3, m_pActiveL);
@@ -672,7 +677,7 @@ links* OpenEdgeEvolutionWithConstantVertex::CreateALink(vertex *v1) {           
 //         v3                    v3
 //  l3  // T1 \\ l2  -->  ml3  /   \  ml2
 //      v1-l1- v2             v1    v2
-bool OpenEdgeEvolutionWithConstantVertex::KillALink(links *l1)
+bool OpenSurfacePhoenixWithConstantVertexAtEquilibrium::KillALink(links *l1)
 {
         triangle *tri = l1->GetTriangle();
         vertex *v1 = l1->GetV1();
@@ -747,9 +752,8 @@ bool OpenEdgeEvolutionWithConstantVertex::KillALink(links *l1)
 // using v1                                          // l3   /   \ l2  -->  // T \\
                                                   //       v1---v2        v1 ====v2
                                                     //        l1
-triangle* OpenEdgeEvolutionWithConstantVertex::CloseATriangleHole(vertex *v1)
+triangle* OpenSurfacePhoenixWithConstantVertexAtEquilibrium::CloseATriangleHole(vertex *v1)
 {
-
 
     links* l1 = v1->m_pEdgeLink;
     vertex *v2 = l1->GetV2();
@@ -763,13 +767,13 @@ triangle* OpenEdgeEvolutionWithConstantVertex::CloseATriangleHole(vertex *v1)
         exit(0);
     }
 
-//-- new triangle and links that need to be created.
-    links *ml1 = m_pGhostL[0];
-    links *ml2 = m_pGhostL[1];
-    links *ml3 = m_pGhostL[2];
-    triangle *outtriangle = m_pGhostT[0];
+//-- new triangle and links that need to be derived from the ghost containor
+    // 3. Acquire resources (O(1) operations)
+    links *ml1 = m_pGhostL.back(); m_pGhostL.pop_back();
+    links *ml2 = m_pGhostL.back(); m_pGhostL.pop_back();
+    links *ml3 = m_pGhostL.back(); m_pGhostL.pop_back();
+    triangle *outtriangle = m_pGhostT.back(); m_pGhostT.pop_back();
 //-- build the new triangle
-    m_pGhostT.erase(m_pGhostT.begin());
     AddtoTriangleList(outtriangle,m_pActiveT);
     // this trinagle is made of v1, v2 and v3 but aniwise
     outtriangle->UpdateVertex(v2,v1,v3);
@@ -782,10 +786,6 @@ triangle* OpenEdgeEvolutionWithConstantVertex::CloseATriangleHole(vertex *v1)
     ml2->UpdateTriangle(outtriangle);
     ml3->UpdateTriangle(outtriangle);
 //-- build the ml links
-    //-- removing from ghost containers
-    m_pGhostL.erase(m_pGhostL.begin());  // rm ml1
-    m_pGhostL.erase(m_pGhostL.begin());  // rm ml2
-    m_pGhostL.erase(m_pGhostL.begin());  // rm ml3
     //--add ml links to active
     AddtoLinkList(ml1,m_pActiveL);
     AddtoLinkList(ml2,m_pActiveL);
@@ -875,7 +875,7 @@ triangle* OpenEdgeEvolutionWithConstantVertex::CloseATriangleHole(vertex *v1)
                                                          //          l1
 
 // this function kills target_triangle and the assosciated links l1,l2,l3. It send them to the ghost area
-bool OpenEdgeEvolutionWithConstantVertex::KillATriangle(links *l1){
+bool OpenSurfacePhoenixWithConstantVertexAtEquilibrium::KillATriangle(links *l1){
 //=== note: the mirror will be killed not l1,
     // this are the objects that will be killed
     links *ml1 = l1->GetMirrorLink();
@@ -958,40 +958,7 @@ bool OpenEdgeEvolutionWithConstantVertex::KillATriangle(links *l1){
 
     return true;
 }
-double  OpenEdgeEvolutionWithConstantVertex::SystemEnergy() {
-    double en = 0;
-    /*
-    std::vector<vertex *> ActiveV =  m_pSurfV;
-    std::vector<triangle *> pActiveT =  m_pActiveT;
-    std::vector<links *> mLink =  m_pHL;
-    std::vector<links *>  pEdgeL =  m_pEdgeL;
-    std::vector<vertex *> EdgeV  =  m_pEdgeV;
-    
-
-    for (std::vector<triangle *>::iterator it = pActiveT.begin() ; it != pActiveT.end(); ++it)
-        (*it)->UpdateNormal_Area(m_pBox);
-    
-    
-    for (std::vector<links *>::iterator it = ( m_pHL).begin() ; it != ( m_pHL).end(); ++it){
-        (*it)->UpdateNormal();
-        (*it)->UpdateShapeOperator(m_pBox);
-    }
-    
-    for (std::vector<vertex *>::iterator it = ( m_pSurfV).begin() ; it != ( m_pSurfV).end(); ++it)
-        (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(*it);
-
-    //====== edge links should be updated
-    for (std::vector<links *>::iterator it = pEdgeL.begin() ; it != pEdgeL.end(); ++it)
-            (*it)->UpdateEdgeVector(m_pBox);
-
-    for (std::vector<vertex *>::iterator it = EdgeV.begin() ; it != EdgeV.end(); ++it)
-            (m_pState->GetCurvatureCalculator())->UpdateEdgeVertexCurvature(*it);
-    
-    en = m_pState->GetEnergyCalculator()->CalculateAllLocalEnergy();
-    */
-    return en;
-}
-bool OpenEdgeEvolutionWithConstantVertex::Linkisvalid(vertex *v1) {
+bool OpenSurfacePhoenixWithConstantVertexAtEquilibrium::Linkisvalid(vertex *v1) {
     // Check if the new link length is within the allowed range and if the angle of the new triangle
     // is acceptable with respect to the two other triangles.
     //           va -- v3----vb
@@ -1037,34 +1004,52 @@ bool OpenEdgeEvolutionWithConstantVertex::Linkisvalid(vertex *v1) {
     
     return true;
 }
-void OpenEdgeEvolutionWithConstantVertex::RemoveFromLinkList(links* z, std::vector<links*> &vect)
+void OpenSurfacePhoenixWithConstantVertexAtEquilibrium::RemoveFromLinkList(links* z, std::vector<links*> &vect)
 {
-    vect.erase(std::remove(vect.begin(), vect.end(), z), vect.end());
-}
-void OpenEdgeEvolutionWithConstantVertex::RemoveFromVertexList(vertex* z, std::vector<vertex*> &vect)
-{
+    auto it = std::find(vect.begin(), vect.end(), z);
 
-    vect.erase(std::remove(vect.begin(), vect.end(), z), vect.end());
+    if (it != vect.end())
+    {
+        *it = vect.back();
+        vect.pop_back();
+    }
 }
-void OpenEdgeEvolutionWithConstantVertex::RemoveFromTriangleList(triangle* z, std::vector<triangle*> &vect)
+void OpenSurfacePhoenixWithConstantVertexAtEquilibrium::RemoveFromVertexList(vertex* z, std::vector<vertex*> &vect)
 {
-
-    vect.erase(std::remove(vect.begin(), vect.end(), z), vect.end());
+    
+    auto it = std::find(vect.begin(), vect.end(), z);
+    
+    if (it != vect.end())
+    {
+        *it = vect.back();
+        vect.pop_back();
+    }
+}
+void OpenSurfacePhoenixWithConstantVertexAtEquilibrium::RemoveFromTriangleList(triangle* z, std::vector<triangle*> &vect)
+{
+    
+    auto it = std::find(vect.begin(), vect.end(), z);
+    
+    if (it != vect.end())
+    {
+        *it = vect.back();
+        vect.pop_back();
+    }
 }
 // this can be written as template
-void OpenEdgeEvolutionWithConstantVertex::AddtoLinkList(links* z, std::vector<links*> &vect)
+void OpenSurfacePhoenixWithConstantVertexAtEquilibrium::AddtoLinkList(links* z, std::vector<links*> &vect)
 {
     vect.push_back(z);
 }
-void OpenEdgeEvolutionWithConstantVertex::AddtoVertexList(vertex* z, std::vector<vertex*> &vect)
+void OpenSurfacePhoenixWithConstantVertexAtEquilibrium::AddtoVertexList(vertex* z, std::vector<vertex*> &vect)
 {
     vect.push_back(z);
 }
-void OpenEdgeEvolutionWithConstantVertex::AddtoTriangleList(triangle* z, std::vector<triangle*> &vect)
+void OpenSurfacePhoenixWithConstantVertexAtEquilibrium::AddtoTriangleList(triangle* z, std::vector<triangle*> &vect)
 {
     vect.push_back(z);
 }
-std::string OpenEdgeEvolutionWithConstantVertex::CurrentState(){
+std::string OpenSurfacePhoenixWithConstantVertexAtEquilibrium::CurrentState(){
     
     std::string state = AbstractOpenEdgeEvolution::GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
     state = state + +" "+ Nfunction::D2S(m_Period) +" "+ Nfunction::D2S(m_NumberOfMovePerStep);
@@ -1073,19 +1058,19 @@ std::string OpenEdgeEvolutionWithConstantVertex::CurrentState(){
 }
 // -----------------------------------------------------------------------------
 /*
-    Static registration for OpenEdgeEvolutionWithConstantVertex
+    Static registration for OpenSurfacePhoenixWithConstantVertexAtEquilibrium
     Automatically registers the class with FactoryOpenEdgeEvolutionMethod
     so it can be created dynamically from input streams.
 */
 //
-class RegistryOpenEdgeEvolutionWithConstantVertex
+class RegistryOpenSurfacePhoenixWithConstantVertexAtEquilibrium
 {
 public:
 
-    RegistryOpenEdgeEvolutionWithConstantVertex()
+    RegistryOpenSurfacePhoenixWithConstantVertexAtEquilibrium()
     {
         FactoryOpenEdgeEvolutionMethod::Instance().Register(
-            OpenEdgeEvolutionWithConstantVertex::GetDefaultReadName(),
+            OpenSurfacePhoenixWithConstantVertexAtEquilibrium::GetDefaultReadName(),
             Create);
     }
 
@@ -1102,7 +1087,7 @@ private:
         std::string rest;
         std::getline(input, rest);   // consume rest of line
         
-        return new OpenEdgeEvolutionWithConstantVertex(
+        return new OpenSurfacePhoenixWithConstantVertexAtEquilibrium(
             period,
             rate,
             state);   // state is always last
@@ -1115,6 +1100,6 @@ Static Registration Object
 */
 namespace
 {
-    RegistryOpenEdgeEvolutionWithConstantVertex
-        register_OpenEdgeEvolutionWithConstantVertex;
+    RegistryOpenSurfacePhoenixWithConstantVertexAtEquilibrium
+        register_OpenSurfacePhoenixWithConstantVertexAtEquilibrium;
 }
