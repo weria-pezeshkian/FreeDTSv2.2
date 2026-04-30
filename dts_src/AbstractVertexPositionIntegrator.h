@@ -33,6 +33,11 @@ public:
     
     inline static std::string GetBaseDefaultReadName() {return "VertexPositionIntegrator";}
     
+    inline static std::string GetRegistryError(std::string type) {
+        std::string txt = "---> error: unknown method for vertex move: " + type;
+        return txt;
+    }
+
     //---- update
     void UpdateFreezGroupName(std::string name_freezgroup){
         m_FreezGroupName = name_freezgroup;

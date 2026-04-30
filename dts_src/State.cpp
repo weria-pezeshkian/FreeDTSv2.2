@@ -9,6 +9,8 @@
 #include "FactoryOpenEdgeEvolutionMethod.h"
 #include "FactoryVertexAdhesionToSubstrateMethod.h"
 #include "FactoryDynamicTopologyMethod.h"
+#include "FactoryVertexPositionIntegrator.h"
+
 State::State(){
     
 }
@@ -379,37 +381,6 @@ while (input >> firstword) {
             getline(input,rest);
         }
 //---- End Visualization file
-//---- position update
-        else if(firstword == AbstractVertexPositionIntegrator::GetBaseDefaultReadName()) {
-            input>>str>>type;
-            if(type == EvolveVerticesByMetropolisAlgorithm::GetDefaultReadName()){  // MetropolisAlgorithm
-                double rate_surf,rate_edge,dr;
-                input >> rate_surf >> rate_edge >> dr;
-                m_pVertexPositionIntegrator = new EvolveVerticesByMetropolisAlgorithm(this, rate_surf, rate_edge, dr);
-            }
-            else if(type == EvolveVerticesByKineticMonteCarlo::GetDefaultReadName()){  // KineticMonteCarlo
-                double Dv,dt;
-                input >>  Dv >> dt;
-                m_pVertexPositionIntegrator = new EvolveVerticesByKineticMonteCarlo(this, Dv, dt);
-            }
-           else if (type == EvolveVerticesByMetropolisAlgorithmWithOpenMPType1::GetDefaultReadName()){  // MetropolisAlgorithmWithOpenMPType1
-               double rate_surf,rate_edge,dr;
-               input >> rate_surf >> rate_edge >> dr;
-#ifdef _OPENMP
-               m_pVertexPositionIntegrator = new EvolveVerticesByMetropolisAlgorithmWithOpenMPType1(this, rate_surf, rate_edge, dr);
-#else
-               std::cout<<"---> warnning: OpenMP was not detected, we will use the serial code "<<type<<"\n";
-               m_pVertexPositionIntegrator = new EvolveVerticesByMetropolisAlgorithm(this, rate_surf, rate_edge, dr);
-#endif
-            }
-            else{
-                std::cout<<"---> error: unknown method for vertex move "<<type<<"\n";
-                m_NumberOfErrors++;
-                return false;
-            }
-            getline(input,rest);
-        }
-//---- end //
 //---- AlexanderMove
         else if(firstword == AbstractAlexanderMove::GetBaseDefaultReadName()) {
                 input>>str>>type;
@@ -573,6 +544,26 @@ while (input >> firstword) {
                 }
             }
     // end open edge treatment
+    //---- position update
+
+            else if(firstword == AbstractVertexPositionIntegrator::GetBaseDefaultReadName()) {
+                if (!(input >> str >> type)) {
+                    std::cerr << "---> Failed to read from input file (id 292838) \n";
+                    ++m_NumberOfErrors;
+                    return false;
+                }
+
+                m_pVertexPositionIntegrator =
+                FactoryVertexPositionIntegrator::Instance().Create(type,input,this);
+                if(!m_pVertexPositionIntegrator) {
+                    std::cerr<<AbstractVertexPositionIntegrator::GetRegistryError(type)<<std::endl;
+                    ++m_NumberOfErrors;
+                    return false;
+                }
+            }
+    //---- end position update //
+    
+    //
                 else if(firstword == AbstractDynamicTopology::GetBaseDefaultReadName()){
                 input >> str >> type;
                 

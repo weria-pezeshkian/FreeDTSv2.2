@@ -8,6 +8,7 @@
 #endif
 #include "EvolveVerticesByMetropolisAlgorithmWithOpenMPType1.h"
 #include "State.h"
+#include "FactoryVertexPositionIntegrator.h"
 
 EvolveVerticesByMetropolisAlgorithmWithOpenMPType1::EvolveVerticesByMetropolisAlgorithmWithOpenMPType1(State *pState)
     : m_pState(pState),
@@ -622,6 +623,58 @@ std::vector<links*> EvolveVerticesByMetropolisAlgorithmWithOpenMPType1::GetEdges
     
     return edge_with_interaction_change;
 }
+namespace
+{
+#ifdef _OPENMP
 
+    AbstractVertexPositionIntegrator* Create_VerPosMC_OpenMPType1(
+        std::istream& input,
+        State* state)
+    {
+        double rate_surf = 0.0;
+        double rate_edge = 0.0;
+        double dr = 0.0;
 
+        if (!(input >> rate_surf >> rate_edge >> dr)) {
+            return nullptr;
+        }
+
+        std::string rest;
+        std::getline(input, rest);
+
+        return new EvolveVerticesByMetropolisAlgorithmWithOpenMPType1(
+            state,
+            rate_surf,
+            rate_edge,
+            dr
+        );
+    }
+
+#else
+
+    // Stub: OpenMP not available
+    AbstractVertexPositionIntegrator* Create_VerPosMC_OpenMPType1(
+        std::istream&,
+        State*)
+    {
+        std::cerr
+            << "Error: '"
+            << EvolveVerticesByMetropolisAlgorithmWithOpenMPType1::GetDefaultReadName()
+            << "' requires OpenMP, but this build does not support it.\n"
+            << "' you can just change to the single thread algorithm .\n";
+
+        return nullptr;
+    }
+
+#endif
+
+    const bool registered = []()
+    {
+        FactoryVertexPositionIntegrator::Instance().Register(
+            EvolveVerticesByMetropolisAlgorithmWithOpenMPType1::GetDefaultReadName(),
+            &Create_VerPosMC_OpenMPType1
+        );
+        return true;
+    }();
+}
 

@@ -1,10 +1,37 @@
 #if !defined(AFX_CouplingTotalAreaToHarmonicPotential_H_334B21B8_C13C_2248_BF23_124095086233__INCLUDED_)
 #define AFX_CouplingTotalAreaToHarmonicPotential_H_334B21B8_C13C_2248_BF23_124095086233__INCLUDED_
 /*
- Weria Pezeshkian (weria.pezeshkian@gmail.com)
- Copyright (c) Weria Pezeshkian
- this class try to force the membrane area to a targeted size
-*/
+ * CouplingTotalAreaToHarmonicPotential.h
+ *
+ * Author: Weria Pezeshkian (weria.pezeshkian@gmail.com)
+ * Copyright (c) Weria Pezeshkian
+ *
+ * Description:
+ * This class implements a harmonic potential-based coupling that constrains
+ * the total membrane surface area toward a target (reference) area.
+ *
+ * The energy contribution penalizes deviations of the system's total area
+ * from the preferred value using a quadratic (harmonic) form:
+ *
+ *     E ~ (A - A0)^2
+ *
+ * where A is the instantaneous total area and A0 is the reference area.
+ *
+ * Functionality:
+ * - Computes total area contributions from vertices and triangle links
+ * - Evaluates energy changes due to area fluctuations
+ * - Provides coupling energy for use in Monte Carlo / dynamic simulations
+ *
+ * Dependencies:
+ * - VAHGlobalMeshProperties
+ * - State
+ * - vertex, triangle, links
+ * - AbstractTotalAreaCoupling (base class)
+ *
+ * Notes:
+ * Note, this is a global based potentials, and in MC models cannot be parallelized
+ */
+
 #include "SimDef.h"
 #include "vertex.h"
 #include "triangle.h"

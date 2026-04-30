@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "EvolveVerticesByMetropolisAlgorithm.h"
 #include "State.h"
+#include "FactoryVertexPositionIntegrator.h"
 
 EvolveVerticesByMetropolisAlgorithm::EvolveVerticesByMetropolisAlgorithm(State *pState)
     : m_pState(pState),
@@ -481,6 +482,40 @@ std::vector<links*> EvolveVerticesByMetropolisAlgorithm::GetEdgesWithInteraction
     
     return edge_with_interaction_change;
 }
+// Self registry
+namespace
+{
+    AbstractVertexPositionIntegrator* Create_VerPosMC(
+        std::istream& input,
+        State* state)
+    {
+        double rate_surf = 0.0;
+        double rate_edge = 0.0;
+        double dr = 0.0;
 
+        if (!(input >> rate_surf >> rate_edge >> dr)) {
+            return nullptr;
+        }
+
+        std::string rest;
+        std::getline(input, rest); // consume rest of line
+
+        return new EvolveVerticesByMetropolisAlgorithm(
+            state,        // FIRST
+            rate_surf,
+            rate_edge,
+            dr
+        );
+    }
+
+    const bool registered = []()
+    {
+        FactoryVertexPositionIntegrator::Instance().Register(
+            EvolveVerticesByMetropolisAlgorithm::GetDefaultReadName(),
+            &Create_VerPosMC
+        );
+        return true;
+    }();
+}
 
 

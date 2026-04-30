@@ -56,9 +56,7 @@
 //--- system evolution
 //-------vertex movies
 #include "AbstractVertexPositionIntegrator.h"
-#include "EvolveVerticesByMetropolisAlgorithm.h"
-#include "EvolveVerticesByMetropolisAlgorithmWithOpenMPType1.h"
-#include "EvolveVerticesByKineticMonteCarlo.h"
+#include "EvolveVerticesByMetropolisAlgorithm.h" // this child class is the default, so needed to be included. could be moved to cpp
 //--- edge 
 #include "AbstractAlexanderMove.h"
 #include "AlexanderMoveByMetropolisAlgorithm.h"

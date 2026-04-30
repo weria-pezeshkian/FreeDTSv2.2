@@ -20,6 +20,9 @@ public:
     inline  std::string GetDerivedDefaultReadName() {return "MetropolisAlgorithmOpenMP";}
     inline static std::string GetDefaultReadName() {return "MetropolisAlgorithmOpenMP";}
 
+    
+
+    
 private:
     bool EvolveOneVertex(int step, vertex *pvertex, double dx, double dy, double dz,double temp, double &en);
     bool VertexMoveIsFine(vertex* pvertex, double dx,double dy, double dz,  double mindist2, double maxdist2);
@@ -45,6 +48,10 @@ private:
         std::cout<<" ---> error, 999o1o this should have been called \n";
         return false;
     }
+    
+
+
+
 
 };
 
