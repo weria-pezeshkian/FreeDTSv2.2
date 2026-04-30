@@ -1,3 +1,4 @@
+#include <unordered_set>
 #include "OpenSurfacePhoenixWithConstantVertexAtEquilibrium.h"
 #include "State.h"
 #include "FactoryOpenEdgeEvolutionMethod.h"
@@ -5,7 +6,7 @@
  Weria Pezeshkian (weria.pezeshkian@gmail.com)
  Copyright (c) Weria Pezeshkian
 
- Edge treatment, this is a new development since June 2023;
+ Edge treatment, this is a new development since June 2023; this has been updated in 2026. Still needs work for clarity but works. It is hard to read.
  
  What it does:
  
@@ -34,6 +35,7 @@ OpenSurfacePhoenixWithConstantVertexAtEquilibrium::OpenSurfacePhoenixWithConstan
                                                     m_MinAngle(pState->GetSimulation()->GetMinAngle()),
                                                     m_No_VectorFields_Per_V(pState->GetMesh()->GetNoVFPerVertex())
 {
+    
     m_EdgeSize = m_pEdgeL.size();
 }
 OpenSurfacePhoenixWithConstantVertexAtEquilibrium::~OpenSurfacePhoenixWithConstantVertexAtEquilibrium(){
@@ -51,36 +53,84 @@ void OpenSurfacePhoenixWithConstantVertexAtEquilibrium::Initialize(){
     return;
 }
 bool OpenSurfacePhoenixWithConstantVertexAtEquilibrium::Move(int step) {
-
-
-    if(step % m_Period != 0 || m_pEdgeL.size() == 0 )
+    /**
+     * @brief Performs Monte Carlo edge treatment (closing or opening) moves for an open surface.
+     *
+     * This function is called every simulation step, but executes only when:
+     *   - The current step matches the specified period (step % m_Period == 0), and
+     *   - There are existing edge links available.
+     *
+     * For each eligible call, the function performs a sequence of Monte Carlo moves:
+     *   1. Attempts to add a link (edge growth or hole closing).
+     *   2. Attempts to remove a link (edge shrinkage), if edges still exist.
+     *
+     * Each add/remove attempt is treated as an independent Monte Carlo trial:
+     *   - If the move is accepted (based on energy criteria), m_AcceptedMoves is incremented.
+     *   - Every attempt (regardless of acceptance) increments m_NumberOfAttemptedMoves.
+     *
+     * The loop runs up to m_NumberOfMovePerStep iterations, but may terminate early
+     * if all edges are removed during the process.
+     *
+     *
+     * @param step Current simulation step.
+     * @return true if the function executed Monte Carlo moves,
+     *         false if skipped due to period condition or absence of edges.
+     */
+    
+    // Validation checks
+    // Validation checks
+    if (step % m_Period != 0 || m_pEdgeL.empty()) {
         return false;
-   
-    for (int i = 0; i< m_NumberOfMovePerStep ;i++) {
-
-        if(m_pEdgeL.size() == 0 )
-            break;
-        
-        if(MCAttemptedToAddALink()){
-            m_AcceptedMoves++;
-
-        }
-        if(MCAttemptedToRemoveALink()){
-            m_AcceptedMoves++;
-
-        }
-        m_NumberOfAttemptedMoves++;
-        m_NumberOfAttemptedMoves++;
     }
-    m_EdgeSize = m_pEdgeL.size();
+    
+    // Perform Monte Carlo moves
+    for (int i = 0; i < m_NumberOfMovePerStep; ++i) {
+        if (m_pEdgeL.empty()) {
+            break;
+        }
+        
+        int which_move = m_pState->GetRandomNumberGenerator()->IntRNG(2);
 
+        if (which_move == 0) {
+            // Add first, then remove
+            if (MCAttemptedToAddALink()) {
+                m_AcceptedMoves++;
+            }
+            m_NumberOfAttemptedMoves++;
+
+            if (!m_pEdgeL.empty() && MCAttemptedToRemoveALink()) {
+                m_AcceptedMoves++;
+            }
+            m_NumberOfAttemptedMoves++;
+        } else {
+            // Remove first, then add
+            if (!m_pEdgeL.empty() && MCAttemptedToRemoveALink()) {
+                m_AcceptedMoves++;
+            }
+            m_NumberOfAttemptedMoves++;
+
+            if (MCAttemptedToAddALink()) {
+                m_AcceptedMoves++;
+            }
+            m_NumberOfAttemptedMoves++;
+        }
+    }
+    
+    m_EdgeSize = static_cast<int>(m_pEdgeL.size());
     return true;
 }
 bool OpenSurfacePhoenixWithConstantVertexAtEquilibrium::MCAttemptedToRemoveALink(){
     
     
+    // N_edge ---> N_edge + 1
+    // P_acc = N_edge/N_edge + 1 * exp(dE)
+    
     if( m_pEdgeL.size() == 0 )
         return false;
+    
+    // we do not need this for this algorithm
+   // int N_vprime = GetSurfVFirstRingSize();
+    
     
     int n = m_pState->GetRandomNumberGenerator()->IntRNG(m_pEdgeL.size());
     links *plink = m_pEdgeL[n];
@@ -89,9 +139,11 @@ bool OpenSurfacePhoenixWithConstantVertexAtEquilibrium::MCAttemptedToRemoveALink
     vertex *v2 = plink->GetV2();
     vertex *v3 = plink->GetV3();
 
-    if(v1->GetVLinkList().size() < 2 || v2->GetVLinkList().size() < 2 || v3->GetVertexType() == 1)
+    if(v1->GetVLinkList().size() < 2 || v2->GetVLinkList().size() < 2 || v3->GetVertexType() == 1){
         return false;
-        
+    }
+    
+    
     double eold = 0;
     double enew = 0;
     
@@ -124,8 +176,9 @@ bool OpenSurfacePhoenixWithConstantVertexAtEquilibrium::MCAttemptedToRemoveALink
             }
             
             //--- this link does not exist in the nb of any vertices
-            eold += 2 * (v1->m_pPrecedingEdgeLink)->GetIntEnergy();
-            eold += 2 * (v1->m_pPrecedingEdgeLink)->GetVFIntEnergy();
+                eold += 2 * (v1->m_pPrecedingEdgeLink)->GetIntEnergy();
+                eold += 2 * (v1->m_pPrecedingEdgeLink)->GetVFIntEnergy();
+
 
             // because these two links were counted two times
             eold -= 2 * (plink->GetNeighborLink1())->GetIntEnergy();
@@ -236,12 +289,13 @@ bool OpenSurfacePhoenixWithConstantVertexAtEquilibrium::MCAttemptedToRemoveALink
             enew +=  (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, v1->GetPrecedingEdgeLink());
         }
         
-        double diff_energy = enew - eold;
-        double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
-    
-        //if(double(NS)/double(NL+1)*(exp(-m_Beta*DE)>thermal ))
-    if(exp( -m_Beta * diff_energy + m_DBeta) > thermal) {
-
+    double diff_energy = enew - eold;
+    double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
+    const double NL = static_cast<double>(m_pEdgeL.size());
+    double P_acc = double(NL)/double(NL + 1)*(exp(-m_Beta * diff_energy + m_DBeta));
+                                              
+                                              
+        if(P_acc > thermal ) {
             m_pState->GetEnergyCalculator()->AddToTotalEnergy(diff_energy);
             return true;
         }
@@ -332,6 +386,10 @@ bool OpenSurfacePhoenixWithConstantVertexAtEquilibrium::MCAttemptedToAddALink(){
     if( !Linkisvalid(v1) ){
         return false;
     }
+    
+    //no need for this
+    //int N_vprime = GetSurfVFirstRingSize();
+
     
     double eold = 0;
     double enew = 0;
@@ -508,8 +566,17 @@ bool OpenSurfacePhoenixWithConstantVertexAtEquilibrium::MCAttemptedToAddALink(){
     double diff_energy = enew - eold;
     double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
 
-
-    if(exp(-m_Beta  *diff_energy + m_DBeta ) > thermal ) {
+    double P_acc = 0;
+    const double NL = static_cast<double>(m_pEdgeL.size());
+    if(!ClosingAHole){
+        P_acc = double(NL)/double(NL - 1) * exp(-m_Beta * diff_energy + m_DBeta);
+    }
+    else{
+        // this case is not realistic, also this is deterministic, we do not want to handle opening anymore
+        P_acc = exp(-m_Beta * diff_energy + m_DBeta);
+    }
+                                              
+    if(P_acc > thermal ) {
         
         m_pState->GetEnergyCalculator()->AddToTotalEnergy(diff_energy);
         return true;
@@ -1048,6 +1115,33 @@ void OpenSurfacePhoenixWithConstantVertexAtEquilibrium::AddtoVertexList(vertex* 
 void OpenSurfacePhoenixWithConstantVertexAtEquilibrium::AddtoTriangleList(triangle* z, std::vector<triangle*> &vect)
 {
     vect.push_back(z);
+}
+int OpenSurfacePhoenixWithConstantVertexAtEquilibrium::GetSurfVFirstRingSize() const {
+    // Computes the number of unique vertices in the first ring of the surface.
+    //
+    // Iterates over all edge links (m_pEdgeL) and collects the V3 vertex
+    // associated with each link. An std::unordered_set is used to ensure
+    // uniqueness based on pointer identity (i.e., duplicate vertex pointers
+    // are ignored automatically).
+    //
+    // Notes:
+    // - The unordered_set is pre-allocated to improve performance by reducing rehashing.
+    // - Null edge links and null vertex pointers are safely skipped.
+    //
+    // Returns:
+    //   The count of distinct vertex pointers found in the first ring.
+    std::unordered_set<vertex*> unique_vertices;
+    unique_vertices.reserve(m_pEdgeL.size());  // Pre-allocate for performance
+    
+    for (const auto* edge_link : m_pEdgeL) {
+        if (edge_link) {
+            if (auto* vertex = edge_link->GetV3()) {
+                unique_vertices.insert(vertex);
+            }
+        }
+    }
+    
+    return static_cast<int>(unique_vertices.size());
 }
 std::string OpenSurfacePhoenixWithConstantVertexAtEquilibrium::CurrentState(){
     

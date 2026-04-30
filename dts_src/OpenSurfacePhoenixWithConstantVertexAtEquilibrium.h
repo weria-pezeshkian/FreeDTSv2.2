@@ -32,12 +32,12 @@ public:
 
 public:
     void Initialize();
-    bool Move(int step);
     std::string CurrentState();
-
-    
     inline  std::string GetDerivedDefaultReadName() {return "OpenSurfacePhoenix";}
     inline static std::string GetDefaultReadName() {return "OpenSurfacePhoenix";}
+    
+    bool Move(int step); // this is the main function to perform the move
+
     
 private:
     bool MCAttemptedToAddALink();
@@ -52,7 +52,6 @@ private:
     void AddtoTriangleList(triangle* z, std::vector<triangle*> &vect);
     bool Linkisvalid(vertex *);
 
-   //  void MC_Move(double lmin, double lmax, double maxangle);
 
 
     // the main hard part of the code. 
@@ -63,6 +62,11 @@ private:  // this functions could be in princeple public, but no need for now
     triangle* CloseATriangleHole(vertex *v1);  //if an edge contains only three links, it will close it
     bool KillATriangle(links *l1);      // kills a triangle anywhere
 
+    
+    
+    // helper functions
+    int GetSurfVFirstRingSize() const; // Computes the number of unique vertices in the first ring of the surface.
+    
 private:
     State *m_pState;
     int m_Period;
