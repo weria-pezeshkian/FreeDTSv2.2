@@ -28,6 +28,11 @@ public:
     
     
     inline static std::string GetBaseDefaultReadName() {return "AlexanderMove";}
+    // Registry Error function, called in state class. Since 2026
+    inline static std::string GetRegistryError(std::string type) {
+        std::string txt = "---> error: unknown method for <Alexander Move> type: " + type;
+        return txt;
+    }
     inline static std::string GetErrorMessage(std::string s) {
         return "---> error: unknown AlexanderMove type -- \n";
     }

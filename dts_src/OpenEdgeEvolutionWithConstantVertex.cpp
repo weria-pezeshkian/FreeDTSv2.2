@@ -1,6 +1,6 @@
 #include "OpenEdgeEvolutionWithConstantVertex.h"
 #include "State.h"
-#include "FactoryOpenEdgeEvolutionMethod.h"
+#include "./Registry/FactoryForRegistration.h"
 /*
  Weria Pezeshkian (weria.pezeshkian@gmail.com)
  Copyright (c) Weria Pezeshkian

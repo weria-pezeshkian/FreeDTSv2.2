@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include "EvolveVerticesByMetropolisAlgorithm.h"
 #include "State.h"
-#include "FactoryVertexPositionIntegrator.h"
+#include "./Registry/FactoryVertexPositionIntegrator.h"
 
 EvolveVerticesByMetropolisAlgorithm::EvolveVerticesByMetropolisAlgorithm(State *pState)
     : m_pState(pState),

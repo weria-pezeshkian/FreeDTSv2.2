@@ -6,7 +6,7 @@
 #include "vertex.h"
 #include "State.h"
 #include "Voxelization.h"
-#include "FactoryDynamicBox.h"
+#include "./Registry/FactoryDynamicBox.h"
 
 
 /*

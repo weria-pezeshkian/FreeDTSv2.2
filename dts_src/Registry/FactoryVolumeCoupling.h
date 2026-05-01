@@ -1,6 +1,6 @@
 /*
 ===============================================================
-VolumeCouplingFactory
+FactoryVolumeCoupling
 ===============================================================
 
 This class implements a **singleton factory** for creating instances of
@@ -22,7 +22,7 @@ How it works:
    name and creator function. Typically, this is done using a static object
    at global scope.
 3. When the simulation code needs a volume coupling object, it calls
-   VolumeCouplingFactory::Instance().Create(name, input, vah),
+   FactoryVolumeCoupling::Instance().Create(name, input, vah),
    which:
    - Looks up the name in the registry.
    - If found, invokes the creator function to produce a new object.
@@ -30,7 +30,7 @@ How it works:
 ---------------------------------------------------------------
 */
 
-class VolumeCouplingFactory {
+class FactoryVolumeCoupling {
 public:
     // Define the type of the creator function
     // It takes:
@@ -48,8 +48,8 @@ public:
       - Only one instance exists during program execution.
       - Thread-safe initialization in C++11 and later.
     */
-    static VolumeCouplingFactory& Instance() {
-        static VolumeCouplingFactory instance;
+    static FactoryVolumeCoupling& Instance() {
+        static FactoryVolumeCoupling instance;
         return instance;
     }
 
@@ -65,7 +65,7 @@ public:
            this type.
 
     Example:
-      VolumeCouplingFactory::Instance().Register(
+      FactoryVolumeCoupling::Instance().Register(
           "OsmoticPressure",
           ApplyOsmoticPressureRegister::Create
       );
@@ -111,11 +111,11 @@ public:
 
 private:
     // Private constructor to enforce singleton pattern
-    VolumeCouplingFactory() = default;
+    FactoryVolumeCoupling() = default;
 
     // Disable copy constructor and assignment operator
-    VolumeCouplingFactory(const VolumeCouplingFactory&) = delete;
-    VolumeCouplingFactory& operator=(const VolumeCouplingFactory&) = delete;
+    FactoryVolumeCoupling(const FactoryVolumeCoupling&) = delete;
+    FactoryVolumeCoupling& operator=(const FactoryVolumeCoupling&) = delete;
 
     // Registry mapping string names to creator functions
     std::unordered_map<std::string, Creator> m_Creators;

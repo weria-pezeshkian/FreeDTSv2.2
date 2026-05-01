@@ -5,7 +5,7 @@
 #include "Three_Edge_Scission.h"
 #include "State.h"
 #include "MESH.h"
-#include "FactoryDynamicTopologyMethod.h"
+#include "./Registry/FactoryDynamicTopologyMethod.h"
 /*
  Weria Pezeshkian (weria.pezeshkian@gmail.com)
  Copyright (c) Weria Pezeshkian

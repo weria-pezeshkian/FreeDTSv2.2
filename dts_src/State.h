@@ -60,7 +60,6 @@
 //--- edge 
 #include "AbstractAlexanderMove.h"
 #include "AlexanderMoveByMetropolisAlgorithm.h"
-#include "AlexanderMoveByMetropolisAlgorithmWithOpenMP.h"
 // ---- inclusions
 #include "AbstractInclusionPoseIntegrator.h"
 #include "InclusionPoseUpdateByMetropolisAlgorithm.h"

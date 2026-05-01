@@ -1,7 +1,7 @@
 #include "Apply_Osmotic_Pressure.h"
 #include "State.h"
 #include "Nfunction.h"
-#include "VolumeCouplingFactory.h"
+#include "./Registry/FactoryVolumeCoupling.h"
 
 /*
  
@@ -147,7 +147,7 @@ static class ApplyOsmoticPressureRegister {
 
 public:
     ApplyOsmoticPressureRegister() {
-        VolumeCouplingFactory::Instance().Register(
+        FactoryVolumeCoupling::Instance().Register(
             Apply_Osmotic_Pressure::GetDefaultReadName(),
             Create
         );

@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include "AlexanderMoveByMetropolisAlgorithm.h"
 #include "State.h"
+#include "./Registry/FactoryForRegistration.h"
+
 AlexanderMoveByMetropolisAlgorithm::AlexanderMoveByMetropolisAlgorithm(State* pState) :
             m_pState(pState),
             m_pSurfL(pState->GetMesh()->GetRightL()),
@@ -515,4 +517,33 @@ std::string AlexanderMoveByMetropolisAlgorithm::CurrentState(){
     std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
     state = state + " "+ Nfunction::D2S(m_NumberOfMovePerStep);
     return state;
+}
+
+namespace
+{
+AbstractAlexanderMove* Create_ReG(
+        std::istream& input,
+        State* state)
+    {
+        double rate = 0.0;
+
+
+        if (!(input >> rate)) {
+            return nullptr;
+        }
+
+        std::string rest;
+        std::getline(input, rest); // consume rest of line
+
+        return new AlexanderMoveByMetropolisAlgorithm(state, rate);
+    }
+
+    const bool registered = []()
+    {
+        FactoryAlexanderMove::Instance().Register(
+        AlexanderMoveByMetropolisAlgorithm::GetDefaultReadName(),
+            &Create_ReG
+        );
+        return true;
+    }();
 }

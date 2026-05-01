@@ -1,5 +1,5 @@
 #include "FlatVertexSubstrate.h"
-#include "FactoryVertexAdhesionToSubstrateMethod.h"
+#include "./Registry/FactoryVertexAdhesionToSubstrateMethod.h"
 
 
 FlatVertexSubstrate::FlatVertexSubstrate(std::string datastream) {

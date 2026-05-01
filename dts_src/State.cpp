@@ -4,13 +4,16 @@
 #include "MESH.h"
 #include "CreateMashBluePrint.h"
 #include "State.h"
-#include "VolumeCouplingFactory.h"
-#include "FactoryInclusionConversionMethod.h"
-#include "FactoryOpenEdgeEvolutionMethod.h"
-#include "FactoryVertexAdhesionToSubstrateMethod.h"
-#include "FactoryDynamicTopologyMethod.h"
-#include "FactoryVertexPositionIntegrator.h"
-#include "FactoryDynamicBox.h"
+#include "./Registry/FactoryVolumeCoupling.h"
+#include "./Registry/FactoryInclusionConversionMethod.h"
+#include "./Registry/FactoryVertexAdhesionToSubstrateMethod.h"
+#include "./Registry/FactoryDynamicTopologyMethod.h"
+#include "./Registry/FactoryVertexPositionIntegrator.h"
+#include "./Registry/FactoryDynamicBox.h"
+
+// new version, all in one. Since 2026
+#include "./Registry/FactoryForRegistration.h"
+
 State::State(){
     
 }
@@ -381,34 +384,6 @@ while (input >> firstword) {
             getline(input,rest);
         }
 //---- End Visualization file
-//---- AlexanderMove
-        else if(firstword == AbstractAlexanderMove::GetBaseDefaultReadName()) {
-                input>>str>>type;
-                if(type == AlexanderMoveByMetropolisAlgorithm::GetDefaultReadName()){  // MetropolisAlgorithm
-                    double rate;
-                    input >> rate;
-                    m_pAlexanderMove = new AlexanderMoveByMetropolisAlgorithm(this, rate);
-                }
-                else if(type == AlexanderMoveByMetropolisAlgorithmWithOpenMP::GetDefaultReadName()){  // MetropolisAlgorithm
-                    double rate;
-                    input >> rate;
-#ifdef _OPENMP
-                    m_pAlexanderMove = new AlexanderMoveByMetropolisAlgorithmWithOpenMP(this, rate);
-#else
-               std::cout<<"---> warnning: OpenMP was not detected, we will use the serial code "<<type<<"\n";
-                    m_pAlexanderMove = new AlexanderMoveByMetropolisAlgorithm(this, rate);
-#endif
-                    
-                    
-                }
-                else{
-                    std::cout<<"---> error: unknown method for Alexander move "<<type<<"\n";
-                    m_NumberOfErrors++;
-                    return false;
-                }
-            getline(input,rest);
-        }
-//---- end //
     //---- inclsuion move
             else if(firstword == AbstractInclusionPoseIntegrator::GetBaseDefaultReadName()) {
                     input>>str>>type;
@@ -479,7 +454,7 @@ while (input >> firstword) {
                     m_pVAHCalculator->MakeVolumeActive();
                     m_pVAHCalculator->MakeAreaActive();
                     m_pVolumeCoupling =
-                    VolumeCouplingFactory::Instance()
+                    FactoryVolumeCoupling::Instance()
                         .Create(type, input, m_pVAHCalculator);
                     
                     if(!m_pVolumeCoupling) {
@@ -538,6 +513,13 @@ while (input >> firstword) {
                 }
             }
     // end dynamic box
+    //---- AlexanderMove
+            else if (firstword == AbstractAlexanderMove::GetBaseDefaultReadName()) {
+                if (!RegisterUsingInputFile<FactoryAlexanderMove>(input, "AM586838", m_pAlexanderMove)) {
+                    return false;
+                }
+            }
+    //---- end //
     
     
     //

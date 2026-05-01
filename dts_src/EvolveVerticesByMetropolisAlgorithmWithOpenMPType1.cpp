@@ -8,7 +8,7 @@
 #endif
 #include "EvolveVerticesByMetropolisAlgorithmWithOpenMPType1.h"
 #include "State.h"
-#include "FactoryVertexPositionIntegrator.h"
+#include "./Registry/FactoryVertexPositionIntegrator.h"
 
 EvolveVerticesByMetropolisAlgorithmWithOpenMPType1::EvolveVerticesByMetropolisAlgorithmWithOpenMPType1(State *pState)
     : m_pState(pState),

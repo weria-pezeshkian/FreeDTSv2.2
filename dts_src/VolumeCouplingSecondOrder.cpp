@@ -1,7 +1,7 @@
 #include "VolumeCouplingSecondOrder.h"
 #include "State.h"
 #include "Nfunction.h"
-#include "VolumeCouplingFactory.h"
+#include "./Registry/FactoryVolumeCoupling.h"
 
 // Constructor
 VolumeCouplingSecondOrder::VolumeCouplingSecondOrder(VAHGlobalMeshProperties *VHA,  double DeltaP,  double K, double targetV)
@@ -132,7 +132,7 @@ static class VolumeCouplingSecondOrderRegister {
 
 public:
     VolumeCouplingSecondOrderRegister() {
-        VolumeCouplingFactory::Instance().Register(
+        FactoryVolumeCoupling::Instance().Register(
             VolumeCouplingSecondOrder::GetDefaultReadName(),
             Create
         );

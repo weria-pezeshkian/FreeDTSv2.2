@@ -1,5 +1,5 @@
 #include "SphericalVertexSubstrate.h"
-#include "FactoryVertexAdhesionToSubstrateMethod.h"
+#include "./Registry/FactoryVertexAdhesionToSubstrateMethod.h"
 
 SphericalVertexSubstrate::SphericalVertexSubstrate(std::string datastream) {
 

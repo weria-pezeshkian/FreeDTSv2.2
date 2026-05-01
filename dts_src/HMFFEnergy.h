@@ -17,7 +17,7 @@
 
 // this should be changed and I need to make declearation class 
 #include "VertexInScalarFieldPotential.cpp"
-#include "MRCParser.cpp"
+#include "MRCParser.h"
 
 class State;
 class HMFFEnergy : public Energy {

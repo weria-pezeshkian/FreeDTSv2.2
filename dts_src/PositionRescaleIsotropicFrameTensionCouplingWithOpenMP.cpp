@@ -11,7 +11,7 @@
 #include "vertex.h"
 #include "State.h"
 #include "Voxelization.h"
-#include "FactoryDynamicBox.h"
+#include "./Registry/FactoryDynamicBox.h"
 
 
 /*
@@ -647,7 +647,7 @@ namespace
             &Create_BoxChange
         );
 #else
-        std::cout << "---> warning: OpenMP not detected, factory registration skipped\n";
+        std::cout << "---> Error: OpenMP not detected, factory registration skipped\n";
 #endif
         return true;
     }();

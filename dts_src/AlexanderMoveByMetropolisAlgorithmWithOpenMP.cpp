@@ -8,6 +8,8 @@
 #include <chrono>   // For std::chrono::milliseconds
 #include "AlexanderMoveByMetropolisAlgorithmWithOpenMP.h"
 #include "State.h"
+#include "./Registry/FactoryForRegistration.h"
+
 AlexanderMoveByMetropolisAlgorithmWithOpenMP::AlexanderMoveByMetropolisAlgorithmWithOpenMP(State* pState) :
             m_pState(pState),
             m_pSurfL(pState->GetMesh()->GetRightL()),
@@ -577,3 +579,37 @@ std::string AlexanderMoveByMetropolisAlgorithmWithOpenMP::CurrentState(){
     state = state + " "+ Nfunction::D2S(m_NumberOfMovePerStep);
     return state;
 }
+
+namespace
+{
+AbstractAlexanderMove* Create_ReG(
+        std::istream& input,
+        State* state)
+    {
+        double rate = 0.0;
+
+
+        if (!(input >> rate)) {
+            return nullptr;
+        }
+
+        std::string rest;
+        std::getline(input, rest); // consume rest of line
+
+        return new AlexanderMoveByMetropolisAlgorithmWithOpenMP(state, rate);
+    }
+
+    const bool registered = []()
+    {
+#ifdef _OPENMP
+        FactoryAlexanderMove::Instance().Register(
+        AlexanderMoveByMetropolisAlgorithmWithOpenMP::GetDefaultReadName(),
+            &Create_ReG
+        );
+#else
+        std::cout<<"---> Error: OpenMP not detected, factory registration skipped: "<<"\n";
+#endif
+        return true;
+    }();
+}
+

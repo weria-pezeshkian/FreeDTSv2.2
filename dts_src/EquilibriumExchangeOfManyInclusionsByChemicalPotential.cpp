@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 #include "EquilibriumExchangeOfManyInclusionsByChemicalPotential.h"
-#include "FactoryInclusionConversionMethod.h"
+#include "./Registry/FactoryInclusionConversionMethod.h"
 #include "Nfunction.h"
 #include "State.h"
 /*
