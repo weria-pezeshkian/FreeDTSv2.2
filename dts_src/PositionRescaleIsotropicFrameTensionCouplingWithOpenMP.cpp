@@ -11,6 +11,7 @@
 #include "vertex.h"
 #include "State.h"
 #include "Voxelization.h"
+#include "FactoryDynamicBox.h"
 
 
 /*
@@ -613,6 +614,44 @@ std::string PositionRescaleIsotropicFrameTensionCouplingWithOpenMP::CurrentState
     return state;
 }
 
+namespace
+{
+    AbstractDynamicBox* Create_BoxChange(
+        std::istream& input,
+        State* state)
+    {
+        int period = 0;
+        double force = 0.0;
+        std::string direction;
+
+        if (!(input >> period >> force >> direction)) {
+            return nullptr;
+        }
+
+        std::string rest;
+        std::getline(input, rest); // consume rest of line
+
+#ifdef _OPENMP
+        return new PositionRescaleIsotropicFrameTensionCouplingWithOpenMP(period, force, direction, state);
+#else
+        std::cout << "---> warning: OpenMP was not detected, using serial fallback\n";
+        return nullptr;
+#endif
+    }
+
+    const bool registered = []()
+    {
+#ifdef _OPENMP
+        FactoryDynamicBox::Instance().Register(
+        PositionRescaleIsotropicFrameTensionCouplingWithOpenMP::GetDefaultReadName(),
+            &Create_BoxChange
+        );
+#else
+        std::cout << "---> warning: OpenMP not detected, factory registration skipped\n";
+#endif
+        return true;
+    }();
+}
 
 
 

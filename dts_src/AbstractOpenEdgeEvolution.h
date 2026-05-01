@@ -27,6 +27,12 @@ public:
     virtual std::string CurrentState() = 0;
     virtual inline std::string GetDerivedDefaultReadName() = 0;
     inline static std::string GetBaseDefaultReadName() {return "OpenEdgeEvolution";}
+    inline static std::string GetRegistryError(std::string type) {
+        std::string txt = "---> error: unknown method for open edge: " + type;
+        return txt;
+    }
+    
+    
     inline const int GetEdgeSize()            const {return m_EdgeSize;}  // note, this is number of edge links not the length
 
     double GetAcceptanceRate(bool reset) {

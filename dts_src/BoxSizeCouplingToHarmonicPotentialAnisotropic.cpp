@@ -6,6 +6,7 @@
 #include "vertex.h"
 #include "State.h"
 #include "Voxelization.h"
+#include "FactoryDynamicBox.h"
 
 
 /*
@@ -520,7 +521,39 @@ std::string BoxSizeCouplingToHarmonicPotentialAnisotropic::CurrentState(){
     state = state +" "+ Nfunction::D2S(m_Period)+" "+Nfunction::D2S(2*m_K(0))+" "+Nfunction::D2S(2*m_K(1))+" "+Nfunction::D2S(2*m_K(2))+" "+Nfunction::D2S(m_Box_0(0))+" "+Nfunction::D2S(m_Box_0(1))+" "+Nfunction::D2S(m_Box_0(2))+" "+  m_Type;
     return state;
 }
+namespace
+{
+AbstractDynamicBox* Create_BoxChange(
+        std::istream& input,
+        State* state)
+    {
+        int period = 0.0;
+        double kx = 0;
+        double ky = 0;
+        double kz = 0;
+        double a0x = 0;
+        double a0y = 0;
+        double a0z = 0;
+        std::string direction = "";
 
+        if (!(input >> period >> kx >> ky >> kz >> a0x >> a0y >> a0z >> direction)) {
+            return nullptr;
+        }
 
+        std::string rest;
+        std::getline(input, rest); // consume rest of line
+
+        return new BoxSizeCouplingToHarmonicPotentialAnisotropic(period, kx, ky, kz, a0x , a0y, a0z, direction, state);
+    }
+
+    const bool registered = []()
+    {
+        FactoryDynamicBox::Instance().Register(
+        BoxSizeCouplingToHarmonicPotentialAnisotropic::GetDefaultReadName(),
+            &Create_BoxChange
+        );
+        return true;
+    }();
+}
 
 

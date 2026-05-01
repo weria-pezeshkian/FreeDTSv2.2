@@ -6,6 +6,7 @@
 #include "vertex.h"
 #include "State.h"
 #include "Voxelization.h"
+#include "FactoryDynamicBox.h"
 
 
 /*
@@ -551,7 +552,34 @@ std::string BoxSizeCouplingToHarmonicPotential::CurrentState(){
     state = state +" "+ Nfunction::D2S(m_Period)+" "+Nfunction::D2S(2*m_K)+" "+Nfunction::D2S(m_A0)+" "+  m_Type;
     return state;
 }
+namespace
+{
+AbstractDynamicBox* Create_BoxChange(
+        std::istream& input,
+        State* state)
+    {
+        int period = 0.0;
+        double k = 0;
+        double a0 = 0;
+        std::string direction = "";
 
+        if (!(input >> period >> k >> a0  >> direction)) {
+            return nullptr;
+        }
 
+        std::string rest;
+        std::getline(input, rest); // consume rest of line
 
+        return new BoxSizeCouplingToHarmonicPotential(period, k, a0, direction, state);
+    }
+
+    const bool registered = []()
+    {
+        FactoryDynamicBox::Instance().Register(
+        BoxSizeCouplingToHarmonicPotential::GetDefaultReadName(),
+            &Create_BoxChange
+        );
+        return true;
+    }();
+}
 

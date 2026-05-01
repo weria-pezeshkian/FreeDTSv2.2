@@ -1,6 +1,8 @@
 #if !defined(AFX_DynamicBox_H)
 #define AFX_DynamicBox_H
 #include <iostream>
+//#include "FactoryDynamicBox.h"
+
 /**
  * @file AbstractDynamicBox.h
  * @brief Defines the AbstractDynamicBox base class and the NoBoxChange derived class for box size management.
@@ -12,6 +14,7 @@
  * Developed 2024 by Weria Pezeshkian
  * Weria Pezeshkian (weria.pezeshkian@gmail.com)
  * Copyright (c) Weria Pezeshkian
+ * Updated 2026 by Weria Pezeshkian, added GetRegistryError function
  * =======================================================
  *
  * The AbstractDynamicBox class defines a standard interface for dynamically changing the simulation box size.
@@ -81,6 +84,11 @@ public:
      */
     inline static std::string GetBaseDefaultReadName() { return "Dynamic_Box"; }
 
+    // Registry Error function, called in state class. Since 2026
+    inline static std::string GetRegistryError(std::string type) {
+        std::string txt = "---> error: unknown method for box change: " + type;
+        return txt;
+    }
     /*
      * @brief Gets the current change rate (DR).
      *
@@ -149,5 +157,25 @@ public:
         return state;
     }
 };
+/*namespace
+{
+AbstractDynamicBox* Create_BoxChange(
+        std::istream& input,
+        State* state)
+    {
+        std::string rest;
+        std::getline(input, rest); // consume rest of line
 
+        return new NoBoxChange();
+    }
+
+    const bool registered = []()
+    {
+        FactoryDynamicBox::Instance().Register(
+            NoBoxChange::GetDefaultReadName(),
+            &Create_BoxChange
+        );
+        return true;
+    }();
+}*/
 #endif

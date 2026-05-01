@@ -51,6 +51,7 @@
 #include <iostream>
 #include <algorithm>
 #include <iomanip> // Include this header for std::setprecision
+#include <functional>
 #include "Nfunction.h"
 
 // Mathematical constants

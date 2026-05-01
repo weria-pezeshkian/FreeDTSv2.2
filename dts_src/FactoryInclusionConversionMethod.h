@@ -28,6 +28,7 @@ How it works:
    - Returns a pointer to the newly created AbstractInclusionConversion.
 ---------------------------------------------------------------
 */
+#include "SimDef.h"
 
 class FactoryInclusionConversionMethod {
 public:

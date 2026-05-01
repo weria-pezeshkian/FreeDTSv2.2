@@ -6,6 +6,7 @@
 #include "vertex.h"
 #include "State.h"
 #include "Voxelization.h"
+#include "FactoryDynamicBox.h"
 
 
 /*
@@ -537,6 +538,37 @@ std::string PositionRescaleAnisotropicFrameTensionCoupling::CurrentState(){
     std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
     state = state +" "+ Nfunction::D2S(m_Period)+" "+Nfunction::D2S(m_Force_1)+" "+Nfunction::D2S(m_Force_1)+" "+Nfunction::D2S(m_Force_1)+" "+  m_Type;
     return state;
+}
+namespace
+{
+AbstractDynamicBox* Create_BoxChange(
+        std::istream& input,
+        State* state)
+    {
+        int period = 0.0;
+        double force_1 = 0;
+        double force_2 = 0;
+        double force_3 = 0;
+        std::string direction = "";
+
+        if (!(input >> period >> force_1 >> force_2 >> force_3 >> direction)) {
+            return nullptr;
+        }
+
+        std::string rest;
+        std::getline(input, rest); // consume rest of line
+
+        return new PositionRescaleAnisotropicFrameTensionCoupling(period, force_1, force_2, force_3, direction, state);
+    }
+
+    const bool registered = []()
+    {
+        FactoryDynamicBox::Instance().Register(
+        PositionRescaleAnisotropicFrameTensionCoupling::GetDefaultReadName(),
+            &Create_BoxChange
+        );
+        return true;
+    }();
 }
 
 

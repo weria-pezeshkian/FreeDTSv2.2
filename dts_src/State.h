@@ -89,11 +89,6 @@
 #include "CurvatureByShapeOperatorType1.h"
 //-- dynamic box
 #include "AbstractDynamicBox.h"
-#include "PositionRescaleFrameTensionCoupling.h"
-#include "PositionRescaleIsotropicFrameTensionCouplingWithOpenMP.h"
-#include "PositionRescaleAnisotropicFrameTensionCoupling.h"
-#include "BoxSizeCouplingToHarmonicPotential.h"
-#include "BoxSizeCouplingToHarmonicPotentialAnisotropic.h"
 //-- dynamic topology
 #include "AbstractDynamicTopology.h"
 //-- open edge treatment
@@ -326,6 +321,33 @@ private:
         double m_MinFaceAngle;              //  minimum angle between the face (smaller will results in error), this is the value of the cos
 
     ParallelReplicaData m_Parallel_Replica; // an object that includes info about Parallel Tempering method that we are applying
+    
+
+private:
+    template <typename Factory, typename Target>
+    bool RegisterUsingInputFile(
+        std::istream& input,
+        const std::string& errorTag,
+        Target*& target)
+    {
+        std::string str, type;
+
+        if (!(input >> str >> type)) {
+            std::cerr << "---> Failed to read input (" << errorTag << ")\n";
+            ++m_NumberOfErrors;
+            return false;
+        }
+
+        target = Factory::Instance().Create(type, input, this);
+
+        if (!target) {
+            std::cerr << Target::GetRegistryError(type) << std::endl;
+            ++m_NumberOfErrors;
+            return false;
+        }
+
+        return true;
+    }
 };
 
 #endif

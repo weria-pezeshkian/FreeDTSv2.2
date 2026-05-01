@@ -10,7 +10,7 @@
 #include "FactoryVertexAdhesionToSubstrateMethod.h"
 #include "FactoryDynamicTopologyMethod.h"
 #include "FactoryVertexPositionIntegrator.h"
-
+#include "FactoryDynamicBox.h"
 State::State(){
     
 }
@@ -517,51 +517,28 @@ while (input >> firstword) {
             }
     // end InclusionConversion
     // open edge treatment
-            else if(firstword == AbstractOpenEdgeEvolution::GetBaseDefaultReadName())
-            {
-                input >> str >> type;
-
-                if(type == NoEvolution::GetDefaultReadName()) {
-                    // Keep the existing NoEvolution
-                    std::getline(input, rest);
-                }
-                else{
-                    m_pOpenEdgeEvolution =
-                    FactoryOpenEdgeEvolutionMethod::Instance().Create(
-                                                                      type,
-                                                                      input,
-                                                                      this);
-                    
-                    if(!m_pOpenEdgeEvolution)
-                    {
-                        std::cout << "---> error: unknown Open Edge Evolution type: "
-                        << type << "\n";
-                        m_NumberOfErrors++;
-                        std::getline(input, rest);
-                        return false;
-                    }
-                    
-                }
-            }
+            else if (firstword == AbstractOpenEdgeEvolution::GetBaseDefaultReadName()) {
+                  if (!RegisterUsingInputFile<FactoryOpenEdgeEvolutionMethod>(input, "OE292838", m_pOpenEdgeEvolution)) {
+                      return false;
+                  }
+              }
     // end open edge treatment
     //---- position update
 
-            else if(firstword == AbstractVertexPositionIntegrator::GetBaseDefaultReadName()) {
-                if (!(input >> str >> type)) {
-                    std::cerr << "---> Failed to read from input file (id 292838) \n";
-                    ++m_NumberOfErrors;
-                    return false;
-                }
-
-                m_pVertexPositionIntegrator =
-                FactoryVertexPositionIntegrator::Instance().Create(type,input,this);
-                if(!m_pVertexPositionIntegrator) {
-                    std::cerr<<AbstractVertexPositionIntegrator::GetRegistryError(type)<<std::endl;
-                    ++m_NumberOfErrors;
+          else if (firstword == AbstractVertexPositionIntegrator::GetBaseDefaultReadName()) {
+                if (!RegisterUsingInputFile<FactoryVertexPositionIntegrator>(input, "VP292838", m_pVertexPositionIntegrator)) {
                     return false;
                 }
             }
     //---- end position update //
+   // dynamic box,
+            else if (firstword == AbstractDynamicBox::GetBaseDefaultReadName()) {
+                if (!RegisterUsingInputFile<FactoryDynamicBox>(input, "DB392838", m_pDynamicBox)) {
+                    return false;
+                }
+            }
+    // end dynamic box
+    
     
     //
                 else if(firstword == AbstractDynamicTopology::GetBaseDefaultReadName()){
@@ -677,64 +654,6 @@ while (input >> firstword) {
                 return false;
             }
             getline(input,rest);
-        }
-// dynamic box
-        else if(firstword == AbstractDynamicBox::GetBaseDefaultReadName()){
-            int period = 0;
-            double force = 0;
-            std::string direction;
-            input >> str >> type ;
-
-            if (type == PositionRescaleFrameTensionCoupling::GetDefaultReadName()) {
-                    
-                input >> period >> force >> direction;
-                m_pDynamicBox = new PositionRescaleFrameTensionCoupling(period, force, direction, this);
-            }
-            else if (type == PositionRescaleIsotropicFrameTensionCouplingWithOpenMP::GetDefaultReadName()) {
-                input >> period >> force >> direction;
-#ifdef _OPENMP
-                m_pDynamicBox = new PositionRescaleIsotropicFrameTensionCouplingWithOpenMP(period, force, direction, this);
-#else
-               std::cout<<"---> warnning: OpenMP was not detected, we will use the serial code "<<type<<"\n";
-                m_pDynamicBox = new PositionRescaleFrameTensionCoupling(period, force, direction, this);
-#endif
-                
-            }
-            else if (type == PositionRescaleAnisotropicFrameTensionCoupling::GetDefaultReadName()) {
-                double force_1 = 0;
-                double force_2 = 0;
-                double force_3 = 0;
-                input >> period >> force_1 >> force_2 >> force_3 >> direction;
-                m_pDynamicBox = new PositionRescaleAnisotropicFrameTensionCoupling(period, force_1, force_2, force_3, direction, this);
-            }
-            else if (type == BoxSizeCouplingToHarmonicPotential::GetDefaultReadName()) {
-                double k = 0;
-                double a0 = 0;
-                input >> period >> k >> a0  >> direction;
-                m_pDynamicBox = new BoxSizeCouplingToHarmonicPotential(period, k, a0, direction, this);
-            }
-            else if (type == BoxSizeCouplingToHarmonicPotentialAnisotropic::GetDefaultReadName()) {
-                double kx = 0;
-                double ky = 0;
-                double kz = 0;
-                double a0x = 0;
-                double a0y = 0;
-                double a0z = 0;
-
-                input >> period >> kx >> ky >> kz >> a0x >> a0y >> a0z >> direction;
-                m_pDynamicBox = new BoxSizeCouplingToHarmonicPotentialAnisotropic(period, kx, ky, kz, a0x , a0y, a0z, direction, this);
-            }
-            else if(type == NoBoxChange::GetDefaultReadName()) {
-                    // has been assigned above
-            }
-            else{
-                std::cout<<"--> error: unknown dynamic box method: "<<type<<std::endl;
-                m_NumberOfErrors++;
-                return false;
-
-            }
-            // Consume remaining input line
-            getline(input, rest);
         }
 // boundry condition
         else if(firstword == AbstractBoundary::GetBaseDefaultReadName() ){ // " Boundary "
@@ -897,6 +816,7 @@ while (input >> firstword) {
 
         }*/
 //-------
+    // I think this should be deleted.
         else if( firstword == "MC_Moves" ) {
             
             getline(input, str);

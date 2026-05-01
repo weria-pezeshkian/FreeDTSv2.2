@@ -1,44 +1,70 @@
-#include "SimDef.h"
-
 /*
  ===============================================================
- FactoryDynamicTopologyMethod
+ FactoryDynamicBox
  ===============================================================
 
  This class implements a singleton factory for creating instances of
- `AbstractDynamicTopology` derived classes dynamically at runtime
+ `AbstractVertexPositionIntegrator` derived classes dynamically at runtime
  based on a string identifier.
 
- Each derived class constructor must take:
-     (parameters..., State*)
+ IMPORTANT:
+ The factory does NOT enforce any specific constructor signature
+ for derived classes.
 
- The State pointer is always passed as the LAST constructor argument.
+ Each derived class is responsible for:
+   - Parsing its own parameters from the input stream
+   - Calling its constructor with the correct argument order
+
+ The only required interface is the creator function.
 
  ---------------------------------------------------------------
  How it works:
  ---------------------------------------------------------------
- 1. Each derived class defines a static creator function:
+ 1. Each derived class (or its .cpp file) defines a creator function:
 
-        static AbstractDynamicTopology* Create(
+        static AbstractVertexPositionIntegrator* Create(
             std::istream& input,
             State* state);
 
- 2. The creator reads parameters from the input stream and constructs
-    the object, passing the State pointer as the final argument.
+    or an equivalent free/static function.
 
- 3. The derived class registers the creator with the factory.
+ 2. The creator:
+      - Reads parameters from the input stream
+      - Constructs the derived object
+      - Passes the State pointer in whatever position the constructor expects
+
+ 3. The creator is registered with the factory using a string identifier.
 
  4. The State class calls:
 
- FactoryDynamicTopologyMethod::Instance()
+        FactoryDynamicBox::Instance()
             .Create(name, input, this);
 
+ 5. The factory:
+      - Looks up the registered creator
+      - Calls it
+      - Returns the constructed object (or nullptr if not found)
+
+ ---------------------------------------------------------------
+ Notes
+ ---------------------------------------------------------------
+ - The State pointer is provided to the creator, but its position
+   in the derived class constructor is NOT fixed by the factory.
+
+ - Returning nullptr indicates:
+      * Unknown type name
+      * Invalid or failed parameter parsing
+
+ - Registration typically happens at static initialization time
+   inside a .cpp file.
+
+ - The factory owns NO memory. The caller is responsible for
+   managing (and deleting) the returned object.
  ---------------------------------------------------------------
 */
-
 class State;   // forward declaration
 
-class FactoryDynamicTopologyMethod {
+class FactoryDynamicBox {
 public:
 
     /*
@@ -56,16 +82,16 @@ public:
         Derived(...parameters..., State* state)
     */
     using Creator =
-        std::function<AbstractDynamicTopology*(std::istream&, State*)>;
+        std::function<AbstractDynamicBox*(std::istream&, State*)>;
 
     /*
     ---------------------------------------------------------------
     Singleton Instance
     ---------------------------------------------------------------
     */
-    static FactoryDynamicTopologyMethod& Instance()
+    static FactoryDynamicBox& Instance()
     {
-        static FactoryDynamicTopologyMethod instance;
+        static FactoryDynamicBox instance;
         return instance;
     }
 
@@ -92,31 +118,30 @@ public:
         state : pointer to the State object creating the evolution
 
     Returns:
-        pointer to AbstractOpenEdgeEvolution or nullptr
+        pointer to AbstractVertexPositionIntegrator or nullptr
     */
-    AbstractDynamicTopology* Create(
+    AbstractDynamicBox* Create(
         const std::string& name,
         std::istream& input,
         State* state)
     {
         auto it = m_Creators.find(name);
 
-        if (it == m_Creators.end()){
+        if (it == m_Creators.end())
             return nullptr;
-        }
 
         return it->second(input, state);
     }
 
 private:
 
-    FactoryDynamicTopologyMethod() = default;
+    FactoryDynamicBox() = default;
 
-    FactoryDynamicTopologyMethod(
-        const FactoryDynamicTopologyMethod&) = delete;
+    FactoryDynamicBox(
+        const FactoryDynamicBox&) = delete;
 
-    FactoryDynamicTopologyMethod& operator=(
-        const FactoryDynamicTopologyMethod&) = delete;
+    FactoryDynamicBox& operator=(
+        const FactoryDynamicBox&) = delete;
 
     std::unordered_map<std::string, Creator> m_Creators;
 };
