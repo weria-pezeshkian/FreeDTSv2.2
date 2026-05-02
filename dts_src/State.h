@@ -348,6 +348,14 @@ private:
 private:
     bool m_CanSimulationCall;
     bool m_CanEnergyCall;
+    bool m_CanpVPositionIntegratorCall;
+    bool m_CanIPoseIntegratorCall;
+
+private:
+    bool HandleSimulationCommands(const std::string& word, std::istream& input);
+    bool HandleEnergyCommands(const std::string& word, std::istream& input);
+    bool HandleVPositionIntegratorCommands(const std::string& word, std::istream& input);
+    bool HandleIPoseIntegratorCommands(const std::string& word, std::istream& input);
 
 };
 

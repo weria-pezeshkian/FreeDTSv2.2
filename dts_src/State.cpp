@@ -1,6 +1,7 @@
 
 #include <fstream>
 #include <time.h>
+#include <sstream>
 #include "MESH.h"
 #include "CreateMashBluePrint.h"
 #include "State.h"
@@ -24,6 +25,8 @@ State::State(std::vector<std::string> argument) :
       m_NumberOfWarnings(0),
       m_CanSimulationCall(true),
       m_CanEnergyCall(true),
+      m_CanpVPositionIntegratorCall(true),
+      m_CanIPoseIntegratorCall(true),
       //============ Initialization of all files
 // make voxels
       m_pVoxelization(new Voxelization<vertex>()),
@@ -295,6 +298,8 @@ bool State::ReadInputFile(std::string file)
      * @param file The name of the input file to be read.
      * @return `true` if the file is successfully read and parsed, `false` otherwise.
      */
+
+
     std::string ext = file.substr(file.find_last_of(".") + 1);
     std::string filename = (ext != InExt) ? file + "." + InExt : file;
 
@@ -302,130 +307,76 @@ bool State::ReadInputFile(std::string file)
         std::cerr << "----> Error: the input file with the name " << filename << " does not exist" << std::endl;
         return false;
     }
-    std::ifstream input(filename);
-    if (!input) {
+    std::ifstream input_read(filename);
+    if (!input_read) {
         std::cerr << "----> Error: failed to open the input file " << filename << std::endl;
         return false;
     }
-
-/*
- We might change to this
- 
-    std::string line;
-    while (std::getline(input, line)) {
+std::string firstword, rest, str, type, line;
+    
+while (std::getline(input_read, line)) {
+    
         if (line.empty() || line[0] == ';') continue;
-
-        std::istringstream iss(line);
-        iss >> firstword;
-
-        if (firstword == AbstractSimulation::GetBaseDefaultReadName()) {
-            if (!RegisterUsingInputFile<FactorySimulationScheme>(iss, "SC442878", m_pSimulation))
-                return false;
-        }
-        else if (firstword == "Temperature") {
-            std::string str;
-            double beta, delta_beta;
-            iss >> str >> beta >> delta_beta;
-            m_pSimulation->SetBeta(beta, delta_beta);
-        }
-        //
-    }
-*/
     
-std::string firstword, rest, str, type;
-while (input >> firstword) {
-    
-        if (input.eof()) break;
-
-        if(firstword.size() !=0  && firstword[0] == ';'){
-            getline(input,rest);
-            continue;
-        }
-//-- simulation (Integrator) block
-    // // "Integrator_Type"
+        std::istringstream input(line);
+        input >> firstword;
+        
         if (firstword == AbstractSimulation::GetBaseDefaultReadName() && m_CanSimulationCall ) {
                  if (!RegisterUsingInputFile<FactorySimulationScheme>(input, "SC442878", m_pSimulation)) {
                      return false;
                  }
         }
-     // end
-    //energy
         else if (firstword == AbstractEnergy::GetBaseDefaultReadName() && m_CanEnergyCall ) {
             if (!RegisterUsingInputFile<FactoryEnergyFunctions>(input, "EF326834", m_pEnergyCalculator)) {
                     return false;
             }
         }
-        else if(firstword == "Box_Centering_F")
-        {
-            m_CanSimulationCall = false;
-            double rate;
-            input>>str>>rate;
-            m_pSimulation->SetCentering(rate);
-            getline(input,rest);
+    // open edge treatment
+        else if (firstword == AbstractOpenEdgeEvolution::GetBaseDefaultReadName()) {
+            if (!RegisterUsingInputFile<FactoryOpenEdgeEvolutionMethod>(input, "OE292838", m_pOpenEdgeEvolution)) {
+                      return false;
+                  }
         }
-        else if(firstword == "Set_Steps")
-        {
-            m_CanSimulationCall = false;
-            int ini,fi;
-            input>>str>>ini>>fi;
-            m_pSimulation->UpdateInitialStep(ini);
-            m_pSimulation->UpdateFinalStep(fi);
-            getline(input,rest);
-        }
-        else if(firstword == "MinfaceAngle")
-        {
-            m_CanSimulationCall = false;
-            double min_angle;
-            input>>str>>min_angle;
-            m_pSimulation->SetMinAngle(min_angle);
-            getline(input,rest);
-        }
-        else if(firstword == "Min_Max_Lenghts")
-        {
-            m_CanSimulationCall = false;
-            double min,max;
-            input>>str>>min>>max;
-            m_pSimulation->SetMinMaxLength(min, max);
+    // end open edge treatment
+    //---- position update
 
-
-            getline(input,rest);
-        }
-        else if(firstword == "Temperature"){
-            m_CanSimulationCall = false;
-            double beta,delta_beta;
-            input>>str>>beta>>delta_beta;
-            m_pSimulation->SetBeta(beta,delta_beta);
-
-        }
-        else if(firstword == "Kappa")
-        {
-            m_CanEnergyCall = false;
-            double k,kg,c0;
-            input>>str>>k>>kg>>c0;
-            m_pEnergyCalculator->SetSurfRigidity(k,kg,c0);
-            getline(input,rest);
-        }
-        else if(firstword == "Edge_Parameters")
-        {
-            m_CanEnergyCall = false;
-            double lambda,kg,kn;
-            input>>str>>lambda>>kg>>kn;
-            m_pEnergyCalculator->SetEdgeRigidity(lambda,kg,kn);
-            //=== send it to force field class
-            getline(input,rest);
-        }
-        else if(firstword == "VertexArea")
-        {
-            m_CanEnergyCall = false;
-            double a,b,c,d;
-            input>>str>>a>>b>>c>>d;
-            
-            if(!m_pEnergyCalculator->SetSizeCoupling (a,b,c,d)){
-                m_NumberOfErrors++;
-                return false;
+        else if (firstword == AbstractVertexPositionIntegrator::GetBaseDefaultReadName() && m_CanpVPositionIntegratorCall) {
+            if (!RegisterUsingInputFile<FactoryVertexPositionIntegrator>(input, "VP292838", m_pVertexPositionIntegrator)) {
+                    return false;
             }
         }
-//---- end of simulation and energy class block
+    //---- end position update //
+   // dynamic box,
+        else if (firstword == AbstractDynamicBox::GetBaseDefaultReadName()) {
+            if (!RegisterUsingInputFile<FactoryDynamicBox>(input, "DB392838", m_pDynamicBox)) {
+                    return false;
+            }
+        }
+    // end dynamic box
+    //---- AlexanderMove
+        else if (firstword == AbstractAlexanderMove::GetBaseDefaultReadName()) {
+            if (!RegisterUsingInputFile<FactoryAlexanderMove>(input, "AM586838", m_pAlexanderMove)) {
+                    return false;
+            }
+        }
+    //---- end //
+        else if (firstword == AbstractDynamicTopology::GetBaseDefaultReadName()) {
+                if (!RegisterUsingInputFile<FactoryDynamicTopologyMethod>(input, "DT986858", m_pDynamicTopology)) {
+                    return false;
+                }
+        }
+        else if(HandleSimulationCommands(firstword, input)){
+            m_CanSimulationCall = false;
+        }
+        else if(HandleEnergyCommands(firstword, input)){
+            m_CanEnergyCall = false;
+        }
+        else if(HandleVPositionIntegratorCommands(firstword, input)){
+            m_CanpVPositionIntegratorCall = false;
+        }
+        else if(HandleIPoseIntegratorCommands(firstword, input)){
+            m_CanIPoseIntegratorCall = false;
+        }
 //---- Visualization file
         else if(firstword == AbstractVisualizationFile::GetBaseDefaultReadName()) {
             input>>str>>type;
@@ -439,7 +390,7 @@ while (input >> firstword) {
         }
 //---- End Visualization file
     //---- inclsuion move
-            else if(firstword == AbstractInclusionPoseIntegrator::GetBaseDefaultReadName()) {
+            else if(firstword == AbstractInclusionPoseIntegrator::GetBaseDefaultReadName() && m_CanIPoseIntegratorCall) {
                     input>>str>>type;
                     if(type == InclusionPoseUpdateByMetropolisAlgorithm::GetDefaultReadName()){  // MetropolisAlgorithm
                         double rate_kawa, rate_angle;
@@ -545,60 +496,6 @@ while (input >> firstword) {
                 }
             }
     // end InclusionConversion
-    // open edge treatment
-            else if (firstword == AbstractOpenEdgeEvolution::GetBaseDefaultReadName()) {
-                  if (!RegisterUsingInputFile<FactoryOpenEdgeEvolutionMethod>(input, "OE292838", m_pOpenEdgeEvolution)) {
-                      return false;
-                  }
-              }
-    // end open edge treatment
-    //---- position update
-
-          else if (firstword == AbstractVertexPositionIntegrator::GetBaseDefaultReadName()) {
-                if (!RegisterUsingInputFile<FactoryVertexPositionIntegrator>(input, "VP292838", m_pVertexPositionIntegrator)) {
-                    return false;
-                }
-            }
-    //---- end position update //
-   // dynamic box,
-            else if (firstword == AbstractDynamicBox::GetBaseDefaultReadName()) {
-                if (!RegisterUsingInputFile<FactoryDynamicBox>(input, "DB392838", m_pDynamicBox)) {
-                    return false;
-                }
-            }
-    // end dynamic box
-    //---- AlexanderMove
-            else if (firstword == AbstractAlexanderMove::GetBaseDefaultReadName()) {
-                if (!RegisterUsingInputFile<FactoryAlexanderMove>(input, "AM586838", m_pAlexanderMove)) {
-                    return false;
-                }
-            }
-    //---- end //
-
-                else if(firstword == AbstractDynamicTopology::GetBaseDefaultReadName()){
-                input >> str >> type;
-                
-                if(type == ConstantTopology::GetDefaultReadName()) {
-                    // Keep the existing ConstantTopology
-                    std::getline(input, rest);
-                }
-                else{
-                    m_pDynamicTopology =
-                    FactoryDynamicTopologyMethod::Instance().Create(
-                                                                    type,
-                                                                    input,
-                                                                    this);
-                    
-                    if(!m_pDynamicTopology)
-                    {
-                        std::cout<<AbstractDynamicTopology::GetErrorMessage(type);
-                        m_NumberOfErrors++;
-                        std::getline(input, rest);
-                        return false;
-                    }
-                    
-                }
-            }
 //-----  start BondedPotentialBetweenVertices
         else if(firstword == AbstractBondedPotentialBetweenVertices::GetBaseDefaultReadName())   { // BondedPotentialBetweenVertices
             input >> str >> type;
@@ -791,7 +688,6 @@ while (input >> firstword) {
 
             if(type == "No")
             {
-                getline(input, rest);
                 return true;
             }
 
@@ -805,34 +701,10 @@ while (input >> firstword) {
             {
                 std::cout << "unknown AdhesionToSubstrate method: " << type << "\n";
                 m_NumberOfErrors++;
-                getline(input, rest);
                 return false;
             }
         }
 //-------
-    // I think this should be deleted.
-        else if( firstword == "MC_Moves" ) {
-            
-            getline(input, str);
-            std::vector<std::string> data = Nfunction::split(str);
-
-            // Check if the correct number of moves is provided
-            const int expectedMoves = 5;
-            if (data.size() != expectedMoves + 1) { // +1 to account for the first element is just = sign
-                std::cout << "---> error: the provided number of MC moves does not cover all the moves. It should be " << expectedMoves << " numbers" << std::endl;
-                return false;
-            }
-            m_pVertexPositionIntegrator->SetMoveRate(Nfunction::String_to_Double(data[1]), Nfunction::String_to_Double(data[2]));
-            m_pAlexanderMove->SetMoveRate(Nfunction::String_to_Double(data[3]));
-            m_pInclusionPoseIntegrator->SetMoveRate(Nfunction::String_to_Double(data[4]),Nfunction::String_to_Double(data[5]));
-
-        }
-        else if(firstword == "FreezingAGroup")
-        {
-            input>>str>>str;
-            m_pVertexPositionIntegrator->UpdateFreezGroupName(str);
-            getline(input,rest);
-        }
         else if(firstword == AbstractForceonVerticesfromInclusions::GetBaseDefaultReadName()) { //InclusionInducedForceOnVertex
             input >> str >> type;
             if(type == Constant_NematicForceFromAnInclusionType::GetDefaultReadName()){  // Constant_NematicForce
@@ -854,7 +726,6 @@ while (input >> firstword) {
                 m_NumberOfErrors++;
                 return false;
             }
-            getline(input,rest);
         }
 //---- force from vector fields on the vertices
         else if(firstword == AbstractForceonVerticesfromVectorFields::GetBaseDefaultReadName()) {
@@ -888,51 +759,6 @@ while (input >> firstword) {
                     return false;
                 }
         }
-        else if(firstword == "TimeSeriesData_Period") { // TimeSeriesData
-            int period;
-            input>>str>>period;
-            m_pTimeSeriesDataOutput->UpdatePeriod(period);
-            getline(input,rest);
-        }
-//-- State class variable
-        else if(firstword == "Run_Tag"){
-            
-                input>>str>>m_GeneralOutputFilename;
-                getline(input,rest);
-            }
-        else if(firstword == "FreezeInclusion")
-        {
-            std::string inc_freez;
-            input>>str>>inc_freez;
-            m_pInclusionPoseIntegrator->SetFreezeTypeName(inc_freez);
-            getline(input,rest);
-        }
-        else if(firstword == "Restart_Period")
-        {
-            int period;
-            input>>str>>period;
-            m_pRestart->UpdatePeriod(period);
-            getline(input,rest);
-        }
-        else if(firstword == "TopologyFile")
-        {
-            input>>str>>m_TopologyFile;
-            getline(input,rest);
-        }
-        else if(firstword == "Seed")
-        {
-            int seed;
-            input>>str>>seed;
-            m_RandomNumberGenerator = new RNG(seed);
-            getline(input,rest);
-        }
-        else if(firstword == "Voxel_Size"){
-            double lx,ly,lz;
-            input>>str>>lx>>ly>>lz;
-            m_pVoxelization->UpdateVoxelSize(lx, ly,  lz);
-            m_pVoxelization->SetDefaultVoxelSize(lx, ly,  lz);
-            getline(input,rest);
-        }
         else if(firstword == AbstractNonbinaryTrajectory::GetBaseDefaultReadName()) {
             
             input>>str>>type;
@@ -942,8 +768,46 @@ while (input >> firstword) {
                 input>>tsiFolder_name>>period;
                 m_pNonbinaryTrajectory  = new Traj_tsi(this, period, tsiFolder_name);
             }
+        }
+        else if(firstword == BTSFile::GetDefaultReadName() ){ // "OutPutTRJ_BTS"
+            int periodic, precision;
+            std::string filename;
+            input>>str>>periodic>>precision>>filename;
+            m_pBinaryTrajectory = new BTSFile(this,periodic,precision,filename);
             getline(input,rest);
 
+        }
+        else if(firstword == "TimeSeriesData_Period") { // TimeSeriesData
+            int period;
+            input>>str>>period;
+            m_pTimeSeriesDataOutput->UpdatePeriod(period);
+        }
+//-- State class variable
+        else if(firstword == "Run_Tag"){
+            
+                input>>str>>m_GeneralOutputFilename;
+            }
+        else if(firstword == "Restart_Period")
+        {
+            int period;
+            input>>str>>period;
+            m_pRestart->UpdatePeriod(period);
+        }
+        else if(firstword == "TopologyFile")
+        {
+            input>>str>>m_TopologyFile;
+        }
+        else if(firstword == "Seed")
+        {
+            int seed;
+            input>>str>>seed;
+            m_RandomNumberGenerator = new RNG(seed);
+        }
+        else if(firstword == "Voxel_Size"){
+            double lx,ly,lz;
+            input>>str>>lx>>ly>>lz;
+            m_pVoxelization->UpdateVoxelSize(lx, ly,  lz);
+            m_pVoxelization->SetDefaultVoxelSize(lx, ly,  lz);
         }
         else if(firstword == "ParallelReplica")
         {
@@ -959,14 +823,6 @@ while (input >> firstword) {
                         
             m_Parallel_Replica.Type = type;
             m_Parallel_Replica.Data = rest;
-
-        }
-        else if(firstword == BTSFile::GetDefaultReadName() ){ // "OutPutTRJ_BTS"
-            int periodic, precision;
-            std::string filename;
-            input>>str>>periodic>>precision>>filename;
-            m_pBinaryTrajectory = new BTSFile(this,periodic,precision,filename);
-            getline(input,rest);
 
         }
         else if(firstword == "INCLUSION")
@@ -998,9 +854,9 @@ while (input >> firstword) {
     }
     
     // read inclusion
-    ReadInclusionType(input);
+    ReadInclusionType(input_read);
     
-    input.close();
+    input_read.close();
     
     return true;
 }
@@ -1270,6 +1126,99 @@ bool State::ReadInclusionType(std::ifstream& input) {
     }
 
     return true;
+}
+bool State::HandleSimulationCommands(const std::string& firstword, std::istream& input){
+    
+    std::string str;
+    if(firstword == "Box_Centering_F")
+    {
+        double rate;
+        input>>str>>rate;
+        m_pSimulation->SetCentering(rate);
+        return true;
+    }
+    else if(firstword == "Set_Steps")
+    {
+        int ini,fi;
+        input>>str>>ini>>fi;
+        m_pSimulation->UpdateInitialStep(ini);
+        m_pSimulation->UpdateFinalStep(fi);
+        return true;
+    }
+    else if(firstword == "MinfaceAngle")
+    {
+        double min_angle;
+        input>>str>>min_angle;
+        m_pSimulation->SetMinAngle(min_angle);
+        return true;
+    }
+    else if(firstword == "Min_Max_Lenghts")
+    {
+        double min,max;
+        input>>str>>min>>max;
+        m_pSimulation->SetMinMaxLength(min, max);
+        return true;
+
+    }
+    else if(firstword == "Temperature"){
+        double beta,delta_beta;
+        input>>str>>beta>>delta_beta;
+        m_pSimulation->SetBeta(beta,delta_beta);
+        return true;
+    }
+    
+    return false;
+}
+bool State::HandleEnergyCommands(const std::string& firstword, std::istream& input){
+    
+    std::string str;
+    if(firstword == "Kappa")
+    {
+        double k,kg,c0;
+        input>>str>>k>>kg>>c0;
+        m_pEnergyCalculator->SetSurfRigidity(k,kg,c0);
+        return true;
+    }
+    else if(firstword == "Edge_Parameters")
+    {
+        double lambda,kg,kn;
+        input>>str>>lambda>>kg>>kn;
+        m_pEnergyCalculator->SetEdgeRigidity(lambda,kg,kn);
+        return true;
+    }
+    else if(firstword == "VertexArea")
+    {
+        double a,b,c,d;
+        input>>str>>a>>b>>c>>d;
+        m_pEnergyCalculator->SetSizeCoupling (a,b,c,d);
+        return true;
+    }
+    
+    return false;
+}
+bool State::HandleVPositionIntegratorCommands(const std::string& firstword, std::istream& input){
+    
+    std::string str;
+    if(firstword == "FreezingAGroup")
+    {
+        input>>str>>str;
+        m_pVertexPositionIntegrator->UpdateFreezGroupName(str);
+        return true;
+
+    }
+    return false;
+}
+bool State::HandleIPoseIntegratorCommands(const std::string& firstword, std::istream& input){
+    
+    if(firstword == "FreezeInclusion")
+    {
+        std::string inc_freez, str;
+        input>>str>>inc_freez;
+        m_pInclusionPoseIntegrator->SetFreezeTypeName(inc_freez);
+        return true;
+    }
+    
+    return false;
 }
 std::string State::CurrentState(){
 

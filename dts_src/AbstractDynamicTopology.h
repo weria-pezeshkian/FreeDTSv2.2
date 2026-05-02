@@ -30,6 +30,10 @@ public:
 
     virtual inline std::string GetDerivedDefaultReadName() {return "";}
     inline static std::string GetBaseDefaultReadName() {return "DynamicTopology";}
+    inline static std::string GetRegistryError(std::string type) {
+        std::string txt = "---> error: unknown method for <Alexander Move> type: " + type;
+        return txt;
+    }
     inline static std::string GetErrorMessage(std::string s) {
         s =  "---> error: unknown dynamic topology method: <" + s + ">\n" ;
         return s;
