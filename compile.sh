@@ -6,8 +6,8 @@
 # University of Copenhagen
 
 cd dts_src
-g++ -c -O3 -std=c++17 *.cpp
-g++ -o DTS *.o
+g++ -c -O3 -flto -std=c++17 -O3 -march=native -mtune=native -ffast-math -funroll-loops *.cpp
+g++ -o DTS -flto *.o
 mv DTS ../
 cd ..
 cd dts_convert

@@ -5,11 +5,13 @@
 
   Author: Valentin Maurer <valentin.maurer@embl-hamburg.de>
 */
+#include <time.h>
+#include <sstream>
 #include "HMFFEnergy.h"
 #include "Nfunction.h"
 #include "State.h"
-#include <time.h>
-#include <sstream>
+#include "./Registry/FactoryForRegistration.h"
+
 
 HMFFEnergy::HMFFEnergy(State *pState, std::string data) : Energy(pState){
   std::vector<std::string> ndata = Nfunction::Split(data);
@@ -145,4 +147,27 @@ double HMFFEnergy::SingleVertexEnergy(vertex *p_vertex) {
     // them here, risking synchronization issues in the future.
     p_vertex->UpdateEnergy(energy);
     return energy;
+}
+namespace
+{
+AbstractEnergy* Create_ReG(
+        std::istream& input,
+        State* state)
+    {
+
+        std::string data;
+        getline(input, data);
+    
+
+        return new HMFFEnergy(state, data);
+    }
+
+    const bool registered = []()
+    {
+        FactoryEnergyFunctions::Instance().Register(
+        HMFFEnergy::GetDefaultReadName(),
+            &Create_ReG
+        );
+        return true;
+    }();
 }

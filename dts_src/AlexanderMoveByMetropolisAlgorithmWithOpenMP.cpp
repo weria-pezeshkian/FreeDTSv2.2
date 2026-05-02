@@ -579,37 +579,50 @@ std::string AlexanderMoveByMetropolisAlgorithmWithOpenMP::CurrentState(){
     state = state + " "+ Nfunction::D2S(m_NumberOfMovePerStep);
     return state;
 }
-
 namespace
 {
-AbstractAlexanderMove* Create_ReG(
+#ifdef _OPENMP
+
+    AbstractAlexanderMove* Create_AM(
         std::istream& input,
         State* state)
-    {
-        double rate = 0.0;
+{
+    double rate = 0.0;
 
-
-        if (!(input >> rate)) {
-            return nullptr;
-        }
-
-        std::string rest;
-        std::getline(input, rest); // consume rest of line
-
-        return new AlexanderMoveByMetropolisAlgorithmWithOpenMP(state, rate);
+    if (!(input >> rate)) {
+        return nullptr;
     }
+
+    std::string rest;
+    std::getline(input, rest);
+
+    return new AlexanderMoveByMetropolisAlgorithmWithOpenMP(state, rate);
+}
+
+#else
+
+    // Stub: OpenMP not available
+AbstractAlexanderMove* Create_AM(
+        std::istream&,
+        State*)
+    {
+        std::cerr
+            << "Error: '"
+            << AlexanderMoveByMetropolisAlgorithmWithOpenMP::GetDefaultReadName()
+            << "' requires OpenMP, but this build does not support it.\n"
+            << "' you can just change to the single thread algorithm .\n";
+
+        return nullptr;
+    }
+
+#endif
 
     const bool registered = []()
     {
-#ifdef _OPENMP
         FactoryAlexanderMove::Instance().Register(
-        AlexanderMoveByMetropolisAlgorithmWithOpenMP::GetDefaultReadName(),
-            &Create_ReG
+            AlexanderMoveByMetropolisAlgorithmWithOpenMP::GetDefaultReadName(),
+            &Create_AM
         );
-#else
-        std::cout<<"---> Error: OpenMP not detected, factory registration skipped: "<<"\n";
-#endif
         return true;
     }();
 }
-

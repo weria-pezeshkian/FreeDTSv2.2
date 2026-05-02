@@ -61,6 +61,12 @@ public:
 
     virtual inline std::string GetDerivedDefaultReadName() = 0;
     inline static std::string GetBaseDefaultReadName() {return "EnergyMethod";}
+    // Registry Error function, called in state class. Since 2026
+    inline static std::string GetRegistryError(std::string type) {
+        std::string txt = "---> error: unknown method for <Energy Functions> type: " + type;
+        return txt;
+    }
+
     
 //---> real functions
     inline double GetEnergy()               const                 {return m_TotalEnergy;}

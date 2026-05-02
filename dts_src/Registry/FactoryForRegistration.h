@@ -7,5 +7,8 @@ using FactoryAlexanderMove = Factory<AbstractAlexanderMove>;
 
 using FactoryOpenEdgeEvolutionMethod = Factory<AbstractOpenEdgeEvolution>;
 
+using FactoryEnergyFunctions  = Factory<AbstractEnergy>;
+
+
 
 #endif

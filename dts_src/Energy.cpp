@@ -3,6 +3,8 @@
 #include <time.h>
 #include "Energy.h"
 #include "State.h"
+#include "./Registry/FactoryForRegistration.h"
+
 /*
  Weria Pezeshkian (weria.pezeshkian@gmail.com)
  Copyright (c) Weria Pezeshkian
@@ -19,7 +21,7 @@ Energy::~Energy() {
 }
 double Energy::SingleVertexEnergy(vertex *p_vertex) {
     
-    double Energy=0.0;
+    double Energy = 0.0;
 //---> note, if the vertex has no inclusion, this will return zero by default
     Energy += m_pState->GetExternalFieldOnInclusions()->GetCouplingEnergy(p_vertex);
     Energy += m_pState->GetVertexAdhesionToSubstrate()->GetCouplingEnergy(p_vertex);
@@ -862,4 +864,27 @@ std::string Energy::CurrentState(){
     state = state + "\n VertexArea = "+Nfunction::D2S(m_Ka)+" "+Nfunction::D2S(m_Area0/sqrt(3)-0.5)+" "+Nfunction::D2S(m_Kl)+" "+Nfunction::D2S((m_l0*m_l0-1)/2);
 
     return state;
+}
+namespace
+{
+AbstractEnergy* Create_ReG(
+        std::istream& input,
+        State* state)
+    {
+
+        std::string data;
+        getline(input, data);
+    
+
+        return new Energy(state);
+    }
+
+    const bool registered = []()
+    {
+        FactoryEnergyFunctions::Instance().Register(
+        Energy::GetDefaultReadName(),
+            &Create_ReG
+        );
+        return true;
+    }();
 }

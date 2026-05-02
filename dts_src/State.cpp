@@ -520,8 +520,13 @@ while (input >> firstword) {
                 }
             }
     //---- end //
+    //energy
     
-    
+            else if (firstword == AbstractEnergy::GetBaseDefaultReadName()) {
+                if (!RegisterUsingInputFile<FactoryEnergyFunctions>(input, "EF326834", m_pEnergyCalculator)) {
+                    return false;
+                }
+            }
     //
                 else if(firstword == AbstractDynamicTopology::GetBaseDefaultReadName()){
                 input >> str >> type;
@@ -691,23 +696,7 @@ while (input >> firstword) {
 
         }
 // end ConstraintBetweenGroups
-//energy
-        else if( firstword == AbstractEnergy::GetBaseDefaultReadName() ) {
-            input >> str >> type;
-            if(type == Energy::GetDefaultReadName()){ // "FreeDTS1.0_FF"
-                m_pEnergyCalculator = new Energy(this);  // Initialize EnergyCalculator
-            }else if(type == HMFFEnergy::GetDefaultReadName()){
-                std::string data;
-                getline(input, data);
-                m_pEnergyCalculator = new HMFFEnergy(this, data);
-            }
-            else {
-                std::cout<<" error---> unknown force field type: "<<type<<std::endl;
-                m_NumberOfErrors++;
-                return false;
-            }
-        }
-//-- end of energy
+
    //--- extenal force on fields and inclsuions
         else if(firstword == AbstractExternalFieldOnVectorFields::GetBaseDefaultReadName()) {  // ConstantFieldOnVectorFields
             
