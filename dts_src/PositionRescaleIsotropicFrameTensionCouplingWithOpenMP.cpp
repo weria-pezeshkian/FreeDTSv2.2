@@ -616,6 +616,7 @@ std::string PositionRescaleIsotropicFrameTensionCouplingWithOpenMP::CurrentState
 
 namespace
 {
+#ifdef _OPENMP
     AbstractDynamicBox* Create_BoxChange(
         std::istream& input,
         State* state)
@@ -631,24 +632,31 @@ namespace
         std::string rest;
         std::getline(input, rest); // consume rest of line
 
-#ifdef _OPENMP
+
         return new PositionRescaleIsotropicFrameTensionCouplingWithOpenMP(period, force, direction, state);
-#else
-        std::cout << "---> warning: OpenMP was not detected, using serial fallback\n";
-        return nullptr;
-#endif
     }
+#else
+AbstractDynamicBox* Create_BoxChange(
+    std::istream& input,
+    State* state)
+{
+    std::cerr
+        << "Error: '"
+        << PositionRescaleIsotropicFrameTensionCouplingWithOpenMP::GetDefaultReadName()
+        << "' requires OpenMP, but this build does not support it.\n"
+        << "' you can just change to the single thread algorithm .\n";
+
+
+    return nullptr;
+}
+#endif
 
     const bool registered = []()
     {
-#ifdef _OPENMP
         FactoryDynamicBox::Instance().Register(
         PositionRescaleIsotropicFrameTensionCouplingWithOpenMP::GetDefaultReadName(),
             &Create_BoxChange
         );
-#else
-        std::cout << "---> Error: OpenMP not detected, factory registration skipped\n";
-#endif
         return true;
     }();
 }

@@ -345,6 +345,10 @@ private:
 
         return true;
     }
+private:
+    bool m_CanSimulationCall;
+    bool m_CanEnergyCall;
+
 };
 
 #endif

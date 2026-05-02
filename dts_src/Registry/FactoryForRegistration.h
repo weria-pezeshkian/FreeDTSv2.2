@@ -9,6 +9,7 @@ using FactoryOpenEdgeEvolutionMethod = Factory<AbstractOpenEdgeEvolution>;
 
 using FactoryEnergyFunctions  = Factory<AbstractEnergy>;
 
+using FactorySimulationScheme  = Factory<AbstractSimulation>;
 
 
 #endif

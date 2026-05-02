@@ -241,7 +241,7 @@ Vec3D CurvatureByShapeOperatorType1::Calculate_Vertex_Normal(vertex *pvertex, do
         Normal = Normal + Nv;
         area += tri->GetArea();
     }
-    area = area/3.0;
+    area *= (1.0 / 3.0);
     // Check for non-positive area
     if(area < 1e-8 ){
         

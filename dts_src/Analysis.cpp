@@ -10,6 +10,8 @@
 #include "Analysis.h"
 #include "State.h"
 #include "SimDef.h"
+#include "./Registry/FactoryForRegistration.h"
+
 /*
  List of skipped function due to lack of clarity based on current state of the code
  They need to be finished before calling this a new version.
@@ -157,4 +159,33 @@ bool Analysis::CenterMesh(){
     }
     
     return true;
+}
+
+namespace
+{
+AbstractSimulation* Create_ReG(
+        std::istream& input,
+        State* state)
+    {
+        std::string str ;
+
+
+        if (!(input >> str)) {
+            return nullptr;
+        }
+
+        std::string rest;
+        std::getline(input, rest); // consume rest of line
+
+        return new Analysis(state, str);
+    }
+
+    const bool registered = []()
+    {
+        FactorySimulationScheme::Instance().Register(
+        Analysis::GetDefaultReadName(),
+            &Create_ReG
+        );
+        return true;
+    }();
 }

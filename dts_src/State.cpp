@@ -22,6 +22,8 @@ State::State(std::vector<std::string> argument) :
       m_pMesh(&m_Mesh), // still until the opening of the constractor, this will not be affective
       m_NumberOfErrors(0),
       m_NumberOfWarnings(0),
+      m_CanSimulationCall(true),
+      m_CanEnergyCall(true),
       //============ Initialization of all files
 // make voxels
       m_pVoxelization(new Voxelization<vertex>()),
@@ -306,6 +308,29 @@ bool State::ReadInputFile(std::string file)
         return false;
     }
 
+/*
+ We might change to this
+ 
+    std::string line;
+    while (std::getline(input, line)) {
+        if (line.empty() || line[0] == ';') continue;
+
+        std::istringstream iss(line);
+        iss >> firstword;
+
+        if (firstword == AbstractSimulation::GetBaseDefaultReadName()) {
+            if (!RegisterUsingInputFile<FactorySimulationScheme>(iss, "SC442878", m_pSimulation))
+                return false;
+        }
+        else if (firstword == "Temperature") {
+            std::string str;
+            double beta, delta_beta;
+            iss >> str >> beta >> delta_beta;
+            m_pSimulation->SetBeta(beta, delta_beta);
+        }
+        //
+    }
+*/
     
 std::string firstword, rest, str, type;
 while (input >> firstword) {
@@ -317,24 +342,22 @@ while (input >> firstword) {
             continue;
         }
 //-- simulation (Integrator) block
-        if(firstword == AbstractSimulation::GetBaseDefaultReadName()) { // "Integrator_Type"
-            input >> str >> type;
-            if(type == MC_Simulation::GetDefaultReadName()){
-                m_pSimulation = new MC_Simulation(this);
+    // // "Integrator_Type"
+        if (firstword == AbstractSimulation::GetBaseDefaultReadName() && m_CanSimulationCall ) {
+                 if (!RegisterUsingInputFile<FactorySimulationScheme>(input, "SC442878", m_pSimulation)) {
+                     return false;
+                 }
+        }
+     // end
+    //energy
+        else if (firstword == AbstractEnergy::GetBaseDefaultReadName() && m_CanEnergyCall ) {
+            if (!RegisterUsingInputFile<FactoryEnergyFunctions>(input, "EF326834", m_pEnergyCalculator)) {
+                    return false;
             }
-            else if(type == Analysis::GetDefaultReadName()){
-                input >> str;
-                m_pSimulation = new Analysis(this, str);
-            }
-            else {
-                std::cout<<AbstractSimulation::GetErrorMessage(type)<<std::endl;
-                m_NumberOfErrors++;
-                return false;
-            }
-            getline(input,rest);
         }
         else if(firstword == "Box_Centering_F")
         {
+            m_CanSimulationCall = false;
             double rate;
             input>>str>>rate;
             m_pSimulation->SetCentering(rate);
@@ -342,6 +365,7 @@ while (input >> firstword) {
         }
         else if(firstword == "Set_Steps")
         {
+            m_CanSimulationCall = false;
             int ini,fi;
             input>>str>>ini>>fi;
             m_pSimulation->UpdateInitialStep(ini);
@@ -350,6 +374,7 @@ while (input >> firstword) {
         }
         else if(firstword == "MinfaceAngle")
         {
+            m_CanSimulationCall = false;
             double min_angle;
             input>>str>>min_angle;
             m_pSimulation->SetMinAngle(min_angle);
@@ -357,6 +382,7 @@ while (input >> firstword) {
         }
         else if(firstword == "Min_Max_Lenghts")
         {
+            m_CanSimulationCall = false;
             double min,max;
             input>>str>>min>>max;
             m_pSimulation->SetMinMaxLength(min, max);
@@ -365,13 +391,41 @@ while (input >> firstword) {
             getline(input,rest);
         }
         else if(firstword == "Temperature"){
-            
+            m_CanSimulationCall = false;
             double beta,delta_beta;
             input>>str>>beta>>delta_beta;
             m_pSimulation->SetBeta(beta,delta_beta);
 
         }
-//---- end of simulation class block
+        else if(firstword == "Kappa")
+        {
+            m_CanEnergyCall = false;
+            double k,kg,c0;
+            input>>str>>k>>kg>>c0;
+            m_pEnergyCalculator->SetSurfRigidity(k,kg,c0);
+            getline(input,rest);
+        }
+        else if(firstword == "Edge_Parameters")
+        {
+            m_CanEnergyCall = false;
+            double lambda,kg,kn;
+            input>>str>>lambda>>kg>>kn;
+            m_pEnergyCalculator->SetEdgeRigidity(lambda,kg,kn);
+            //=== send it to force field class
+            getline(input,rest);
+        }
+        else if(firstword == "VertexArea")
+        {
+            m_CanEnergyCall = false;
+            double a,b,c,d;
+            input>>str>>a>>b>>c>>d;
+            
+            if(!m_pEnergyCalculator->SetSizeCoupling (a,b,c,d)){
+                m_NumberOfErrors++;
+                return false;
+            }
+        }
+//---- end of simulation and energy class block
 //---- Visualization file
         else if(firstword == AbstractVisualizationFile::GetBaseDefaultReadName()) {
             input>>str>>type;
@@ -520,14 +574,7 @@ while (input >> firstword) {
                 }
             }
     //---- end //
-    //energy
-    
-            else if (firstword == AbstractEnergy::GetBaseDefaultReadName()) {
-                if (!RegisterUsingInputFile<FactoryEnergyFunctions>(input, "EF326834", m_pEnergyCalculator)) {
-                    return false;
-                }
-            }
-    //
+
                 else if(firstword == AbstractDynamicTopology::GetBaseDefaultReadName()){
                 input >> str >> type;
                 
@@ -670,6 +717,7 @@ while (input >> firstword) {
             }
             getline(input,rest);
         }
+       // this is different, this is loading
         else if(firstword == "NonequilibriumCommands"){
             getline(input,rest);
             m_pNonequilibriumCommands->LoadCommand(rest);
@@ -761,31 +809,6 @@ while (input >> firstword) {
                 return false;
             }
         }
-        /*else if(firstword == AbstractVertexAdhesionToSubstrate::GetBaseDefaultReadName() ) { // "ConstantField"
-            
-            input >> str >> type;
-            if(type == SphericalVertexSubstrate::GetDefaultReadName() ){
-
-                getline(input,rest);
-                m_pVertexAdhesionToSubstrate = new SphericalVertexSubstrate(rest);
-            }
-            else if(type == FlatVertexSubstrate::GetDefaultReadName() ){
-
-                getline(input,rest);
-                m_pVertexAdhesionToSubstrate = new FlatVertexSubstrate(rest);
-            }
-            else if(type == "No"){
-                getline(input,rest);
-            }
-            else{
-                std::cout<<" unknown AdhesionToSubstrate method "<<std::endl;
-                m_NumberOfErrors++;
-                getline(input,rest);
-                return false;
-            }
-
-
-        }*/
 //-------
     // I think this should be deleted.
         else if( firstword == "MC_Moves" ) {
@@ -903,31 +926,6 @@ while (input >> firstword) {
             m_RandomNumberGenerator = new RNG(seed);
             getline(input,rest);
         }
-        else if(firstword == "Kappa")
-        {
-            double k,kg,c0;
-            input>>str>>k>>kg>>c0;
-            m_pEnergyCalculator->SetSurfRigidity(k,kg,c0);
-            getline(input,rest);
-        }
-        else if(firstword == "Edge_Parameters")
-        {
-            double lambda,kg,kn;
-            input>>str>>lambda>>kg>>kn;
-            m_pEnergyCalculator->SetEdgeRigidity(lambda,kg,kn);
-            //=== send it to force field class
-            getline(input,rest);
-        }
-        else if(firstword == "VertexArea")
-        {
-            double a,b,c,d;
-            input>>str>>a>>b>>c>>d;
-            
-            if(!m_pEnergyCalculator->SetSizeCoupling (a,b,c,d)){
-                m_NumberOfErrors++;
-                return false;
-            }
-        }
         else if(firstword == "Voxel_Size"){
             double lx,ly,lz;
             input>>str>>lx>>ly>>lz;
@@ -975,12 +973,27 @@ while (input >> firstword) {
         {
             break;
         }
-        else {
-            if(firstword.at(0)!=';') {
-                std::cout<<"Error: bad keyword in the input file *** "<<firstword<<" ***\n";
+        else
+        {
+            if (!firstword.empty() && firstword[0] != ';')
+            {
+                std::cerr
+                    << "**********************************************************\n"
+                    << "-->Error: unknown or unexpected keyword in input file: '"
+                    << firstword << "'\n"
+                    << "This indicates that the parser does not recognize this command.\n"
+                    << "Possible causes:\n"
+                    << "  - typo or misspelling in the keyword\n"
+                    << "  - unsupported or deprecated parameter name\n"
+                    << "  - mismatch between input file version and code\n"
+                    << "  e.g., Integrator_Type if declared should come first \n"
+                    << "  and., EnergyMethod if declared should come second \n"
+                << "**********************************************************";
+
+
                 return false;
             }
-            getline(input,rest);
+            std::getline(input, rest);
         }
     }
     
