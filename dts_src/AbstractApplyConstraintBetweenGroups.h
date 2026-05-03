@@ -37,6 +37,10 @@ public:
     static std::string GetBaseDefaultReadName() {
         return "ConstraintBetweenGroups";
     }
+    inline static std::string GetRegistryError(std::string type) {
+        std::string txt = "---> error: unknown method for <ConstraintBetweenGroups> type: " + type;
+        return txt;
+    }
 
 protected:
     double m_Energy;

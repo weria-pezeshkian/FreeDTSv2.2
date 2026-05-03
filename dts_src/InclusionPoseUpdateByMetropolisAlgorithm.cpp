@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "State.h"
 #include "InclusionPoseUpdateByMetropolisAlgorithm.h"
+#include "./Registry/FactoryForRegistration.h"
 
 InclusionPoseUpdateByMetropolisAlgorithm::InclusionPoseUpdateByMetropolisAlgorithm (State *pState)  :
                 m_pState(pState),
@@ -296,7 +297,31 @@ std::string InclusionPoseUpdateByMetropolisAlgorithm::CurrentState(){
     state = state +" "+ Nfunction::D2S(m_NumberOfMovePerStep_Kawasaki) +" "+ Nfunction::D2S(m_NumberOfMovePerStep_Angle);
     return state;
 }
+namespace
+{
+AbstractInclusionPoseIntegrator* Create_ReG(
+        std::istream& input,
+        State* state)
+    {
 
+            double rate_kawa, rate_angle;
+    
+        if (!(input >> rate_kawa>> rate_angle)) {
+            return nullptr;
+        }
+
+        return new InclusionPoseUpdateByMetropolisAlgorithm(state, rate_kawa, rate_angle);
+    }
+
+    const bool registered = []()
+    {
+        FactoryInclusionPoseIntegrator::Instance().Register(
+        InclusionPoseUpdateByMetropolisAlgorithm::GetDefaultReadName(),
+            &Create_ReG
+        );
+        return true;
+    }();
+}
 
 
 

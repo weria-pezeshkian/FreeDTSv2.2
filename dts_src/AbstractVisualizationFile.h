@@ -26,7 +26,11 @@ public:
     virtual std::string CurrentState() = 0;
     inline int GetPeriod()  {return m_Period;}
     inline static std::string GetBaseDefaultReadName()  {return "VisualizationFormat";}
-    
+    // Registry Error function, called in state class. Since 2026
+    inline static std::string GetRegistryError(std::string type) {
+        std::string txt = "---> error: unknown method for box change: " + type;
+        return txt;
+    }
 
     void SetPeriod(int period){
         m_Period = period;

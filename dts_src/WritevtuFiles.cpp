@@ -2,6 +2,7 @@
 #include <string.h>
 #include "State.h"
 #include "WritevtuFiles.h"
+#include "./Registry/FactoryForRegistration.h"
 
 WritevtuFiles::WritevtuFiles(State* pState, int period, std::string foldername) :
     m_FolderName(foldername),
@@ -279,4 +280,31 @@ std::string WritevtuFiles::CurrentState(){
     
     std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName() +" "+m_FolderName+" "+ Nfunction::D2S(m_Period);
     return state;
+}
+// Self registry
+namespace
+{
+AbstractVisualizationFile* Create_Reg(
+        std::istream& input,
+        State* state)
+    {
+        int period = 0;
+        std::string foldername;
+
+        if (!(input >> foldername >> period )) {
+            return nullptr;
+        }
+
+
+    return new WritevtuFiles(state, period, foldername);
+    }
+
+    const bool registered = []()
+    {
+        FactoryVisualizationFile::Instance().Register(
+        WritevtuFiles::GetDefaultReadName(),
+            &Create_Reg
+        );
+        return true;
+    }();
 }

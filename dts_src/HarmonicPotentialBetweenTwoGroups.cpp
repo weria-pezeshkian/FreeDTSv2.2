@@ -1,7 +1,8 @@
 
 
-
 #include "HarmonicPotentialBetweenTwoGroups.h"
+
+#include "./Registry/FactoryForRegistration.h"
 #include "Nfunction.h"
 #include "State.h"
 HarmonicPotentialBetweenTwoGroups::HarmonicPotentialBetweenTwoGroups(State* pState, double K, double l0, std::string group1,std::string group2,double nx,double ny,double nz) {
@@ -187,4 +188,29 @@ std::string HarmonicPotentialBetweenTwoGroups::CurrentState(){
         state = state +" "+Nfunction::D2S(m_Direction(2));
         return state;
 }
+// Self registry
+namespace
+{
+AbstractApplyConstraintBetweenGroups* Create_Reg(
+        std::istream& input,
+        State* state)
+    {
+        double k,l0,nx,ny,nz;
+        std::string g1name,g2name;
 
+        if (!(input>>k>>l0>>g1name>>g2name>>nx>>ny>>nz )) {
+            return nullptr;
+        }
+
+        return new HarmonicPotentialBetweenTwoGroups(state, k, l0, g1name, g2name, nx, ny, nz);
+    }
+
+    const bool registered = []()
+    {
+        FactoryConstraintBetweenGroups::Instance().Register(
+        HarmonicPotentialBetweenTwoGroups::GetDefaultReadName(),
+            &Create_Reg
+        );
+        return true;
+    }();
+}

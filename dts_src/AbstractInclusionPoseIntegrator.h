@@ -29,7 +29,11 @@ public:
     virtual std::string CurrentState() = 0;
     virtual inline std::string GetDerivedDefaultReadName() = 0;
     inline static std::string GetBaseDefaultReadName() {return "InclusionPoseIntegrator";}
-    
+    // Registry Error function, called in state class. Since 2026
+    inline static std::string GetRegistryError(std::string type) {
+        std::string txt = "---> error: unknown method for <Inclusion Pose> type: " + type;
+        return txt;
+    }
 
 
     

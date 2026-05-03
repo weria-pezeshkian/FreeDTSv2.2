@@ -1,7 +1,8 @@
 
 
 #include <stdio.h>
-#include "PositionRescaleFrameTensionCoupling.h"
+#include <tuple>
+#include "GenericPositionRescaleBoxChange.h"
 #include "Nfunction.h"
 #include "vertex.h"
 #include "State.h"
@@ -10,16 +11,13 @@
 
 
 /*
-===============================================================================================================
- Last update Aug 2023 by Weria
+===============================================
+  Started May 2026 by Weria
  Weria Pezeshkian (weria.pezeshkian@gmail.com)
  Copyright (c) Weria Pezeshkian
-This class changes the box in x and y direction to minimize the energy. It is called in input file by Frame_Tension  = on 0 2, where the first flag should be on to start this command and the second argument is frame tension and the third argument is the priodic of the operating.
-
-The way it works is based on the changing the box in x and y direction by a small size of dr by calling "ChangeBoxSize" function.
-=================================================================================================================
+===============================================
 */
-PositionRescaleFrameTensionCoupling::PositionRescaleFrameTensionCoupling(int period, double sigma, std::string direction, State *pState)  :
+GenericPositionRescaleBoxChange::GenericPositionRescaleBoxChange(std::istream& indata, State *pState)  :
         m_pState(pState),
         m_pActiveV(pState->GetMesh()->GetActiveV()),
         m_pActiveT(pState->GetMesh()->GetActiveT()),
@@ -29,36 +27,21 @@ PositionRescaleFrameTensionCoupling::PositionRescaleFrameTensionCoupling(int per
         m_DBeta(pState->GetSimulation()->GetDBeta()),
         m_MinLength2(pState->GetSimulation()->GetMinL2()),
         m_MaxLength2(pState->GetSimulation()->GetMaxL2()),
-        m_MinAngle(pState->GetSimulation()->GetMinAngle()),
-        m_Type (direction){
+        m_MinAngle(pState->GetSimulation()->GetMinAngle()) {
             
-            m_SigmaP = sigma;
-            m_Period = period;
-            //-- convert the type string into the direction vector
-            SetDirection(m_Type);
-
+            
+            SetInputs(indata);
+            
 }
-PositionRescaleFrameTensionCoupling::~PositionRescaleFrameTensionCoupling() {
+GenericPositionRescaleBoxChange::~GenericPositionRescaleBoxChange() {
     
 }
-void PositionRescaleFrameTensionCoupling::Initialize() {
+void GenericPositionRescaleBoxChange::Initialize() {
     
     std::cout<<"---> the algorithm for box change involves applying: "<< GetDefaultReadName()<<" \n";
     m_pBox = (m_pState->GetMesh())->GetBox();
 }
-bool PositionRescaleFrameTensionCoupling::ChangeBoxSize(int step){
-    /**
-     * @brief a call function to change the simulation box size at a given step.
-     *
-     * This function changes the size of the simulation box based on the current step.
-     * It first checks if the current step matches the defined period. If the voxel size
-     * is below a threshold, it updates the voxel size and re-voxelizes. It then computes
-     * the size change for the box using, and attempts to change the
-     * box size based on these calculations.
-     *
-     * @param step The current step in the simulation.
-     * @return true if the box size was changed, false otherwise.
-     */
+bool GenericPositionRescaleBoxChange::ChangeBoxSize(int step){
 //---> if does not match the preiod, return false
     if(step%m_Period != 0)
         return false;
@@ -73,23 +56,12 @@ bool PositionRescaleFrameTensionCoupling::ChangeBoxSize(int step){
         m_pState->GetVoxelization()->UpdateVoxelSize(DVS(0) + 0.2, DVS(1) + 0.2, DVS(2) + 0.2);
         m_pState->GetVoxelization()->Voxelize(m_pActiveV);
     }
-    
-//---> find the size of box change; isotropic method (here all the other methods can be performed)
-    double dx = 1 - 2 * (m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
-    dx *= m_DR;
-    double dy = dx*((*m_pBox)(1))/(*m_pBox)(0);
-    double dz = dx*((*m_pBox)(2))/(*m_pBox)(0);
 
-    // lx, ly, lz how much the box should be scaled in each direction
-     double lx = 1 + m_Direction(0) * dx / (*m_pBox)(0);
-     double ly = 1 + m_Direction(1) * dy / (*m_pBox)(1);
-     double lz = 1 + m_Direction(2) * dz / (*m_pBox)(2);
-    
+    Vec3D dBox = (this->*mF_IsotropyType)();
     double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
 
-    
     // Attempt to change the box size
-    if (AnAtemptToChangeBox(lx, ly, lz, thermal)) {
+    if (AnAtemptToChangeBox(dBox(0), dBox(1), dBox(2), thermal)) {
         m_AcceptedMoves++;
         m_NumberOfAttemptedMoves++;
     }
@@ -99,7 +71,7 @@ bool PositionRescaleFrameTensionCoupling::ChangeBoxSize(int step){
     
     return true;
 }
-bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double ly, double lz, double temp){
+bool GenericPositionRescaleBoxChange::AnAtemptToChangeBox(double lx,double ly, double lz, double temp){
 
 //---> check if we do the move, the distance will be normal
     if(!VertexMoveIsFine(lx, ly, lz)){
@@ -109,14 +81,6 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
     //---> get the energies
     double old_energy = m_pState->GetEnergyCalculator()->GetEnergy();
     double new_energy = 0;
-    
-    double new_systemsize = 1;   // area for 2d, volume for 3d, line for 1d
-    double old_systemsize = 1;
-    for (int i=0;i<3;i++) {
-        if(m_Direction(i) != 0){
-            old_systemsize *= (*m_pBox)(i);
-        }
-    }
     
     // Obtain and sum the initial global variables that might change
     double old_Tvolume = 0.0, old_Tarea = 0.0, old_Tcurvature = 0.0;
@@ -240,14 +204,10 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
     double tot_diff_energy = diff_energy + dE_Cgroup + dE_force_from_inc + dE_volume + dE_t_area + dE_g_curv + dE_bonds;
     double NV = m_pActiveV.size();
     
-    for (int i=0;i<3;i++) {
-        if(m_Direction(i) != 0){
-            new_systemsize *= (*m_pBox)(i);
-        }
-    }
+
     
-    tot_diff_energy -= m_SigmaP * (new_systemsize - old_systemsize);
-    
+    tot_diff_energy += (this->*mF_EnergyOfBoxChange)(lx);
+
 
 
     //---> accept or reject the move
@@ -294,7 +254,7 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
 
     return true;
 }
-bool PositionRescaleFrameTensionCoupling::VertexMoveIsFine(double lx,double ly, double lz){
+bool GenericPositionRescaleBoxChange::VertexMoveIsFine(double lx,double ly, double lz){
     /**
      * @brief Checks if distances are valid given the new box dimensions.
      *
@@ -358,7 +318,7 @@ bool PositionRescaleFrameTensionCoupling::VertexMoveIsFine(double lx,double ly, 
     
     return true;
 }
-bool PositionRescaleFrameTensionCoupling::CheckLinkLength(double lx,double ly, double lz){
+bool GenericPositionRescaleBoxChange::CheckLinkLength(double lx,double ly, double lz){
     /**
      * Checks if the length of links in the mesh is within acceptable bounds after rescaling.
      *
@@ -388,7 +348,7 @@ bool PositionRescaleFrameTensionCoupling::CheckLinkLength(double lx,double ly, d
 
     return true;
 }
-double PositionRescaleFrameTensionCoupling::StretchedDistanceSquardBetweenTwoVertices(vertex * v1,vertex * v2, double lx, double ly, double lz){
+double GenericPositionRescaleBoxChange::StretchedDistanceSquardBetweenTwoVertices(vertex * v1,vertex * v2, double lx, double ly, double lz){
     /**
      * Calculates the squared stretched distance between two vertices.
      *
@@ -446,7 +406,7 @@ double PositionRescaleFrameTensionCoupling::StretchedDistanceSquardBetweenTwoVer
     // Return the squared distance after scaling and applying periodic boundary conditions
     return dx * dx + dy * dy + dz * dz;
 }
-bool PositionRescaleFrameTensionCoupling::CheckFaceAngleOfOneLink(links* p_edge) {
+bool GenericPositionRescaleBoxChange::CheckFaceAngleOfOneLink(links* p_edge) {
     
     // Function to check if the angle between the normal vectors of the faces sharing the given edge
     // is above a minimum threshold defined by m_MinAngle.
@@ -471,7 +431,7 @@ bool PositionRescaleFrameTensionCoupling::CheckFaceAngleOfOneLink(links* p_edge)
     return true;
 }
 
-bool PositionRescaleFrameTensionCoupling::CheckFaces() {
+bool GenericPositionRescaleBoxChange::CheckFaces() {
     // Function to check if the angle between the faces of all links in the m_pRightL list
     // satisfies the minimum angle condition.
     
@@ -487,63 +447,63 @@ bool PositionRescaleFrameTensionCoupling::CheckFaces() {
     // If all links satisfy the face angle condition, return true.
     return true;
 }
-void PositionRescaleFrameTensionCoupling::SetDirection(std::string direction){
-    /**
-     * @brief Sets the direction for box size rescaling.
-     *
-     * This function sets the direction vector for rescaling the box size based on the
-     * provided string. It supports various combinations of X, Y, and Z directions.
-     *
-     * @param direction A string specifying the direction for rescaling ("XYZ", "XY", "XZ", "YZ", "X", "Y", "Z").
-     */
-    if(direction == "XYZ"){
-        m_Direction(0) = 1;
-        m_Direction(1) = 1;
-        m_Direction(2) = 1;
-
-    }
-    else if(direction == "XY"){
-        m_Direction(0) = 1;
-        m_Direction(1) = 1;
-        m_Direction(2) = 0;
-
-    }
-    else if(direction == "XZ"){
-        m_Direction(0) = 1;
-        m_Direction(1) = 0;
-        m_Direction(2) = 1;
-
-    }
-    else if(direction == "YZ"){
-        m_Direction(0) = 0;
-        m_Direction(1) = 1;
-        m_Direction(2) = 1;
-
-    }
-    else if(direction == "X"){
-        m_Direction(0) = 1;
-        m_Direction(1) = 0;
-        m_Direction(2) = 0;
-    }
-    else if(direction == "Y"){
-        m_Direction(0) = 0;
-        m_Direction(1) = 1;
-        m_Direction(2) = 0;
-    }
-    else if(direction == "Z"){
-        m_Direction(0) = 0;
-        m_Direction(1) = 0;
-        m_Direction(2) = 1;
-    }
-    else{
-        // Print an error message if the direction is unknown
-        std::cout << "---> Error: direction of the box change is unknown\n";
-        exit(0);
-    }
+bool GenericPositionRescaleBoxChange::SetInputs(std::istream& input) {
     
-    return;
+    // Semiisotropic_ConstantTension m_Period m_SigmaP m_DR m_Alpha
+    // Semiisotropic_ConstantTension 1        0        0.1  1
+    std::string type;
+    input >> type;
+
+    if (!input) {
+        std::cerr << "--> error: failed to read type\n";
+        return false;
+    }
+
+    if (type == "Semiisotropic_ConstantTension")
+    {
+        mF_IsotropyType      = &GenericPositionRescaleBoxChange::SemiIsotropic;
+        mF_EnergyOfBoxChange = &GenericPositionRescaleBoxChange::EnergySemiIsotropic;
+
+        input >> m_Period >> m_SigmaP >> m_DR >> m_Alpha;
+
+        if (!input) {
+            std::cerr << "--> error: failed to read parameters for " << type << "\n";
+            return false;
+        }
+
+        if (m_Alpha < 0.0)
+        {
+            std::cerr << "--> error: m_Alpha must be >= 0 (got " << m_Alpha << ")\n";
+            return false;
+        }
+
+        return true;
+    }
+
+    std::cerr << "--> error: unknown type '" << type << "'\n";
+    return false;
 }
-std::string PositionRescaleFrameTensionCoupling::CurrentState(){
+Vec3D GenericPositionRescaleBoxChange::SemiIsotropic(){
+    
+    //---> find the size of box change; isotropic method (here all the other methods can be performed)
+        double dx = 1 - 2 * (m_pState->GetRandomNumberGenerator()->UniformRNG(1.0));
+        dx *= m_DR;
+        
+        // lx, ly, lz how much the box should be scaled in each direction
+         double lx = 1 +  dx / (*m_pBox)(0);
+         double ly = lx;
+         double lz = 1 + m_Alpha * (1.0/(lx * lx)-1);
+
+    return Vec3D(lx,ly,lz);
+}
+double GenericPositionRescaleBoxChange::EnergySemiIsotropic(double lx){
+    double Lx = (*m_pBox)(0);
+    double Ly = (*m_pBox)(1);
+    double scale = (1.0 - 1.0/lx);
+    return -m_SigmaP * Lx* Ly * scale * scale;
+}
+
+std::string GenericPositionRescaleBoxChange::CurrentState(){
     
     std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
     state = state +" "+ Nfunction::D2S(m_Period)+" "+Nfunction::D2S(m_SigmaP)+" "+  m_Type;
@@ -552,32 +512,21 @@ std::string PositionRescaleFrameTensionCoupling::CurrentState(){
 // Self registry
 namespace
 {
-AbstractDynamicBox* Create_BoxChange(
-        std::istream& input,
-        State* state)
-    {
-        int period = 0;
-        double force = 0.0;
-        std::string direction ;
+AbstractDynamicBox* Create_BoxChange(std::istream& input, State* state) {
 
-        if (!(input >> period >> force >> direction)) {
-            return nullptr;
-        }
-
-        std::string rest;
-        std::getline(input, rest); // consume rest of line
-
-        return new PositionRescaleFrameTensionCoupling(period, force, direction, state);
+        return new GenericPositionRescaleBoxChange(input, state);
     }
 
     const bool registered = []()
     {
         FactoryDynamicBox::Instance().Register(
-         PositionRescaleFrameTensionCoupling::GetDefaultReadName(),
+         GenericPositionRescaleBoxChange::GetDefaultReadName(),
             &Create_BoxChange
         );
         return true;
     }();
 }
+
+
 
 

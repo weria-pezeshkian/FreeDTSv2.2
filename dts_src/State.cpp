@@ -365,6 +365,27 @@ while (std::getline(input_read, line)) {
                     return false;
                 }
         }
+    //---- Visualization file
+        else if (firstword == AbstractVisualizationFile::GetBaseDefaultReadName()) {
+             if (!RegisterUsingInputFile<FactoryVisualizationFile>(input, "VF446878", m_pVisualizationFile)) {
+                    return false;
+            }
+        }
+    //---- End Visualization file
+    //--- ConstraintBetweenGroups
+        else if (firstword == AbstractApplyConstraintBetweenGroups::GetBaseDefaultReadName()) {
+             if (!RegisterUsingInputFile<FactoryConstraintBetweenGroups>(input, "CG346878", m_pApplyConstraintBetweenGroups)) {
+                    return false;
+            }
+        }
+    //End
+    //---- inclsuion move
+        else if (firstword == AbstractInclusionPoseIntegrator::GetBaseDefaultReadName()) {
+             if (!RegisterUsingInputFile<FactoryInclusionPoseIntegrator>(input, "IP676878", m_pInclusionPoseIntegrator)) {
+                    return false;
+            }
+        }
+    //---- end //
         else if(HandleSimulationCommands(firstword, input)){
             m_CanSimulationCall = false;
         }
@@ -377,44 +398,13 @@ while (std::getline(input_read, line)) {
         else if(HandleIPoseIntegratorCommands(firstword, input)){
             m_CanIPoseIntegratorCall = false;
         }
-//---- Visualization file
-        else if(firstword == AbstractVisualizationFile::GetBaseDefaultReadName()) {
-            input>>str>>type;
-            if(type == WritevtuFiles::GetDefaultReadName()){  // VTUFileFormat
-                double period;
-                std::string foldername;
-                input >> foldername>> period;
-                m_pVisualizationFile = new WritevtuFiles(this, period, foldername);
-            }
+    // this is different, this is loading
+        else if(firstword == "NonequilibriumCommands"){
             getline(input,rest);
+            m_pNonequilibriumCommands->LoadCommand(rest);
         }
-//---- End Visualization file
-    //---- inclsuion move
-            else if(firstword == AbstractInclusionPoseIntegrator::GetBaseDefaultReadName() && m_CanIPoseIntegratorCall) {
-                    input>>str>>type;
-                    if(type == InclusionPoseUpdateByMetropolisAlgorithm::GetDefaultReadName()){  // MetropolisAlgorithm
-                        double rate_kawa, rate_angle;
-                        input >> rate_kawa>> rate_angle;
-                        m_pInclusionPoseIntegrator  = new InclusionPoseUpdateByMetropolisAlgorithm(this, rate_kawa, rate_angle);  // Initialize InclusionPoseIntegrator
-                    }
-                    else if(type == InclusionPoseUpdateByMetropolisAlgorithmOpenMP::GetDefaultReadName()){  // MetropolisAlgorithm
-                        double rate_kawa, rate_angle;
-                        input >> rate_kawa>> rate_angle;
-#ifdef _OPENMP
-                        m_pInclusionPoseIntegrator  = new InclusionPoseUpdateByMetropolisAlgorithmOpenMP(this, rate_kawa, rate_angle);  // Initialize InclusionPoseIntegrator
-#else
-               std::cout<<"---> warnning: OpenMP was not detected, we will use the serial code "<<type<<"\n";
-                        m_pInclusionPoseIntegrator  = new InclusionPoseUpdateByMetropolisAlgorithm(this, rate_kawa, rate_angle);  // Initialize InclusionPoseIntegrator
-#endif
-                    }
-                    else{
-                        std::cout<<"---> error: unknown method for Alexander move "<<type<<"\n";
-                        m_NumberOfErrors++;
-                        return false;
-                    }
-                getline(input,rest);
-            }
-    //---- end //
+
+
 //---- vector field
             else if(firstword == AbstractVectorFieldsRotationMove::GetBaseDefaultReadName()) {
                     input>>str>>type;
@@ -614,33 +604,8 @@ while (std::getline(input_read, line)) {
             }
             getline(input,rest);
         }
-       // this is different, this is loading
-        else if(firstword == "NonequilibriumCommands"){
-            getline(input,rest);
-            m_pNonequilibriumCommands->LoadCommand(rest);
-        }
 // end boundry condition
-//ConstraintBetweenGroups
-        else if(firstword == AbstractApplyConstraintBetweenGroups::GetBaseDefaultReadName()) { // ConstraintBetweenGroups
-            
-            input >> str >> type;
-            if(type == HarmonicPotentialBetweenTwoGroups::GetDefaultReadName()){ // HarmonicPotentialBetweenTwoGroups
-                // ConstraintBetweenGroups  = HarmonicPotentialBetweenTwoGroups 10 0.1 2000 Group1 Group2 0 1 1
-                double k,l0,nx,ny,nz;
-                std::string g1name,g2name;
-                input>>k>>l0>>g1name>>g2name>>nx>>ny>>nz;
-                m_pApplyConstraintBetweenGroups = new HarmonicPotentialBetweenTwoGroups(this, k, l0, g1name, g2name, nx, ny, nz);
-            }
-            else if(type == NoConstraint::GetDefaultReadName()){ // No
-                
-            }
-            else{
-                std::cout<<" error---> unknown method of Constraint Between Groups "<<std::endl;
-            }
-            getline(input,rest);
 
-        }
-// end ConstraintBetweenGroups
 
    //--- extenal force on fields and inclsuions
         else if(firstword == AbstractExternalFieldOnVectorFields::GetBaseDefaultReadName()) {  // ConstantFieldOnVectorFields

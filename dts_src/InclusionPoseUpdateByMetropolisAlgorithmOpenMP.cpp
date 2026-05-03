@@ -6,6 +6,7 @@
 #endif
 #include "State.h"
 #include "InclusionPoseUpdateByMetropolisAlgorithmOpenMP.h"
+#include "./Registry/FactoryForRegistration.h"
 
 InclusionPoseUpdateByMetropolisAlgorithmOpenMP::InclusionPoseUpdateByMetropolisAlgorithmOpenMP (State *pState)  :
                 m_pState(pState),
@@ -312,11 +313,41 @@ std::string InclusionPoseUpdateByMetropolisAlgorithmOpenMP::CurrentState(){
     return state;
 }
 
+namespace
+{
+#ifdef _OPENMP
+InclusionPoseUpdateByMetropolisAlgorithmOpenMP* Create_ReG(
+        std::istream& input,
+        State* state)
+    {
 
+            double rate_kawa, rate_angle;
+    
+        if (!(input >> rate_kawa>> rate_angle)) {
+            return nullptr;
+        }
 
+        return new InclusionPoseUpdateByMetropolisAlgorithmOpenMP(state, rate_kawa, rate_angle);
+    }
+#else
 
+InclusionPoseUpdateByMetropolisAlgorithmOpenMP* Create_ReG(std::istream& input,State* state) {
+    std::cerr
+        << "Error: '"
+        << InclusionPoseUpdateByMetropolisAlgorithmOpenMP::GetDefaultReadName()
+        << "' requires OpenMP, but this build does not support it.\n"
+        << "' you can just change to the single thread algorithm .\n";
 
+    return nullptr;
+}
 
-
-
-
+#endif
+    const bool registered = []()
+    {
+        FactoryInclusionPoseIntegrator::Instance().Register(
+        InclusionPoseUpdateByMetropolisAlgorithmOpenMP::GetDefaultReadName(),
+            &Create_ReG
+        );
+        return true;
+    }();
+}

@@ -45,6 +45,9 @@ public:
         inline std::vector <links *> GetVLinkList()             {return m_VLinkList;}
         inline std::vector <triangle *> GetVTraingleList()         {return m_VTraingleList;}
         inline std::vector <vertex *> GetVNeighbourVertex()     {return m_VNeighbourVertex;}
+    
+
+
         inline Voxel<vertex> * GetVoxel()     {return m_pVoxel;}
 
 //---> functions to access positions and Velocity and possibly forces
