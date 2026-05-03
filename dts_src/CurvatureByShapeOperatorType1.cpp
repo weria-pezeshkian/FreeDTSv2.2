@@ -3,6 +3,8 @@
 
 #include "CurvatureByShapeOperatorType1.h"
 #include "Tensor2.h"
+#include "./Registry/FactoryForRegistration.h"
+
 CurvatureByShapeOperatorType1::CurvatureByShapeOperatorType1(State *pState) : m_pState(pState) {
     
 }
@@ -263,7 +265,20 @@ std::string CurvatureByShapeOperatorType1::CurrentState(){
     std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
     return state;
 }
-
+namespace
+{
+AbstractCurvature* Create_ReG(std::istream& input, State* state) {
+        return new CurvatureByShapeOperatorType1(state);
+    }
+    const bool registered = []()
+    {
+        FactoryCurvatureMethod::Instance().Register(
+        CurvatureByShapeOperatorType1::GetDefaultReadName(),
+            &Create_ReG
+        );
+        return true;
+    }();
+}
 
 
 

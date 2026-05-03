@@ -11,7 +11,7 @@ class AbstractSimulation;
 class AbstractVisualizationFile;
 class AbstractApplyConstraintBetweenGroups;
 class AbstractInclusionPoseIntegrator;
-
+class AbstractCurvature;
 
 using FactoryAlexanderMove = Factory<AbstractAlexanderMove>;
 using FactoryOpenEdgeEvolutionMethod = Factory<AbstractOpenEdgeEvolution>;
@@ -20,5 +20,6 @@ using FactorySimulationScheme  = Factory<AbstractSimulation>;
 using FactoryVisualizationFile  = Factory<AbstractVisualizationFile>;
 using FactoryConstraintBetweenGroups  = Factory<AbstractApplyConstraintBetweenGroups>;
 using FactoryInclusionPoseIntegrator  = Factory<AbstractInclusionPoseIntegrator>;
+using FactoryCurvatureMethod  = Factory<AbstractCurvature>;
 
 #endif

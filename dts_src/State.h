@@ -63,7 +63,6 @@
 // ---- inclusions
 #include "AbstractInclusionPoseIntegrator.h"
 #include "InclusionPoseUpdateByMetropolisAlgorithm.h"
-#include "InclusionPoseUpdateByMetropolisAlgorithmOpenMP.h"
 //--- vector field
 #include "AbstractVectorFieldsRotationMove.h"
 #include "VectorFieldsRotationByMetropolisAlgorithm.h"
@@ -103,7 +102,6 @@
 #include "HarmonicBondsList.h"
 //--- Constraint Between vertex Groups
 #include "AbstractApplyConstraintBetweenGroups.h"
-#include "HarmonicPotentialBetweenTwoGroups.h"
 //--- Inclusion exchange
 #include "AbstractInclusionConversion.h"
 //--- force on ver
@@ -122,9 +120,6 @@
 #include "ConstantExternalField.h"
 #include "ConstantExternalFieldOnOneInclusionType.h"
 #include "ConstantExternalFieldOnVectorFields.h"
-//--- Local Stretching
-#include "AbstractLocalStretching.h"
-#include "AnisotropicStretchingByNematicField.h"
 //--- interaction with Substrate
 #include "AbstractVertexAdhesionToSubstrate.h"
 #include "SphericalVertexSubstrate.h"
@@ -191,8 +186,6 @@ inline AbstractApplyConstraintBetweenGroups *GetApplyConstraintBetweenGroups()  
 
 //---- nonbonded interactions
 inline AbstractNonbondedInteractionBetweenVertices *GetNonbondedInteractionBetweenVertices()                    {return m_NonbondedInteractionBetweenVertices;}
-
-inline AbstractLocalStretching *GetAbstractLocalStretching()                    {return m_pAbstractLocalStretching;}
 //---- algorithm mangments
 inline AbstractTotalAreaCoupling        *GetTotalAreaCoupling()                         {return m_pTotalAreaCoupling;}
 inline AbstractVolumeCoupling           *GetVolumeCoupling()                            {return m_pVolumeCoupling;}
@@ -262,7 +255,6 @@ private:
     AbstractInclusionPoseIntegrator     *m_pInclusionPoseIntegrator;
     AbstractVectorFieldsRotationMove    *m_pVectorFieldsRotationIntegrator;
     
-    AbstractLocalStretching             *m_pAbstractLocalStretching;
 //--- IO file managment
     TimeSeriesDataOutput            *m_pTimeSeriesDataOutput;
     TimeSeriesLogInformation        *m_pTimeSeriesLogInformation;

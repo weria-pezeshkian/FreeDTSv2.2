@@ -54,9 +54,6 @@ State::State(std::vector<std::string> argument) :
       m_pApplyConstraintBetweenGroups(new NoConstraint),  // Initialize ApplyConstraintBetweenGroups
       m_pBoundary(new PBCBoundary),  // Initialize Boundary
       m_pBondedPotentialBetweenVertices(new EmptyBonds),
-
-//---- Initialize local stretching
-      m_pAbstractLocalStretching(new NoLocalStretching),
       //---- Initialize supplementary integrators
       m_pDynamicBox(new NoBoxChange),  // Initialize DynamicBox
       m_pDynamicTopology(new ConstantTopology),  // Initialize DynamicTopology
@@ -140,7 +137,6 @@ State::~State()
     delete m_pSimulation;
     delete m_pVoxelization;
     delete m_pNonequilibriumCommands;
-    delete m_pAbstractLocalStretching;
 }
 bool State::ExploreArguments(std::vector<std::string> &argument){
     /*
@@ -385,6 +381,12 @@ while (std::getline(input_read, line)) {
                     return false;
             }
         }
+    // curvature method
+        else if (firstword == AbstractCurvature::GetBaseDefaultReadName()) {
+             if (!RegisterUsingInputFile<FactoryCurvatureMethod>(input, "CM096878", m_pCurvatureCalculations)) {
+                    return false;
+            }
+        }
     //---- end //
         else if(HandleSimulationCommands(firstword, input)){
             m_CanSimulationCall = false;
@@ -426,15 +428,6 @@ while (std::getline(input_read, line)) {
                         m_NumberOfErrors++;
                         return false;
                     }
-            }
-// --------LocalStretching
-            else if(firstword == AbstractLocalStretching::GetBaseDefaultReadName()) {
-                input>>str>>type;
-                if(type == AnisotropicStretchingByNematicField::GetDefaultReadName()){  // MetropolisAlgorithm
-                    double kp,kn;
-                    input >> kp >> kn;
-                    m_pAbstractLocalStretching = new AnisotropicStretchingByNematicField(kp,kn);
-                }
             }
 //---- Volume_Constraint data
             else if(firstword == AbstractVolumeCoupling::GetBaseDefaultReadName()) {
@@ -981,8 +974,6 @@ bool State::Initialize(){
     m_pDynamicTopology->Initialize();
     m_pOpenEdgeEvolution->Initialize();
     
-    m_pAbstractLocalStretching->Initialize();
-
     
     m_pVAHCalculator->Initialize(this);
     m_pTotalAreaCoupling->Initialize(this);

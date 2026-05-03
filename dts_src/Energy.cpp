@@ -26,8 +26,6 @@ double Energy::SingleVertexEnergy(vertex *p_vertex) {
     Energy += m_pState->GetExternalFieldOnInclusions()->GetCouplingEnergy(p_vertex);
     Energy += m_pState->GetVertexAdhesionToSubstrate()->GetCouplingEnergy(p_vertex);
 
-    Energy += m_pState->GetAbstractLocalStretching()->Energy(p_vertex);
-
     if(p_vertex->m_VertexType == 0) {
     
         Energy += SurfVertexBendingAndStretchingEnergy(p_vertex);

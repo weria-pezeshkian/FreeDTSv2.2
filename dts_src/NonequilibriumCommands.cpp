@@ -4,7 +4,7 @@
 #include "State.h"
 #include "RigidWallTypes.h"
 #include "VolumeCouplingSecondOrder.h"
-
+#include "HarmonicPotentialBetweenTwoGroups.h"
 
 NonequilibriumCommands::NonequilibriumCommands(State* pState) {
     m_pState = pState;

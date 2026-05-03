@@ -28,7 +28,10 @@ public:
     virtual inline std::string GetDerivedDefaultReadName() {return "";}
     
     inline static std::string GetBaseDefaultReadName() {return "CurvatureMethod";}
-    
+    inline static std::string GetRegistryError(std::string type) {
+        std::string txt = "---> error: unknown method for <Curvature Method> type: " + type;
+        return txt;
+    }
 private:
     
 };
