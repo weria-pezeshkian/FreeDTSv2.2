@@ -1,6 +1,7 @@
 #include <unordered_set>
 #include "InteractionBetweenInclusionsIn3D.h"
 #include "State.h"
+#include "./Registry/FactoryForRegistration.h"
 
 // Constructor
 InteractionBetweenInclusionsIn3D::InteractionBetweenInclusionsIn3D(State* pstate, std::string input_data)  : m_pState(pstate), m_Input_Data(input_data) {
@@ -110,6 +111,26 @@ std::string InteractionBetweenInclusionsIn3D::CurrentState() const {
     std::string state = GetBaseDefaultReadName() + " = " + this->GetDerivedDefaultReadName();
     state += " " + m_Input_Data;
     return state;
+}
+namespace
+{
+AbstractNonbondedInteractionBetweenVertices* Create_ReG(
+        std::istream& input,
+        State* state)
+    {
+            std::string inputdata;
+            getline(input,inputdata);
+            return new InteractionBetweenInclusionsIn3D(state, inputdata);
+    }
+
+    const bool registered = []()
+    {
+        FactoryNonbondedInteractionBetweenVertices::Instance().Register(
+        InteractionBetweenInclusionsIn3D::GetDefaultReadName(),
+            &Create_ReG
+        );
+        return true;
+    }();
 }
 
 

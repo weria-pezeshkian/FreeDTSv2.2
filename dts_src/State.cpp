@@ -6,7 +6,6 @@
 #include "CreateMashBluePrint.h"
 #include "State.h"
 #include "./Registry/FactoryVolumeCoupling.h"
-#include "./Registry/FactoryInclusionConversionMethod.h"
 #include "./Registry/FactoryVertexAdhesionToSubstrateMethod.h"
 #include "./Registry/FactoryDynamicTopologyMethod.h"
 #include "./Registry/FactoryVertexPositionIntegrator.h"
@@ -393,6 +392,21 @@ while (std::getline(input_read, line)) {
                     return false;
             }
         }
+        else if (firstword == AbstractVectorFieldsRotationMove::GetBaseDefaultReadName()) {
+             if (!RegisterUsingInputFile<FactoryVectorFieldsRotationMove>(input, "VR887378", m_pVectorFieldsRotationIntegrator)) {
+                    return false;
+            }
+        }
+        else if (firstword == AbstractInclusionConversion::GetBaseDefaultReadName()) {
+             if (!RegisterUsingInputFile<FactoryInclusionConversionMethod>(input, "IC287378", m_pInclusionConversion)) {
+                    return false;
+            }
+        }
+        else if (firstword == AbstractNonbondedInteractionBetweenVertices::GetBaseDefaultReadName()) {
+             if (!RegisterUsingInputFile<FactoryNonbondedInteractionBetweenVertices>(input, "NB387378", m_NonbondedInteractionBetweenVertices)) {
+                    return false;
+            }
+        }
     //---- end //
         else if(HandleSimulationCommands(firstword, input)){
             m_CanSimulationCall = false;
@@ -413,78 +427,60 @@ while (std::getline(input_read, line)) {
         }
 
 
-//---- vector field
-            else if(firstword == AbstractVectorFieldsRotationMove::GetBaseDefaultReadName()) {
-                    input>>str>>type;
-                    if(type == VectorFieldsRotationByMetropolisAlgorithm::GetDefaultReadName()){  // MetropolisAlgorithm
-                        double rate, dr;
-                        input >> rate;
-                        getline(input,rest);
-                        std::vector<std::string> str_dr = Nfunction::Split(rest);
-                        if(str_dr.size() == 0){
-                            m_pVectorFieldsRotationIntegrator  = new VectorFieldsRotationByMetropolisAlgorithm (this, rate);  // Initialize InclusionPoseIntegrator
-                        }
-                        if(str_dr.size() != 0){
-                            dr = Nfunction::String_to_Double(str_dr[0]);
-                            m_pVectorFieldsRotationIntegrator  = new VectorFieldsRotationByMetropolisAlgorithm (this, rate, dr);  // Initialize InclusionPoseIntegrator
-                        }
+
+                else if(firstword == AbstractVertexAdhesionToSubstrate::GetBaseDefaultReadName())
+                {
+                    input >> str >> type;
+
+                    if(type == "No")
+                    {
+                        return true;
+                    }
+
+                    delete m_pVertexAdhesionToSubstrate;
+
+                    m_pVertexAdhesionToSubstrate =
+                        FactoryVertexAdhesionToSubstrateMethod::Instance()
+                            .Create(type, input);
+
+                    if(!m_pVertexAdhesionToSubstrate)
+                    {
+                        std::cout << "unknown AdhesionToSubstrate method: " << type << "\n";
+                        m_NumberOfErrors++;
+                        return false;
+                    }
+                }
+
+    // end InclusionConversion
+    //---- Volume_Constraint data
+                else if(firstword == AbstractVolumeCoupling::GetBaseDefaultReadName()) {
+
+                    input >> str >> type;
+
+                    if(type == "No") {
+                        // Keep the existing NoInclusionConversion
+                        std::getline(input, rest);
                     }
                     else{
-                        std::cout<<"---> error: unknown method for Alexander move "<<type<<"\n";
-                        m_NumberOfErrors++;
-                        return false;
+                        m_pVAHCalculator->MakeVolumeActive();
+                        m_pVAHCalculator->MakeAreaActive();
+                        m_pVolumeCoupling =
+                        FactoryVolumeCoupling::Instance()
+                            .Create(type, input, m_pVAHCalculator);
+                        
+                        if(!m_pVolumeCoupling) {
+                            std::cout << "---> error: unknown volume coupling type "
+                            << type << "\n";
+                            m_NumberOfErrors++;
+                            return false;
+                        }
                     }
-            }
-//---- Volume_Constraint data
-            else if(firstword == AbstractVolumeCoupling::GetBaseDefaultReadName()) {
 
-                input >> str >> type;
-
-                if(type == "No") {
-                    // Keep the existing NoInclusionConversion
-                    std::getline(input, rest);
+                    getline(input, rest);
                 }
-                else{
-                    m_pVAHCalculator->MakeVolumeActive();
-                    m_pVAHCalculator->MakeAreaActive();
-                    m_pVolumeCoupling =
-                    FactoryVolumeCoupling::Instance()
-                        .Create(type, input, m_pVAHCalculator);
-                    
-                    if(!m_pVolumeCoupling) {
-                        std::cout << "---> error: unknown volume coupling type "
-                        << type << "\n";
-                        m_NumberOfErrors++;
-                        return false;
-                    }
-                }
-
-                getline(input, rest);
-            }
-//---- end Volume_Constraint
-    // InclusionConversion and ActiveTwoStateInclusion
+    //---- end Volume_Constraint
     
-            else if(firstword == AbstractInclusionConversion::GetBaseDefaultReadName()) {
-                input >> str >> type;
-                
-                if(type == "No") {
-                    // Keep the existing NoInclusionConversion
-                    std::getline(input, rest);
-                }
-                else{
-                    m_pInclusionConversion =
-                    FactoryInclusionConversionMethod::Instance().Create(type, input);
-                    
-                    if(!m_pInclusionConversion) {
-                        std::cout << "---> error: unknown Inclusion Conversion method '" << type << "'" << std::endl;
-                        m_NumberOfErrors++;
-                        std::getline(input, rest);
-                        return false;
-                    }
-                    m_pInclusionConversion->AssignState(this);
-                }
-            }
-    // end InclusionConversion
+    
 //-----  start BondedPotentialBetweenVertices
         else if(firstword == AbstractBondedPotentialBetweenVertices::GetBaseDefaultReadName())   { // BondedPotentialBetweenVertices
             input >> str >> type;
@@ -506,30 +502,7 @@ while (std::getline(input_read, line)) {
             getline(input,rest);
         }
     
-//-----  start nonBonded
-            else if(firstword == AbstractNonbondedInteractionBetweenVertices::GetBaseDefaultReadName())   { // BondedPotentialBetweenVertices
-                input >> str >> type;
 
-                if(type == NoNonbondedInteractionBetweenVertices::GetDefaultReadName()){
-                    // it is already set to
-                    getline(input,rest);
-                }
-                else if(type == PolarInteractionBetweenEdgesVertices::GetDefaultReadName()) { //
-                    
-                    getline(input,rest);
-                    m_NonbondedInteractionBetweenVertices = new PolarInteractionBetweenEdgesVertices(this, rest);
-                }
-                else if(type == InteractionBetweenInclusionsIn3D::GetDefaultReadName()) { //
-                    
-                    getline(input,rest);
-                    m_NonbondedInteractionBetweenVertices = new InteractionBetweenInclusionsIn3D(this, rest);
-                }
-                else {
-                    std::cerr<<AbstractNonbondedInteractionBetweenVertices::GetErrorMessage(type)<<"\n";
-                    m_NumberOfErrors++;
-                    return false;
-                }
-            }
 //---- global curvature
         else if(firstword == AbstractGlobalCurvature::GetBaseDefaultReadName()) {
 
@@ -620,28 +593,7 @@ while (std::getline(input_read, line)) {
 
             }
         }
-        else if(firstword == AbstractVertexAdhesionToSubstrate::GetBaseDefaultReadName())
-        {
-            input >> str >> type;
 
-            if(type == "No")
-            {
-                return true;
-            }
-
-            delete m_pVertexAdhesionToSubstrate;
-
-            m_pVertexAdhesionToSubstrate =
-                FactoryVertexAdhesionToSubstrateMethod::Instance()
-                    .Create(type, input);
-
-            if(!m_pVertexAdhesionToSubstrate)
-            {
-                std::cout << "unknown AdhesionToSubstrate method: " << type << "\n";
-                m_NumberOfErrors++;
-                return false;
-            }
-        }
 //-------
         else if(firstword == AbstractForceonVerticesfromInclusions::GetBaseDefaultReadName()) { //InclusionInducedForceOnVertex
             input >> str >> type;

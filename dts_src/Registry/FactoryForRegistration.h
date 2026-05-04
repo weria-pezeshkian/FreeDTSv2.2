@@ -13,6 +13,9 @@ class AbstractApplyConstraintBetweenGroups;
 class AbstractInclusionPoseIntegrator;
 class AbstractCurvature;
 class AbstractExternalFieldOnInclusions;
+class AbstractVectorFieldsRotationMove;
+class AbstractInclusionConversion;
+class AbstractNonbondedInteractionBetweenVertices;
 
 using FactoryAlexanderMove = Factory<AbstractAlexanderMove>;
 using FactoryOpenEdgeEvolutionMethod = Factory<AbstractOpenEdgeEvolution>;
@@ -23,5 +26,10 @@ using FactoryConstraintBetweenGroups  = Factory<AbstractApplyConstraintBetweenGr
 using FactoryInclusionPoseIntegrator  = Factory<AbstractInclusionPoseIntegrator>;
 using FactoryCurvatureMethod  = Factory<AbstractCurvature>;
 using FactoryExternalFieldOnInclusions  = Factory<AbstractExternalFieldOnInclusions>;
+using FactoryVectorFieldsRotationMove  = Factory<AbstractVectorFieldsRotationMove>;
+using FactoryInclusionConversionMethod = Factory<AbstractInclusionConversion>;
+using FactoryNonbondedInteractionBetweenVertices = Factory<AbstractNonbondedInteractionBetweenVertices>;
+
+
 
 #endif

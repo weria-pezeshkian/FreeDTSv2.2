@@ -1,5 +1,6 @@
 #include "PolarInteractionBetweenEdgesVertices.h"
 #include "State.h"
+#include "./Registry/FactoryForRegistration.h"
 
 // Constructor
 PolarInteractionBetweenEdgesVertices::PolarInteractionBetweenEdgesVertices(State* pstate, std::string input_data) {
@@ -100,6 +101,25 @@ std::string PolarInteractionBetweenEdgesVertices::CurrentState() const {
     state += " " + m_Input_Data;
     return state;
 }
+namespace
+{
+AbstractNonbondedInteractionBetweenVertices* Create_ReG(
+        std::istream& input,
+        State* state)
+    {
+            std::string inputdata;
+            getline(input,inputdata);
+            return new PolarInteractionBetweenEdgesVertices(state, inputdata);
+    }
 
+    const bool registered = []()
+    {
+        FactoryNonbondedInteractionBetweenVertices::Instance().Register(
+        PolarInteractionBetweenEdgesVertices::GetDefaultReadName(),
+            &Create_ReG
+        );
+        return true;
+    }();
+}
 
 

@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 #include "EquilibriumInclusionExchangeByChemicalPotential.h"
-#include "./Registry/FactoryInclusionConversionMethod.h"
+#include "./Registry/FactoryForRegistration.h"
 #include "Nfunction.h"
 #include "State.h"
 /*
@@ -177,31 +177,31 @@ std::string EquilibriumInclusionExchangeByChemicalPotential::CurrentState(){
 */
 // -----------------------------------------------------------------------------
 
-static class EquilibriumInclusionExchangeByChemicalPotentialRegister {
-
-    // Static create function for the factory
-    static AbstractInclusionConversion* Create(std::istream& input)
+namespace
+{
+AbstractInclusionConversion* Create_ReG(std::istream& input,State* state)
+{
+    std::string inctype1, inctype2;
+    double mu, rate;
+    int period;
+    
+    if (!(input>> period>> rate>> mu>> inctype1>> inctype2)) {
+        return nullptr;
+    }
+        
+        AbstractInclusionConversion* pIncCon =
+        new EquilibriumInclusionExchangeByChemicalPotential(period, rate, mu, inctype1, inctype2);
+        
+        pIncCon->AssignState(state);
+        
+        return pIncCon;
+    }
+    const bool registered = []()
     {
-        std::string inctype1, inctype2;
-        double mu, rate;
-        int period;
-
-        input>> period>> rate>> mu>> inctype1>> inctype2;
-
-        std::string rest;
-        std::getline(input, rest); // consume remaining line
-
-        // Construct and return a new object
-        return new EquilibriumInclusionExchangeByChemicalPotential(period, rate, mu, inctype1, inctype2);
-    }
-
-public:
-    // Constructor automatically registers the class with the factory
-    EquilibriumInclusionExchangeByChemicalPotentialRegister() {
         FactoryInclusionConversionMethod::Instance().Register(
-            "EquilibriumExchange", // string identifier for the factory
-            Create                      // the creator function
+        EquilibriumInclusionExchangeByChemicalPotential::GetDefaultReadName(),
+            &Create_ReG
         );
-    }
-
-} EquilibriumInclusionExchangeByChemicalPotentialRegisterObject; // static instance triggers registration
+        return true;
+    }();
+}

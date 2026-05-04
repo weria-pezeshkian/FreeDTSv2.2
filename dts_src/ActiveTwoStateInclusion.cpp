@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 #include "ActiveTwoStateInclusion.h"
-#include "./Registry/FactoryInclusionConversionMethod.h"
+#include "./Registry/FactoryForRegistration.h"
 #include "Nfunction.h"
 #include "State.h"
  /*
@@ -139,47 +139,39 @@ bool ActiveTwoStateInclusion::Exchange(int step){
     so it can be created dynamically from input streams.
 */
 // -----------------------------------------------------------------------------
-
 namespace
 {
-
-class ActiveTwoStateInclusionRegister
-{
-public:
-
-    ActiveTwoStateInclusionRegister()
-    {
-        FactoryInclusionConversionMethod::Instance().Register(
-            ActiveTwoStateInclusion::GetDefaultReadName(),
-            Create);
-    }
-
-private:
-
-    static AbstractInclusionConversion* Create(std::istream& input)
+    AbstractInclusionConversion* Create_ReG(std::istream& input, State* state)
     {
         std::string inctype1, inctype2;
         int period;
         double ep, percentage, gamma;
 
-        // Read parameters from input
-        input >> inctype1 >> inctype2 >> period >> ep >> percentage >> gamma;
+        if (!(input >> inctype1 >> inctype2 >> period >> ep >> percentage >> gamma)) {
+            return nullptr;
+        }
 
-        std::string rest;
-        std::getline(input, rest);   // consume rest of line
+        AbstractInclusionConversion* pInclusionConversion =
+            new ActiveTwoStateInclusion(
+                period,
+                ep,
+                percentage,
+                gamma,
+                inctype1,
+                inctype2
+            );
 
-        return new ActiveTwoStateInclusion(
-            period,
-            ep,
-            percentage,
-            gamma,
-            inctype1,
-            inctype2);
+        pInclusionConversion->AssignState(state);
+
+        return pInclusionConversion;
     }
-};
 
-
-// Static instance → triggers registration at program start
-ActiveTwoStateInclusionRegister register_ActiveTwoStateInclusion;
-
+    const bool registered = []()
+    {
+        FactoryInclusionConversionMethod::Instance().Register(
+        ActiveTwoStateInclusion::GetDefaultReadName(),
+            &Create_ReG
+        );
+        return true;
+    }();
 }

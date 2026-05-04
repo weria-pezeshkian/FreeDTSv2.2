@@ -138,8 +138,6 @@
 #include "NonequilibriumCommands.h"
 //---  nonbonded energies
 #include "AbstractNonbondedInteractionBetweenVertices.h"
-#include "PolarInteractionBetweenEdgesVertices.h"
-#include "InteractionBetweenInclusionsIn3D.h"
 
 
 struct ParallelReplicaData {  // data structure for turning on and off certain moves

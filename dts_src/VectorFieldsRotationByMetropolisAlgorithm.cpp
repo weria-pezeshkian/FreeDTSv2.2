@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "State.h"
 #include "VectorFieldsRotationByMetropolisAlgorithm.h"
+#include "./Registry/FactoryForRegistration.h"
 
 VectorFieldsRotationByMetropolisAlgorithm::VectorFieldsRotationByMetropolisAlgorithm (State *pState)  :
                 m_pState(pState),
@@ -138,7 +139,34 @@ std::string VectorFieldsRotationByMetropolisAlgorithm::CurrentState(){
     state = state +" "+ Nfunction::D2S(m_NumberOfMovePerStep) +" "+ Nfunction::D2S(m_DR);
     return state;
 }
+namespace
+{
+AbstractVectorFieldsRotationMove* Create_ReG(std::istream& input, State* state) {
+    double rate, dr;
 
+    // Read rate once and validate
+    if (!(input >> rate)) {
+        return nullptr;
+    }
+
+    // Try to read dr
+    if (input >> dr) {
+        return new VectorFieldsRotationByMetropolisAlgorithm(state, rate, dr);
+    } else {
+        input.clear(); // clear fail state so stream can continue being used
+        return new VectorFieldsRotationByMetropolisAlgorithm(state, rate);
+    }
+}
+
+const bool registered = []()
+{
+    FactoryVectorFieldsRotationMove::Instance().Register(
+        VectorFieldsRotationByMetropolisAlgorithm::GetDefaultReadName(),
+        &Create_ReG
+    );
+    return true;
+}();
+}
 
 
 

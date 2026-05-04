@@ -27,7 +27,10 @@ public:
     virtual std::string CurrentState() = 0;
     virtual inline std::string GetDerivedDefaultReadName() = 0;
     inline static std::string GetBaseDefaultReadName() {return "VectorFieldsRotation";}
-    
+    inline static std::string GetRegistryError(std::string type) {
+        std::string txt = "---> error: unknown method for VectorFieldsRotation type: " + type;
+        return txt;
+    }
 
 
     

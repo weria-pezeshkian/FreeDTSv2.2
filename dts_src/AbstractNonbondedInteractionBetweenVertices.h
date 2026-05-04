@@ -75,6 +75,10 @@ public:
     inline static std::string GetErrorMessage(std::string info) {
         return "---> error: unknown NonbondedInteractionBetweenVertices type -- \n";
     }
+    inline static std::string GetRegistryError(std::string type) {
+        std::string txt = "---> error: unknown method for <NonbondedInteraction> type: " + type;
+        return txt;
+    }
 
 };
 

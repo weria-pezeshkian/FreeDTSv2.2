@@ -27,7 +27,10 @@ public:
     virtual inline std::string GetDerivedDefaultReadName() = 0;
     
     inline static std::string GetBaseDefaultReadName() {return "InclusionConversion";}
-
+    inline static std::string GetRegistryError(std::string type) {
+        std::string txt = "---> error: unknown method for <InclusionConversion> type: " + type;
+        return txt;
+    }
     void AssignState(State* state) {
         m_pState = state;
     }
