@@ -1,4 +1,5 @@
 #include "ConstantExternalFieldOnOneInclusionType.h"
+#include "./Registry/FactoryForRegistration.h"
 
 // E = -k*(Field*Inc_direction)^2 --> we could make it k1*(Field*Inc_direction)-k2*(Field*Inc_direction)^2
 
@@ -52,4 +53,27 @@ std::string ConstantExternalFieldOnOneInclusionType::CurrentState(){
     std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
     state += " "+Nfunction::D2S(m_FieldStrength) +" "+ Nfunction::D2S(m_FieldDirection(0))+" "+ Nfunction::D2S(m_FieldDirection(1))+" "+ Nfunction::D2S(m_FieldDirection(2));
     return state;
+}
+namespace
+{
+AbstractExternalFieldOnInclusions* Create_ReG(std::istream& input, State* state) {
+        
+        double k,x,y,z;
+        std::string inctype;
+
+        if (!(input >> inctype>> k >> x >> y>> z)) {
+            return nullptr;
+        }
+    
+        return new ConstantExternalFieldOnOneInclusionType(inctype,k,x,y,z);
+    }
+
+    const bool registered = []()
+    {
+        FactoryExternalFieldOnInclusions::Instance().Register(
+        ConstantExternalFieldOnOneInclusionType::GetDefaultReadName(),
+            &Create_ReG
+        );
+        return true;
+    }();
 }

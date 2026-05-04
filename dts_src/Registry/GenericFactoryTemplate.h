@@ -72,7 +72,7 @@
  ---------------------------------------------------------------
  name  : string identifier of the desired derived type
  input : stream containing parameters for construction
- state : pointer to the calling State object
+ state : pointer to State object
 
  The `state` pointer is always forwarded to the creator, but its
  position in the derived constructor is not dictated by the
@@ -97,8 +97,6 @@
     - Owning the returned pointer
     - Deleting it when appropriate
 
- (Using smart pointers such as std::unique_ptr is recommended
-  for safer ownership management.)
 
  ---------------------------------------------------------------
  Registration Notes
@@ -112,7 +110,7 @@
  ---------------------------------------------------------------
  Thread Safety
  ---------------------------------------------------------------
- - Singleton initialization is thread-safe (since C++11)
+ - Singleton initialization is thread-safe
  - Registration and creation are NOT inherently thread-safe
    and must be externally synchronized if used concurrently
 

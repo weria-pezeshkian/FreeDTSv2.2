@@ -117,8 +117,6 @@
 //--- interaction with external fields
 #include "AbstractExternalFieldOnVectorFields.h"
 #include "AbstractExternalFieldOnInclusions.h"
-#include "ConstantExternalField.h"
-#include "ConstantExternalFieldOnOneInclusionType.h"
 #include "ConstantExternalFieldOnVectorFields.h"
 //--- interaction with Substrate
 #include "AbstractVertexAdhesionToSubstrate.h"
@@ -322,7 +320,7 @@ private:
         std::string str, type;
 
         if (!(input >> str >> type)) {
-            std::cerr << "---> Failed to read input (" << errorTag << ")\n";
+            std::cerr << "---> Error: failed to read input (" << errorTag << ")\n";
             ++m_NumberOfErrors;
             return false;
         }

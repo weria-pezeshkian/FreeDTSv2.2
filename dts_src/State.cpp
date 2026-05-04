@@ -387,6 +387,12 @@ while (std::getline(input_read, line)) {
                     return false;
             }
         }
+    // external field on incs
+        else if (firstword == AbstractExternalFieldOnInclusions::GetBaseDefaultReadName()) {
+             if (!RegisterUsingInputFile<FactoryExternalFieldOnInclusions>(input, "EF876378", m_pExternalFieldOnInclusions)) {
+                    return false;
+            }
+        }
     //---- end //
         else if(HandleSimulationCommands(firstword, input)){
             m_CanSimulationCall = false;
@@ -613,32 +619,6 @@ while (std::getline(input_read, line)) {
                 m_pExternalFieldOnVectorFields = new NoExternalFieldOnVectorFields;
 
             }
-        }
-        else if(firstword == AbstractExternalFieldOnInclusions::GetBaseDefaultReadName() ) { // "ConstantField"
-            
-            input >> str >> type;
-            if(type == ConstantExternalField::GetDefaultReadName() ){
-                double k,x,y,z;
-                input>>k>>x>>y>>z;
-                m_pExternalFieldOnInclusions = new ConstantExternalField(k,x,y,z);
-            }
-            else if(type == ConstantExternalFieldOnOneInclusionType::GetDefaultReadName() ){
-                double k,x,y,z;
-                std::string inctype;
-                input>>inctype>>k>>x>>y>>z;
-                m_pExternalFieldOnInclusions = new ConstantExternalFieldOnOneInclusionType(inctype, k,x,y,z);
-            }
-            else if(type == "No"){
-                
-            }
-            else{
-                std::cout<<" unknown External Field On Inclusions method "<<std::endl;
-                m_NumberOfErrors++;
-                return false;
-            }
-
-            getline(input,rest);
-
         }
         else if(firstword == AbstractVertexAdhesionToSubstrate::GetBaseDefaultReadName())
         {

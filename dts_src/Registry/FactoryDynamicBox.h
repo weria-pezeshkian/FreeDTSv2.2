@@ -63,7 +63,6 @@
  ---------------------------------------------------------------
 */
 class State;   // forward declaration
-
 class FactoryDynamicBox {
 public:
 

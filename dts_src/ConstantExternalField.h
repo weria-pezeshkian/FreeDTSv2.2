@@ -11,7 +11,7 @@
 class ConstantExternalField : public AbstractExternalFieldOnInclusions {
 
 public:
-    ConstantExternalField(double k, double x, double y, double z);
+    ConstantExternalField(double k, double x, double y, double z, double alpha);
     ~ConstantExternalField();
 
     double GetCouplingEnergy(vertex *pvertex);
@@ -23,6 +23,7 @@ public:
 private:
     Vec3D m_FieldDirection;
     double m_FieldStrength;
+    double m_EdgeFieldStrength;
     
     static double CouplingType_1(const double &angle );
     static double CouplingType_2(const double &angle );
