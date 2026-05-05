@@ -5,6 +5,9 @@
 #include "MESH.h"
 #include "CreateMashBluePrint.h"
 #include "State.h"
+#include "Traj_tsi.h"
+#include "WritevtuFiles.h"
+#include "BTSFile.h"
 #include "./Registry/FactoryVolumeCoupling.h"
 #include "./Registry/FactoryVertexAdhesionToSubstrateMethod.h"
 #include "./Registry/FactoryDynamicTopologyMethod.h"
@@ -407,6 +410,36 @@ while (std::getline(input_read, line)) {
                     return false;
             }
         }
+        else if (firstword == AbstractForceonVerticesfromInclusions::GetBaseDefaultReadName()) {
+             if (!RegisterUsingInputFile<FactoryForceonVerticesfromInclusions>(input, "FI387378", m_pForceonVerticesfromInclusions)) {
+                    return false;
+            }
+        }
+        else if (firstword == AbstractForceonVertices::GetBaseDefaultReadName()) {
+             if (!RegisterUsingInputFile<FactoryForceonVertices>(input, "FV457378", m_pForceonVertices)) {
+                    return false;
+            }
+        }
+        else if (firstword == AbstractExternalFieldOnVectorFields::GetBaseDefaultReadName()) {
+             if (!RegisterUsingInputFile<FactoryExternalFieldOnVectorFields>(input, "EV37378", m_pExternalFieldOnVectorFields)) {
+                    return false;
+            }
+        }
+        else if (firstword == AbstractForceonVerticesfromVectorFields::GetBaseDefaultReadName()) {
+             if (!RegisterUsingInputFile<FactoryForceonVerticesfromVectorFields>(input, "VF99378", m_pForceonVerticesfromVectorFields)) {
+                    return false;
+            }
+        }
+        else if (firstword == AbstractNonbinaryTrajectory::GetBaseDefaultReadName()) {
+             if (!RegisterUsingInputFile<FactoryNonbinaryTrajectory>(input, "NT00378", m_pNonbinaryTrajectory)) {
+                    return false;
+            }
+        }
+        else if (firstword == AbstractBinaryTrajectory::GetBaseDefaultReadName()) {
+             if (!RegisterUsingInputFile<FactoryBinaryTrajectory>(input, "BT00278", m_pBinaryTrajectory)) {
+                    return false;
+            }
+        }
     //---- end //
         else if(HandleSimulationCommands(firstword, input)){
             m_CanSimulationCall = false;
@@ -427,7 +460,36 @@ while (std::getline(input_read, line)) {
         }
 
 
-
+    
+    // boundry condition
+            else if(firstword == AbstractBoundary::GetBaseDefaultReadName() ){ // " Boundary "
+                input >> str >> type;
+                if(type == TwoFlatParallelWall::GetDefaultReadName()){   // " "TwoFlatParallelWall" "
+                    double thickness;
+                    char direction;
+                    input>>thickness>>direction;
+                    m_pBoundary = new TwoFlatParallelWall(this, thickness,direction);
+                }
+                else if(type == EllipsoidalShell::GetDefaultReadName()){   // " "EllipsoidalShell" "
+                    double thickness, r, a, b, c;
+                    input >> thickness >> r >> a >> b >> c;
+                    
+                    m_pBoundary = new EllipsoidalShell(this, thickness, r, a, b, c);
+                }
+                else if(type == EllipsoidalCore::GetDefaultReadName()){   // " "EllipsoidalShell" "
+                    double  r, a, b, c;
+                    input >>  r >> a >> b >> c;
+                    
+                    m_pBoundary = new EllipsoidalCore(this, r, a, b, c);
+                }
+                else {
+                    std::cout<<"---> error: unknown Boundary type: "<<type<<std::endl;
+                    m_NumberOfErrors++;
+                    return false;
+                }
+                getline(input,rest);
+            }
+    // end boundry condition
                 else if(firstword == AbstractVertexAdhesionToSubstrate::GetBaseDefaultReadName())
                 {
                     input >> str >> type;
@@ -548,125 +610,15 @@ while (std::getline(input_read, line)) {
             }
             getline(input,rest);
         }
-// boundry condition
-        else if(firstword == AbstractBoundary::GetBaseDefaultReadName() ){ // " Boundary "
-            input >> str >> type;
-            if(type == TwoFlatParallelWall::GetDefaultReadName()){   // " "TwoFlatParallelWall" "
-                double thickness;
-                char direction;
-                input>>thickness>>direction;
-                m_pBoundary = new TwoFlatParallelWall(this, thickness,direction);
-            }
-            else if(type == EllipsoidalShell::GetDefaultReadName()){   // " "EllipsoidalShell" "
-                double thickness, r, a, b, c;
-                input >> thickness >> r >> a >> b >> c;
-                
-                m_pBoundary = new EllipsoidalShell(this, thickness, r, a, b, c);
-            }
-            else if(type == EllipsoidalCore::GetDefaultReadName()){   // " "EllipsoidalShell" "
-                double  r, a, b, c;
-                input >>  r >> a >> b >> c;
-                
-                m_pBoundary = new EllipsoidalCore(this, r, a, b, c);
-            }
-            else {
-                std::cout<<"---> error: unknown Boundary type: "<<type<<std::endl;
-                m_NumberOfErrors++;
-                return false;
-            }
-            getline(input,rest);
-        }
-// end boundry condition
 
 
-   //--- extenal force on fields and inclsuions
-        else if(firstword == AbstractExternalFieldOnVectorFields::GetBaseDefaultReadName()) {  // ConstantFieldOnVectorFields
-            
-            input >> str >> type;
-            getline(input,rest);
-            if(type == ConstantExternalFieldOnVectorFields::GetDefaultReadName() ){
-                
-                m_pExternalFieldOnVectorFields = new ConstantExternalFieldOnVectorFields(rest);
-            }
-            else if(type == NoExternalFieldOnVectorFields::GetDefaultReadName() ){
-                m_pExternalFieldOnVectorFields = new NoExternalFieldOnVectorFields;
 
-            }
-        }
 
-//-------
-        else if(firstword == AbstractForceonVerticesfromInclusions::GetBaseDefaultReadName()) { //InclusionInducedForceOnVertex
-            input >> str >> type;
-            if(type == Constant_NematicForceFromAnInclusionType::GetDefaultReadName()){  // Constant_NematicForce
-                double f0; // force value
-                std::string inc_type;
-                input>>f0>>inc_type;
-                m_pForceonVerticesfromInclusions = new Constant_NematicForceFromAnInclusionType(f0,inc_type);
-            }
-            else if(type == Constant_NematicForce::GetDefaultReadName()){  // Constant_NematicForce
-                double f0; // force value
-                input>>f0;
-                m_pForceonVerticesfromInclusions = new Constant_NematicForce(f0);
-            }
-            else if(firstword == NoForce::GetDefaultReadName()){  // No
-                
-            }
-            else {
-                std::cout<<" unknown Force From Inclusions method "<<std::endl;
-                m_NumberOfErrors++;
-                return false;
-            }
-        }
+
+
 //---- force from vector fields on the vertices
-        else if(firstword == AbstractForceonVerticesfromVectorFields::GetBaseDefaultReadName()) {
-            input >> str >> type;
-            getline(input,rest);
-            if(type == Constant_NematicForceByVectorFields::GetDefaultReadName()){  // Constant_NematicForce
-                m_pForceonVerticesfromVectorFields = new Constant_NematicForceByVectorFields(rest);
-            }
-            else if(type == NoVFForce::GetDefaultReadName()){
-                
-            }
-            else {
-                std::cout<<" unknown Force From vector fields method "<<std::endl;
-                m_NumberOfErrors++;
-                return false;
-            }
-        }
-    //---- force from vector fields on the vertices
-        else if(firstword == AbstractForceonVertices::GetBaseDefaultReadName()) {
-                input >> str >> type;
-                getline(input,rest);
-                if(type == UserDefinedForceonVertices::GetDefaultReadName()){  // Constant_NematicForce
-                    m_pForceonVertices = new UserDefinedForceonVertices(this, rest);
-                }
-                else if(type == NoForceonVertices::GetDefaultReadName()){
-                    
-                }
-                else {
-                    std::cout<<" unknown Force on vertices type has unknown  method "<<std::endl;
-                    m_NumberOfErrors++;
-                    return false;
-                }
-        }
-        else if(firstword == AbstractNonbinaryTrajectory::GetBaseDefaultReadName()) {
-            
-            input>>str>>type;
-            if(type == Traj_tsi::GetDefaultReadName()){ // "TSI"
-                int period;
-                std::string tsiFolder_name;
-                input>>tsiFolder_name>>period;
-                m_pNonbinaryTrajectory  = new Traj_tsi(this, period, tsiFolder_name);
-            }
-        }
-        else if(firstword == BTSFile::GetDefaultReadName() ){ // "OutPutTRJ_BTS"
-            int periodic, precision;
-            std::string filename;
-            input>>str>>periodic>>precision>>filename;
-            m_pBinaryTrajectory = new BTSFile(this,periodic,precision,filename);
-            getline(input,rest);
 
-        }
+
         else if(firstword == "TimeSeriesData_Period") { // TimeSeriesData
             int period;
             input>>str>>period;

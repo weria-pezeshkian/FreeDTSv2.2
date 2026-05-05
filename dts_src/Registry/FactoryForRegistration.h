@@ -16,6 +16,12 @@ class AbstractExternalFieldOnInclusions;
 class AbstractVectorFieldsRotationMove;
 class AbstractInclusionConversion;
 class AbstractNonbondedInteractionBetweenVertices;
+class AbstractForceonVerticesfromInclusions;
+class AbstractForceonVertices;
+class AbstractExternalFieldOnVectorFields;
+class AbstractForceonVerticesfromVectorFields;
+class AbstractNonbinaryTrajectory;
+class AbstractBinaryTrajectory;
 
 using FactoryAlexanderMove = Factory<AbstractAlexanderMove>;
 using FactoryOpenEdgeEvolutionMethod = Factory<AbstractOpenEdgeEvolution>;
@@ -29,7 +35,12 @@ using FactoryExternalFieldOnInclusions  = Factory<AbstractExternalFieldOnInclusi
 using FactoryVectorFieldsRotationMove  = Factory<AbstractVectorFieldsRotationMove>;
 using FactoryInclusionConversionMethod = Factory<AbstractInclusionConversion>;
 using FactoryNonbondedInteractionBetweenVertices = Factory<AbstractNonbondedInteractionBetweenVertices>;
-
-
+using FactoryForceonVerticesfromInclusions = Factory<AbstractForceonVerticesfromInclusions>;
+using FactoryForceonVertices = Factory<AbstractForceonVertices>;
+using FactoryExternalFieldOnVectorFields = Factory<AbstractExternalFieldOnVectorFields>;
+using FactoryForceonVerticesfromVectorFields = Factory<AbstractForceonVerticesfromVectorFields>;
+using FactoryNonbinaryTrajectory = Factory<AbstractNonbinaryTrajectory>;
+using FactoryNonbinaryTrajectory = Factory<AbstractNonbinaryTrajectory>;
+using FactoryBinaryTrajectory = Factory<AbstractBinaryTrajectory>;
 
 #endif

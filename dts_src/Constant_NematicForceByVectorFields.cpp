@@ -1,4 +1,5 @@
 #include "Constant_NematicForceByVectorFields.h"
+#include "./Registry/FactoryForRegistration.h"
 
 
 Constant_NematicForceByVectorFields::Constant_NematicForceByVectorFields(std::string data_stream) {
@@ -137,5 +138,28 @@ std::string Constant_NematicForceByVectorFields::CurrentState(){
         state += "  "+ Nfunction::D2S(*it);
     }
     return state;
+}
+namespace
+{
+AbstractForceonVerticesfromVectorFields* Create_ReG(
+        std::istream& input,
+        State* state)
+    {
+    
+        std::string data;
+        getline(input,data);
+
+
+        return new Constant_NematicForceByVectorFields(data);
+    }
+
+    const bool registered = []()
+    {
+        FactoryForceonVerticesfromVectorFields::Instance().Register(
+        Constant_NematicForceByVectorFields::GetDefaultReadName(),
+            &Create_ReG
+        );
+        return true;
+    }();
 }
 

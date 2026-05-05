@@ -73,10 +73,8 @@
 #include "AbstractBinaryTrajectory.h"
 #include "TimeSeriesDataOutput.h"
 #include "TimeSeriesLogInformation.h"
-#include "Traj_tsi.h"
 #include "Restart.h"
-#include "WritevtuFiles.h"
-#include "BTSFile.h"
+
 //--- energy calcuation method
 #include "AbstractEnergy.h"
 #include "Energy.h"
@@ -106,18 +104,13 @@
 #include "AbstractInclusionConversion.h"
 //--- force on ver
 #include "AbstractForceonVertices.h"
-#include "UserDefinedForceonVertices.h"
 
 //--- force from inc to ver
 #include "AbstractForceonVerticesfromInclusions.h"
 #include "AbstractForceonVerticesfromVectorFields.h"
-#include "Constant_NematicForce.h"
-#include "Constant_NematicForceFromAnInclusionType.h"
-#include "Constant_NematicForceByVectorFields.h"
 //--- interaction with external fields
 #include "AbstractExternalFieldOnVectorFields.h"
 #include "AbstractExternalFieldOnInclusions.h"
-#include "ConstantExternalFieldOnVectorFields.h"
 //--- interaction with Substrate
 #include "AbstractVertexAdhesionToSubstrate.h"
 #include "SphericalVertexSubstrate.h"

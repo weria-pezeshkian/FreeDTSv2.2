@@ -1,4 +1,5 @@
 #include "Constant_NematicForceFromAnInclusionType.h"
+#include "./Registry/FactoryForRegistration.h"
 
 
 Constant_NematicForceFromAnInclusionType::Constant_NematicForceFromAnInclusionType(double f0, std::string inc_typename) : m_IncType(inc_typename){
@@ -123,4 +124,27 @@ std::string Constant_NematicForceFromAnInclusionType::CurrentState(){
     state += " "+Nfunction::D2S(m_F0);
     return state;
 }
+namespace
+{
+AbstractForceonVerticesfromInclusions* Create_ReG(
+        std::istream& input,
+        State* state)
+    {
+        double f0; // force value
+        std::string incType;
+        if (!(input >> f0 >> incType)) {
+            return nullptr;
+        }
 
+        return new Constant_NematicForceFromAnInclusionType(f0 , incType);
+    }
+
+    const bool registered = []()
+    {
+        FactoryForceonVerticesfromInclusions::Instance().Register(
+         Constant_NematicForceFromAnInclusionType::GetDefaultReadName(),
+            &Create_ReG
+        );
+        return true;
+    }();
+}

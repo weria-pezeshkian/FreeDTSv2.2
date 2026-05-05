@@ -25,7 +25,10 @@ public:
     virtual std::string CurrentState() = 0;
     virtual inline std::string GetDerivedDefaultReadName() = 0;
     inline static std::string GetBaseDefaultReadName() {return "ExternalFieldOnVectorFields";}
-
+    inline static std::string GetRegistryError(std::string type) {
+        std::string txt = "---> error: unknown method for <ExternalFieldOnVectorFields> type: " + type;
+        return txt;
+    }
     
 private:
     

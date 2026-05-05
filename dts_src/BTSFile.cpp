@@ -10,6 +10,8 @@
 #include "State.h"
 #include "Nfunction.h"
 #include "CreateMashBluePrint.h"
+#include "./Registry/FactoryForRegistration.h"
+
 BTSFile::BTSFile(State* pState){
     m_Periodic = 0;
     m_pState = pState;
@@ -167,4 +169,28 @@ std::string BTSFile::CurrentState(){
     
     std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
     return state;
+}
+namespace
+{
+AbstractBinaryTrajectory* Create_ReG(
+        std::istream& input,
+        State* state)
+    {
+        int periodic, precision;
+        std::string filename;
+
+        if (!(input >> periodic >> precision >> filename)) {
+            return nullptr;
+        }
+
+    return new BTSFile(state, periodic, precision, filename);
+    }
+
+    const bool registered = []()
+    {
+        FactoryBinaryTrajectory::Instance().Register(BTSFile::GetDefaultReadName(),
+            &Create_ReG
+        );
+        return true;
+    }();
 }

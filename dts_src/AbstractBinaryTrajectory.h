@@ -24,7 +24,10 @@ public:
     virtual std::string CurrentState() = 0;
     virtual inline std::string GetDerivedDefaultReadName() {return "";}
     inline static std::string GetBaseDefaultReadName() {return "BinaryTrajectory";}
-
+    inline static std::string GetRegistryError(std::string type) {
+        std::string txt = "---> error: unknown method for <BinaryTrajectory> type: " + type;
+        return txt;
+    }
     
 private:
     

@@ -1,5 +1,6 @@
 #include "UserDefinedForceonVertices.h"
 #include "State.h"
+#include "./Registry/FactoryForRegistration.h"
 
 UserDefinedForceonVertices::UserDefinedForceonVertices(State *pState, std::string data_stream) : m_Inputs(data_stream), m_pState(pState)
 {
@@ -57,4 +58,26 @@ std::string UserDefinedForceonVertices::CurrentState(){
     state = state + m_Inputs;
     return state;
 }
+namespace
+{
+AbstractForceonVertices* Create_ReG(
+        std::istream& input,
+        State* state)
+    {
+    
+        std::string data;
+        getline(input,data);
 
+
+        return new UserDefinedForceonVertices(state, data);
+    }
+
+    const bool registered = []()
+    {
+        FactoryForceonVertices::Instance().Register(
+            UserDefinedForceonVertices::GetDefaultReadName(),
+            &Create_ReG
+        );
+        return true;
+    }();
+}

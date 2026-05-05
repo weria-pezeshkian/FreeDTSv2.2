@@ -1,4 +1,5 @@
 #include "ConstantExternalFieldOnVectorFields.h"
+#include "./Registry/FactoryForRegistration.h"
 
 // E = -k*(Field*Inc_direction)^2 --> we could make it k1*(Field*Inc_direction)-k2*(Field*Inc_direction)^2
 
@@ -62,4 +63,27 @@ std::string ConstantExternalFieldOnVectorFields::CurrentState(){
 
     }
     return state;
+}
+namespace
+{
+AbstractExternalFieldOnVectorFields* Create_ReG(
+        std::istream& input,
+        State* state)
+    {
+    
+        std::string data;
+        getline(input,data);
+
+
+        return new ConstantExternalFieldOnVectorFields(data);
+    }
+
+    const bool registered = []()
+    {
+        FactoryExternalFieldOnVectorFields::Instance().Register(
+        ConstantExternalFieldOnVectorFields::GetDefaultReadName(),
+            &Create_ReG
+        );
+        return true;
+    }();
 }

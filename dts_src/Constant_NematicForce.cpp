@@ -1,4 +1,5 @@
 #include "Constant_NematicForce.h"
+#include "./Registry/FactoryForRegistration.h"
 
 
 Constant_NematicForce::Constant_NematicForce(double f0) : m_ForceFunction(nullptr) {
@@ -245,4 +246,27 @@ std::string Constant_NematicForce::CurrentState(){
     state += " "+Nfunction::D2S(m_F0);
     return state;
 }
+namespace
+{
+AbstractForceonVerticesfromInclusions* Create_ReG(
+        std::istream& input,
+        State* state)
+    {
+        double f0; // force value
 
+        if (!(input >> f0)) {
+            return nullptr;
+        }
+
+        return new Constant_NematicForce(f0);
+    }
+
+    const bool registered = []()
+    {
+        FactoryForceonVerticesfromInclusions::Instance().Register(
+        Constant_NematicForce::GetDefaultReadName(),
+            &Create_ReG
+        );
+        return true;
+    }();
+}

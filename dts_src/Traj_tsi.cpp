@@ -5,6 +5,9 @@
 #include "vertex.h"
 #include "Traj_tsi.h"
 #include "Nfunction.h"
+#include "./Registry/FactoryForRegistration.h"
+
+
 Traj_tsi::Traj_tsi(State *pstate){
 
     m_Period = 1000;
@@ -333,4 +336,29 @@ std::string Traj_tsi::CurrentState(){
     std::string state = GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
     state = state +" "+m_Folder_name+" "+Nfunction::D2S(m_Period);
     return state;
+}
+namespace
+{
+AbstractNonbinaryTrajectory* Create_ReG(
+        std::istream& input,
+        State* state)
+    {
+    
+        int period;
+        std::string tsiFolder_name;
+        if (!(input >> tsiFolder_name >> period)){
+                return nullptr;
+        }
+
+
+        return new Traj_tsi(state, period, tsiFolder_name);
+    }
+
+    const bool registered = []()
+    {
+        FactoryNonbinaryTrajectory::Instance().Register(Traj_tsi::GetDefaultReadName(),
+            &Create_ReG
+        );
+        return true;
+    }();
 }
