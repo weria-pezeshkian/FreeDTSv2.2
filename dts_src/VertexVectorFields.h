@@ -54,7 +54,7 @@ public:
      * @param pMesh A pointer to the mesh object.
      * @return true if initialization is successful, false otherwise.
      */
-    bool Initialize(int no_v, std::string data, MESH *pMesh);
+    bool Initialize(int no_v, const std::string& data, MESH *pMesh);
     
     /*
      * @brief Get the vector fields as a formatted string.

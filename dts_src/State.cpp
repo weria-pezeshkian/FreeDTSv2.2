@@ -728,57 +728,63 @@ bool State::Initialize(){
     
        // m_RandomNumberGenerator->Initialize();
         // Generate mesh from the mesh blueprint
-        m_Mesh.GenerateMesh(mesh_blueprint);
-        m_pVoxelization->SetBox(m_pMesh->GetBox());
+       
+        if(!(m_Mesh.GenerateMesh(mesh_blueprint))){
+            std::cout<<"\033[1;31m [ERROR]-->\033[0m An error has been found during mesh generation  \n";
+            m_NumberOfErrors++;
+        }
+        else{
+
+            m_pVoxelization->SetBox(m_pMesh->GetBox());
 
         // Update group from index file
-        m_pMesh->UpdateGroupFromIndexFile(m_IndexFileName);
+            m_pMesh->UpdateGroupFromIndexFile(m_IndexFileName);
 //============ activate of all inputs and data structures
-        m_pRestart->SetRestartFileName();
+            m_pRestart->SetRestartFileName();
 //----> calaculate curvature for all vertices
-        m_pCurvatureCalculations->Initialize();
+            m_pCurvatureCalculations->Initialize();
 //----> set some easy access for integrators
-        m_pVertexPositionIntegrator->Initialize();
-        m_pAlexanderMove->Initialize();
-        m_pInclusionPoseIntegrator->Initialize();
-        m_pVectorFieldsRotationIntegrator->Initialize();
+            m_pVertexPositionIntegrator->Initialize();
+            m_pAlexanderMove->Initialize();
+            m_pInclusionPoseIntegrator->Initialize();
+            m_pVectorFieldsRotationIntegrator->Initialize();
 //----> boundry of the simulations
-        m_pBoundary->Initialize();
-        m_pForceonVertices->Initialize();
+            m_pBoundary->Initialize();
+            m_pForceonVertices->Initialize();
 
 //-----> box change
-        m_pDynamicBox->Initialize();
+            m_pDynamicBox->Initialize();
     
 //----> inclsuion exchange, active inclsuion exchange
-    m_pInclusionConversion->Initialize();
-    m_pDynamicTopology->Initialize();
-    m_pOpenEdgeEvolution->Initialize();
+            m_pInclusionConversion->Initialize();
+            m_pDynamicTopology->Initialize();
+            m_pOpenEdgeEvolution->Initialize();
     
     
-    m_pVAHCalculator->Initialize(this);
-    m_pTotalAreaCoupling->Initialize(this);
-    m_pVolumeCoupling->Initialize(this);
-    m_pCoupleGlobalCurvature->Initialize(this);
+            m_pVAHCalculator->Initialize(this);
+            m_pTotalAreaCoupling->Initialize(this);
+            m_pVolumeCoupling->Initialize(this);
+            m_pCoupleGlobalCurvature->Initialize(this);
    // m_pForceonVerticesfromInclusions this does not have one
-    m_pApplyConstraintBetweenGroups->Initialize();
-    m_pSimulation->Initialize();
-    m_pBondedPotentialBetweenVertices->Initialize();
+            m_pApplyConstraintBetweenGroups->Initialize();
+            m_pSimulation->Initialize();
+            m_pBondedPotentialBetweenVertices->Initialize();
 
 //--- now that the system is ready for simulation, we first write the State into the log file and make one vis 
-    m_pTimeSeriesLogInformation->WriteStartingState();
-    m_pVisualizationFile->WriteAFrame(-m_pVisualizationFile->GetPeriod());
+            m_pTimeSeriesLogInformation->WriteStartingState();
+            m_pVisualizationFile->WriteAFrame(-m_pVisualizationFile->GetPeriod());
 //----> energy class
 //---> to get interaction energies
-    m_pEnergyCalculator->Initialize(m_InputFileName);
+            m_pEnergyCalculator->Initialize(m_InputFileName);
 //---> to update each vertex and edge energy. Up to now May 2024, edge energy is not zero when both vertices has inclusions
-    m_pEnergyCalculator->UpdateTotalEnergy(m_pEnergyCalculator->CalculateAllLocalEnergy());
+            m_pEnergyCalculator->UpdateTotalEnergy(m_pEnergyCalculator->CalculateAllLocalEnergy());
 
     //-------->
-    m_NonbondedInteractionBetweenVertices->Initialize();
-
-    if(m_NumberOfErrors!=0){
+            m_NonbondedInteractionBetweenVertices->Initialize();
+    }
+    if(m_NumberOfErrors != 0){
         std::cout<<" There were "<<m_NumberOfErrors<<" errors in the input files "<<std::endl;
-        exit(0);
+        return false;
     }
     if(m_NumberOfWarnings!=0){
         std::cout<<" There were "<<m_NumberOfWarnings<<" warning in the input files "<<std::endl;

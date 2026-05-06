@@ -42,7 +42,13 @@ Job::Job(const std::vector<std::string> &argument) {
 #ifndef _OPENMP
     // Perform a normal simulation on a single CPU if OpenMP is not enabled
     State T_state(argument);
-    T_state.Initialize();
+    
+    if (!T_state.Initialize()) {
+        std::cerr << "\033[1;31m"   // Bold red
+                  << "\nFATAL ERROR\033[0m: State initialization failed!\n"
+                  << "     the program will terminate here! \n";
+        std::exit(EXIT_FAILURE);
+    }
     T_state.GetSimulation()->do_Simulation();
     
 #else

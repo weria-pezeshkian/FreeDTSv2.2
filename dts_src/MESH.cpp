@@ -366,7 +366,11 @@ bool MESH::GenerateMesh(MeshBluePrint meshblueprint)
         // Iterate over active vertices and initialize them with corresponding vector field data
         for (std::vector<vertex*>::iterator it = m_pActiveV.begin(); it != m_pActiveV.end(); ++it, ++data_it) {
             std::string data_line = data_it->data_line;
-            (*it)->Initialize(m_No_VectorFields_Per_V, data_line, this);
+            
+            if(!((*it)->Initialize(m_No_VectorFields_Per_V, data_line, this))){
+                std::cout<<"---> error: the topology file has vector field, but the type is not defined in the input file\n";
+                return false;
+            }
         }
     }//     if(m_No_VectorFields_Per_V !=0) {
     else{

@@ -16,8 +16,13 @@ VertexVectorFields::~VertexVectorFields() {
     m_VectorFields.clear(); // Clear the vector to remove dangling pointers.
 }
 
-// Initialize the VertexVectorFields with the given number of vector fields and data.
-bool VertexVectorFields::Initialize(int no_v, std::string data, MESH *pMesh) {
+
+
+bool VertexVectorFields::Initialize(int no_v, const std::string& data, MESH* pMesh)
+{
+    // Initialize the VertexVectorFields with the given number of vector fields and data.
+
+
     /**
      * @brief Initializes the vector fields.
      *
@@ -30,41 +35,79 @@ bool VertexVectorFields::Initialize(int no_v, std::string data, MESH *pMesh) {
      * @param pMesh A pointer to the mesh object.
      * @return true if initialization is successful, false otherwise.
      */
-    m_pMesh = pMesh;
-    std::vector<InclusionType*> all_incType = m_pMesh->GetInclusionType();
-
-    std::vector<std::string> data_str = Nfunction::Split(data);
-    m_NoFields = no_v;
-
-    // Check if the data provided matches the expected format.
-    if (data_str.size() != 3 * m_NoFields) {
-        std::cout << "---> error, info on vector field is not enough \n";
+    if (no_v <= 0 || pMesh == nullptr) {
+        std::cerr << "---> error: invalid mesh pointer, should not happen \n";
         return false;
     }
 
-    // Clear existing vector fields if any.
-    for (size_t i = 0; i < m_VectorFields.size(); ++i) {
-        delete m_VectorFields[i];
+    m_pMesh = pMesh;
+
+    const auto& all_incType = m_pMesh->GetInclusionType();
+
+    std::vector<std::string> data_str = Nfunction::Split(data);
+
+    constexpr int fields_per_entry = 3;
+
+    if (static_cast<int>(data_str.size()) != fields_per_entry * no_v) {
+        std::cerr << "---> error: insufficient or malformed vector field data\n";
+        return false;
     }
-    m_VectorFields.clear();
-    m_VectorFields.reserve(m_NoFields); // Reserve space for new vector fields.
 
-    // Create new VectorField objects and add them to m_VectorFields.
+    // Parse everything first BEFORE modifying object state (strong exception safety)
+    struct ParsedField {
+        int inc_type_id;
+        double x;
+        double y;
+    };
+
+    std::vector<ParsedField> parsed;
+    parsed.reserve(no_v);
+
     for (int i = 0; i < no_v; ++i) {
-        int inc_type_id = Nfunction::String_to_Int(data_str[i * 3]);
+        const int base = i * fields_per_entry;
 
-        if (inc_type_id >= static_cast<int>(all_incType.size())) {
-            std::cout << "---> vector field: inc type id too high \n";
+        int inc_type_id = 0;
+        double x = 0.0, y = 0.0;
+
+        try {
+            inc_type_id = Nfunction::String_to_Int(data_str[base]);
+            x = Nfunction::String_to_Double(data_str[base + 1]);
+            y = Nfunction::String_to_Double(data_str[base + 2]);
+        }
+        catch (const std::exception& e) {
+            std::cerr << "---> error: failed to parse vector field data: " << e.what() << "\n";
             return false;
         }
 
-        double x = Nfunction::String_to_Double(data_str[i * 3 + 1]);
-        double y = Nfunction::String_to_Double(data_str[i * 3 + 2]);
-        InclusionType* inc_type = all_incType[inc_type_id];
+        if (inc_type_id < 0 || inc_type_id >= static_cast<int>(all_incType.size())) {
+            std::cerr << "\033[1;31m [ERROR]-->\033[0m : vector field type does not exist \n";
+            return false;
+        }
 
-        // Allocate a new VectorField object and add it to the vector.
-        m_VectorFields.push_back(new VectorField(i, inc_type, x, y));
+        parsed.push_back({inc_type_id, x, y});
     }
+
+    // Now safely replace internal state
+    std::vector<std::unique_ptr<VectorField>> newFields;
+    newFields.reserve(no_v);
+
+    for (int i = 0; i < no_v; ++i) {
+        const auto& f = parsed[i];
+        newFields.push_back(std::make_unique<VectorField>(
+            i,
+            all_incType[f.inc_type_id],
+            f.x,
+            f.y
+        ));
+    }
+
+    // Commit only after success
+    m_VectorFields.clear();
+    for (auto& f : newFields) {
+        m_VectorFields.push_back(f.release());
+    }
+
+    m_NoFields = no_v;
 
     return true;
 }
