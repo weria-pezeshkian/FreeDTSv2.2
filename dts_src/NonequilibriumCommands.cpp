@@ -5,7 +5,7 @@
 #include "RigidWallTypes.h"
 #include "VolumeCouplingSecondOrder.h"
 #include "HarmonicPotentialBetweenTwoGroups.h"
-
+#include "SphericalVertexSubstrate.h"
 NonequilibriumCommands::NonequilibriumCommands(State* pState) {
     m_pState = pState;
     m_ActiveSimStep = 0;

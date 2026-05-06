@@ -28,7 +28,10 @@ public:
     inline static std::string GetErrorMessage(std::string info) {
         return "---> error: unknown BondedPotentialBetweenVertices type -- \n";
     }
-    
+    inline static std::string GetRegistryError(std::string type) {
+        std::string txt = "---> error: unknown method for <BondedPotentialBetweenVertices> type: " + type;
+        return txt;
+    }
 
 };
 //---- a class for no box change

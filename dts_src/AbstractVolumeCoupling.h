@@ -55,7 +55,10 @@ public:
 
     // Retrieve the base class default name for logging or identification purposes
     inline static std::string GetBaseDefaultReadName() { return "VolumeCoupling"; }
-
+    inline static std::string GetRegistryError(std::string type) {
+        std::string txt = "---> error: unknown method for VolumeCoupling type: " + type;
+        return txt;
+    }
 protected:
     VAHGlobalMeshProperties *m_pVAH;
     

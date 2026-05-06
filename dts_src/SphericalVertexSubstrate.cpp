@@ -1,5 +1,5 @@
 #include "SphericalVertexSubstrate.h"
-#include "./Registry/FactoryVertexAdhesionToSubstrateMethod.h"
+#include "./Registry/FactoryForRegistration.h"
 
 SphericalVertexSubstrate::SphericalVertexSubstrate(std::string datastream) {
 
@@ -34,28 +34,24 @@ std::string SphericalVertexSubstrate::CurrentState(){
 }
 namespace
 {
-
-class SphericalVertexSubstrateRegister
-{
-public:
-    SphericalVertexSubstrateRegister()
-    {
-        // Use static function to get the name
-        FactoryVertexAdhesionToSubstrateMethod::Instance().Register(
-        SphericalVertexSubstrate::GetDefaultReadName(),
-            Create);
-    }
-
-private:
-    static AbstractVertexAdhesionToSubstrate* Create(std::istream& input)
+AbstractVertexAdhesionToSubstrate* Create_ReG(
+        std::istream& input,
+        State* state)
     {
         std::string rest;
         std::getline(input, rest);  // read the rest of the line
         return new SphericalVertexSubstrate(rest);
     }
-};
 
-// Static instance → triggers registration at program start
-SphericalVertexSubstrateRegister register_SphericalVertexSubstrate;
+    const bool registered = []()
+    {
+        FactoryVertexAdhesionToSubstrate::Instance().Register(
+        SphericalVertexSubstrate::GetDefaultReadName(),
+            &Create_ReG
+        );
+        return true;
+    }();
+}
 
-} // anonymous namespace
+
+

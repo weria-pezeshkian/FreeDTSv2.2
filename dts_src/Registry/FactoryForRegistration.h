@@ -22,6 +22,12 @@ class AbstractExternalFieldOnVectorFields;
 class AbstractForceonVerticesfromVectorFields;
 class AbstractNonbinaryTrajectory;
 class AbstractBinaryTrajectory;
+class AbstractBoundary;
+class AbstractVertexAdhesionToSubstrate;
+class AbstractBondedPotentialBetweenVertices;
+class AbstractTotalAreaCoupling;
+class AbstractGlobalCurvature;
+
 
 using FactoryAlexanderMove = Factory<AbstractAlexanderMove>;
 using FactoryOpenEdgeEvolutionMethod = Factory<AbstractOpenEdgeEvolution>;
@@ -42,5 +48,12 @@ using FactoryForceonVerticesfromVectorFields = Factory<AbstractForceonVerticesfr
 using FactoryNonbinaryTrajectory = Factory<AbstractNonbinaryTrajectory>;
 using FactoryNonbinaryTrajectory = Factory<AbstractNonbinaryTrajectory>;
 using FactoryBinaryTrajectory = Factory<AbstractBinaryTrajectory>;
+using FactoryBoxBoundary = Factory<AbstractBoundary>;
+using FactoryVertexAdhesionToSubstrate = Factory<AbstractVertexAdhesionToSubstrate>;
+using FactoryBondedPotentialBetweenVertices = Factory<AbstractBondedPotentialBetweenVertices>;
+
+
+using FactroyTotalAreaCoupling =  FactoryGlobal<AbstractTotalAreaCoupling>;
+using FactroyGlobalCurvature =  FactoryGlobal<AbstractGlobalCurvature>;
 
 #endif

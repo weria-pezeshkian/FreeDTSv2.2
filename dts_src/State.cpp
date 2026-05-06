@@ -9,7 +9,6 @@
 #include "WritevtuFiles.h"
 #include "BTSFile.h"
 #include "./Registry/FactoryVolumeCoupling.h"
-#include "./Registry/FactoryVertexAdhesionToSubstrateMethod.h"
 #include "./Registry/FactoryDynamicTopologyMethod.h"
 #include "./Registry/FactoryVertexPositionIntegrator.h"
 #include "./Registry/FactoryDynamicBox.h"
@@ -440,6 +439,62 @@ while (std::getline(input_read, line)) {
                     return false;
             }
         }
+        else if (firstword == AbstractBoundary::GetBaseDefaultReadName()) {
+             if (!RegisterUsingInputFile<FactoryBoxBoundary>(input, "BC00291", m_pBoundary)) {
+                    return false;
+            }
+        }
+        else if (firstword == AbstractVertexAdhesionToSubstrate::GetBaseDefaultReadName()) {
+             if (!RegisterUsingInputFile<FactoryVertexAdhesionToSubstrate>(input, "BC00291", m_pVertexAdhesionToSubstrate)) {
+                    return false;
+            }
+        }
+        else if (firstword == AbstractBondedPotentialBetweenVertices::GetBaseDefaultReadName()) {
+             if (!RegisterUsingInputFile<FactoryBondedPotentialBetweenVertices>(input, "BC00291", m_pBondedPotentialBetweenVertices)) {
+                    return false;
+            }
+        }
+    // -- global area coupling
+            else if(firstword == AbstractTotalAreaCoupling::GetBaseDefaultReadName()){
+                    
+                    input >> str >> type;
+                    m_pVAHCalculator->MakeAreaActive();
+                    m_pTotalAreaCoupling = FactroyTotalAreaCoupling::Instance().Create(type, input, m_pVAHCalculator);
+
+                if(!m_pTotalAreaCoupling) {
+                    std::cout << AbstractTotalAreaCoupling::GetRegistryError(type)<< std::endl;
+                    m_NumberOfErrors++;
+                    return false;
+                }
+            }
+                else if(firstword == AbstractVolumeCoupling::GetBaseDefaultReadName()) {
+                    
+                    input >> str >> type;
+                    
+                        m_pVAHCalculator->MakeVolumeActive();
+                        m_pVAHCalculator->MakeAreaActive();
+                        m_pVolumeCoupling = FactoryVolumeCoupling::Instance().Create(type, input, m_pVAHCalculator);
+                        
+                        if(!m_pVolumeCoupling) {
+                            std::cout << AbstractVolumeCoupling::GetRegistryError(type)<< std::endl;
+                            m_NumberOfErrors++;
+                            return false;
+                        }
+                }
+        else if(firstword == AbstractGlobalCurvature::GetBaseDefaultReadName()) {
+
+                input>>str>>type;
+                m_pVAHCalculator->MakeGlobalCurvatureActive();
+                m_pVAHCalculator->MakeAreaActive();
+
+                m_pCoupleGlobalCurvature = FactroyGlobalCurvature::Instance().Create(type, input, m_pVAHCalculator);
+
+            if(!m_pCoupleGlobalCurvature) {
+                std::cout<<AbstractGlobalCurvature::GetErrorMessage(type)<<"\n";
+                m_NumberOfErrors++;
+                return false;
+            }
+        }
     //---- end //
         else if(HandleSimulationCommands(firstword, input)){
             m_CanSimulationCall = false;
@@ -458,165 +513,6 @@ while (std::getline(input_read, line)) {
             getline(input,rest);
             m_pNonequilibriumCommands->LoadCommand(rest);
         }
-
-
-    
-    // boundry condition
-            else if(firstword == AbstractBoundary::GetBaseDefaultReadName() ){ // " Boundary "
-                input >> str >> type;
-                if(type == TwoFlatParallelWall::GetDefaultReadName()){   // " "TwoFlatParallelWall" "
-                    double thickness;
-                    char direction;
-                    input>>thickness>>direction;
-                    m_pBoundary = new TwoFlatParallelWall(this, thickness,direction);
-                }
-                else if(type == EllipsoidalShell::GetDefaultReadName()){   // " "EllipsoidalShell" "
-                    double thickness, r, a, b, c;
-                    input >> thickness >> r >> a >> b >> c;
-                    
-                    m_pBoundary = new EllipsoidalShell(this, thickness, r, a, b, c);
-                }
-                else if(type == EllipsoidalCore::GetDefaultReadName()){   // " "EllipsoidalShell" "
-                    double  r, a, b, c;
-                    input >>  r >> a >> b >> c;
-                    
-                    m_pBoundary = new EllipsoidalCore(this, r, a, b, c);
-                }
-                else {
-                    std::cout<<"---> error: unknown Boundary type: "<<type<<std::endl;
-                    m_NumberOfErrors++;
-                    return false;
-                }
-                getline(input,rest);
-            }
-    // end boundry condition
-                else if(firstword == AbstractVertexAdhesionToSubstrate::GetBaseDefaultReadName())
-                {
-                    input >> str >> type;
-
-                    if(type == "No")
-                    {
-                        return true;
-                    }
-
-                    delete m_pVertexAdhesionToSubstrate;
-
-                    m_pVertexAdhesionToSubstrate =
-                        FactoryVertexAdhesionToSubstrateMethod::Instance()
-                            .Create(type, input);
-
-                    if(!m_pVertexAdhesionToSubstrate)
-                    {
-                        std::cout << "unknown AdhesionToSubstrate method: " << type << "\n";
-                        m_NumberOfErrors++;
-                        return false;
-                    }
-                }
-
-    // end InclusionConversion
-    //---- Volume_Constraint data
-                else if(firstword == AbstractVolumeCoupling::GetBaseDefaultReadName()) {
-
-                    input >> str >> type;
-
-                    if(type == "No") {
-                        // Keep the existing NoInclusionConversion
-                        std::getline(input, rest);
-                    }
-                    else{
-                        m_pVAHCalculator->MakeVolumeActive();
-                        m_pVAHCalculator->MakeAreaActive();
-                        m_pVolumeCoupling =
-                        FactoryVolumeCoupling::Instance()
-                            .Create(type, input, m_pVAHCalculator);
-                        
-                        if(!m_pVolumeCoupling) {
-                            std::cout << "---> error: unknown volume coupling type "
-                            << type << "\n";
-                            m_NumberOfErrors++;
-                            return false;
-                        }
-                    }
-
-                    getline(input, rest);
-                }
-    //---- end Volume_Constraint
-    
-    
-//-----  start BondedPotentialBetweenVertices
-        else if(firstword == AbstractBondedPotentialBetweenVertices::GetBaseDefaultReadName())   { // BondedPotentialBetweenVertices
-            input >> str >> type;
-
-            if(type == EmptyBonds::GetDefaultReadName()){
-                // it is already set to 
-            }
-            else if(type == HarmonicBondsList::GetDefaultReadName()) { //
-                
-                std::string file;
-                input>>file;
-             m_pBondedPotentialBetweenVertices = new HarmonicBondsList(this, file);
-            }
-            else {
-                std::cout<<AbstractBondedPotentialBetweenVertices::GetErrorMessage(type)<<"\n";
-                m_NumberOfErrors++;
-                return false;
-            }
-            getline(input,rest);
-        }
-    
-
-//---- global curvature
-        else if(firstword == AbstractGlobalCurvature::GetBaseDefaultReadName()) {
-
-            input>>str>>type;
-            
-            if(type != "No"){
-                m_pVAHCalculator->MakeGlobalCurvatureActive();
-                m_pVAHCalculator->MakeAreaActive();
-            }
-            
-            if(type == CouplingGlobalCurvatureToHarmonicPotential::GetDefaultReadName()) {
-                double k,gc0;
-                input>>k>>gc0;
-                m_pCoupleGlobalCurvature = new CouplingGlobalCurvatureToHarmonicPotential(m_pVAHCalculator,k,gc0);
-            }
-            else if(type == NoGlobalCurvature::GetDefaultReadName()) {
-            }
-            else {
-                std::cout<<AbstractGlobalCurvature::GetErrorMessage(type)<<"\n";
-                m_NumberOfErrors++;
-                return false;
-            }
-            getline(input,rest);
-            
-        }
-// -- global area coupling
-        else if(firstword == "TotalAreaCoupling"){
-            input>>str>>type;
-            if(type != "No"){
-                m_pVAHCalculator->MakeAreaActive();
-            }
-            if(type ==  CouplingTotalAreaToHarmonicPotential::GetDefaultReadName()){
-                double gamma , k0;
-                input>>k0>>gamma;
-                m_pTotalAreaCoupling = new CouplingTotalAreaToHarmonicPotential(m_pVAHCalculator,k0,gamma);
-            }
-            else if(type == "No") {
-            }
-            else {
-                std::cout<<"---> error: unknown method for global curvature: "<<type<<" \n";
-                m_NumberOfErrors++;
-                return false;
-            }
-            getline(input,rest);
-        }
-
-
-
-
-
-
-//---- force from vector fields on the vertices
 
 
         else if(firstword == "TimeSeriesData_Period") { // TimeSeriesData
@@ -849,7 +745,7 @@ bool State::Initialize(){
 //----> boundry of the simulations
         m_pBoundary->Initialize();
         m_pForceonVertices->Initialize();
-    
+
 //-----> box change
         m_pDynamicBox->Initialize();
     
@@ -876,7 +772,7 @@ bool State::Initialize(){
     m_pEnergyCalculator->Initialize(m_InputFileName);
 //---> to update each vertex and edge energy. Up to now May 2024, edge energy is not zero when both vertices has inclusions
     m_pEnergyCalculator->UpdateTotalEnergy(m_pEnergyCalculator->CalculateAllLocalEnergy());
-    
+
     //-------->
     m_NonbondedInteractionBetweenVertices->Initialize();
 

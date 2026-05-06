@@ -165,6 +165,7 @@ double Energy::CalculateAllLocalEnergy()
              E += TwoVectorFieldInteractionEnergy(i, *it);
          }
     }
+
     for (std::vector<links *>::const_iterator it = pEdge_L.begin() ; it != pEdge_L.end(); ++it) {
         E += TwoInclusionsInteractionEnergy(*it);
         //-- interaction energies of vector fields

@@ -1,6 +1,7 @@
 
 #include "State.h"
 #include "RigidWallTypes.h"
+#include "./Registry/FactoryForRegistration.h"
 
 TwoFlatParallelWall::TwoFlatParallelWall(State* pState, double thickness,  char direction){
     
@@ -257,4 +258,55 @@ std::string EllipsoidalCore::CurrentStateParameters(){
     
     std::string state = Nfunction::D2S(sqrt(m_R)) +" "+ Nfunction::D2S(1/m_A) +" "+ Nfunction::D2S(1/m_B) +" "+ Nfunction::D2S(1/m_C);
     return state;
+}
+namespace
+{
+AbstractBoundary* Create_R1(std::istream& input, State* state) {
+            double  r, a, b, c;
+        if (!(input >>  r >> a >> b >> c)) {
+            return nullptr;
+        }
+        return new EllipsoidalCore(state, r, a, b, c);
+    }
+
+    const bool registered_R1 = []()
+    {
+        FactoryBoxBoundary::Instance().Register(EllipsoidalCore::GetDefaultReadName(), &Create_R1);
+        return true;
+    }();
+}
+namespace
+{
+AbstractBoundary* Create_R2(std::istream& input, State* state) {
+    
+        double thickness, r, a, b, c;
+        if (!(input >> thickness >> r >> a >> b >> c)) {
+            return nullptr;
+        }
+        return new EllipsoidalShell(state, thickness, r, a, b, c);
+    }
+
+    const bool registered_R2 = []()
+    {
+        FactoryBoxBoundary::Instance().Register(EllipsoidalShell::GetDefaultReadName(), &Create_R2);
+        return true;
+    }();
+}
+namespace
+{
+AbstractBoundary* Create_R3(std::istream& input, State* state) {
+    
+        double thickness;
+        char direction;
+        if (!(input >> thickness >> direction)) {
+            return nullptr;
+        }
+        return new TwoFlatParallelWall(state, thickness, direction);
+    }
+
+    const bool registered_R3 = []()
+    {
+        FactoryBoxBoundary::Instance().Register(TwoFlatParallelWall::GetDefaultReadName(), &Create_R3);
+        return true;
+    }();
 }

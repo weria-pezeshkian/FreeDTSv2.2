@@ -4,6 +4,7 @@
 #include "CouplingGlobalCurvatureToHarmonicPotential.h"
 #include "Nfunction.h"
 #include "State.h"
+#include "./Registry/FactoryForRegistration.h"
 
 /*
  Weria Pezeshkian (weria.pezeshkian@gmail.com)
@@ -68,4 +69,24 @@ std::string CouplingGlobalCurvatureToHarmonicPotential::CurrentState(){
     state += " " + Nfunction::D2S(2*m_K) + " " + Nfunction::D2S(m_gC0);
     return state;
 }
+namespace
+{
+AbstractGlobalCurvature* Create_ReG(std::istream& input, VAHGlobalMeshProperties* VAH) {
+    
+    
+                double k,gc0;
+                if (!(input >> k >> gc0)) {
+                        return nullptr;
+                }
+            return  new CouplingGlobalCurvatureToHarmonicPotential(VAH,k,gc0);
+    }
 
+    const bool registered = []()
+    {
+        FactroyGlobalCurvature::Instance().Register(
+        CouplingGlobalCurvatureToHarmonicPotential::GetDefaultReadName(),
+            &Create_ReG
+        );
+        return true;
+    }();
+}

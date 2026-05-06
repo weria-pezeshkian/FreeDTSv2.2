@@ -1,5 +1,6 @@
 #include "HarmonicBondsList.h"
 #include "State.h"
+#include "./Registry/FactoryForRegistration.h"
 
 // E = -k*(Field*Inc_direction)^2 --> we could make it k1*(Field*Inc_direction)-k2*(Field*Inc_direction)^2
 
@@ -79,4 +80,25 @@ double HarmonicBondsList::GetTotalEnergy(){
     }
     
     return en;
+}
+namespace
+{
+AbstractBondedPotentialBetweenVertices* Create_ReG(
+        std::istream& input,
+        State* state)
+    {
+            std::string file;
+        if (!(input >> file)) {
+            return nullptr;
+        }
+        return new HarmonicBondsList(state, file);
+    }
+
+    const bool registered = []()
+    {
+        FactoryBondedPotentialBetweenVertices::Instance().Register(HarmonicBondsList::GetDefaultReadName(),
+            &Create_ReG
+        );
+        return true;
+    }();
 }

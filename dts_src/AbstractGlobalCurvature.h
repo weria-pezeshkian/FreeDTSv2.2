@@ -27,7 +27,10 @@ public:
     inline static std::string GetErrorMessage(std::string s) {
         return "---> error: unknown global curvature coupling type -- \n";
     }
-
+    inline static std::string GetRegistryError(std::string type) {
+        std::string txt = "---> error: unknown method for <GlobalCurvatureCoupling> type: " + type;
+        return txt;
+    }
 
 protected:
     VAHGlobalMeshProperties *m_pVAH;

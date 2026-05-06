@@ -29,7 +29,10 @@ public:
     virtual inline std::string GetDerivedDefaultReadName() = 0;
     
     inline static std::string GetBaseDefaultReadName() {return "TotalAreaCoupling";}
-    
+    inline static std::string GetRegistryError(std::string type) {
+        std::string txt = "---> error: unknown method for <TotalAreaCoupling> type: " + type;
+        return txt;
+    }
 
 protected:
     VAHGlobalMeshProperties *m_pVAH;

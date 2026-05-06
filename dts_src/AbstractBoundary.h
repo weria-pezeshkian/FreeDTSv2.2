@@ -27,9 +27,12 @@ public:
     virtual inline std::string GetDerivedDefaultReadName() {return "";}
     inline static std::string GetBaseDefaultReadName() {return "Boundary";}
     inline static std::string GetErrorMessage(std::string info) {
-        return "---> error: unknown AlexanderMove type -- \n";
+        return "---> error: unknown Boundary type -- \n";
     }
-    
+    inline static std::string GetRegistryError(std::string type) {
+        std::string txt = "---> error: unknown method for <Boundary> type: " + type;
+        return txt;
+    }
 
 };
 //---- a class for no box change

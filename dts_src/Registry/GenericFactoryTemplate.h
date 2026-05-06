@@ -164,3 +164,43 @@ private:
 
     std::unordered_map<std::string, Creator> m_Creators;
 };
+
+
+// second type of factory for global constraint
+class VAHGlobalMeshProperties;
+template <typename Base>
+class FactoryGlobal {
+public:
+    using Creator = std::function<Base*(std::istream&, VAHGlobalMeshProperties*)>;
+
+    static FactoryGlobal& Instance()
+    {
+        static FactoryGlobal instance;
+        return instance;
+    }
+
+    void Register(const std::string& name, Creator c)
+    {
+        m_Creators[name] = std::move(c);
+    }
+
+    Base* Create(
+        const std::string& name,
+        std::istream& input,
+        VAHGlobalMeshProperties* VAH)
+    {
+        auto it = m_Creators.find(name);
+
+        if (it == m_Creators.end())
+            return nullptr;
+
+        return it->second(input, VAH);
+    }
+
+private:
+    FactoryGlobal() = default;
+    FactoryGlobal(const FactoryGlobal&) = delete;
+    FactoryGlobal& operator=(const FactoryGlobal&) = delete;
+
+    std::unordered_map<std::string, Creator> m_Creators;
+};

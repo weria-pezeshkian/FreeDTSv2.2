@@ -1,6 +1,7 @@
 #include "CouplingTotalAreaToHarmonicPotential.h"
 #include "Nfunction.h"
 #include "State.h"
+#include "./Registry/FactoryForRegistration.h"
 
 
 CouplingTotalAreaToHarmonicPotential::CouplingTotalAreaToHarmonicPotential(VAHGlobalMeshProperties *VHA,  double K0, double gamma) : AbstractTotalAreaCoupling(VHA) {
@@ -74,3 +75,24 @@ std::string CouplingTotalAreaToHarmonicPotential::CurrentState(){
     return state;
 }
 
+namespace
+{
+AbstractTotalAreaCoupling* Create_ReG(std::istream& input, VAHGlobalMeshProperties* VAH) {
+    
+    
+                double gamma , k0;
+                if (!(input >> k0 >> gamma)) {
+                        return nullptr;
+                }
+            return  new CouplingTotalAreaToHarmonicPotential(VAH, k0, gamma);
+    }
+
+    const bool registered = []()
+    {
+        FactroyTotalAreaCoupling::Instance().Register(
+        CouplingTotalAreaToHarmonicPotential::GetDefaultReadName(),
+            &Create_ReG
+        );
+        return true;
+    }();
+}

@@ -91,13 +91,10 @@
 #include "AbstractVolumeCoupling.h"
 //-- global curvature
 #include "AbstractGlobalCurvature.h"
-#include "CouplingGlobalCurvatureToHarmonicPotential.h"
 //--- total area coupling
 #include "AbstractTotalAreaCoupling.h"
-#include "CouplingTotalAreaToHarmonicPotential.h"
 //--- bonded potentials
 #include "AbstractBondedPotentialBetweenVertices.h"
-#include "HarmonicBondsList.h"
 //--- Constraint Between vertex Groups
 #include "AbstractApplyConstraintBetweenGroups.h"
 //--- Inclusion exchange
@@ -113,11 +110,8 @@
 #include "AbstractExternalFieldOnInclusions.h"
 //--- interaction with Substrate
 #include "AbstractVertexAdhesionToSubstrate.h"
-#include "SphericalVertexSubstrate.h"
-#include "FlatVertexSubstrate.h"
 //--- rigid boundries
 #include "AbstractBoundary.h"
-#include "RigidWallTypes.h"
 #include "Voxelization.h"
 //--- simulation
 #include "AbstractSimulation.h"
