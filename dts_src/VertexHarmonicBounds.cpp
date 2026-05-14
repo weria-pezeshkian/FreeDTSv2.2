@@ -2,6 +2,8 @@
 #include "VertexHarmonicBounds.h"
 #include "MESH.h"
 
+// I should as some comments 
+
 VertexHarmonicBounds::VertexHarmonicBounds() {
     m_pVertexBond.clear();
 }
