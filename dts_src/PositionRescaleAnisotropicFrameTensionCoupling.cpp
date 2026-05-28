@@ -48,6 +48,12 @@ void PositionRescaleAnisotropicFrameTensionCoupling::Initialize() {
     
     std::cout<<"---> the algorithm for box change involves applying: "<< GetDefaultReadName()<<" \n";
     m_pBox = (m_pState->GetMesh())->GetBox();
+    
+    
+    m_Force_1 = m_Force_1/((*m_pBox)(1) * (*m_pBox)(2));
+    m_Force_2 = m_Force_2/((*m_pBox)(0) * (*m_pBox)(2));
+    m_Force_3 = m_Force_3/((*m_pBox)(0) * (*m_pBox)(1));
+    
 }
 bool PositionRescaleAnisotropicFrameTensionCoupling::ChangeBoxSize(int step){
     /**
@@ -234,11 +240,15 @@ bool PositionRescaleAnisotropicFrameTensionCoupling::AnAtemptToChangeBox(double 
     double NV = m_pActiveV.size();
     
 
-    tot_diff_energy -= m_Force_1 * ((*m_pBox)(0) - OldBox(0));
-    tot_diff_energy -= m_Force_2 * ((*m_pBox)(1) - OldBox(1));
-    tot_diff_energy -= m_Force_3 * ((*m_pBox)(2) - OldBox(2));
+    
+    // we should be carefull here.
+   // tot_diff_energy -= m_Force_1 * ((*m_pBox)(0) - OldBox(0));
+   // tot_diff_energy -= m_Force_2 * ((*m_pBox)(1) - OldBox(1));
+   // tot_diff_energy -= m_Force_3 * ((*m_pBox)(2) - OldBox(2));
 
-
+    tot_diff_energy -= m_Force_1 * OldBox(2) * OldBox(1) *((*m_pBox)(0) - OldBox(0));
+    tot_diff_energy -= m_Force_2 * OldBox(2) * OldBox(0) *((*m_pBox)(1) - OldBox(1));
+    tot_diff_energy -= m_Force_3 * OldBox(1) * OldBox(0) *((*m_pBox)(2) - OldBox(2));
 
     //---> accept or reject the move
 
