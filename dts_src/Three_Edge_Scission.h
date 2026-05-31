@@ -6,7 +6,7 @@
 #include "SimDef.h"
 #include "Vec3D.h"
 #include "MESH.h"
-
+#include "Tensor2.h"
 class State;
 class triangle;
 class vertex;
@@ -36,6 +36,19 @@ struct pair_pot_triangle {    // data structure for a pair of potential_triangle
         std::vector <links *> ConnectingLinks;       // this does not include the mirror links
         std::vector <triangle *> ConnectingTriangles;
 
+};
+struct PairHash {
+    size_t operator()(const std::pair<triangle*, triangle*>& p) const {
+        size_t h1 = std::hash<triangle*>()(p.first);
+        size_t h2 = std::hash<triangle*>()(p.second);
+        return h1 ^ (h2 << 1);
+    }
+};
+struct fusion_site {    // data structure for a pair of triangle
+    triangle* t1;
+    triangle* t2;
+    double dist[3][3];
+        
 };
 struct fussion_site {    // data structure for a pair of triangle
     links* l1;
@@ -71,14 +84,22 @@ private:
     bool ScissionByMC(pair_pot_triangle &pair_t, double thermal);
     
     //--- functions for fussions
-    bool FussionByMove(fussion_site &pair_tri, double thermal);
+    bool FusionByMove(fusion_site &pair_tri, double thermal);
     bool CheapScane(links *l1, links *l2, fussion_site &p_T);
     bool BuildScane(fussion_site &p_T);
 
-    std::vector<fussion_site> FindPotentialFussionSites();
+
+    std::vector<fusion_site> FindPotentialFusionSites();
+    std::vector<fussion_site> FindPotentialFussionSites_V2FunctionType(); // this should be deleted
+
+
+    bool FusionSite_DistanceIsGood(triangle *t1, triangle *t2, fusion_site &p_T);
+    bool FusionSites_AreNotNeighbours(triangle *t1, triangle *t2);
 
 
 private:
+   bool  VoxelizeTriangles(double voxsize);
+
 
 
 private:
@@ -117,6 +138,7 @@ private:
     int &m_No_VectorFields_Per_V;
     int m_Period;
     State *m_pState;
+    Voxelization<triangle>  *m_pTriVoxelization;
     
 };
 #endif

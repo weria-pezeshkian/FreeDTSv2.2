@@ -3,6 +3,7 @@
 
 #include "SimDef.h"
 #include "Vec3D.h"
+#include "Voxel.h"
 
 /*
  * @file triangle.h
@@ -27,9 +28,19 @@ public:
     inline double GetVolume() { return m_Volume; }
     inline Vec3D GetAreaVector() { return m_AreaVector; }
     inline Vec3D GetNormalVector() { return m_Normal; }
+    
 
     // Only needed for visualization
     inline bool GetRepresentation() { return m_Representation; }
+
+    //only if centroid is updated: // m_Centroid could be just zero as only in some commands get updated. Do not call it without calling CalculateCentroid() function first
+    inline const Vec3D GetCentroid() const { return m_Centroid; }      
+    double GetXPos() const noexcept { return m_Centroid(0); }
+    double GetYPos() const noexcept { return m_Centroid(1); }
+    double GetZPos() const noexcept { return m_Centroid(2); }
+    // note this are only vallid in some commands
+    const Voxel<triangle>* GetVoxel() const noexcept { return m_pVoxel; }
+    Voxel<triangle>* GetVoxel() { return m_pVoxel; }
 
 public:
     // Update functions
@@ -46,6 +57,8 @@ public:
     void Reverse2PreviousCopy();
     void ConstantMesh_Copy();
     void ReverseConstantMesh_Copy();
+    void UpdateVoxel(Voxel<triangle> * pVoxel);
+    void CalculateCentroid(const Vec3D& Box); // 
 private:
     // Original state members
     int m_ID;
@@ -57,7 +70,10 @@ private:
     Vec3D m_AreaVector;
     double m_Area;
     double m_Volume;
-
+    Vec3D m_Centroid;
+    Voxel<triangle> * m_pVoxel;
+    
+    
     // Old state members to maintain previous state
     vertex *m_oldV1;
     vertex *m_oldV2;

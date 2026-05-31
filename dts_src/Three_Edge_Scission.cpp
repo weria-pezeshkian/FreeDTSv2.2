@@ -2,6 +2,7 @@
 #include <unordered_set>
 #include <utility>
 #include <ctime>
+#include <set>
 #include "Three_Edge_Scission.h"
 #include "State.h"
 #include "MESH.h"
@@ -36,7 +37,8 @@ Three_Edge_Scission::Three_Edge_Scission(int period, State *pState) :
                 m_MaxLength2(pState->GetSimulation()->GetMaxL2()),
                 m_MinAngle(pState->GetSimulation()->GetMinAngle()),
                 m_No_VectorFields_Per_V(pState->GetMesh()->GetNoVFPerVertex()),
-                m_Box(pState->GetMesh()->Link2ReferenceBox())
+                m_Box(pState->GetMesh()->Link2ReferenceBox()),
+                m_pTriVoxelization(new Voxelization<triangle>())
 {
 
 }
@@ -55,10 +57,10 @@ bool Three_Edge_Scission::MCMove(int step) {
     if(m_Period == 0 ||  step%m_Period != 0){
         return false;
     }
-    
-     std::vector<pair_pot_triangle> pair_list  = FindNecks();
+        
+   std::vector<pair_pot_triangle> pair_list  = FindNecks();
    // std::cout<<pair_list.size()<<" number of pot trinagles \n";
-   if(pair_list.size() != 0) {// ScissionByMC
+    if(pair_list.size() != 0) {// ScissionByMC
         int n = m_pState->GetRandomNumberGenerator()->IntRNG(pair_list.size());
         pair_pot_triangle pair_T = pair_list[n];
         double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
@@ -66,71 +68,197 @@ bool Three_Edge_Scission::MCMove(int step) {
         if(ScissionByMC(pair_T, thermal)){
             m_AcceptedMoves++;
         }
-    } //  if(pair_list.size() != 0) end ScissionByMC
+    } ///  if(pair_list.size() != 0) end ScissionByMC
     std::clock_t start = std::clock();
-    std::vector<fussion_site> all_possible_sites = FindPotentialFussionSites();
-    std::clock_t end = std::clock();
+   
+     std::vector<fusion_site> all_possible_sites = FindPotentialFusionSites();
+    // std::vector<fussion_site> all_possible_sites = FindPotentialFussionSites_V2FunctionType();
+      std::clock_t end = std::clock();
     // Calculate the duration
        double duration = static_cast<double>(end - start) / CLOCKS_PER_SEC;
        // Print the time taken
        std::cout << "Time taken to execute FindPotentialFussionSites: " << duration << " seconds " << all_possible_sites.size() << std::endl;
     if(all_possible_sites.size() != 0) {// FussionByMove
-        int n = m_pState->GetRandomNumberGenerator()->IntRNG(pair_list.size());
-        fussion_site pair_T = all_possible_sites[n];
+        int n = m_pState->GetRandomNumberGenerator()->IntRNG(all_possible_sites.size());
+        fusion_site pair_T = all_possible_sites[n];
         double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
         m_NumberOfAttemptedMoves++;
-        if(FussionByMove(pair_T, thermal)){
+        if(FusionByMove(pair_T, thermal)){
             m_AcceptedMoves++;
         }
-    }//     if(all_possible_sites.size() != 0) {// end FussionByMove
+    } ///     if(all_possible_sites.size() != 0) {// end FussionByMove
 
     m_Surface_Genus = 1 - (m_pSurfV.size()-m_pLeftL.size()+m_pActiveT.size())/2;
     return true;
 }
-bool Three_Edge_Scission::FussionByMove(fussion_site &pair_tri, double thermal){
-    return false;
-}
-std::vector<fussion_site> Three_Edge_Scission::FindPotentialFussionSites(){
+std::vector<fusion_site> Three_Edge_Scission::FindPotentialFusionSites() {
+    //////////////////////////////////////////////////////////////////////////////////////////
+//  FindPotentialFusionSites
+//
+//  PURPOSE:
+//  --------
+//  Identify all valid potential fusion sites between triangles in the system.
+//
+//  OVERVIEW:
+//  ---------
+//  This function:
+//   1. Builds a voxel grid representation of all active triangles.
+//   2. Searches each triangle’s local 3x3x3 voxel neighborhood for candidates.
+//   3. Filters candidate triangle pairs using:
+//        - Periodic boundary condition distance cutoff
+//        - Geometric exclusion rules (FusionSites_AreNotNeighbours)
+//   4. Stores unique triangle pairs in a hash set to avoid duplicates.
+//   5. Performs final validation on each pair to construct fusion_site objects.
+//
+//  RETURNS:
+//  --------
+//  A vector of validated fusion_site objects representing possible fusion events.
+//
+//////////////////////////////////////////////////////////////////////////////////////////
     
-    std::vector<fussion_site> all_possible_sites;
     
-    //MESH::SquareDistanceBetweenTwoVertices(p_v1, p_v2, m_Box);
+    std::unordered_set<std::pair<triangle*, triangle*>, PairHash> Possible_pairs;
+    std::vector<fusion_site> Available_Sites;
+    
+    if (!VoxelizeTriangles(m_MaxLength2)) {
+        std::cout << "Failed to make voxels\n";
+        return Available_Sites;
+    }
 
-   // for (std::vector<links *>::iterator it = m_pRightL.begin() ; it != m_pRightL.end(); ++it){
+    for (auto it = m_pActiveT.begin(); it != m_pActiveT.end(); ++it)
+    {
+        triangle* t0 = *it;
+        Vec3D T0center = t0->GetCentroid();
 
-        for(int i = 0; i<m_pActiveL.size(); i++){
-            for(int j = 0; j<m_pActiveL.size(); j++){
-               // if(all_possible_sites.size())
-                 //   break;
-                
-                links *l1 = m_pActiveL[i];
-                links *l2 = m_pActiveL[j];
-                //---- check if they are close
-                fussion_site p_T;
-                if(CheapScane(l1,l2, p_T)){
-                    continue;
-                }
-
-                if(BuildScane(p_T)){
-                    all_possible_sites.push_back(p_T);
-                    
-                    l1->GetV1()->UpdateGroup(1);
-                    l1->GetV2()->UpdateGroup(1);
-                    l1->GetV3()->UpdateGroup(1);
-                    l2->GetV1()->UpdateGroup(2);
-                    l2->GetV2()->UpdateGroup(2);
-                    l2->GetV3()->UpdateGroup(2);
-
-                }
-            //====
-            }
+        Voxel<triangle>* pvoxel = t0->GetVoxel();
+        if (!pvoxel) {
+            std::cout << "Error -> NULL TRIANGLE VOXEL\n";
+            std::abort();
         }
 
+        for (int n = -1; n <= 1; n++)
+        for (int m = -1; m <= 1; m++)
+        for (int s = -1; s <= 1; s++)
+        {
+            Voxel<triangle>* pvox = pvoxel->GetANeighbourCell(n, m, s);
+            if (!pvox) {
+                std::cout << "Error -> NULL VOXEL DETECTED\n";
+                std::abort();
+            }
+
+            const auto& VTri = pvox->GetContentObjects();
+
+            for (auto itvox = VTri.begin(); itvox != VTri.end(); ++itvox)
+            {
+                triangle* t1 = t0;
+                triangle* t2 = *itvox;
+
+                if (t1 == t2) continue;
+
+                Vec3D T1center = t2->GetCentroid();
+
+                if (Nfunction::SquarePBCDistanceOfTwoPoint(
+                        T0center, T1center, m_Box) >= m_MaxLength2)
+                    continue;
+
+                if (!FusionSites_AreNotNeighbours(t1, t2))
+                    continue;
+
+                if (t1 > t2) std::swap(t1, t2);
+
+                Possible_pairs.insert({t1, t2});
+            }
+        }
+    }
+
+   // now we have unique pair of trinagles that are close
+   // we can check them further
+   //Performs final validation on each pair to construct fusion_site objects FusionSite_DistanceIsGood().
+   for (const auto& p : Possible_pairs)
+    {
+        triangle* t1 = p.first;
+        triangle* t2 = p.second;
+        fusion_site p_T;
+        if(!FusionSite_DistanceIsGood(t1, t2, p_T)){
+             continue;
+        }
+        Available_Sites.push_back(p_T);
+    }
     
+    return Available_Sites;
+}
+bool Three_Edge_Scission::FusionSite_DistanceIsGood(triangle *t1, triangle *t2, fusion_site &p_T){
+
+
+    // ---- vertex sharing rejection ----
+    vertex * v1 = t1->GetV1();
+    vertex * v2 = t1->GetV2();
+    vertex * v3 = t1->GetV3();
+
+    vertex * u1 = t2->GetV1();
+    vertex * u2 = t2->GetV2();
+    vertex * u3 = t2->GetV3();
+
+
+    double dist_11 = MESH::SquareDistanceBetweenTwoVertices(v1, u1, m_Box);
+    double dist_12 = MESH::SquareDistanceBetweenTwoVertices(v1, u2, m_Box);
+    double dist_13 = MESH::SquareDistanceBetweenTwoVertices(v1, u3, m_Box);
+    double dist_21 = MESH::SquareDistanceBetweenTwoVertices(v2, u1, m_Box);
+    double dist_22 = MESH::SquareDistanceBetweenTwoVertices(v2, u2, m_Box);
+    double dist_23 = MESH::SquareDistanceBetweenTwoVertices(v2, u3, m_Box);
+    double dist_31 = MESH::SquareDistanceBetweenTwoVertices(v3, u1, m_Box);
+    double dist_32 = MESH::SquareDistanceBetweenTwoVertices(v3, u2, m_Box);
+    double dist_33 = MESH::SquareDistanceBetweenTwoVertices(v3, u3, m_Box);
+
+
+    p_T.t1 = t1;
+    p_T.t2 = t2;
+
+    p_T.dist[0][0] = dist_11;
+    p_T.dist[0][1] = dist_12;
+    p_T.dist[0][2] = dist_13;
+    p_T.dist[1][0] = dist_21;
+    p_T.dist[1][1] = dist_22;
+    p_T.dist[1][2] = dist_23;
+    p_T.dist[2][0] = dist_31;
+    p_T.dist[2][1] = dist_32;
+    p_T.dist[2][2] = dist_33;
+
+
     
-    //n1.n2<0??
+    return true;
+        
+}
+bool Three_Edge_Scission::FusionSites_AreNotNeighbours(triangle *t1, triangle *t2){
+ 
+ // this might be extended to avoid even next neighbours 
+    // ---- vertex sharing rejection ----
+    vertex * v1 = t1->GetV1();
+    vertex * v2 = t1->GetV2();
+    vertex * v3 = t1->GetV3();
+
+    vertex * u1 = t2->GetV1();
+    vertex * u2 = t2->GetV2();
+    vertex * u3 = t2->GetV3();
+
+    if (v1 == u1 || v1 == u2 || v1 == u3 ||
+        v2 == u1 || v2 == u2 || v2 == u3 ||
+        v3 == u1 || v3 == u2 || v3 == u3)
+    {
+        return false;
+    }
     
-    return all_possible_sites;
+    return true;
+        
+}
+bool Three_Edge_Scission::FusionByMove(fusion_site &pair_tri, double thermal){
+    
+    // we have to add here!
+    
+    double new_energy = 0;
+    double old_energy = 0;
+    
+    return false;
 }
 bool Three_Edge_Scission::BuildScane(fussion_site &p_T) {
 
@@ -250,6 +378,48 @@ bool Three_Edge_Scission::CheapScane(links *l1, links *l2, fussion_site &p_T) {
     p_T.dist[2][2] = dist_33;
 
     return false;
+}
+std::vector<fussion_site> Three_Edge_Scission::FindPotentialFussionSites_V2FunctionType(){ // this should be deleted 
+    
+    std::vector<fussion_site> all_possible_sites;
+    
+    //MESH::SquareDistanceBetweenTwoVertices(p_v1, p_v2, m_Box);
+
+   // for (std::vector<links *>::iterator it = m_pRightL.begin() ; it != m_pRightL.end(); ++it){
+
+        for(int i = 0; i<m_pActiveL.size(); i++){
+            for(int j = 0; j<m_pActiveL.size(); j++){
+               // if(all_possible_sites.size())
+                 //   break;
+                
+                links *l1 = m_pActiveL[i];
+                links *l2 = m_pActiveL[j];
+                //---- check if they are close
+                fussion_site p_T;
+                if(CheapScane(l1,l2, p_T)){
+                    continue;
+                }
+
+                if(BuildScane(p_T)){
+                    all_possible_sites.push_back(p_T);
+                    
+                    l1->GetV1()->UpdateGroup(1);
+                    l1->GetV2()->UpdateGroup(1);
+                    l1->GetV3()->UpdateGroup(1);
+                    l2->GetV1()->UpdateGroup(2);
+                    l2->GetV2()->UpdateGroup(2);
+                    l2->GetV3()->UpdateGroup(2);
+
+                }
+            //====
+            }
+        }
+
+    
+    
+    //n1.n2<0??
+    
+    return all_possible_sites;
 }
 bool Three_Edge_Scission::ScissionByMC(pair_pot_triangle &pair_t, double thermal){
     /**
@@ -704,7 +874,7 @@ bool Three_Edge_Scission::Is_A_Neck(pot_triangle potT1, pot_triangle potT2, pair
      * @param neck Reference to the pair_pot_triangle struct to store the result.
      * @return true if the potential triangles form a neck, false otherwise.
      //          v1------------v4            disconnected from v4, v5, v6. This function checks for such cases
-     //         /T1\              / T2\
+     //         /T1\         / T2\
      //        v2--v3-------v4---v6
      */
     neck.state = false;
@@ -999,6 +1169,28 @@ std::vector<links*> Three_Edge_Scission::GetEdgesWithInteractionChange(pair_pot_
 
     }
     return edge_with_interaction_change;
+}
+bool Three_Edge_Scission::VoxelizeTriangles(double voxelsize) {
+// Builds a voxelization of all active triangles using their PBC-correct centroids.
+// Centroids are updated before insertion to ensure consistent spatial hashing.
+// Returns a fully constructed voxel grid for triangle lookup / interaction queries.
+
+
+    m_pTriVoxelization->SetBox(&m_Box);
+    m_pTriVoxelization->UpdateVoxelSize(voxelsize, voxelsize, voxelsize);
+
+    // Only keep this if it is actually needed separately from UpdateVoxelSize
+    m_pTriVoxelization->SetDefaultVoxelSize(voxelsize, voxelsize, voxelsize);
+
+    // Recompute centroids (PBC-correct)
+    for (triangle* t : m_pActiveT)
+    {
+        t->CalculateCentroid(m_Box);
+    }
+
+    m_pTriVoxelization->Voxelize(m_pActiveT);
+
+    return true;
 }
 std::string Three_Edge_Scission::CurrentState(){
     

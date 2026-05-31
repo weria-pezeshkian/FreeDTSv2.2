@@ -616,6 +616,11 @@ double MESH::SquareDistanceBetweenTwoVertices(vertex * v1,vertex * v2){
      *         considering periodic boundary conditions.
      */
     // Calculate the initial distance components between the two vertices
+    
+    if(v1 == v2){
+        return 0.0;
+    }
+    
     double dx = v2->GetVXPos() - v1->GetVXPos();
     double dy = v2->GetVYPos() - v1->GetVYPos();
     double dz = v2->GetVZPos() - v1->GetVZPos();

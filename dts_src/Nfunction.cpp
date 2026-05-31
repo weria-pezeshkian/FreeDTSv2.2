@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <string>
 #include "SimDef.h"
+#include "Vec3D.h"
 //#include "Nfunction.h"
 
 std::string Nfunction::Int_to_String(double ConInt) {
@@ -38,6 +39,27 @@ double Nfunction::String_to_Double(const std::string& ConInt) {
 }
 bool Nfunction::isEven(int x) {
     return x % 2 == 0;
+}
+double Nfunction::SquarePBCDistanceOfTwoPoint(const Vec3D &P1, const Vec3D &P2, const Vec3D &Box) {
+    
+// Returns squared distance between two points using PBC minimum image convention.
+// Assumes coordinates differ by at most one box length in each dimension.
+
+    double dx = P1(0) - P2(0);
+    double dy = P1(1) - P2(1);
+    double dz = P1(2) - P2(2);
+
+    // Minimum image convention (PBC)
+    if (dx >  0.5 * Box(0)) dx -= Box(0);
+    else if (dx < -0.5 * Box(0)) dx += Box(0);
+
+    if (dy >  0.5 * Box(1)) dy -= Box(1);
+    else if (dy < -0.5 * Box(1)) dy += Box(1);
+
+    if (dz >  0.5 * Box(2)) dz -= Box(2);
+    else if (dz < -0.5 * Box(2)) dz += Box(2);
+
+    return dx*dx + dy*dy + dz*dz;
 }
 std::vector<std::string> Nfunction::split(const std::string& str)
 {
@@ -140,6 +162,25 @@ std::vector<std::string> Nfunction::Split(const std::string& str)
     }
 
     return words; // Return the vector of words
+}
+bool Nfunction::isValidDoubleNumber(double d) {
+    // Check if it's a valid number (not NaN)
+    if (std::isnan(d)) {
+        std::cout << "ERROR: Number is NaN\n";
+        return false;
+    }
+    
+    // Check if it's infinite
+    if (std::isinf(d)) {
+        std::cout << "ERROR: Number is Infinite\n";
+        return false;
+    }
+    if (d > 1e12) {  // Arbitrary large value, adjust for your system
+        std::cout << "ERROR: Number too large: " << d << "\n";
+        return false;
+    }
+    
+    return true;
 }
 bool Nfunction::CopyBinaryFile(const std::string& inputFilename,
                                const std::string& outputFilename,

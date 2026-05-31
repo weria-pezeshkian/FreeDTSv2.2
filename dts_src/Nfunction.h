@@ -3,7 +3,7 @@
 
 #include <string>
 #include <vector>
-
+class Vec3D;
 class Nfunction {
 public:
     // Conversion functions
@@ -27,6 +27,10 @@ public:
     static bool CopyBinaryFile(const std::string& file1, const std::string& file2, const std::streamsize bufferSize);
     static void HelpMessage();
     static std::string ConvertSecond2Time(double seconds);
+    static bool isValidDoubleNumber(double d);
+    
+    static double SquarePBCDistanceOfTwoPoint(const Vec3D &P1, const Vec3D &P2, const Vec3D &Box);
+
 };
 
 #endif

@@ -133,6 +133,16 @@ public:
         
         return m_NeighbouringVoxel[i+1][j+1][k+1];
     }
+    /*const Voxel* GetANeighbourCell(int i, int j, int k) const{
+        
+            if(i==0 && j==0 && k==0){
+            return this;
+        }
+        else if(i>1 || i<-1 || j>1 || j<-1 || k>1 || k<-1  )
+            std::cout<<" ---> error: such indices are not permitted "<<std::endl;
+        
+        return m_NeighbouringVoxel[i+1][j+1][k+1];
+    }*/
     static int Convert2LocalVoxelIndex(int new_index, int old_index, int No_index){
 
         if(new_index == old_index){
