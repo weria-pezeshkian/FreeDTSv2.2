@@ -372,7 +372,7 @@ bool AlexanderMoveByMetropolisAlgorithm::EdgeCanBeFliped(links *p_edge) {
      * and using references where applicable.
      */
     
-// Obtain references to the vertices connected by the edge
+// Obtain pointer to the vertices connected by the edge
     vertex* v1 = p_edge->GetV1();
     vertex* v2 = p_edge->GetV2();
     vertex* v3 = p_edge->GetV3();

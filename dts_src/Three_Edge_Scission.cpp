@@ -231,7 +231,7 @@ bool Three_Edge_Scission::FusionSite_DistanceIsGood(triangle *t1, triangle *t2, 
 }
 bool Three_Edge_Scission::FusionSites_AreNotNeighbours(triangle *t1, triangle *t2){
  
- // this might be extended to avoid even next neighbours 
+ // this might be extended to avoid even second next neighbours 
     // ---- vertex sharing rejection ----
     vertex * v1 = t1->GetV1();
     vertex * v2 = t1->GetV2();
@@ -247,6 +247,28 @@ bool Three_Edge_Scission::FusionSites_AreNotNeighbours(triangle *t1, triangle *t
     {
         return false;
     }
+    
+    std::vector <vertex *> pNv1 = v1->GetVNeighbourVertex();
+    for (auto it : pNv1) {
+        if (it == u1 || it == u2 || it == u3){
+            return false;
+        }
+    }
+    
+    std::vector <vertex *> pNv2 = v2->GetVNeighbourVertex();
+    for (auto it : pNv2) {
+        if (it == u1 || it == u2 || it == u3){
+            return false;
+        }
+    }
+    
+    std::vector <vertex *> pNv3 = v3->GetVNeighbourVertex();
+    for (auto it : pNv3) {
+        if (it == u1 || it == u2 || it == u3){
+            return false;
+        }
+    }
+    
     
     return true;
         
