@@ -41,7 +41,8 @@ inline triple make_triple(int a, int b, int c) {
     return {a,b,c};
 }
 struct TriangularPrism {
-    std::array<triple, 6> tp;
+    std::vector<triple> VTriples;
+    std::vector<Vec3D> VNormals;
 };
 class TriangularPrismBuilder {
 public:
@@ -56,8 +57,7 @@ public:
      *   pbox - Simulation box used for geometric calculations.
      *   max distance 
      */
-    TriangularPrismBuilder(int id,triangle* t1, triangle* t2,Vec3D* pbox, double &maxl2
-    );
+    TriangularPrismBuilder(int id, Vec3D* pbox, double &maxl2, double &minagle);
 
     ~TriangularPrismBuilder();
 
@@ -65,31 +65,37 @@ public:
     // Accessors
     //--------------------------------------------------------------------------
     int GetID() const { return m_ID; }
-    int GetNoTopology() const { return m_NoTopology; }
+
+
+
+public:
+
+std::vector<TriangularPrism> GeneratePossibleTopology(triangle* t1,  triangle* t2);
 
 private:
-void GenerateDistanceMap();  
+void GenerateDistanceMap(triangle* t1,  triangle* t2);  
 bool CheckMap(TriangularPrism & tp);
 bool CheckDistanceEdge(int i, int j);    
 bool MakePrismMaps();  
+bool ReorderTriple(triple& t);
+Vec3D TripleNormal(triple& t);
+bool TriplesAreNeighbour(triple& t1, triple& t2);
+bool UpdatePrismNormals(TriangularPrism & tp);
+bool CheckPrismNormals(TriangularPrism & tp);
+
 private:
 
     //--------------------------------------------------------------------------
     // Data members
     //--------------------------------------------------------------------------
     int m_ID;
-     triangle* m_T1; // Unique identifier.
-     triangle* m_T2;
      Vec3D* m_pBox; // Ownership is not required.
     double m_Dist[3][3];
-    int m_NoTopology;
     std::vector<TriangularPrism> m_TopologyMaps;
     double &m_MaxLength2;
     // just to keep as global
-    std::array<Vec3D, 6> m_NormalVector;
-    std::array<Vec3D, 6> m_Vertices;
-
-    //std::vector<> m_ValidTopology;
+    std::vector<vertex *> m_Vertices;
+    double &m_MinAngle;
     
 
 };
