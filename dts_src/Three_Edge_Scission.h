@@ -7,6 +7,8 @@
 #include "Vec3D.h"
 #include "MESH.h"
 #include "Tensor2.h"
+#include "TriangularPrismBuilder.h"
+
 class State;
 class triangle;
 class vertex;
@@ -44,17 +46,10 @@ struct PairHash {
         return h1 ^ (h2 << 1);
     }
 };
-struct fusion_site {    // data structure for a pair of triangle
+struct fusion_site {    // data structure for a fusion site
     triangle* t1;
     triangle* t2;
-    double dist[3][3];
-        
-};
-struct fussion_site {    // data structure for a pair of triangle
-    links* l1;
-    links* l2;
-    double dist[3][3];
-    int no_conf;
+    TriangularPrism topology;
         
 };
 class Three_Edge_Scission :  public AbstractDynamicTopology { // to use for polymorphism
@@ -85,15 +80,11 @@ private:
     
     //--- functions for fussions
     bool FusionByMove(fusion_site &pair_tri, double thermal);
-    bool CheapScane(links *l1, links *l2, fussion_site &p_T);
-    bool BuildScane(fussion_site &p_T);
 
 
     std::vector<fusion_site> FindPotentialFusionSites();
-    std::vector<fussion_site> FindPotentialFussionSites_V2FunctionType(); // this should be deleted
 
 
-    bool FusionSite_DistanceIsGood(triangle *t1, triangle *t2, fusion_site &p_T);
     bool FusionSites_AreNotNeighbours(triangle *t1, triangle *t2);
 
 
@@ -139,6 +130,7 @@ private:
     int m_Period;
     State *m_pState;
     Voxelization<triangle>  *m_pTriVoxelization;
+    TriangularPrismBuilder *m_pTriangularPrismBuilder;
     
 };
 #endif

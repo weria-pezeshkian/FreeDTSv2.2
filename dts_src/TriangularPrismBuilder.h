@@ -57,20 +57,14 @@ public:
      *   pbox - Simulation box used for geometric calculations.
      *   max distance 
      */
-    TriangularPrismBuilder(int id, Vec3D* pbox, double &maxl2, double &minagle);
+    TriangularPrismBuilder(Vec3D* pbox, double &maxl2, double &minagle);
 
     ~TriangularPrismBuilder();
-
-    //--------------------------------------------------------------------------
-    // Accessors
-    //--------------------------------------------------------------------------
-    int GetID() const { return m_ID; }
-
 
 
 public:
 
-std::vector<TriangularPrism> GeneratePossibleTopology(triangle* t1,  triangle* t2);
+        std::vector<TriangularPrism> GeneratePossibleTopology(triangle* t1,  triangle* t2);
 
 private:
 void GenerateDistanceMap(triangle* t1,  triangle* t2);  
@@ -88,7 +82,6 @@ private:
     //--------------------------------------------------------------------------
     // Data members
     //--------------------------------------------------------------------------
-    int m_ID;
      Vec3D* m_pBox; // Ownership is not required.
     double m_Dist[3][3];
     std::vector<TriangularPrism> m_TopologyMaps;

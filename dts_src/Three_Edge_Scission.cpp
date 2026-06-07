@@ -7,6 +7,7 @@
 #include "State.h"
 #include "MESH.h"
 #include "./Registry/FactoryDynamicTopologyMethod.h"
+
 /*
  Weria Pezeshkian (weria.pezeshkian@gmail.com)
  Copyright (c) Weria Pezeshkian
@@ -43,7 +44,7 @@ Three_Edge_Scission::Three_Edge_Scission(int period, State *pState) :
 
 }
 Three_Edge_Scission::~Three_Edge_Scission(){
-    
+    delete m_pTriangularPrismBuilder ;
 }
 void Three_Edge_Scission::Initialize() {
 
@@ -51,6 +52,8 @@ void Three_Edge_Scission::Initialize() {
     m_NumberOfAttemptedMoves = 0;
     m_AcceptedMoves = 0;
     m_Surface_Genus = 1-(m_pSurfV.size()-m_pLeftL.size()+m_pActiveT.size())/2;
+    
+    m_pTriangularPrismBuilder = new TriangularPrismBuilder (&m_Box, m_MaxLength2, m_MinAngle);
 }
 bool Three_Edge_Scission::MCMove(int step) {
     
@@ -69,15 +72,18 @@ bool Three_Edge_Scission::MCMove(int step) {
             m_AcceptedMoves++;
         }
     } ///  if(pair_list.size() != 0) end ScissionByMC
+    
+    // Fusion
     std::clock_t start = std::clock();
    
      std::vector<fusion_site> all_possible_sites = FindPotentialFusionSites();
-    // std::vector<fussion_site> all_possible_sites = FindPotentialFussionSites_V2FunctionType();
       std::clock_t end = std::clock();
     // Calculate the duration
        double duration = static_cast<double>(end - start) / CLOCKS_PER_SEC;
        // Print the time taken
        std::cout << "Time taken to execute FindPotentialFussionSites: " << duration << " seconds " << all_possible_sites.size() << std::endl;
+       
+    
     if(all_possible_sites.size() != 0) {// FussionByMove
         int n = m_pState->GetRandomNumberGenerator()->IntRNG(all_possible_sites.size());
         fusion_site pair_T = all_possible_sites[n];
@@ -164,7 +170,7 @@ std::vector<fusion_site> Three_Edge_Scission::FindPotentialFusionSites() {
                 if (!FusionSites_AreNotNeighbours(t1, t2))
                     continue;
 
-                if (t1 > t2) std::swap(t1, t2);
+                if (t1 > t2) std::swap(t1, t2);  // to remove the repeated one
 
                 Possible_pairs.insert({t1, t2});
             }
@@ -178,56 +184,21 @@ std::vector<fusion_site> Three_Edge_Scission::FindPotentialFusionSites() {
     {
         triangle* t1 = p.first;
         triangle* t2 = p.second;
-        fusion_site p_T;
-        if(!FusionSite_DistanceIsGood(t1, t2, p_T)){
-             continue;
+        
+        std::vector<TriangularPrism> PossiblePrism = m_pTriangularPrismBuilder->GeneratePossibleTopology(t1, t2);
+        if(PossiblePrism.size()==0){
+            continue;
         }
-        Available_Sites.push_back(p_T);
+        for (const auto& topo : PossiblePrism){
+            fusion_site p_T;
+            p_T.t1 = t1;
+            p_T.t2 = t2;
+            p_T.topology  = topo;
+            Available_Sites.push_back(p_T);
+        }
     }
     
     return Available_Sites;
-}
-bool Three_Edge_Scission::FusionSite_DistanceIsGood(triangle *t1, triangle *t2, fusion_site &p_T){
-
-
-    // ---- vertex sharing rejection ----
-    vertex * v1 = t1->GetV1();
-    vertex * v2 = t1->GetV2();
-    vertex * v3 = t1->GetV3();
-
-    vertex * u1 = t2->GetV1();
-    vertex * u2 = t2->GetV2();
-    vertex * u3 = t2->GetV3();
-
-
-    double dist_11 = MESH::SquareDistanceBetweenTwoVertices(v1, u1, m_Box);
-    double dist_12 = MESH::SquareDistanceBetweenTwoVertices(v1, u2, m_Box);
-    double dist_13 = MESH::SquareDistanceBetweenTwoVertices(v1, u3, m_Box);
-    double dist_21 = MESH::SquareDistanceBetweenTwoVertices(v2, u1, m_Box);
-    double dist_22 = MESH::SquareDistanceBetweenTwoVertices(v2, u2, m_Box);
-    double dist_23 = MESH::SquareDistanceBetweenTwoVertices(v2, u3, m_Box);
-    double dist_31 = MESH::SquareDistanceBetweenTwoVertices(v3, u1, m_Box);
-    double dist_32 = MESH::SquareDistanceBetweenTwoVertices(v3, u2, m_Box);
-    double dist_33 = MESH::SquareDistanceBetweenTwoVertices(v3, u3, m_Box);
-
-
-    p_T.t1 = t1;
-    p_T.t2 = t2;
-
-    p_T.dist[0][0] = dist_11;
-    p_T.dist[0][1] = dist_12;
-    p_T.dist[0][2] = dist_13;
-    p_T.dist[1][0] = dist_21;
-    p_T.dist[1][1] = dist_22;
-    p_T.dist[1][2] = dist_23;
-    p_T.dist[2][0] = dist_31;
-    p_T.dist[2][1] = dist_32;
-    p_T.dist[2][2] = dist_33;
-
-
-    
-    return true;
-        
 }
 bool Three_Edge_Scission::FusionSites_AreNotNeighbours(triangle *t1, triangle *t2){
  
@@ -275,173 +246,80 @@ bool Three_Edge_Scission::FusionSites_AreNotNeighbours(triangle *t1, triangle *t
 }
 bool Three_Edge_Scission::FusionByMove(fusion_site &pair_tri, double thermal){
     
-    // we have to add here!
+    // There is a lot to be added to this function
     
     double new_energy = 0;
     double old_energy = 0;
     
-    return false;
-}
-bool Three_Edge_Scission::BuildScane(fussion_site &p_T) {
-
+    triangle* t1 = pair_tri.t1;
+    triangle* t2 = pair_tri.t2;
     
+    vertex * v1 = t1->GetV1();
+    vertex * v2 = t1->GetV2();
+    vertex * v3 = t1->GetV3();
+
+    vertex * u1 = t2->GetV1();
+    vertex * u2 = t2->GetV2();
+    vertex * u3 = t2->GetV3();
     
-    return true;
-}
-bool Three_Edge_Scission::CheapScane(links *l1, links *l2, fussion_site &p_T) {
-    /**
-     * @brief Determines if two links are close to each other based on their normal vectors and vertex proximity.
-     *
-     * This function checks if two given links are close by first comparing the normal vectors of the triangles
-     * they belong to (because fussion trinagles should have this characters). If the dot product of the normal vectors is positive, the links are considered close.
-     * Additionally, it checks the proximity of the vertices of the two links. If any vertex of the second link
-     * is a neighbor of any vertex of the first link, the links are considered close.
-     *
-     * @param l1 Pointer to the first link.
-     * @param l2 Pointer to the second link.
-     * @return True if the links are considered close, false otherwise.
-     */
-#if DEVELOPMENT_MODE == Enabled
-    std::cout << "DEVELOPMENT_MODE ID 00345: This function can be made better\n";
-#endif
-
-    // If the dot product of the normal vectors is positive, return true
-    if (Vec3D::dot(l1->GetTriangle()->GetNormalVector(), l2->GetTriangle()->GetNormalVector()) > 0) {
-        return true;
-    }
-
-    double dist_33 = MESH::SquareDistanceBetweenTwoVertices(l1->GetV3(), l2->GetV3(), m_Box);
-    if(dist_33 > m_MaxLength2){
-        return true;
+    std::vector<vertex*> Vver;
+    Vver.insert(Vver.end(),{v1, v2, v3, u1, u2, u3});
+    
+    // get old energy
+    for (const auto& pV : Vver){
+        old_energy += pV->GetEnergy();
+        old_energy += pV->GetBindingEnergy(); // vector field
     }
     
-    if(l1->GetV1() == l2->GetV1() ||
-       l1->GetV1() == l2->GetV2() ||
-       l1->GetV1() == l2->GetV3() ){
-        return true;
-    }
-    if(l1->GetV2() == l2->GetV1() ||
-       l1->GetV2() == l2->GetV2() ||
-       l1->GetV2() == l2->GetV3() ){
-        return true;
-    }
-    if(l1->GetV3() == l2->GetV1() ||
-       l1->GetV3() == l2->GetV2() ||
-       l1->GetV3() == l2->GetV3() ){
-        return true;
-    }
-    if(l1->GetV1() == l2->GetMirrorLink()->GetV3() ||
-       l1->GetV2() == l2->GetMirrorLink()->GetV3() ||
-       l1->GetV3() == l2->GetMirrorLink()->GetV3() ){
-        return true;
-    }
-    if(l1->GetV1() == l2->GetNeighborLink1()->GetMirrorLink()->GetV3() ||
-       l1->GetV2() == l2->GetNeighborLink1()->GetMirrorLink()->GetV3() ||
-       l1->GetV3() == l2->GetNeighborLink1()->GetMirrorLink()->GetV3() ){
-        return true;
-    }
-    if(l1->GetV1() == l2->GetNeighborLink2()->GetMirrorLink()->GetV3() ||
-       l1->GetV2() == l2->GetNeighborLink2()->GetMirrorLink()->GetV3() ||
-       l1->GetV3() == l2->GetNeighborLink2()->GetMirrorLink()->GetV3() ){
-        return true;
-    }
-    if(l2->GetV1() == l1->GetMirrorLink()->GetV3() ||
-       l2->GetV2() == l1->GetMirrorLink()->GetV3() ||
-       l2->GetV3() == l1->GetMirrorLink()->GetV3() ){
-        return true;
-    }
-    if(l2->GetV1() == l1->GetNeighborLink1()->GetMirrorLink()->GetV3() ||
-       l2->GetV2() == l1->GetNeighborLink1()->GetMirrorLink()->GetV3() ||
-       l2->GetV3() == l1->GetNeighborLink1()->GetMirrorLink()->GetV3() ){
-        return true;
-    }
-    if(l2->GetV1() == l1->GetNeighborLink2()->GetMirrorLink()->GetV3() ||
-       l2->GetV2() == l1->GetNeighborLink2()->GetMirrorLink()->GetV3() ||
-       l2->GetV3() == l1->GetNeighborLink2()->GetMirrorLink()->GetV3() ){
-        return true;
-    }
+    //-- get the energy for interaction
+        std::vector<links*> Affected_links;// = GetEdgesWithInteractionChange(p_edge);
 
-
-    double dist_12 = MESH::SquareDistanceBetweenTwoVertices(l1->GetV1(), l2->GetV2(), m_Box);
-    double dist_21 = MESH::SquareDistanceBetweenTwoVertices(l1->GetV2(), l2->GetV1(), m_Box);
-
-    if(dist_21 > m_MaxLength2 || dist_12 > m_MaxLength2){
-        return true;
-    }
-    
-    double dist_11 = MESH::SquareDistanceBetweenTwoVertices(l1->GetV1(), l2->GetV1(), m_Box);
-    double dist_22 = MESH::SquareDistanceBetweenTwoVertices(l1->GetV2(), l2->GetV2(), m_Box);
-    if( dist_11> m_MaxLength2 && dist_22> m_MaxLength2){
-        return true;
-    }
-    
-    double dist_13 = MESH::SquareDistanceBetweenTwoVertices(l1->GetV1(), l2->GetV3(), m_Box);
-    double dist_32 = MESH::SquareDistanceBetweenTwoVertices(l1->GetV3(), l2->GetV2(), m_Box);
-    if (dist_13 > m_MaxLength2 && dist_32> m_MaxLength2 ){
-            return true;
-    }
-
-    double dist_23 = MESH::SquareDistanceBetweenTwoVertices(l1->GetV2(), l2->GetV3(), m_Box);
-    double dist_31 = MESH::SquareDistanceBetweenTwoVertices(l1->GetV3(), l2->GetV1(), m_Box);
-
-    if (dist_23> m_MaxLength2 && dist_31> m_MaxLength2){
-            return true;
-    }
-    p_T.l1 = l1;
-    p_T.l2 = l2;
-    p_T.dist[0][0] = dist_11;
-    p_T.dist[0][1] = dist_12;
-    p_T.dist[0][2] = dist_13;
-    p_T.dist[1][0] = dist_21;
-    p_T.dist[1][1] = dist_22;
-    p_T.dist[1][2] = dist_23;
-    p_T.dist[2][1] = dist_32;
-    p_T.dist[2][2] = dist_33;
-    p_T.dist[2][2] = dist_33;
-
-    return false;
-}
-std::vector<fussion_site> Three_Edge_Scission::FindPotentialFussionSites_V2FunctionType(){ // this should be deleted 
-    
-    std::vector<fussion_site> all_possible_sites;
-    
-    //MESH::SquareDistanceBetweenTwoVertices(p_v1, p_v2, m_Box);
-
-   // for (std::vector<links *>::iterator it = m_pRightL.begin() ; it != m_pRightL.end(); ++it){
-
-        for(int i = 0; i<m_pActiveL.size(); i++){
-            for(int j = 0; j<m_pActiveL.size(); j++){
-               // if(all_possible_sites.size())
-                 //   break;
-                
-                links *l1 = m_pActiveL[i];
-                links *l2 = m_pActiveL[j];
-                //---- check if they are close
-                fussion_site p_T;
-                if(CheapScane(l1,l2, p_T)){
-                    continue;
-                }
-
-                if(BuildScane(p_T)){
-                    all_possible_sites.push_back(p_T);
-                    
-                    l1->GetV1()->UpdateGroup(1);
-                    l1->GetV2()->UpdateGroup(1);
-                    l1->GetV3()->UpdateGroup(1);
-                    l2->GetV1()->UpdateGroup(2);
-                    l2->GetV2()->UpdateGroup(2);
-                    l2->GetV3()->UpdateGroup(2);
-
-                }
-            //====
-            }
+        for (std::vector<links *>::iterator it = Affected_links.begin() ; it != Affected_links.end(); ++it){
+                (*it)->Copy_InteractionEnergy();
+                (*it)->Copy_VFInteractionEnergy();
+                old_energy += 2 * (*it)->GetIntEnergy();
+                old_energy += 2 * (*it)->GetVFIntEnergy();
         }
+        
+        // and more terms
+            // Obtain and sum the initial global variables that might change
+            double old_Tvolume = 0.0, old_Tarea = 0.0, old_Tcurvature = 0.0;
+            double new_Tvolume = 0.0, new_Tarea = 0.0, new_Tcurvature = 0.0;
+            /*if(m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()){
+                m_pState->GetVAHGlobalMeshProperties()->CalculateALinkTrianglesContributionToGlobalVariables(p_edge, old_Tvolume, old_Tarea, old_Tcurvature);
+            }*/
+        
+        
+        //MakeFusion();
+        
+        
+            // link should be updated first
+            for (const auto& pV : Vver){
+                (m_pState->GetCurvatureCalculator())->UpdateVertexCurvature(pV);
 
+            }
+            for (const auto& pV : Vver){
+                new_energy += pV->GetEnergy();
+                new_energy += pV->GetBindingEnergy(); // vector field
+            }
+        
+        
+    double diff_energy = new_energy - old_energy;
+    double tot_diff_energy = diff_energy ;
+
+    double U = m_Beta * tot_diff_energy - m_DBeta;
+    //---> accept or reject the move
+    if(U <= 0 || exp(-U) > thermal ) {
     
+        return true;
+    }
+    else {
+        return false;
+    }
+        
+        
     
-    //n1.n2<0??
-    
-    return all_possible_sites;
+    return false;
 }
 bool Three_Edge_Scission::ScissionByMC(pair_pot_triangle &pair_t, double thermal){
     /**

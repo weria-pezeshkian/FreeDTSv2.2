@@ -3,8 +3,8 @@
 #include "MESH.h"
 
 // Constructor with initialization of TriangularPrismBuilder parameters
-TriangularPrismBuilder::TriangularPrismBuilder(int id, Vec3D *pbox, double &maxl2, double &minagle)
-    : m_ID(id), m_pBox(pbox), m_MaxLength2(maxl2), m_MinAngle(minagle) {
+TriangularPrismBuilder::TriangularPrismBuilder(Vec3D *pbox, double &maxl2, double &minagle)
+    : m_pBox(pbox), m_MaxLength2(maxl2), m_MinAngle(minagle) {
 
         if(!MakePrismMaps()){
             std::cout<<" error--> 220202 \n";
