@@ -6,6 +6,7 @@
 #include "Three_Edge_Scission.h"
 #include "State.h"
 #include "MESH.h"
+#include "vertex.h"
 #include "./Registry/FactoryDynamicTopologyMethod.h"
 
 /*
@@ -20,8 +21,10 @@
  
  */
 
-Three_Edge_Scission::Three_Edge_Scission(int period, State *pState) :
+Three_Edge_Scission::Three_Edge_Scission(std::string inputdata, State *pState) :
                 m_pState(pState),
+                m_StreamInputs (inputdata),
+                m_PrismMapTopologyFile(""),
                 m_pEdgeL(pState->GetMesh()->GetEdgeL()),
                 m_pGhostL(pState->GetMesh()->GetGhostL()),
                 m_pGhostT(pState->GetMesh()->GetGhostT()),
@@ -31,7 +34,6 @@ Three_Edge_Scission::Three_Edge_Scission(int period, State *pState) :
                 m_pActiveL(pState->GetMesh()->GetActiveL()),
                 m_pSurfV(pState->GetMesh()->GetSurfV()),
                 m_pEdgeV(pState->GetMesh()->GetEdgeV()),
-                m_Period(period),
                 m_Beta(pState->GetSimulation()->GetBeta()),
                 m_DBeta(pState->GetSimulation()->GetDBeta()),
                 m_MinLength2(pState->GetSimulation()->GetMinL2()),
@@ -48,12 +50,29 @@ Three_Edge_Scission::~Three_Edge_Scission(){
 }
 void Three_Edge_Scission::Initialize() {
 
+
+std::vector<std::string> input_data = Nfunction::Split(m_StreamInputs);
+    if (input_data.empty()) {
+        std::cerr << "---> Error: insufficient input data for '" << GetDefaultReadName() << "' command" << std::endl;
+    }   
+// Parse required parameter: Period
+    m_Period = Nfunction::String_to_Int(input_data[0]);
+
+// Parse optional parameter: PrismMapTopologyFile
+    if (input_data.size() > 1 && !input_data[1].empty()) {
+        m_PrismMapTopologyFile = input_data[1];
+    } 
+    else {
+            std::cout << "---> Note: No topology prism file provided for '" 
+              << GetDefaultReadName() << "' command. Using default behavior." << std::endl;
+    }
+
     std::cout<<"---> note: Three_Edge Neck will be used to change the surface topology "<<std::endl;
     m_NumberOfAttemptedMoves = 0;
     m_AcceptedMoves = 0;
     m_Surface_Genus = 1-(m_pSurfV.size()-m_pLeftL.size()+m_pActiveT.size())/2;
     
-    m_pTriangularPrismBuilder = new TriangularPrismBuilder (&m_Box, m_MaxLength2, m_MinAngle);
+    m_pTriangularPrismBuilder = new TriangularPrismBuilder (&m_Box, m_MaxLength2, m_MinAngle, m_PrismMapTopologyFile);
 }
 bool Three_Edge_Scission::MCMove(int step) {
     
@@ -68,9 +87,10 @@ bool Three_Edge_Scission::MCMove(int step) {
         pair_pot_triangle pair_T = pair_list[n];
         double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
         m_NumberOfAttemptedMoves++;
-        if(ScissionByMC(pair_T, thermal)){
+       /* if(ScissionByMC(pair_T, thermal)){
+            
             m_AcceptedMoves++;
-        }
+        }*/
     } ///  if(pair_list.size() != 0) end ScissionByMC
     
     // Fusion
@@ -82,7 +102,7 @@ bool Three_Edge_Scission::MCMove(int step) {
        double duration = static_cast<double>(end - start) / CLOCKS_PER_SEC;
        // Print the time taken
        std::cout << "Time taken to execute FindPotentialFussionSites: " << duration << " seconds " << all_possible_sites.size() << std::endl;
-       
+       std::cout << m_AcceptedMoves<<"\n";
     
     if(all_possible_sites.size() != 0) {// FussionByMove
         int n = m_pState->GetRandomNumberGenerator()->IntRNG(all_possible_sites.size());
@@ -90,7 +110,7 @@ bool Three_Edge_Scission::MCMove(int step) {
         double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
         m_NumberOfAttemptedMoves++;
         if(FusionByMove(pair_T, thermal)){
-            m_AcceptedMoves++;
+           // m_AcceptedMoves++;
         }
     } ///     if(all_possible_sites.size() != 0) {// end FussionByMove
 
@@ -289,8 +309,11 @@ bool Three_Edge_Scission::FusionByMove(fusion_site &pair_tri, double thermal){
                 m_pState->GetVAHGlobalMeshProperties()->CalculateALinkTrianglesContributionToGlobalVariables(p_edge, old_Tvolume, old_Tarea, old_Tcurvature);
             }*/
         
+           // we know perform fusion and our mesh is no longer the old one.
+           Fuse_MeshViaTwoTrinagles(pair_tri);
         
-        //MakeFusion();
+           //(m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(v1);
+
         
         
             // link should be updated first
@@ -321,6 +344,153 @@ bool Three_Edge_Scission::FusionByMove(fusion_site &pair_tri, double thermal){
     
     return false;
 }
+bool Three_Edge_Scission::Fuse_MeshViaTwoTrinagles(fusion_site &pair_tri){
+    
+    
+    if(m_pGhostT.size()<6 || m_pGhostL.size()<12){
+        std::cout<<"---> warning (id 333) \n";
+        return false;
+    }
+    
+    triangle* t1 = pair_tri.t1;
+    triangle* t2 = pair_tri.t2;
+    
+    RemoveFromTriangleList(t1, m_pActiveT);
+    RemoveFromTriangleList(t2, m_pActiveT);
+    // we add them to the begining of the ghost, so when we take out from the end, for the moment, we do not affect these objects
+    m_pGhostT.insert(m_pGhostT.begin(), t1);
+    m_pGhostT.insert(m_pGhostT.begin(), t2);
+
+        
+    vertex * v1 = t1->GetV1();
+    vertex * v2 = t1->GetV2();
+    vertex * v3 = t1->GetV3();
+    vertex * u1 = t2->GetV1();
+    vertex * u2 = t2->GetV2();
+    vertex * u3 = t2->GetV3();
+    std::vector<vertex*> Vver;
+    Vver.insert(Vver.end(),{v1, v2, v3, u1, u2, u3});
+
+    
+    v1->RemoveFromTraingleList(t1);
+    v2->RemoveFromTraingleList(t1);
+    v3->RemoveFromTraingleList(t1);
+    u1->RemoveFromTraingleList(t2);
+    u2->RemoveFromTraingleList(t2);
+    u3->RemoveFromTraingleList(t2);
+    
+
+    std::vector<triple> VTriples = (pair_tri.topology).VTriples;
+    std::vector<triangle*> pnewTrinagles;
+    std::vector<links*> pnewLinks;
+    std::vector<links*> pHalfnewLinks;
+    std::vector<links*> poldLinks;
+
+    for (int i= 0; i < 6; i++){
+            triangle* prism_t = m_pGhostT.back();
+            m_pGhostT.pop_back();
+            m_pActiveT.push_back(prism_t);
+            int id1 = (VTriples[i])[0];
+            int id2 = (VTriples[i])[1];
+            int id3 = (VTriples[i])[2];
+            vertex * tv1 = Vver[id1];
+            vertex * tv2 = Vver[id2];
+            vertex * tv3 = Vver[id3];
+
+            prism_t->UpdateVertex(tv1, tv2, tv3);
+            pnewTrinagles.push_back(prism_t);
+            tv1->AddtoTraingleList(prism_t);
+            tv2->AddtoTraingleList(prism_t);
+            tv3->AddtoTraingleList(prism_t);
+            
+            // lets now create the links 
+            links* old_link = tv1->GetConnectingLink(tv2);
+            links* prism_l1 = m_pGhostL.back();
+            m_pGhostL.pop_back();
+            m_pActiveL.push_back(prism_l1);
+            links* prism_l2 = m_pGhostL.back();
+            m_pGhostL.pop_back();
+            m_pActiveL.push_back(prism_l2);
+            
+            prism_l1->UpdateV(tv2, tv3, tv1);
+            prism_l2->UpdateV(tv3, tv1, tv2);
+
+            prism_l1->UpdateNeighborLink1(prism_l2);
+            prism_l1->UpdateNeighborLink2(old_link);
+            prism_l2->UpdateNeighborLink1(old_link);
+            prism_l2->UpdateNeighborLink2(prism_l1);
+            old_link->UpdateNeighborLink1(prism_l1);
+            old_link->UpdateNeighborLink2(prism_l2);
+            
+            tv2->AddtoLinkList(prism_l1);
+            tv3->AddtoLinkList(prism_l2);
+            
+            old_link->UpdateTriangle(prism_t);
+            prism_l1->UpdateTriangle(prism_t);
+            prism_l2->UpdateTriangle(prism_t);
+            
+            poldLinks.push_back(old_link);
+            pnewLinks.push_back(prism_l1);
+            pnewLinks.push_back(prism_l2);
+
+    }
+    
+
+    // add the mirrors and make the links left and right
+    std::vector<bool> used(pnewLinks.size(), false);
+    for (size_t i = 0; i < pnewLinks.size(); i++) {
+
+        if (used[i]) continue;
+
+        links* l1 = pnewLinks[i];
+        links* l2 = nullptr;
+        bool found = false;
+        size_t matchIndex = -1;
+
+        for (size_t j = i + 1; j < pnewLinks.size(); j++) {
+
+            if (used[j]) continue;
+            l2 = pnewLinks[j];
+
+            if (l1->GetV1() == l2->GetV2() && l1->GetV2() == l2->GetV1()) {
+
+                found = true;
+                matchIndex = j;
+                break;
+            }
+        }
+
+        if (!found) {
+            std::cout << "--> error 33344\n";
+            return false;
+         }
+        used[i] = true;
+        used[matchIndex] = true;
+
+        m_pRightL.push_back(l1);
+        m_pLeftL.push_back(l2);
+        pHalfnewLinks.push_back(l1);
+        l1->UpdateMirrorLink(l2);
+        l2->UpdateMirrorLink(l1);
+        l1->UpdateMirrorFlag(true);
+        l2->UpdateMirrorFlag(true);
+    }
+
+    for (auto tri : pnewTrinagles){
+        tri->UpdateNormal_Area(&m_Box);
+    }
+    for (auto le : pHalfnewLinks){
+        le->UpdateNormal();
+        le->UpdateShapeOperator(&m_Box);
+    }
+    for (auto le : poldLinks){
+        le->UpdateNormal();
+        le->UpdateShapeOperator(&m_Box);
+    }
+
+    return true;
+}
+
 bool Three_Edge_Scission::ScissionByMC(pair_pot_triangle &pair_t, double thermal){
     /**
      * @brief Perform a scission operation on a neck by getting a potential pair of triangles and determine its acceptance based on Metropolis criteria.
@@ -436,7 +606,7 @@ bool Three_Edge_Scission::ScissionByMC(pair_pot_triangle &pair_t, double thermal
         return false;
     }
     
-    return true;
+    return false;
 }
 // it creates a triangle and place it to the active trinagles list
 triangle * Three_Edge_Scission::CreateATriangleFromAPotentialTriangle(pot_triangle &p1) {
@@ -1141,14 +1311,14 @@ private:
         std::istream& input,
         State* state)
     {
-        int period = 0;
-        input >>  period;
+        //int period = 0;
+       // input >>  period;
         
-        std::string rest;
-        std::getline(input, rest);   // consume rest of line
+        std::string inputdata;
+        std::getline(input, inputdata);   // consume rest of line
         
         return new Three_Edge_Scission(
-            period,
+            inputdata,
             state);   // state is always last
     }
 };

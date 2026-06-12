@@ -73,6 +73,10 @@ public:
         inline links* GetEdgeLink()                 {return m_pEdgeLink;}// preceding link at the edge
 
     
+public:
+// expensive gets
+   static links*  GetConnectingLink(vertex* v1, vertex* v2);
+   links*  GetConnectingLink(vertex* v2);
 
 public:
     

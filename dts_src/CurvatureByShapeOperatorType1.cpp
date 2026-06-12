@@ -110,6 +110,26 @@ bool CurvatureByShapeOperatorType1::UpdateSurfVertexCurvature(vertex * pvertex){
             double ff = Se.norm(); // Get the norm
             if (ff == 0) {
                 std::cerr << "-----> Error: projection is zero error" << "\n";
+               /* std::cout <<" normal "<<"\n";
+                std::cout <<currentLink->GetNormal()<<"\n";
+                
+                       Vec3D norm1 = (currentLink->GetTriangle())->GetNormalVector();
+                       Vec3D norm2 = currentLink->GetMirrorLink()->GetTriangle()->GetNormalVector();
+                                std::cout <<"trinagle normal: "<<norm1<<" "<<norm2<<"\n";
+                                
+                                (currentLink->GetTriangle())->UpdateNormal_Area(m_pBox);
+                       norm1 = (currentLink->GetTriangle())->GetNormalVector();
+                       norm2 = currentLink->GetMirrorLink()->GetTriangle()->GetNormalVector();
+                    std::cout <<"trinagle normal: "<<norm1<<" "<<norm2<<"\n";
+
+                std::cout <<currentLink->GetNormal()<<"\n";
+                std::cout <<" -- cal normal ---- "<<"\n";
+                currentLink->UpdateNormal();
+                Vec3D vnorm = currentLink->GetNormal();
+                double sizess = vnorm.norm();
+                std::cout <<"print normal 2"<<sizess<<vnorm<<"\n";
+                std::cout <<" ------ "<<"\n";
+                */
                 return false;
             } else {
                 Se = Se*(1.0 / ff); // Normalize the vector

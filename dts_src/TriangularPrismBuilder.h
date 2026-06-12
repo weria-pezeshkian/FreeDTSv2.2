@@ -57,7 +57,7 @@ public:
      *   pbox - Simulation box used for geometric calculations.
      *   max distance 
      */
-    TriangularPrismBuilder(Vec3D* pbox, double &maxl2, double &minagle);
+    TriangularPrismBuilder(Vec3D* pbox, double &maxl2, double &minagle, std::string &topfilename);
 
     ~TriangularPrismBuilder();
 
@@ -76,6 +76,8 @@ Vec3D TripleNormal(triple& t);
 bool TriplesAreNeighbour(triple& t1, triple& t2);
 bool UpdatePrismNormals(TriangularPrism & tp);
 bool CheckPrismNormals(TriangularPrism & tp);
+bool MakeDefaultPrismMaps();
+TriangularPrism ReadPrismMap(std::istream& input);
 
 private:
 
@@ -89,6 +91,8 @@ private:
     // just to keep as global
     std::vector<vertex *> m_Vertices;
     double &m_MinAngle;
+    
+     std::string &m_TopologyFilename;
     
 
 };

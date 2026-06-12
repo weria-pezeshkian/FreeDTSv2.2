@@ -303,7 +303,7 @@ bool State::ReadInputFile(std::string file)
     if (!Nfunction::FileExist(filename)) {
         std::cerr << "----> Error: the input file with the name " << filename << " does not exist" << std::endl;
         return false;
-    }
+    } 
     std::ifstream input_read(filename);
     if (!input_read) {
         std::cerr << "----> Error: failed to open the input file " << filename << std::endl;

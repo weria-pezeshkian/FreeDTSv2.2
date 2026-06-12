@@ -528,6 +528,33 @@ bool vertex::ReverseVFLocalDirection(){
 
     return true;
 }
+links*  vertex::GetConnectingLink(vertex* v){
+    links* mylink = nullptr;
+    for (auto* l : m_VLinkList)
+    {
+        if (l->GetV2() == v)
+        {
+                mylink = l;
+                break;
+        }
+    }
+    
+    return  mylink;
+}
+// static
+links*  vertex::GetConnectingLink(vertex* v1, vertex* v2){
+    links* mylink = nullptr;
+    for (auto* l : v1->GetVLinkList())
+    {
+        if (l->GetV2() == v2)
+        {
+                mylink = l;
+                break;
+        }
+    }
+    
+    return  mylink;
+}
 #ifdef _OPENMP
 bool vertex::CheckLockVertex(){
 return omp_test_lock(&m_Lock);
@@ -603,5 +630,8 @@ void vertex::UnockVectorVertex(std::vector <vertex *> V_ver){
     }
     return;
 }
+
+
+
 
 #endif // #ifdef _OPENMP

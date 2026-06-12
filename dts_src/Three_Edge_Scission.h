@@ -55,7 +55,7 @@ struct fusion_site {    // data structure for a fusion site
 class Three_Edge_Scission :  public AbstractDynamicTopology { // to use for polymorphism
 
 public:
-    Three_Edge_Scission(int period, State *pState);
+    Three_Edge_Scission(std::string inputdata, State *pState);
     ~Three_Edge_Scission();
     void Initialize();
     bool MCMove(int step);
@@ -86,7 +86,7 @@ private:
 
 
     bool FusionSites_AreNotNeighbours(triangle *t1, triangle *t2);
-
+    bool Fuse_MeshViaTwoTrinagles(fusion_site &pair_tri);
 
 private:
    bool  VoxelizeTriangles(double voxsize);
@@ -132,5 +132,10 @@ private:
     Voxelization<triangle>  *m_pTriVoxelization;
     TriangularPrismBuilder *m_pTriangularPrismBuilder;
     
+    
+private:  
+std::string m_StreamInputs;    
+std::string m_PrismMapTopologyFile;    
+
 };
 #endif

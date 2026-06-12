@@ -1,10 +1,12 @@
+#include <fstream>
+#include <sstream>
 #include "TriangularPrismBuilder.h"
 #include "vertex.h"
 #include "MESH.h"
 
 // Constructor with initialization of TriangularPrismBuilder parameters
-TriangularPrismBuilder::TriangularPrismBuilder(Vec3D *pbox, double &maxl2, double &minagle)
-    : m_pBox(pbox), m_MaxLength2(maxl2), m_MinAngle(minagle) {
+TriangularPrismBuilder::TriangularPrismBuilder(Vec3D *pbox, double &maxl2, double &minagle, std::string &topfilename)
+    : m_pBox(pbox), m_MaxLength2(maxl2), m_MinAngle(minagle), m_TopologyFilename(topfilename) {
 
         if(!MakePrismMaps()){
             std::cout<<" error--> 220202 \n";
@@ -71,8 +73,9 @@ bool TriangularPrismBuilder::CheckPrismNormals(TriangularPrism &tp)
 
             const double angle = Vec3D::dot(normals[i], normals[j]);
 
-            if (angle < m_MinAngle)
-                return false;
+            if (angle < m_MinAngle){
+               // return false;
+            }
         }
     }
 
@@ -97,13 +100,16 @@ bool TriangularPrismBuilder::CheckPrismNormals(TriangularPrism &tp)
             }
         }
 
-        if (!mylink)
+        if (!mylink || !(mylink->GetMirrorFlag())){
+            std::cout <<"---> error (id 4647393), this should not happen \n";
             return false; // safety guard
+        }
 
-        const double angle  = Vec3D::dot(normals[i], mylink->GetTriangle()->GetNormalVector());
+        const double angle  = Vec3D::dot(normals[i], mylink->GetMirrorLink()->GetTriangle()->GetNormalVector());
 
-        if (angle < m_MinAngle)
+        if (angle < m_MinAngle){
             return false;
+        }
     }
 
     return true;
@@ -271,7 +277,86 @@ bool TriangularPrismBuilder::UpdatePrismNormals(TriangularPrism& tp)
 
     return true;
 }
-bool TriangularPrismBuilder::MakePrismMaps()
+bool TriangularPrismBuilder::MakePrismMaps() {
+    /**
+ * @brief Builds prism topology maps either from a file or using default generation
+ * 
+ * This function attempts to load prism topology definitions from a user-specified
+ * file. If no filename is provided, it falls back to generating default prism maps.
+ * Each map in the file is read sequentially using ReadPrismMap() and stored in
+ * the m_TopologyMaps container.
+ * 
+ * @return true  if maps were successfully loaded or default maps were created
+ * @return false if the specified topology file exists but cannot be opened
+ * 
+ * @note The function expects the file format compatible with ReadPrismMap()
+ * @see ReadPrismMap(), MakeDefaultPrismMaps()
+ */
+    
+    
+    // If a topology file is specified, attempt to load from it
+    if (!m_TopologyFilename.empty()) {
+        std::ifstream mapFile(m_TopologyFilename);
+        
+        if (!mapFile.is_open()) {
+            std::cerr << "---> Error: (id 139565) failed to open map file: " 
+                      << m_TopologyFilename << std::endl;
+            return false;
+        }
+        
+        std::string line;
+        while (std::getline(mapFile, line)) {
+            // Skip empty lines or comments 
+            if (line.empty() || line[0] == '#') {
+                continue;
+            }
+            
+            // Read a single prism map from the file stream
+            // Note: Map ID and other metadata are handled inside ReadPrismMap()
+            TriangularPrism prism = ReadPrismMap(mapFile);
+            m_TopologyMaps.push_back(std::move(prism));  
+        }
+        
+        return true;
+    } 
+    
+    // No filename provided - generate default topology maps
+    return MakeDefaultPrismMaps();
+}
+TriangularPrism TriangularPrismBuilder::ReadPrismMap(std::istream& input) {
+/**
+ * Reads a triangular prism definition from a stream.
+ *
+ * Expects exactly 6 triples of integer vertex indices.
+ * Each triple is reordered via ReorderTriple() before being stored.
+ *
+ * @param input Input stream containing prism data.
+ * @return A populated TriangularPrism.
+ * @throws std::runtime_error if an invalid triple is encountered.
+ */
+    
+    TriangularPrism prism;
+    prism.VTriples.reserve(6);
+    std::string clearline;
+
+    for (int i = 0; i < 6; ++i)
+    {
+        int a, b, c;
+        input >> a >> b >> c;
+        getline(input, clearline);
+        triple t = make_triple(a, b, c);
+
+        if (!ReorderTriple(t))
+        {
+            throw std::runtime_error("Invalid prism triple.");
+        }
+
+        prism.VTriples.push_back(t);
+    }
+
+    return prism;
+}
+bool TriangularPrismBuilder::MakeDefaultPrismMaps()
 {
     //==== map 1
     TriangularPrism map1;
