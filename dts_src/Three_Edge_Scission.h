@@ -49,8 +49,16 @@ struct PairHash {
 struct fusion_site {    // data structure for a fusion site
     triangle* t1;
     triangle* t2;
-    TriangularPrism topology;
-        
+    TriangularPrism topology;     
+};
+struct fusion_outcome {    // data structure for a fusion site
+    std::vector<triangle*> newTriangles;
+    std::vector<links*> newLinks;
+    std::vector<links*> oldLinks;
+    std::vector<links*> pHalfnewLinks;
+    std::vector<vertex*> vertices;
+    triangle* t1;
+    triangle* t2;
 };
 class Three_Edge_Scission :  public AbstractDynamicTopology { // to use for polymorphism
 
@@ -86,7 +94,9 @@ private:
 
 
     bool FusionSites_AreNotNeighbours(triangle *t1, triangle *t2);
-    bool Fuse_MeshViaTwoTrinagles(fusion_site &pair_tri);
+    bool Fuse_MeshViaTwoTrinagles(fusion_site &pair_tri, fusion_outcome &data);
+    bool Reverse_Fuse_MeshViaTwoTrinagles(fusion_outcome &fusion_mesh);
+    std::vector<links*> Get_EdgesFusionAffect(std::vector<vertex*> &Vver);
 
 private:
    bool  VoxelizeTriangles(double voxsize);

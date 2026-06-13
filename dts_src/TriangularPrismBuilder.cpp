@@ -295,6 +295,7 @@ bool TriangularPrismBuilder::MakePrismMaps() {
     
     
     // If a topology file is specified, attempt to load from it
+    int total_map_inFile = 0;
     if (!m_TopologyFilename.empty()) {
         std::ifstream mapFile(m_TopologyFilename);
         
@@ -314,8 +315,19 @@ bool TriangularPrismBuilder::MakePrismMaps() {
             // Read a single prism map from the file stream
             // Note: Map ID and other metadata are handled inside ReadPrismMap()
             TriangularPrism prism = ReadPrismMap(mapFile);
-            m_TopologyMaps.push_back(std::move(prism));  
+            total_map_inFile++;
+            if(CheckPrismMapOrientation(prism)){
+                m_TopologyMaps.push_back(std::move(prism));
+            }
         }
+        
+            std::cout << "---> Note: The fusion map contains " << total_map_inFile << " fusion map";
+            if (m_TopologyMaps.size() == total_map_inFile) {
+                    std::cout << ", all maps will be considered.";
+            } 
+            else {
+                std::cout << ", but only " << m_TopologyMaps.size() << " will be considered.\n";
+            }
         
         return true;
     } 
@@ -393,4 +405,50 @@ bool TriangularPrismBuilder::MakeDefaultPrismMaps()
     m_TopologyMaps.push_back(map1);
 
     return true;
+}
+bool TriangularPrismBuilder::CheckPrismMapOrientation(TriangularPrism & tp){
+/**
+ * brief: Checks whether the triangular prism face map can be made with consistent orientation.
+ *
+ * This function verifies that all directed edges in the prism surface occur in
+ * balanced opposite pairs, ensuring consistent face winding across adjacent
+ * triangles.
+ *
+ * For each triangle in the prism, directed edges are extracted according to the
+ * stored vertex ordering. Only the edges (v2 → v3) and (v3 → v1) are considered,
+ * since the (v1 → v2) edge is shared with the original mesh and handled elsewhere.
+ *
+ * The method counts occurrences of each directed edge and confirms that every
+ * edge has a corresponding opposite-directed edge with the same multiplicity.
+ * If any imbalance is found, the prism orientation is considered invalid.
+ *
+ * @param tp Triangular prism structure containing vertex triples (VTriples).
+ * @return true if all edges are consistently oriented; false otherwise.
+ */
+    std::vector<triple> VTriples = tp.VTriples;
+    
+     // Count occurrences of each directed edge
+    std::unordered_map<PairMap, int, PairMapHash> edgeCount;
+    
+    // Count directed edges (only from vertex 2->3 and 3->1 as per original)
+    for (auto tmap : VTriples) {
+        edgeCount[{tmap[1], tmap[2]}]++;  // edge from vertex 2 to 3
+        edgeCount[{tmap[2], tmap[0]}]++;  // edge from vertex 3 to 1
+    }
+    
+    // Verify each directed edge has its opposite (C++14 compatible)
+    for (const auto& entry : edgeCount) {
+        const PairMap& edge = entry.first;
+        int count = entry.second;
+        
+        PairMap opposite = {edge[1], edge[0]};
+        auto it = edgeCount.find(opposite);
+        
+        // Must exist and have same count (balanced pairs)
+        if (it == edgeCount.end() || it->second != count) {
+            return false;
+        }
+    }
+    
+    return true;    
 }

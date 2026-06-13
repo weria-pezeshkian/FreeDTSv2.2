@@ -17,6 +17,23 @@ std::string Nfunction::Int_to_String(double ConInt) {
     S_mediate << ConInt;
     return S_mediate.str();
 }
+void Nfunction::ConsolePrint_Note(const std::string &text){
+    std::cout << "\033[1;34m---> 📝 Note: "<< text<< "\033[0m" << std::endl;
+    return;
+}
+void Nfunction::ConsolePrint_Error(const std::string &text){
+
+              std::cerr << "\033[1;31m"  // Bold red
+              << "╔══════════════════════════════════════════════════════════════╗\n"
+              << "║                    !!! FATAL ERROR !!!                       ║\n"
+              << "╚══════════════════════════════════════════════════════════════╝\n"
+              << "\033[0m"  // Reset
+              << "\033[1;31m"   // Blue
+              <<text
+              << "══════════════════════════════════════════════════════════════\n"
+              << "\033[0m";  // Reset
+    return;
+}
 std::string Nfunction::D2S(double ConInt) {
     std::ostringstream S_mediate;
     S_mediate << ConInt;

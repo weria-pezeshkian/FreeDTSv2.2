@@ -8,7 +8,6 @@
 #include "MESH.h"
 #include "vertex.h"
 #include "./Registry/FactoryDynamicTopologyMethod.h"
-
 /*
  Weria Pezeshkian (weria.pezeshkian@gmail.com)
  Copyright (c) Weria Pezeshkian
@@ -66,8 +65,8 @@ std::vector<std::string> input_data = Nfunction::Split(m_StreamInputs);
             std::cout << "---> Note: No topology prism file provided for '" 
               << GetDefaultReadName() << "' command. Using default behavior." << std::endl;
     }
-
-    std::cout<<"---> note: Three_Edge Neck will be used to change the surface topology "<<std::endl;
+    std::string note_txt = "This is a dynamic topology simulation with " + GetDefaultReadName() +" method.";
+    Nfunction::ConsolePrint_Note(note_txt);
     m_NumberOfAttemptedMoves = 0;
     m_AcceptedMoves = 0;
     m_Surface_Genus = 1-(m_pSurfV.size()-m_pLeftL.size()+m_pActiveT.size())/2;
@@ -80,37 +79,42 @@ bool Three_Edge_Scission::MCMove(int step) {
         return false;
     }
         
-   std::vector<pair_pot_triangle> pair_list  = FindNecks();
+//========================================================
+//--============== Fission
+//======================================================
+   /*std::vector<pair_pot_triangle> pair_list  = FindNecks();
    // std::cout<<pair_list.size()<<" number of pot trinagles \n";
     if(pair_list.size() != 0) {// ScissionByMC
         int n = m_pState->GetRandomNumberGenerator()->IntRNG(pair_list.size());
         pair_pot_triangle pair_T = pair_list[n];
         double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
         m_NumberOfAttemptedMoves++;
-       /* if(ScissionByMC(pair_T, thermal)){
+        if(ScissionByMC(pair_T, thermal)){
             
             m_AcceptedMoves++;
-        }*/
-    } ///  if(pair_list.size() != 0) end ScissionByMC
+        }
+    } *////  if(pair_list.size() != 0) end ScissionByMC
     
-    // Fusion
+//========================================================
+//--============== Fusion
+//======================================================
+    /*
     std::clock_t start = std::clock();
-   
      std::vector<fusion_site> all_possible_sites = FindPotentialFusionSites();
       std::clock_t end = std::clock();
-    // Calculate the duration
+     Calculate the duration
        double duration = static_cast<double>(end - start) / CLOCKS_PER_SEC;
-       // Print the time taken
-       std::cout << "Time taken to execute FindPotentialFussionSites: " << duration << " seconds " << all_possible_sites.size() << std::endl;
-       std::cout << m_AcceptedMoves<<"\n";
-    
+        Print the time taken
+       std::cout << "Time taken to execute FindPotentialFussionSites: " << duration << " seconds " << all_possible_sites.size() << std::endl;*/
+         
+    std::vector<fusion_site> all_possible_sites = FindPotentialFusionSites();
     if(all_possible_sites.size() != 0) {// FussionByMove
         int n = m_pState->GetRandomNumberGenerator()->IntRNG(all_possible_sites.size());
         fusion_site pair_T = all_possible_sites[n];
         double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
         m_NumberOfAttemptedMoves++;
         if(FusionByMove(pair_T, thermal)){
-           // m_AcceptedMoves++;
+            m_AcceptedMoves++;
         }
     } ///     if(all_possible_sites.size() != 0) {// end FussionByMove
 
@@ -232,13 +236,14 @@ bool Three_Edge_Scission::FusionSites_AreNotNeighbours(triangle *t1, triangle *t
     vertex * u2 = t2->GetV2();
     vertex * u3 = t2->GetV3();
 
+//-- check if they shapre any vertex. 
     if (v1 == u1 || v1 == u2 || v1 == u3 ||
         v2 == u1 || v2 == u2 || v2 == u3 ||
         v3 == u1 || v3 == u2 || v3 == u3)
     {
         return false;
     }
-    
+//-- check if they shapre any vertex with the vertex neighbour      
     std::vector <vertex *> pNv1 = v1->GetVNeighbourVertex();
     for (auto it : pNv1) {
         if (it == u1 || it == u2 || it == u3){
@@ -264,6 +269,9 @@ bool Three_Edge_Scission::FusionSites_AreNotNeighbours(triangle *t1, triangle *t
     return true;
         
 }
+//========================================================================
+//=====================  Fusion function =================================
+//========================================================================
 bool Three_Edge_Scission::FusionByMove(fusion_site &pair_tri, double thermal){
     
     // There is a lot to be added to this function
@@ -288,11 +296,11 @@ bool Three_Edge_Scission::FusionByMove(fusion_site &pair_tri, double thermal){
     // get old energy
     for (const auto& pV : Vver){
         old_energy += pV->GetEnergy();
-        old_energy += pV->GetBindingEnergy(); // vector field
+       // old_energy += pV->GetBindingEnergy(); // vector field
     }
     
     //-- get the energy for interaction
-        std::vector<links*> Affected_links;// = GetEdgesWithInteractionChange(p_edge);
+        std::vector<links*> Affected_links  = Get_EdgesFusionAffect(Vver);
 
         for (std::vector<links *>::iterator it = Affected_links.begin() ; it != Affected_links.end(); ++it){
                 (*it)->Copy_InteractionEnergy();
@@ -301,42 +309,82 @@ bool Three_Edge_Scission::FusionByMove(fusion_site &pair_tri, double thermal){
                 old_energy += 2 * (*it)->GetVFIntEnergy();
         }
         
-        // and more terms
+        // and more terms: global variables 
             // Obtain and sum the initial global variables that might change
             double old_Tvolume = 0.0, old_Tarea = 0.0, old_Tcurvature = 0.0;
             double new_Tvolume = 0.0, new_Tarea = 0.0, new_Tcurvature = 0.0;
             /*if(m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()){
                 m_pState->GetVAHGlobalMeshProperties()->CalculateALinkTrianglesContributionToGlobalVariables(p_edge, old_Tvolume, old_Tarea, old_Tcurvature);
             }*/
-        
+        //====
            // we know perform fusion and our mesh is no longer the old one.
-           Fuse_MeshViaTwoTrinagles(pair_tri);
-        
-           //(m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(v1);
+           // this will also updates trinagule and links normal and shape operator 
 
+             fusion_outcome fusion_data;          
+            if (!Fuse_MeshViaTwoTrinagles(pair_tri, fusion_data)) {
+                std::cerr << "ERROR: Fuse_MeshViaTwoTriangles() returned false. "
+                        "Fusion was expected to succeed for the selected triangle pair."
+                << std::endl;
+            }
         
-        
-            // link should be updated first
+            // update curvature of the vertices
             for (const auto& pV : Vver){
                 (m_pState->GetCurvatureCalculator())->UpdateVertexCurvature(pV);
 
             }
             for (const auto& pV : Vver){
-                new_energy += pV->GetEnergy();
-                new_energy += pV->GetBindingEnergy(); // vector field
+                new_energy += m_pState->GetEnergyCalculator()->SingleVertexEnergy(pV);
+                //new_energy += pV->GetBindingEnergy(); // vector field
             }
-        
+            
+
+            for (std::vector<links *>::iterator it = Affected_links.begin() ; it != Affected_links.end(); ++it){
+                    (*it)->Copy_InteractionEnergy();
+                    (*it)->Copy_VFInteractionEnergy();
+                    new_energy += (m_pState->GetEnergyCalculator())->TwoInclusionsInteractionEnergy(*it);
+                    
+                if(v1->GetNumberOfVF() != 0 ){
+                   for( int vf_layer = 0; vf_layer< m_pState->GetMesh()->GetNoVFPerVertex(); vf_layer++){
+                     new_energy +=  (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, *it);
+                    }    
+                }
+            }
+            // new links need to be updated
+            for (std::vector<links *>::iterator it = (fusion_data.pHalfnewLinks).begin() ; it != (fusion_data.pHalfnewLinks).end(); ++it){
+                    new_energy += (m_pState->GetEnergyCalculator())->TwoInclusionsInteractionEnergy(*it);
+                    
+                if(v1->GetNumberOfVF() != 0 ){
+                   for( int vf_layer = 0; vf_layer< m_pState->GetMesh()->GetNoVFPerVertex(); vf_layer++){
+                     new_energy +=  (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, *it);
+                    }    
+                }
+            }
+            
         
     double diff_energy = new_energy - old_energy;
     double tot_diff_energy = diff_energy ;
 
     double U = m_Beta * tot_diff_energy - m_DBeta;
     //---> accept or reject the move
-    if(U <= 0 || exp(-U) > thermal ) {
-    
+    if(2>1){//U <= 0 || exp(-U) > thermal ) {
+        m_pState->GetEnergyCalculator()->AddToTotalEnergy(diff_energy);
+        std::cout<<"accepted \n";
         return true;
     }
     else {
+        
+        if(!Reverse_Fuse_MeshViaTwoTrinagles(fusion_data)){
+                Nfunction::ConsolePrint_Error("-- error should not happen ");
+        }
+        
+        for (auto* li : Affected_links) {
+            li->Reverse_InteractionEnergy();
+            li->Reverse_VFInteractionEnergy();
+        }
+        for (auto* li : fusion_data.newLinks ) {
+            li->Reverse_InteractionEnergy();
+            li->Reverse_VFInteractionEnergy();
+        }
         return false;
     }
         
@@ -344,17 +392,155 @@ bool Three_Edge_Scission::FusionByMove(fusion_site &pair_tri, double thermal){
     
     return false;
 }
-bool Three_Edge_Scission::Fuse_MeshViaTwoTrinagles(fusion_site &pair_tri){
+
+std::vector<links*> Three_Edge_Scission::Get_EdgesFusionAffect(std::vector<vertex*> &Vver){  
+/**
+ * @brief Collects unique undirected edges from a set of vertices
+ * 
+ * Iterates through all links incident to the given vertices and returns
+ * each edge only once, treating (v1→v2) and (v2→v1) as the same edge.
+ * Uses hash set for O(N) average time complexity.
+ * 
+ * @param Vver Vector of vertex pointers to collect edges from
+ * @return Vector of unique link pointers (one per undirected edge)
+ * 
+ * @note Order of returned links is not guaranteed
+ * @note Result contains no duplicates even if two vertices share the same edge
+ */
+
+  
+    auto hash = [](const std::pair<vertex*, vertex*>& p) {
+        return std::hash<vertex*>()(p.first) ^ (std::hash<vertex*>()(p.second) << 1);
+    };
     
+    std::unordered_set<std::pair<vertex*, vertex*>, decltype(hash)> seen_edges(0, hash);
+    std::vector<links*> result;
+    result.reserve(100);
+    seen_edges.reserve(100);
     
-    if(m_pGhostT.size()<6 || m_pGhostL.size()<12){
-        std::cout<<"---> warning (id 333) \n";
-        return false;
+    for (auto* pv : Vver) {
+        for (auto* link : pv->GetVLinkList()) {
+            auto v1 = link->GetV1();
+            auto v2 = link->GetV2();
+            auto key = std::make_pair(std::min(v1, v2), std::max(v1, v2));
+            
+            if (seen_edges.insert(key).second) {
+                result.push_back(link);
+            }
+        }
     }
+    return result;
+}
+//========================================================================
+//=====================  Fusion function =================================
+//========================================================================
+bool Three_Edge_Scission::Reverse_Fuse_MeshViaTwoTrinagles(fusion_outcome &fusion_mesh){
+    /**
+ * @brief Reverses a previous mesh fusion operation, restoring the original topology
+ * 
+ * This function is the inverse of Fuse_MeshViaTwoTrinagles(). It restores the mesh
+ * to its state before the fusion by moving triangles and links back from active
+ * to ghost pools and reverting all modified objects to their saved copies.
+ * 
+ * @param fusion_mesh   A fusion_outcome structure containing all elements created
+ *                      during the forward fusion operation, including:
+ *                      - t1, t2: The original two triangles that were fused
+ *                      - newTriangles: The 6 triangles created during fusion
+ *                      - newLinks: The 12 links created during fusion
+ *                      - oldLinks: The original links that were modified
+ *                      - vertices: The 6 vertices involved in the fusion
+ * 
+ * @return true         Always returns true on successful reversal
+ * 
+ * @details The reversal process consists of six steps:
+ * 
+ * 1. **Ghost Triangle Cleanup**: Removes the two original triangles (t1, t2)
+ *    from the front of the ghost pool where they were placed during fusion.
+ * 
+ * 2. **Active Triangle Restoration**: 
+ *    - Removes the 6 newly created triangles from the active pool
+ *    - Restores the original two triangles (t1, t2) back to the active pool
+ *    - Moves the 6 new triangles to the ghost pool for future use
+ * 
+ * 3. **Link Pool Restoration**:
+ *    - Removes the 12 new links from the active link pool
+ *    - Removes the 6 pairs from the left/right link containers
+ *    - Moves the 12 new links to the ghost link pool
+ * 
+ * 4. **Vertex State Restoration**: Calls Reverse2PreviousCopy() on all 6 vertices
+ *    to restore their saved state (triangle lists, coordinates, etc.)
+ * 
+ * 5. **Link State Restoration**: Calls Reverse2PreviousCopy() on all modified
+ *    original links to restore their neighbor relationships and geometric properties
+ * 
+ * 6. **Ghost Pool Management**: Appends the 12 new links to the ghost link pool
+ *    for future reuse in subsequent fusion operations
+ * 
+ * @warning This function assumes that fusion_mesh contains valid pointers and that
+ *          the ghost pools have sufficient capacity. No error checking is performed.
+ * 
+ * @note The order of operations is critical. Pools are resized before pushing
+ *       back elements to maintain proper container sizes and avoid memory issues.
+ * 
+ * @see Fuse_MeshViaTwoTrinagles() The forward fusion operation that this reverses
+ */
+    
+    // remove the first two members. Because we added t1 and t2 to the first member 
+    if (m_pGhostT.size() >= 2) {
+        m_pGhostT.erase(m_pGhostT.begin(), m_pGhostT.begin() + 2);
+    }
+    // remove the new trinagle from active
+    m_pActiveT.resize(m_pActiveT.size() - 6);
+    m_pActiveT.push_back(fusion_mesh.t1);
+    m_pActiveT.push_back(fusion_mesh.t2);
+    // add back the new trinagle to the ghost
+    for(auto* tri: fusion_mesh.newTriangles){
+        m_pGhostT.push_back(tri);
+    }
+    m_pActiveL.resize(m_pActiveL.size() - 12);
+    m_pRightL.resize(m_pRightL.size() - 6);
+    m_pLeftL.resize(m_pLeftL.size() - 6);
+    
+    
+    for(auto* pver: fusion_mesh.vertices){
+        pver->Reverse2PreviousCopy();
+    }
+    for(auto* li: fusion_mesh.oldLinks){
+        li->Reverse2PreviousCopy();
+    }
+    for(auto* li: fusion_mesh.newLinks){
+        m_pGhostL.push_back(li);
+    }
+
+    
+ return true;   
+}
+//========================================================================
+//=====================  Fusion function =================================
+//========================================================================
+bool Three_Edge_Scission::Fuse_MeshViaTwoTrinagles(fusion_site &pair_tri, fusion_outcome &outcome){
+// -----------------------------------------------------------------------------
+// bool Three_Edge_Scission::Fuse_MeshViaTwoTrinagles(fusion_site &pair_tri)
+// -----------------------------------------------------------------------------
+// Fuses two triangles into a new prism-like local topology using ghost
+// triangle/link pools. The function:
+//   1. Validates available ghost resources
+//   2. Removes old triangles from active mesh
+//   3. Builds 6 new triangles from topology mapping
+//   4. Creates and connects new links
+//   5. Assigns mirror relationships between links
+//   6. Recomputes normals and shape operators
+// -----------------------------------------------------------------------------
+    
+if (m_pGhostT.size() < 6 || m_pGhostL.size() < 12) {
+    std::cout << "---> Warning: Ghost counters are full. Fusion will not be performed. "
+              << "This is a code limitation, not a physics limitation. "
+              << "Please restart the simulation to restore correct physics behavior.\n";
+    return false;
+}
     
     triangle* t1 = pair_tri.t1;
     triangle* t2 = pair_tri.t2;
-    
     RemoveFromTriangleList(t1, m_pActiveT);
     RemoveFromTriangleList(t2, m_pActiveT);
     // we add them to the begining of the ghost, so when we take out from the end, for the moment, we do not affect these objects
@@ -370,8 +556,12 @@ bool Three_Edge_Scission::Fuse_MeshViaTwoTrinagles(fusion_site &pair_tri){
     vertex * u3 = t2->GetV3();
     std::vector<vertex*> Vver;
     Vver.insert(Vver.end(),{v1, v2, v3, u1, u2, u3});
-
-    
+    for (auto* ver: Vver){
+        
+        if(!ver->SetCopy()){
+            Nfunction::ConsolePrint_Error(" Error-> copying failded ");
+        }
+    }
     v1->RemoveFromTraingleList(t1);
     v2->RemoveFromTraingleList(t1);
     v3->RemoveFromTraingleList(t1);
@@ -390,9 +580,9 @@ bool Three_Edge_Scission::Fuse_MeshViaTwoTrinagles(fusion_site &pair_tri){
             triangle* prism_t = m_pGhostT.back();
             m_pGhostT.pop_back();
             m_pActiveT.push_back(prism_t);
-            int id1 = (VTriples[i])[0];
-            int id2 = (VTriples[i])[1];
-            int id3 = (VTriples[i])[2];
+            const int id1 = VTriples[i][0];
+            const int id2 = VTriples[i][1];
+            const int id3 = VTriples[i][2];
             vertex * tv1 = Vver[id1];
             vertex * tv2 = Vver[id2];
             vertex * tv3 = Vver[id3];
@@ -405,6 +595,9 @@ bool Three_Edge_Scission::Fuse_MeshViaTwoTrinagles(fusion_site &pair_tri){
             
             // lets now create the links 
             links* old_link = tv1->GetConnectingLink(tv2);
+            if(!old_link->SetCopy()){
+                Nfunction::ConsolePrint_Error(" Error-> copying link failded ");
+            }
             links* prism_l1 = m_pGhostL.back();
             m_pGhostL.pop_back();
             m_pActiveL.push_back(prism_l1);
@@ -434,38 +627,49 @@ bool Three_Edge_Scission::Fuse_MeshViaTwoTrinagles(fusion_site &pair_tri){
             pnewLinks.push_back(prism_l2);
 
     }
-    
 
     // add the mirrors and make the links left and right
-    std::vector<bool> used(pnewLinks.size(), false);
+    for (auto nl : pnewLinks){
+        nl->UpdateMirrorFlag(false);
+    }
+
     for (size_t i = 0; i < pnewLinks.size(); i++) {
+            
+            links* l1 = pnewLinks[i];
+        if (l1->GetMirrorFlag()) {
+            continue;
+        }
 
-        if (used[i]) continue;
-
-        links* l1 = pnewLinks[i];
         links* l2 = nullptr;
         bool found = false;
-        size_t matchIndex = -1;
 
         for (size_t j = i + 1; j < pnewLinks.size(); j++) {
-
-            if (used[j]) continue;
             l2 = pnewLinks[j];
-
-            if (l1->GetV1() == l2->GetV2() && l1->GetV2() == l2->GetV1()) {
-
+            if (l2->GetMirrorFlag()) {
+                continue;
+            }
+            if (l1->GetV1() == l2->GetV2() && l1->GetV2() == l2->GetV1()){
                 found = true;
-                matchIndex = j;
                 break;
             }
         }
 
         if (!found) {
-            std::cout << "--> error 33344\n";
-            return false;
-         }
-        used[i] = true;
-        used[matchIndex] = true;
+              std::cerr << "\033[1;31m"  // Bold red
+              << "╔══════════════════════════════════════════════════════════════╗\n"
+              << "║                    !!! FATAL ERROR !!!                       ║\n"
+              << "╚══════════════════════════════════════════════════════════════╝\n"
+              << "\033[0m"  // Reset
+              << "\033[1;31m"   // Blue
+              << "---> In "<<Three_Edge_Scission::GetDefaultReadName()<<" command, "
+              << " function Fuse_MeshViaTwoTrinagles(), \n"
+              << "      we are matching mirror edges, but one found that does not have any  \n"
+              << "      links vertices id  "<<pnewLinks[i]->GetV1()->GetVID()<<"   "<<pnewLinks[i]->GetV2()->GetVID()<<"\n"
+
+              << "══════════════════════════════════════════════════════════════\n"
+              << "\033[0m";  // Reset
+              return false;
+             }
 
         m_pRightL.push_back(l1);
         m_pLeftL.push_back(l2);
@@ -476,6 +680,7 @@ bool Three_Edge_Scission::Fuse_MeshViaTwoTrinagles(fusion_site &pair_tri){
         l2->UpdateMirrorFlag(true);
     }
 
+   // update geometry of the trinagles and the links
     for (auto tri : pnewTrinagles){
         tri->UpdateNormal_Area(&m_Box);
     }
@@ -487,6 +692,14 @@ bool Three_Edge_Scission::Fuse_MeshViaTwoTrinagles(fusion_site &pair_tri){
         le->UpdateNormal();
         le->UpdateShapeOperator(&m_Box);
     }
+
+    outcome.newTriangles = pnewTrinagles;
+    outcome.newLinks = pnewLinks;
+    outcome.oldLinks = poldLinks;
+    outcome.pHalfnewLinks = pHalfnewLinks;
+    outcome.vertices = Vver;
+    outcome.t1 = t1;
+    outcome.t2 = t2;
 
     return true;
 }

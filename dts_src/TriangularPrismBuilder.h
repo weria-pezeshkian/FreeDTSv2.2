@@ -36,6 +36,16 @@
  * Copyright (c) Weria Pezeshkian, 2026. All rights reserved.
  * -----------------------------------------------------------------------------
  */
+using PairMap = std::array<int, 2>; 
+inline PairMap make_PairMap(int a, int b) {
+    return {a,b};
+} 
+// At namespace scope
+struct PairMapHash {
+    size_t operator()(const PairMap& p) const {
+        return std::hash<int>()(p[0]) ^ (std::hash<int>()(p[1]) << 1);
+    }
+};
 using triple = std::array<int, 3>;
 inline triple make_triple(int a, int b, int c) {
     return {a,b,c};
@@ -78,7 +88,7 @@ bool UpdatePrismNormals(TriangularPrism & tp);
 bool CheckPrismNormals(TriangularPrism & tp);
 bool MakeDefaultPrismMaps();
 TriangularPrism ReadPrismMap(std::istream& input);
-
+bool CheckPrismMapOrientation(TriangularPrism & tp); // Checks whether the triangular prism face map can be made with consistent orientation.
 private:
 
     //--------------------------------------------------------------------------

@@ -36,9 +36,15 @@ For more information and updates, please visit the project repository:
 */
 int main(int argc, char* argv[]) {
     // Print program header
-    std::cout << "████████████████████████████████    FreeDTS    ██████████████████████████████" << std::endl;
-    std::cout << "------ Simulation of Biomembranes Using Dynamically Triangulated Surfaces ------------" << std::endl;
-    std::cout << "--------------------------------------------------------------------------------------" << std::endl;
+std::cout << "\033[1;36m" 
+          << "╔══════════════════════════════════════════════════════════════════════════════════════╗\n"
+          << "║                                                                                      ║\n"
+          << "║  ████████████████████████████████    FreeDTS    ████████████████████████████████     ║\n"
+          << "║                                                                                      ║\n"
+          << "║        Simulation of Biomembranes Using Dynamically Triangulated Surfaces            ║\n"
+          << "║                                                                                      ║\n"
+          << "╚══════════════════════════════════════════════════════════════════════════════════════╝\n"
+          << "\033[0m" << std::endl;
 
     // Store command-line arguments in a vector
     std::vector<std::string> argument(argv, argv + argc);

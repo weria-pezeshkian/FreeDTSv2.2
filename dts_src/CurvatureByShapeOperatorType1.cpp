@@ -137,11 +137,24 @@ bool CurvatureByShapeOperatorType1::UpdateSurfVertexCurvature(vertex * pvertex){
             
             Tensor2 Q = P.makeTen(Se); // Create the tensor
             SV = SV + Q * (we * he); // Update SV
-        } else {
-            std::cerr << "---> error: vertex, with id " << pvertex->GetVID() << " is wrongly here \n";
+        } 
+        else {
+                std::cerr << "\033[1;31m"  // Bold red
+              << "╔══════════════════════════════════════════════════════════════╗\n"
+              << "║                    !!! FATAL ERROR !!!                       ║\n"
+              << "╚══════════════════════════════════════════════════════════════╝\n"
+              << "\033[0m"  // Reset
+              << "\033[31m"  // Red
+              << "---> In UpdateSurfVertexCurvature function from CurvatureByShapeOperatorType1 class\n"
+              << "-------> Vertex with ID " << pvertex->GetVID() 
+              << " has a link which does not have a mirror\n"
+              << "    but the code is asked to make surface curvature calculation for it.\n"
+              << "    This is not possible because the vertex should be considered an edge vertex.\n"
+              << "\033[0m";  // Reset  
+              exit(-1);
             return false;
         }
-    }
+}
 
 
 
