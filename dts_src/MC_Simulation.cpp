@@ -73,24 +73,13 @@ bool MC_Simulation::do_Simulation(){
         std::cout << "---> error: The  mesh quality is insufficient for running a simulation.\n";
         exit(0);
     }
-
-    
-    
-
     std::cout<<"------>   Simulation will be performed from "<<m_Initial_Step<<" to "<<m_Final_Step<<" steps\n";
+    
+    m_pState->GetTimeSeriesDataOutput()->WriteTimeSeriesDataOutput(0);
+
 for (int step = m_Initial_Step; step <= m_Final_Step; step++){
         
-//----> write files
-        //--- write visulaization frame
-        m_pState->GetVisualization()->WriteAFrame(step);
-        //--- write non-binary trejectory e.g., tsi, tsg
-        m_pState->GetNonbinaryTrajectory()->WriteAFrame(step);
-        //--- write binary trejectory e.g., bts
-        m_pState->GetBinaryTrajectory()->WriteAFrame(step);
-        //--- write into time seri file, e.g., energy, volume ...
-        m_pState->GetTimeSeriesDataOutput()->WriteTimeSeriesDataOutput(step);
-        //--- write check point for the state
-        m_pState->GetRestart()->UpdateRestartState(step, m_pState->GetVertexPositionUpdate()->GetDR(), m_pState->GetDynamicBox()->GetDR());
+
     
 //---> centering the simulation box
     if(m_CenteringFrequently != 0 && step%m_CenteringFrequently == 0){
@@ -121,6 +110,20 @@ for (int step = m_Initial_Step; step <= m_Final_Step; step++){
         //---- NonequilibriumCommands
         m_pState->GetNonequilibriumCommands()->Run(step);
 
+
+
+//----> write files
+        //--- write visulaization frame
+        m_pState->GetVisualization()->WriteAFrame(step);
+        //--- write non-binary trejectory e.g., tsi, tsg
+        m_pState->GetNonbinaryTrajectory()->WriteAFrame(step);
+        //--- write binary trejectory e.g., bts
+        m_pState->GetBinaryTrajectory()->WriteAFrame(step);
+        //--- write into time seri file, e.g., energy, volume ...
+        m_pState->GetTimeSeriesDataOutput()->WriteTimeSeriesDataOutput(step);
+        //--- write check point for the state
+        m_pState->GetRestart()->UpdateRestartState(step, m_pState->GetVertexPositionUpdate()->GetDR(), m_pState->GetDynamicBox()->GetDR());
+        
 //----> print info about the simulation, e.g., rate,
    // time_t currentTime;
    // time(&currentTime);

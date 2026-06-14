@@ -565,6 +565,9 @@ bool MESH::CheckMesh(double min_l, double max_l, double min_angle, Voxelization<
             for (std::vector<vertex*>::iterator it2 = it1 + 1; it2 != voxel_ver.end(); ++it2) {
                     double l2 = SquareDistanceBetweenTwoVertices(*it1, *it2);
                     if (l2 < min_l) {
+                        std::string txt = " ---> error: there are some vertices too close, ";
+                        txt += " distance found "+Nfunction::D2S(l2)+"\n";
+                        Nfunction::ConsolePrint_Error(txt);
                         return false;
                     }
                 }
@@ -580,7 +583,10 @@ bool MESH::CheckMesh(double min_l, double max_l, double min_angle, Voxelization<
                         for (std::vector<vertex *>::iterator it2 = voxel_ver2.begin() ; it2 != voxel_ver2.end(); ++it2) {
                             if(it1 != it2){
                                 double l2 = SquareDistanceBetweenTwoVertices(*it1, *it2);
-                                if (l2 < min_angle) {
+                                if (l2 < min_l) {
+                                 std::string txt = " ---> error: there are some vertices too close, ";
+                                    txt += " distance found "+ Nfunction::D2S(l2)+"\n";
+                                        Nfunction::ConsolePrint_Error(txt);
                                     return false;
                                 }
                         }//  if(it1 != it2){
@@ -597,6 +603,8 @@ bool MESH::CheckMesh(double min_l, double max_l, double min_angle, Voxelization<
         // For each link, check if the face angle condition is satisfied using CheckFaceAngleOfOneLink function.
         // If any link does not satisfy the condition, return false.
         if (!(*it)->CheckFaceAngleWithMirrorFace(min_angle)) {
+            std::string txt = " ---> error: there are bad angles in the mesh, \n";
+             Nfunction::ConsolePrint_Error(txt);
             return false;
         }
     }
@@ -606,7 +614,6 @@ bool MESH::CheckMesh(double min_l, double max_l, double min_angle, Voxelization<
 }
 double MESH::SquareDistanceBetweenTwoVertices(vertex * v1,vertex * v2){
     /**
-     * Calculates the squared stretched distance between two vertices.
      *
      * This function computes the squared distance between two vertices (v1 and v2)
      * after applying a stretching factor along each axis (lx, ly, lz). The stretching

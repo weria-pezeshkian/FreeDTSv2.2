@@ -87,16 +87,16 @@ bool Three_Edge_Scission::MCMove(int step) {
 //======================================================
    std::vector<pair_pot_triangle> pair_list  = FindNecks();
    // std::cout<<pair_list.size()<<" number of pot trinagles \n";
-    if(pair_list.size() != 0) {// ScissionByMC
+   /* if(pair_list.size() != 0) {// ScissionByMC
         int n = m_pState->GetRandomNumberGenerator()->IntRNG(pair_list.size());
         pair_pot_triangle pair_T = pair_list[n];
         double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
         m_NumberOfAttemptedMoves++;
         if(ScissionByMC(pair_T, thermal)){
-            
+            std::cout <<"accepted ScissionByMC "<<step<<"\n";
             m_AcceptedMoves++;
         }
-    } ///  if(pair_list.size() != 0) end ScissionByMC
+    }*/ ///  if(pair_list.size() != 0) end ScissionByMC
     
 //========================================================
 //--============== should be removed
@@ -119,7 +119,8 @@ bool Three_Edge_Scission::MCMove(int step) {
         double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
         m_NumberOfAttemptedMoves++;
         if(FusionByMove(pair_T, thermal)){
-           // std::cout<<"accepted "<<step<<"\n";
+            std::cout<<"accepted fusion "<<step<<"\n";
+            std::cout <<"accepted fusion\n";
             m_AcceptedMoves++;
         }
     } ///     if(all_possible_sites.size() != 0) {// end FussionByMove
@@ -281,7 +282,9 @@ bool Three_Edge_Scission::FusionSites_AreNotNeighbours(triangle *t1, triangle *t
 bool Three_Edge_Scission::FusionByMove(fusion_site &pair_tri, double thermal){
     
     // There is a lot to be added to this function
-    
+        if(m_AcceptedMoves!=0)
+         return false;
+
     double new_energy = 0;
     double old_energy = 0;
     
@@ -367,9 +370,16 @@ bool Three_Edge_Scission::FusionByMove(fusion_site &pair_tri, double thermal){
             }
             
         
+
     double diff_energy = new_energy - old_energy;
     double tot_diff_energy = diff_energy ;
 
+
+
+   /* double energy0 = m_pState->GetEnergyCalculator()->GetEnergy();
+    double Final_energy = m_pState->GetEnergyCalculator()->CalculateAllLocalEnergy();    
+    std::cout<<"f energy: "<<Final_energy<<" 0energy "<<   energy0+diff_energy <<"\n";
+    */
     double U = m_Beta * tot_diff_energy - m_DBeta;
     //---> accept or reject the move
     if(2>1){//U <= 0 || exp(-U) > thermal ) {
@@ -539,7 +549,8 @@ bool Three_Edge_Scission::Fuse_MeshViaTwoTriangles(fusion_site &pair_tri, fusion
 //   5. Assigns mirror relationships between links
 //   6. Recomputes normals and shape operators
 // -----------------------------------------------------------------------------
-    
+
+         
 if (m_pGhostT.size() < 6 || m_pGhostL.size() < 12) {
     std::cout << "---> Warning: Ghost counters are full. Fusion will not be performed. "
               << "This is a code limitation, not a physics limitation. "
@@ -675,7 +686,6 @@ if (m_pGhostT.size() < 6 || m_pGhostL.size() < 12) {
               << "\033[0m";  // Reset
               return false;
              }
-
         m_pRightL.push_back(l1);
         m_pLeftL.push_back(l2);
         pHalfnewLinks.push_back(l1);
@@ -683,6 +693,12 @@ if (m_pGhostT.size() < 6 || m_pGhostL.size() < 12) {
         l2->UpdateMirrorLink(l1);
         l1->UpdateMirrorFlag(true);
         l2->UpdateMirrorFlag(true);
+    }
+
+    // add the vertices to the nighbour list
+    for (auto li : pHalfnewLinks){
+        li->GetV1()->AddtoNeighbourVertex(li->GetV2());
+        li->GetV2()->AddtoNeighbourVertex(li->GetV1());
     }
 
    // update geometry of the trinagles and the links
@@ -697,7 +713,21 @@ if (m_pGhostT.size() < 6 || m_pGhostL.size() < 12) {
         le->UpdateNormal();
         le->UpdateShapeOperator(&m_Box);
     }
+/*int nn =0;
+for (auto ver : Vver) {
+    
+   inclusion* inc = ver->GetInclusion();
+   if(nn<3){
+   inc->m_IncType = m_pState->GetMesh()->GetInclusionType()[2];
+   }
+   else
+   {
+          inc->m_IncType = m_pState->GetMesh()->GetInclusionType()[3];
 
+   }
+nn++;
+}
+*/
 
     outcome.newTriangles = pnewTrinagles;
     outcome.newLinks = pnewLinks;
@@ -1105,11 +1135,6 @@ std::vector<pair_pot_triangle> Three_Edge_Scission::FindNecks() {
         
         vertex *pv1 = link1->GetV1();
         vertex *pv2 = link1->GetV2();
-        
-        if (pv1 == nullptr || pv2 == nullptr) {
-            fprintf(stderr, "Error: One or both vertices are null pointers\n");
-            exit(EXIT_FAILURE);
-        }
         
         std::vector<links*> v2_l = pv2->GetVLinkList();
         for (std::vector<links*>::iterator il2 = v2_l.begin(); il2 != v2_l.end(); il2++) {
