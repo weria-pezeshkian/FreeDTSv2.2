@@ -4,6 +4,7 @@
 #include "vertex.h"
 
 links::links(int id, vertex *v1, vertex *v2, triangle *t1) {
+    m_V3 = nullptr;
     m_IntEnergy = 0;
     m_OldIntEnergy = 0;
     m_T1 = t1;
@@ -17,6 +18,7 @@ links::links(int id, vertex *v1, vertex *v2, triangle *t1) {
     m_Be = 0;
     m_He = 0;
     m_Number_of_VectorField_Layers = 0;
+
 }
 links::links(int id) {
     m_IntEnergy = 0;
@@ -29,6 +31,12 @@ links::links(int id) {
     m_Be = 0;
     m_He = 0;
     m_Number_of_VectorField_Layers = 0;
+    m_V1 = nullptr;
+    m_V2 = nullptr;
+    m_T1 = nullptr;
+    m_V3 = nullptr;
+
+
 }
 
 links::~links() {

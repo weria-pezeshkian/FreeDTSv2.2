@@ -79,7 +79,10 @@ public:
         m_MaxLength2 = max_l;
         return;
     }
-
+    void CheckMeshFrequency(double checkmesh){
+        m_CheckMeshFrequently = checkmesh;
+        return;
+    }
 private:
 
 

@@ -908,6 +908,13 @@ bool State::HandleSimulationCommands(const std::string& firstword, std::istream&
         m_pSimulation->SetBeta(beta,delta_beta);
         return true;
     }
+    else if(firstword == "Check_Mesh_Frequency")
+    {
+        double rate;
+        input>>str>>rate;
+        m_pSimulation->CheckMeshFrequency(rate);
+        return true;
+    }
     
     return false;
 }

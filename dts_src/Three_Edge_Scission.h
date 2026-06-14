@@ -94,8 +94,8 @@ private:
 
 
     bool FusionSites_AreNotNeighbours(triangle *t1, triangle *t2);
-    bool Fuse_MeshViaTwoTrinagles(fusion_site &pair_tri, fusion_outcome &data);
-    bool Reverse_Fuse_MeshViaTwoTrinagles(fusion_outcome &fusion_mesh);
+    bool Fuse_MeshViaTwoTriangles(fusion_site &pair_tri, fusion_outcome &data);
+    bool Reverse_Fuse_MeshViaTwoTriangles(fusion_outcome &fusion_mesh);
     std::vector<links*> Get_EdgesFusionAffect(std::vector<vertex*> &Vver);
 
 private:

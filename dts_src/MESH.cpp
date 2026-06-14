@@ -535,7 +535,12 @@ bool MESH::CheckMesh(double min_l, double max_l, double min_angle, Voxelization<
         double dist2 = p_v1->SquareDistanceFromAVertex(p_v2);
         if(dist2 < min_l || dist2 > max_l){
             
-            std::cout<<"---> error: bad edge length: length of an edge is "<<dist2<<"\n";
+            std::string txt = "---> Error: Mesh quality check failed. At least one edge length  \n";
+            txt += "squared is not within the interval specified in the input file.\n";
+            txt += "     Edge length^2 = " + Nfunction::D2S(dist2) +", interval [" + Nfunction::D2S(min_l) +
+            " - " + Nfunction::D2S(max_l) + "]\n";
+            Nfunction::ConsolePrint_Error(txt);
+            
             return false;
         }
     }

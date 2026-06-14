@@ -530,13 +530,18 @@ bool vertex::ReverseVFLocalDirection(){
 }
 links*  vertex::GetConnectingLink(vertex* v){
     links* mylink = nullptr;
+    bool ver_is = false;
     for (auto* l : m_VLinkList)
     {
         if (l->GetV2() == v)
         {
                 mylink = l;
+                ver_is = true;
                 break;
         }
+    }
+    if(!ver_is){
+        Nfunction::ConsolePrint_Error("---> error: GetConnectingLink in vertex not found \n");
     }
     
     return  mylink;
