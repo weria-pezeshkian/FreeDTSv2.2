@@ -148,6 +148,53 @@ void vertex::UpdateVZPos(double z) {
         m_Z = z;
     }
 }
+bool  vertex::IsAnyTriangle(vertex* v2, vertex* v3){
+ /**
+ * @brief Finds a triangle in the vertex's adjacency list that contains this vertex (v1)
+ *        and the two provided vertices (v2 and v3).
+ *
+ *  m_VTriangleList contains all triangles adjacent to this vertex.
+ *
+ * @param v2 Second vertex of the triangle
+ * @param v3 Third vertex of the triangle
+ * @return true Found triangle or false if none exists
+ */
+    for (auto *it_t : m_VTraingleList){
+        bool hasV2 = (it_t->GetV1() == v2) || (it_t->GetV2() == v2) || (it_t->GetV3() == v2);
+
+        bool hasV3 = (it_t->GetV1() == v3) || (it_t->GetV2() == v3) || (it_t->GetV3() == v3);
+
+        if (hasV2 && hasV3) {
+            return true;
+        }
+    }    
+    return false;   
+}
+
+triangle*  vertex::FindTriangleByVertices(vertex* v2, vertex* v3){
+/**
+ * @brief Finds a triangle in the vertex's adjacency list that contains this vertex (v1)
+ *        and the two provided vertices (v2 and v3).
+ *
+ *  m_VTriangleList contains all triangles adjacent to this vertex.
+ *
+ * @param v2 Second vertex of the triangle
+ * @param v3 Third vertex of the triangle
+ * @return triangle* Found triangle or nullptr if none exists
+ */
+    for (auto it_t : m_VTraingleList){
+        bool hasV2 = (it_t->GetV1() == v2) || (it_t->GetV2() == v2) || (it_t->GetV3() == v2);
+
+        bool hasV3 = (it_t->GetV1() == v3) || (it_t->GetV2() == v3) || (it_t->GetV3() == v3);
+
+        if (hasV2 && hasV3) {
+            return it_t;
+        }
+    }
+    Nfunction::ConsolePrint_Error("---> Error: No triangle contains the given pair of vertices \n ");
+    
+    return nullptr;
+}
 void vertex::AddtoLinkList(links* l)
 {
     m_VLinkList.push_back(l);
@@ -527,6 +574,25 @@ bool vertex::ReverseVFLocalDirection(){
     }
 
     return true;
+}
+bool vertex::IsThereAConnectingLink(vertex* v2, links* &mylink){
+    
+    for (auto* l : m_VLinkList) {
+        
+        if (l->GetV2() == v2){
+            mylink = l;
+            return true;
+        }
+    }
+    return  false;
+}
+bool vertex::IsThereAConnectingLink(vertex* v2){
+    for (auto* l : m_VLinkList) {
+        
+        if (l->GetV2() == v2)
+            return true;
+    }
+    return  false;
 }
 links*  vertex::GetConnectingLink(vertex* v){
     links* mylink = nullptr;

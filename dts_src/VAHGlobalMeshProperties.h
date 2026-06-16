@@ -45,6 +45,10 @@ public:
     void CalculateALinkTrianglesContributionToGlobalVariables(links* p_link, double& vol, double& area, double& curvature);
     void CalculateBoxRescalingContributionToGlobalVariables(double lx, double ly, double lz, double& vol, double& area, double& curvature);
     void CalculateGlobalVariables(double& vol, double& area, double& curvature);
+    void CalculateAPrismFacesContributionToGlobalVariables(std::vector<links*> prism_links, double& vol, double& area, double& curvature);
+    void CalculateAPrismBasesContributionToGlobalVariables(triangle *t1, triangle *t2, double& vol, double& area, double& curvature);
+
+
 
     void Initialize(State* pState);
 

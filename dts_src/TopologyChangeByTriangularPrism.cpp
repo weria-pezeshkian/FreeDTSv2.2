@@ -1,9 +1,56 @@
+/**
+ * @class TopologyChangeByTriangularPrism
+ * @brief Monte Carlo dynamic-topology algorithm based on triangular-prism
+ *        topology transformations.
+ *
+ * This class implements topology-changing moves for triangulated membrane
+ * surfaces by representing local fusion and scission events as transformations
+ * of a six-vertex triangular prism. The method allows the mesh connectivity
+ * and surface genus to evolve while preserving a valid triangulation.
+ *
+ * The algorithm supports:
+ * - Detection of neck-like structures that can undergo scission.
+ * - Detection of nearby triangle pairs that can undergo fusion.
+ * - Construction of admissible prism topologies using a
+ *   TriangularPrismBuilder.
+ * - Execution and reversal of local topology modifications.
+ * - Monte Carlo acceptance/rejection using the Metropolis criterion.
+ * - Consistent updates of mesh geometry, curvature, inclusion interactions,
+ *   vector-field interactions, and global constraint energies.
+ *
+ * Topology changes are performed using preallocated ghost triangles and
+ * ghost links, avoiding dynamic memory allocation during simulation.
+ * Rejected moves are exactly reversible through stored local copies of
+ * affected vertices, links, and interaction energies.
+ *
+ * Energy contributions considered during acceptance may include:
+ * - Local vertex energies
+ * - Inclusion interaction energies
+ * - Vector-field interaction energies
+ * - Volume constraint energy
+ * - Total area constraint energy
+ * - Global curvature energy
+ *
+ * The class operates periodically during the simulation and updates the
+ * surface genus according to the current Euler characteristic of the mesh.
+ *
+ * Assumptions:
+ * - The mesh is represented as an oriented triangular surface.
+ * - Sufficient ghost triangles and ghost links are available for topology
+ *   modifications.
+ * - Local topology transformations preserve mesh validity and orientation.
+ *
+ *
+ * @see TriangularPrismBuilder
+ * @see AbstractDynamicTopology
+ */
+
 #include <chrono>
 #include <unordered_set>
 #include <utility>
 #include <ctime>
 #include <set>
-#include "Three_Edge_Scission.h"
+#include "TopologyChangeByTriangularPrism.h"
 #include "State.h"
 #include "MESH.h"
 #include "vertex.h"
@@ -20,7 +67,7 @@
  
  */
 
-Three_Edge_Scission::Three_Edge_Scission(std::string inputdata, State *pState) :
+TopologyChangeByTriangularPrism::TopologyChangeByTriangularPrism(std::string inputdata, State *pState) :
                 m_pState(pState),
                 m_StreamInputs (inputdata),
                 m_PrismMapTopologyFile(""),
@@ -40,14 +87,15 @@ Three_Edge_Scission::Three_Edge_Scission(std::string inputdata, State *pState) :
                 m_MinAngle(pState->GetSimulation()->GetMinAngle()),
                 m_No_VectorFields_Per_V(pState->GetMesh()->GetNoVFPerVertex()),
                 m_Box(pState->GetMesh()->Link2ReferenceBox()),
-                m_pTriVoxelization(new Voxelization<triangle>())
+                m_pTriVoxelization(new Voxelization<triangle>()),
+                m_No_Vectorfield(0)
 {
 
 }
-Three_Edge_Scission::~Three_Edge_Scission(){
+TopologyChangeByTriangularPrism::~TopologyChangeByTriangularPrism(){
     delete m_pTriangularPrismBuilder ;
 }
-void Three_Edge_Scission::Initialize() {
+void TopologyChangeByTriangularPrism::Initialize() {
 
 
 std::vector<std::string> input_data = Nfunction::Split(m_StreamInputs);
@@ -76,27 +124,29 @@ std::vector<std::string> input_data = Nfunction::Split(m_StreamInputs);
 //===========================================================
 //========== MC MOVE: containing both fission and fusion move 
 //==========================================================
-bool Three_Edge_Scission::MCMove(int step) {
+bool TopologyChangeByTriangularPrism::MCMove(int step) {
     
     if(m_Period == 0 ||  step%m_Period != 0){
         return false;
     }
-        
+
+    // number of vf in the surface
+    m_No_Vectorfield = m_pSurfV[0]->GetNumberOfVF();
+
 //========================================================
 //--============== Fission
 //======================================================
-   std::vector<pair_pot_triangle> pair_list  = FindNecks();
-   // std::cout<<pair_list.size()<<" number of pot trinagles \n";
-   /* if(pair_list.size() != 0) {// ScissionByMC
-        int n = m_pState->GetRandomNumberGenerator()->IntRNG(pair_list.size());
-        pair_pot_triangle pair_T = pair_list[n];
+   std::vector<fission_site> All_fission_Sites  = FindNecks();
+    if(All_fission_Sites.size() != 0) {// ScissionByMC
+        int n = m_pState->GetRandomNumberGenerator()->IntRNG(All_fission_Sites.size());
+        fission_site f_site = All_fission_Sites[n];
         double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
         m_NumberOfAttemptedMoves++;
-        if(ScissionByMC(pair_T, thermal)){
+        if(ScissionByMC(f_site, thermal)){
             std::cout <<"accepted ScissionByMC "<<step<<"\n";
             m_AcceptedMoves++;
         }
-    }*/ ///  if(pair_list.size() != 0) end ScissionByMC
+    } ///  if(pair_list.size() != 0) end ScissionByMC
     
 //========================================================
 //--============== should be removed
@@ -128,7 +178,153 @@ bool Three_Edge_Scission::MCMove(int step) {
     m_Surface_Genus = 1 - (m_pSurfV.size()-m_pLeftL.size()+m_pActiveT.size())/2;
     return true;
 }
-std::vector<fusion_site> Three_Edge_Scission::FindPotentialFusionSites() {
+bool TopologyChangeByTriangularPrism::ScissionByMC(fission_site &f_site, double thermal){
+/**
+ * @brief Attempts a Monte Carlo scission move by splitting a triangular-prism neck region.
+ *
+ * This routine proposes a topological scission at the specified fission site,
+ * evaluates the resulting energy change, and accepts or rejects the move using
+ * the Metropolis criterion.
+ *
+ * The algorithm:
+ * - Stores the current local state and interaction energies.
+ * - Computes the energy contribution of all vertices, links, and global
+ *   geometric terms affected by the scission.
+ * - Performs the trial scission, replacing the prism neck with two separated
+ *   triangular caps and updating local connectivity.
+ * - Recomputes the affected energies and global constraint contributions.
+ * - Evaluates the total energy difference and applies the Metropolis test.
+ * - If rejected, restores all topology, interaction energies, and copied state.
+ *
+ * Global energy terms that may contribute to the acceptance probability include:
+ * - Volume constraint energy
+ * - Total area constraint energy
+ * - Global curvature energy
+ *
+ * @param f_site
+ *        Description of the candidate scission region, including the prism
+ *        vertices, links, and neighboring topology required to perform and
+ *        potentially reverse the move.
+ *
+ * @param thermal
+ *        Uniform random number in the range [0,1) used in the Metropolis
+ *        acceptance test.
+ *
+ * @return true if the scission move is accepted and the new topology is kept;
+ *         false if the move is rejected and the original configuration is
+ *         restored.
+ */
+    // Check if there are enough links and triangles in the repository
+    if (m_pGhostT.size() < 4 || m_pGhostL.size() < 4) {
+        std::string message = " --->note: the number of the links and triangles in the repository is not enough, restart the simulations \n";
+        *(m_pState->GetTimeSeriesLog())<<message;
+        std::cout << message ;
+        return false;
+    }
+    
+    double new_energy = 0;
+    double old_energy = 0;
+
+    
+//---> calculate old energies    
+//---- effected vertex energy
+    for (auto it_v : f_site.v_ver){
+        it_v->SetCopy();
+        old_energy += it_v->GetEnergy();
+    }
+    for (auto it_v : f_site.u_ver){
+        it_v->SetCopy();
+        old_energy += it_v->GetEnergy();
+    }
+    for (auto it_l : f_site.V_links){
+        it_l->SetCopy();
+         it_l->GetVFIntEnergy();
+    }
+    for (auto it_l : f_site.U_links){
+        it_l->SetCopy();
+         it_l->GetVFIntEnergy();
+    }
+//---- edge effects    
+    std::vector<links*> Affected_links_old = GetEdgesWithInteractionChange(f_site);
+    for (std::vector<links *>::iterator it = Affected_links_old.begin() ; it != Affected_links_old.end(); ++it){
+        (*it)->Copy_InteractionEnergy();
+        (*it)->Copy_VFInteractionEnergy();
+        old_energy += 2 * (*it)->GetIntEnergy();
+        old_energy += 2 * (*it)->GetVFIntEnergy();
+    }
+    
+            // and more terms: global variables 
+            // Obtain and sum the initial global variables that might change
+            double old_Tvolume = 0.0, old_Tarea = 0.0, old_Tcurvature = 0.0;
+            double new_Tvolume = 0.0, new_Tarea = 0.0, new_Tcurvature = 0.0;
+            if(m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()){
+                m_pState->GetVAHGlobalMeshProperties()->CalculateAPrismFacesContributionToGlobalVariables(f_site.C_Links, old_Tvolume, old_Tarea, old_Tcurvature);
+            }
+//======== new mesh            
+                    std::vector<triangle *> new_triangles = DoAScission(f_site);
+//======== new mesh 
+
+    for (auto it_v : f_site.v_ver){
+        new_energy += m_pState->GetEnergyCalculator()->SingleVertexEnergy(it_v);
+    }
+    for (auto it_v : f_site.u_ver){
+        new_energy += m_pState->GetEnergyCalculator()->SingleVertexEnergy(it_v);
+    }
+    
+    std::vector<links*> Affected_links_new = GetEdgesWithInteractionChange(f_site);
+    for (std::vector<links *>::iterator it = Affected_links_new.begin() ; it != Affected_links_new.end(); ++it){
+            new_energy += (m_pState->GetEnergyCalculator())->TwoInclusionsInteractionEnergy(*it);
+
+            if(m_No_Vectorfield != 0 ){
+                for( int vf_layer = 0; vf_layer< m_pState->GetMesh()->GetNoVFPerVertex(); vf_layer++){
+                new_energy +=  (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, *it);
+                }
+            }
+    }
+    
+            // and more terms: global variables 
+            // Obtain and sum the initial global variables that might change
+            if(m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()){
+                m_pState->GetVAHGlobalMeshProperties()->CalculateAPrismBasesContributionToGlobalVariables(f_site.V_links[0]->GetTriangle(), f_site.U_links[0]->GetTriangle(), new_Tvolume, new_Tarea, new_Tcurvature);
+            }
+        //---> energy change of global variables
+    double dE_volume =  m_pState->GetVolumeCoupling()->GetEnergyChange(old_Tarea, old_Tvolume, new_Tarea, new_Tvolume);
+    double dE_t_area = m_pState->GetTotalAreaCoupling()->CalculateEnergyChange(old_Tarea, new_Tarea);
+    double dE_g_curv = m_pState->GetGlobalCurvature()->CalculateEnergyChange(new_Tarea-old_Tarea, new_Tcurvature-old_Tcurvature);
+    
+    
+    //==== MC
+    double diff_energy = new_energy - old_energy;
+    double tot_diff_energy = diff_energy + dE_volume + dE_t_area + dE_g_curv;
+    double U = m_Beta * tot_diff_energy - m_DBeta;
+    //---> accept or reject the move
+    if(U <= 0 || exp(-U) > thermal ) {
+        //--- Accepted
+        m_pState->GetEnergyCalculator()->AddToTotalEnergy(diff_energy);
+         if(m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()){
+           
+            m_pState->GetVAHGlobalMeshProperties()->Add2Volume(new_Tvolume - old_Tvolume);
+            m_pState->GetVAHGlobalMeshProperties()->Add2TotalArea(new_Tarea - old_Tarea);
+            m_pState->GetVAHGlobalMeshProperties()->Add2GlobalCurvature(new_Tcurvature - old_Tcurvature);
+        }
+        return true;
+    }
+    else{ // reject the move
+
+        //--> the shape operator of these links has not been affected, therefore we only update the interaction energy
+        for (auto it_l : Affected_links_old){
+            it_l->Reverse_InteractionEnergy();
+            it_l->Reverse_VFInteractionEnergy();
+        }
+        ReverseAScission(f_site);
+
+        return false;
+    }
+    
+    return false;
+}
+
+std::vector<fusion_site> TopologyChangeByTriangularPrism::FindPotentialFusionSites() {
     //////////////////////////////////////////////////////////////////////////////////////////
 //  FindPotentialFusionSites
 //
@@ -231,7 +427,7 @@ std::vector<fusion_site> Three_Edge_Scission::FindPotentialFusionSites() {
     
     return Available_Sites;
 }
-bool Three_Edge_Scission::FusionSites_AreNotNeighbours(triangle *t1, triangle *t2){
+bool TopologyChangeByTriangularPrism::FusionSites_AreNotNeighbours(triangle *t1, triangle *t2){
  
  // this might be extended to avoid even second next neighbours 
     // ---- vertex sharing rejection ----
@@ -279,11 +475,11 @@ bool Three_Edge_Scission::FusionSites_AreNotNeighbours(triangle *t1, triangle *t
 //========================================================================
 //=====================  Fusion function =================================
 //========================================================================
-bool Three_Edge_Scission::FusionByMove(fusion_site &pair_tri, double thermal){
+bool TopologyChangeByTriangularPrism::FusionByMove(fusion_site &pair_tri, double thermal){
     
     // There is a lot to be added to this function
-        if(m_AcceptedMoves!=0)
-         return false;
+       // if(m_AcceptedMoves!=0)
+         //return false;
 
     double new_energy = 0;
     double old_energy = 0;
@@ -318,13 +514,13 @@ bool Three_Edge_Scission::FusionByMove(fusion_site &pair_tri, double thermal){
                 old_energy += 2 * (*it)->GetVFIntEnergy();
         }
         
-        // and more terms: global variables 
+            // and more terms: global variables 
             // Obtain and sum the initial global variables that might change
             double old_Tvolume = 0.0, old_Tarea = 0.0, old_Tcurvature = 0.0;
             double new_Tvolume = 0.0, new_Tarea = 0.0, new_Tcurvature = 0.0;
-            /*if(m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()){
-                m_pState->GetVAHGlobalMeshProperties()->CalculateALinkTrianglesContributionToGlobalVariables(p_edge, old_Tvolume, old_Tarea, old_Tcurvature);
-            }*/
+            if(m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()){
+                m_pState->GetVAHGlobalMeshProperties()->CalculateAPrismBasesContributionToGlobalVariables(t1, t2, old_Tvolume, old_Tarea, old_Tcurvature);
+            }
         //====
            // we know perform fusion and our mesh is no longer the old one.
            // this will also updates trinagule and links normal and shape operator 
@@ -369,17 +565,18 @@ bool Three_Edge_Scission::FusionByMove(fusion_site &pair_tri, double thermal){
                 }
             }
             
+            
+            if(m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()){
+                m_pState->GetVAHGlobalMeshProperties()->CalculateAPrismFacesContributionToGlobalVariables(fusion_data.pHalfnewLinks, old_Tvolume, old_Tarea, old_Tcurvature);
+            }
+               //---> energy change of global variables
+    double dE_volume =  m_pState->GetVolumeCoupling()->GetEnergyChange(old_Tarea, old_Tvolume, new_Tarea, new_Tvolume);
+    double dE_t_area = m_pState->GetTotalAreaCoupling()->CalculateEnergyChange(old_Tarea, new_Tarea);
+    double dE_g_curv = m_pState->GetGlobalCurvature()->CalculateEnergyChange(new_Tarea-old_Tarea, new_Tcurvature-old_Tcurvature); 
         
-
     double diff_energy = new_energy - old_energy;
-    double tot_diff_energy = diff_energy ;
+    double tot_diff_energy = diff_energy + dE_volume + dE_t_area + dE_g_curv;
 
-
-
-   /* double energy0 = m_pState->GetEnergyCalculator()->GetEnergy();
-    double Final_energy = m_pState->GetEnergyCalculator()->CalculateAllLocalEnergy();    
-    std::cout<<"f energy: "<<Final_energy<<" 0energy "<<   energy0+diff_energy <<"\n";
-    */
     double U = m_Beta * tot_diff_energy - m_DBeta;
     //---> accept or reject the move
     if(2>1){//U <= 0 || exp(-U) > thermal ) {
@@ -411,7 +608,7 @@ bool Three_Edge_Scission::FusionByMove(fusion_site &pair_tri, double thermal){
     return false;
 }
 
-std::vector<links*> Three_Edge_Scission::Get_EdgesFusionAffect(std::vector<vertex*> &Vver){  
+std::vector<links*> TopologyChangeByTriangularPrism::Get_EdgesFusionAffect(std::vector<vertex*> &Vver){  
 /**
  * @brief Collects unique undirected edges from a set of vertices
  * 
@@ -452,7 +649,7 @@ std::vector<links*> Three_Edge_Scission::Get_EdgesFusionAffect(std::vector<verte
 //========================================================================
 //=====================  Fusion function =================================
 //========================================================================
-bool Three_Edge_Scission::Reverse_Fuse_MeshViaTwoTriangles(fusion_outcome &fusion_mesh){
+bool TopologyChangeByTriangularPrism::Reverse_Fuse_MeshViaTwoTriangles(fusion_outcome &fusion_mesh){
     /**
  * @brief Reverses a previous mesh fusion operation, restoring the original topology
  * 
@@ -536,9 +733,9 @@ bool Three_Edge_Scission::Reverse_Fuse_MeshViaTwoTriangles(fusion_outcome &fusio
 //========================================================================
 //=====================  Fusion function =================================
 //========================================================================
-bool Three_Edge_Scission::Fuse_MeshViaTwoTriangles(fusion_site &pair_tri, fusion_outcome &outcome){
+bool TopologyChangeByTriangularPrism::Fuse_MeshViaTwoTriangles(fusion_site &pair_tri, fusion_outcome &outcome){
 // -----------------------------------------------------------------------------
-// bool Three_Edge_Scission::Fuse_MeshViaTwoTrinagles(fusion_site &pair_tri)
+// bool TopologyChangeByTriangularPrism::Fuse_MeshViaTwoTrinagles(fusion_site &pair_tri)
 // -----------------------------------------------------------------------------
 // Fuses two triangles into a new prism-like local topology using ghost
 // triangle/link pools. The function:
@@ -677,7 +874,7 @@ if (m_pGhostT.size() < 6 || m_pGhostL.size() < 12) {
               << "╚══════════════════════════════════════════════════════════════╝\n"
               << "\033[0m"  // Reset
               << "\033[1;31m"   // Blue
-              << "---> In "<<Three_Edge_Scission::GetDefaultReadName()<<" command, "
+              << "---> In "<<TopologyChangeByTriangularPrism::GetDefaultReadName()<<" command, "
               << " function Fuse_MeshViaTwoTrinagles(), \n"
               << "      we are matching mirror edges, but one found that does not have any  \n"
               << "      links vertices id  "<<pnewLinks[i]->GetV1()->GetVID()<<"   "<<pnewLinks[i]->GetV2()->GetVID()<<"\n"
@@ -740,264 +937,124 @@ nn++;
     return true;
 }
 
-bool Three_Edge_Scission::ScissionByMC(pair_pot_triangle &pair_t, double thermal){
-    /**
-     * @brief Perform a scission operation on a neck by getting a potential pair of triangles and determine its acceptance based on Metropolis criteria.
-     *
-     * @param pair_t A potential pair of triangles that will be created after  the scission.
-     * @param thermal The thermal factor used in the Metropolis acceptance criterion.
-     * @return true if the scission is accepted, false otherwise.
-     *
-     * This function calculates the energy before and after performing a scission operation on a pair of triangles.
-     * It then uses the Metropolis criterion to decide whether to accept the new configuration or revert to the old one.
-     */
-    // Check if there are enough links and triangles in the repository
-    if (m_pGhostT.size() < 4 || m_pGhostL.size() < 4) {
-        std::cout << " --->note: the number of the links and triangles in the repository is not enough, restart the simulations \n";
-        return false;
-    }
-    
-    double new_energy = 0;
-    double old_energy = 0;
-    
-    //---> get all the links
-        vertex *v11 = pair_t.PT1.pv1;
-        vertex *v12 = pair_t.PT1.pv2;
-        vertex *v13 = pair_t.PT1.pv3;
-        vertex *v21 = pair_t.PT2.pv1;
-        vertex *v22 = pair_t.PT2.pv2;
-        vertex *v23 = pair_t.PT2.pv3;
-    
-        v11->EnergyCopy();
-        v12->EnergyCopy();
-        v13->EnergyCopy();
-        v21->EnergyCopy();
-        v22->EnergyCopy();
-        v23->EnergyCopy();
-//---> calculate old energies
-    //---- effected vertex energy
-    old_energy += v11->GetEnergy();
-    old_energy += v12->GetEnergy();
-    old_energy += v13->GetEnergy();
-    old_energy += v21->GetEnergy();
-    old_energy += v22->GetEnergy();
-    old_energy += v23->GetEnergy();
-    
-//--> get the links that may be effected by the cut
-    std::vector <links *> Clinks = pair_t.ConnectingLinks;
-    std::vector <triangle *> Ctriangles = pair_t.ConnectingTriangles;
-    
-    // find the links in which there interaction energy changes
-    std::vector<links*> Affected_links_old = GetEdgesWithInteractionChange(pair_t);
-    for (std::vector<links *>::iterator it = Affected_links_old.begin() ; it != Affected_links_old.end(); ++it){
-        (*it)->Copy_InteractionEnergy();
-        (*it)->Copy_VFInteractionEnergy();
-        old_energy += 2 * (*it)->GetIntEnergy();
-        old_energy += 2 * (*it)->GetVFIntEnergy();
-    }
-//----> Perform the scission
-    std::vector<triangle *> pair_tri = DoAScission(pair_t);
-
-//----> Calculate new energy
-    new_energy += m_pState->GetEnergyCalculator()->SingleVertexEnergy(v11);
-    new_energy += m_pState->GetEnergyCalculator()->SingleVertexEnergy(v12);
-    new_energy += m_pState->GetEnergyCalculator()->SingleVertexEnergy(v13);
-    new_energy += m_pState->GetEnergyCalculator()->SingleVertexEnergy(v21);
-    new_energy += m_pState->GetEnergyCalculator()->SingleVertexEnergy(v22);
-    new_energy += m_pState->GetEnergyCalculator()->SingleVertexEnergy(v23);
-
-        std::vector<links*> Affected_links_new = GetEdgesWithInteractionChange(pair_t);
-        for (std::vector<links *>::iterator it = Affected_links_new.begin() ; it != Affected_links_new.end(); ++it){
-            new_energy += (m_pState->GetEnergyCalculator())->TwoInclusionsInteractionEnergy(*it);
-        
-            if(pair_t.PT1.pv1->GetNumberOfVF() != 0 ){
-                for( int vf_layer = 0; vf_layer< m_pState->GetMesh()->GetNoVFPerVertex(); vf_layer++){
-                new_energy +=  (m_pState->GetEnergyCalculator())->TwoVectorFieldInteractionEnergy(vf_layer, *it);
-                }
-            }
-        }
-    
-    double diff_energy = new_energy - old_energy;
-    double tot_diff_energy = diff_energy;
-    double U = m_Beta * tot_diff_energy - m_DBeta;
-    //---> accept or reject the move
-    if(U <= 0 || exp(-U) > thermal ) {
-        //--- Accepted
-        m_pState->GetEnergyCalculator()->AddToTotalEnergy(diff_energy);
-        /*
-         
-            // area and voulme effects
-
-        }*/
-        return true;
-    }
-    else{ // reject the move
-        
-        // Rejected, reverse the scission
-        ReverseAScission(pair_t, pair_tri[0], pair_tri[1]);
-        
-        // Recalculate energies for consistency (although not needed for return value)
-        v11->ReverseEnergyCopy();
-        v12->ReverseEnergyCopy();
-        v13->ReverseEnergyCopy();
-        v21->ReverseEnergyCopy();
-        v22->ReverseEnergyCopy();
-        v23->ReverseEnergyCopy();
-
-        //--> the shape operator of these links has not been affected, therefore we only update the interaction energy
-        //std::vector<links*> Affected_links_old = GetEdgesWithInteractionChange(pair_t);
-        for (std::vector<links *>::iterator it = Affected_links_old.begin() ; it != Affected_links_old.end(); ++it){
-            (*it)->Reverse_InteractionEnergy();
-            (*it)->Reverse_VFInteractionEnergy();
-        }
-
-
-        return false;
-    }
-    
-    return false;
-}
 // it creates a triangle and place it to the active trinagles list
-triangle * Three_Edge_Scission::CreateATriangleFromAPotentialTriangle(pot_triangle &p1) {
-//---> initate the copy of the three links for the potential triangle
-    (p1.pl1)->SetCopy();
-    (p1.pl2)->SetCopy();
-    (p1.pl3)->SetCopy();
-    
+triangle * TopologyChangeByTriangularPrism::CreateTriangleByTriple(
+                    std::array<vertex*, 3> &v_ver, std::array<links*, 3> &v_links){
+
 //---> create the triangle
     //--- select the last ghost triangle
+    if(m_pGhostT.size() == 0){
+        Nfunction::ConsolePrint_Error(" ---> error: (204847)\n");
+    }
     triangle *gt1 = m_pGhostT[m_pGhostT.size()-1];
     //--- update its vertex
-    gt1->UpdateVertex(p1.pv1,p1.pv2,p1.pv3);
+    gt1->UpdateVertex(v_ver[0], v_ver[1], v_ver[2]);
 
-    //--- put the triangle from ghost to active
+    //--- set the triangle from ghost to active
     m_pActiveT.push_back(gt1);
     m_pGhostT.pop_back();
     
 //---> now make the changes in the edges
     //--- update their triangles
-    (p1.pl1)->UpdateTriangle(gt1);
-    (p1.pl2)->UpdateTriangle(gt1);
-    (p1.pl3)->UpdateTriangle(gt1);
-    //---- update their next two edges
-    p1.pl1->UpdateNeighborLink1(p1.pl2);
-    p1.pl1->UpdateNeighborLink2(p1.pl3);
-    p1.pl2->UpdateNeighborLink1(p1.pl3);
-    p1.pl2->UpdateNeighborLink2(p1.pl1);
-    p1.pl3->UpdateNeighborLink1(p1.pl1);
-    p1.pl3->UpdateNeighborLink2(p1.pl2);
-    //--- update their v3 (v2 and v1 remain the same)
-    p1.pl1->UpdateV3(p1.pv3);
-    p1.pl2->UpdateV3(p1.pv1);
-    p1.pl3->UpdateV3(p1.pv2);
-    
+    for( auto it_l : v_links){
+        it_l->UpdateTriangle(gt1);
+    }
+    for(int i = 0 ; i<3 ; i++){
+        //---- update their next two edges
+        v_links[i]->UpdateNeighborLink1(v_links[(i+1)%3]);
+        v_links[i]->UpdateNeighborLink2(v_links[(i+2)%3]);
+        //--- update their v3 (v2 and v1 remain the same)
+        v_links[i]->UpdateV3(v_ver[(i+2)%3]);
+    }    
 //---> update the vertices triangle list
-    p1.pv1->AddtoTraingleList(gt1);
-    p1.pv2->AddtoTraingleList(gt1);
-    p1.pv3->AddtoTraingleList(gt1);
-    
+    for( auto it_v : v_ver){
+        it_v->AddtoTraingleList(gt1);
+    }
 //---> update geometry; we cannot update the geometry of the the vertices because they have some edges that should be removed
     //--- update the normal and area of the triangle
     gt1->UpdateNormal_Area(&m_Box);   //trinagule normal and area should be obtained
     //--- update the three links notmal and shape Operator
-    (p1.pl1)->UpdateNormal();
-    (p1.pl2)->UpdateNormal();
-    (p1.pl3)->UpdateNormal();
-    (p1.pl1)->UpdateShapeOperator(&m_Box);
-    (p1.pl2)->UpdateShapeOperator(&m_Box);
-    (p1.pl3)->UpdateShapeOperator(&m_Box);
+    
+    for( auto it_l : v_links){
+        it_l->UpdateNormal();
+        it_l->UpdateShapeOperator(&m_Box);
+
+    }
 
     return gt1;
 }
 // this function cuts the neck made of p1 and p2, i.e., pair
-std::vector <triangle *> Three_Edge_Scission::DoAScission(pair_pot_triangle &pair){
+std::vector <triangle *> TopologyChangeByTriangularPrism::DoAScission(fission_site &f_site){
     
-    std::vector <triangle *> createdtriangles;
     if(m_pGhostT.size()<2){
         std::cout<<" ---> [not an error] not enough reserved trinagles; you may restart the simulation "<<std::endl;
         exit(0);
     }
-    pot_triangle p1 = pair.PT1;
-    pot_triangle p2 = pair.PT2;
-    
-//---> generate the two triangles and store them in the return vector
     //--- create the triangles
-    createdtriangles.push_back(CreateATriangleFromAPotentialTriangle(p1));
-    createdtriangles.push_back(CreateATriangleFromAPotentialTriangle(p2));
-
-//---> remove the links that connect the two potential trinagles; we just remove them from different lists and send them to ghost
-    //-- these edges are stored in the Clinks that are obtained in when the pair is created
-    //-- note, the mirror links do not exist in this list, also their triangles should be deleted
-    //-- these two triangles now have been created
-    std::vector <links *> Clinks = pair.ConnectingLinks;       // this does not include the mirror links
-    for (std::vector<links*>::iterator it = Clinks.begin() ; it != Clinks.end(); it++){
-            MakeALinkGhost(*it);
+    std::vector <triangle *> createdtriangles;
+    createdtriangles.push_back(CreateTriangleByTriple(f_site.v_ver , f_site.V_links ));
+    createdtriangles.push_back(CreateTriangleByTriple(f_site.u_ver , f_site.U_links));
+    
+    // removing the trinagles        
+    for(auto it_l : f_site.C_Links){
+        MakeATriangleGhost(it_l->GetTriangle());
     }
-    std::vector <triangle *> all_triangle = pair.ConnectingTriangles;
-    for (std::vector<triangle*>::iterator it = all_triangle.begin() ; it != all_triangle.end(); it++){
-        MakeATriangleGhost(*it);
+      // removing the edges        
+    for(auto it_l : f_site.C_Links){
+        MakeALinkGhost(it_l);
+    }   
+    for (auto it_v : f_site.v_ver){
+        (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(it_v);
     }
-//--> update geometry
-    //-- update geometry of the 6 vertices
-    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(p1.pv1);
-    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(p1.pv2);
-    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(p1.pv3);
-    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(p2.pv1);
-    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(p2.pv2);
-    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(p2.pv3);
-
-    return createdtriangles;
+    for (auto it_v : f_site.u_ver){
+        (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(it_v);
+    }
+    
+        return createdtriangles;
 }
 // this is the exact reverse action of DoAScission; different from DoAFussion
-bool Three_Edge_Scission::ReverseAScission(pair_pot_triangle &pair , triangle *t1, triangle *t2){
+bool TopologyChangeByTriangularPrism::ReverseAScission(fission_site &f_site){
 
-//--- getting p1 and p2
-    pot_triangle p1 = pair.PT1;
-    pot_triangle p2 = pair.PT2;
-    
-//-- we take the triangle3 t1 and t2 to the ghost and remove them from associated vertices and edges
-    //-- send t1 and t2 to the ghost
-    RemoveFromTriangleList(t1, m_pActiveT);
-    RemoveFromTriangleList(t2, m_pActiveT);
+    for (auto it_v : f_site.v_ver){
+        it_v->Reverse2PreviousCopy();
+    }
+    for (auto it_v : f_site.u_ver){
+        it_v->Reverse2PreviousCopy();
+    }
+    for (auto it_l : f_site.V_links){
+        it_l->Reverse2PreviousCopy();
+        it_l->Reverse_VFInteractionEnergy();
+    }    
+    for (auto it_l : f_site.U_links){
+        it_l->Reverse2PreviousCopy();
+        it_l->Reverse_VFInteractionEnergy();
+    }  
+//-- add back the removed trinagles  
+//-----> remove the added tringale   
+    triangle * t1 = m_pActiveT.back();
+    m_pActiveT.pop_back();
+    triangle * t2 = m_pActiveT.back();
+    m_pActiveT.pop_back();
+//----> add the removed 6 trinagle    
+    m_pActiveT.insert(m_pActiveT.end(),std::make_move_iterator(m_pGhostT.end() - 6),std::make_move_iterator(m_pGhostT.end()));
+    m_pGhostT.resize(m_pGhostT.size() - 6);
+//---- remove both added trinagles
     m_pGhostT.push_back(t1);
     m_pGhostT.push_back(t2);
-    //--- remove t1 and t2 from their v->t list
-    (t1->GetV1())->RemoveFromTraingleList(t1);
-    (t1->GetV2())->RemoveFromTraingleList(t1);
-    (t1->GetV3())->RemoveFromTraingleList(t1);
-    (t2->GetV1())->RemoveFromTraingleList(t2);
-    (t2->GetV2())->RemoveFromTraingleList(t2);
-    (t2->GetV3())->RemoveFromTraingleList(t2);
-    //--- reverse the edges to previous value
-    (p1.pl1)->Reverse2PreviousCopy();
-    (p1.pl2)->Reverse2PreviousCopy();
-    (p1.pl3)->Reverse2PreviousCopy();
-    (p2.pl1)->Reverse2PreviousCopy();
-    (p2.pl2)->Reverse2PreviousCopy();
-    (p2.pl3)->Reverse2PreviousCopy();
-
-     //
-//==== from the pair, we have all the links that were used to connect t1 and t2, we can recover them well
-    std::vector <links *> Clinks = pair.ConnectingLinks;       // this does not include the mirror links
-    for (std::vector<links*>::iterator it = Clinks.begin() ; it != Clinks.end(); it++){
-        ActivateAGhostLink(*it);
-    }
-    std::vector <triangle *> all_triangle = pair.ConnectingTriangles;
-    for (std::vector<triangle*>::iterator it = all_triangle.begin() ; it != all_triangle.end(); it++){
-        ActivateAGhostTriangle(*it);
-    }
-//--> update geometry
-    //-- update geometry of the 6 vertices
-    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(p1.pv1);
-    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(p1.pv2);
-    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(p1.pv3);
-    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(p2.pv1);
-    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(p2.pv2);
-    (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(p2.pv3);
     
+    
+//--- return all the edges to life    
+    m_pActiveL.insert(m_pActiveL.end(),std::make_move_iterator(m_pGhostL.end() - 12),std::make_move_iterator(m_pGhostL.end()));
+    m_pGhostL.resize(m_pGhostL.size() - 12);
+    
+    for (auto it_l : f_site.C_Links){
+        auto it_m = it_l->GetMirrorLink();
+        m_pLeftL.push_back(it_l);
+        m_pRightL.push_back(it_m);
+    }         
     return true;
 }
-void Three_Edge_Scission::MakeALinkGhost(links *p_links){
+void TopologyChangeByTriangularPrism::MakeALinkGhost(links *p_links){
     /**
      * @brief Make a link a "ghost" link, effectively deactivating it while preserving its information for potential reversal.
      *
@@ -1048,7 +1105,7 @@ void Three_Edge_Scission::MakeALinkGhost(links *p_links){
     // what about ghost link
     return;
 }
-void Three_Edge_Scission::MakeATriangleGhost(triangle *p_tri){
+void TopologyChangeByTriangularPrism::MakeATriangleGhost(triangle *p_tri){
 
     //-- remove the assosciated triangle
     RemoveFromTriangleList(p_tri, m_pActiveT);
@@ -1061,434 +1118,236 @@ void Three_Edge_Scission::MakeATriangleGhost(triangle *p_tri){
     // what about ghost link
     return;
 }
-void Three_Edge_Scission::ActivateAGhostTriangle(triangle *p_tri){
-
-    RemoveFromTriangleList(p_tri,m_pGhostT);
-    AddtoVectorCarefully(p_tri, m_pActiveT);
-    //--- add the triangles to the vertex list
-    p_tri->GetV1()->AddtoTriangleListCarefully(p_tri);
-    p_tri->GetV2()->AddtoTriangleListCarefully(p_tri);
-    p_tri->GetV3()->AddtoTriangleListCarefully(p_tri);
-
-    return;
-}
-void Three_Edge_Scission::ActivateAGhostLink(links *p_links){
-    /**
-     * @brief Reactivate a ghost link, restoring its activity and associated structures.
-     *
-     * This function reactivates a previously ghosted link and its mirror by moving them from the ghost list to the active lists.
-     * It restores the link and its associated triangles to various active lists, ensuring they are properly reconnected within
-     * the mesh or network structure. The function updates the link lists of the vertices and reestablishes the neighbor relationships between the vertices connected by the link.
-     *
-     * @param p_links A pointer to the link to be reactivated.
-     *
-     * @note The function assumes the link and its mirror link are currently in the ghost list. It carefully adds the
-     * link and its associated triangle back to active lists, and ensures all necessary connections are reestablished.
-     *
-     * @warning Ensure that the link and its mirror link are correctly initialized and currently ghosted before calling
-     * this function. Misuse may lead to inconsistencies in the data structure.
-     */
-    
-    
-    links *p_mlinks = p_links->GetMirrorLink();
-
-    //--removing it and its mirror from ghost and add to real containors
-    m_pActiveL.push_back(p_links);
-    m_pActiveL.push_back(p_mlinks);
-    m_pLeftL.push_back(p_links);
-    m_pRightL.push_back(p_mlinks);
-
-    RemoveFromLinkList(p_links,m_pGhostL);
-    RemoveFromLinkList(p_mlinks,m_pGhostL);
-
-    //-- add the links to the vertex linklist
-    (p_links->GetV1())->AddtoLinkListCarefully(p_links);
-    (p_links->GetV2())->AddtoLinkListCarefully(p_links->GetMirrorLink());
-    //--- add the triangles to the vertex list
-    //--- make v1 and v2 nighbour again
-    (p_links->GetV1())->AddtoNeighbourVertexCarefully(p_links->GetV2());
-    (p_links->GetV2())->AddtoNeighbourVertexCarefully(p_links->GetV1());
-    
-    
-    return;
-}
+auto canonicalize = [](vertex*& a, vertex*& b, vertex*& c) {
+    if (a > b) std::swap(a, b);
+    if (a > c) std::swap(a, c);
+    if (b > c) std::swap(b, c);
+};
 //== this function get a mesh and search through it and finds possible fission sites
-std::vector<pair_pot_triangle> Three_Edge_Scission::FindNecks() {
-    
-    //---- this part searches through all the links and finds possible triangles that do not yet exist.
-    //---- This means, it finds triple vertices (v1,v2,v3) that are connected by edges but such triangle is not defined.
-    
+std::vector<fission_site> TopologyChangeByTriangularPrism::FindNecks() {
+    /**
+ * @brief Finds unique potential triangles ("triangle frames") in the surface mesh and groups them into neck candidates.
+ *
+ * This function scans the surface vertex connectivity to identify all valid triplets of vertices
+ * (v1, v2, v3) that are pairwise connected by edges but do not yet form an explicit triangle in the mesh.
+ *
+ * To avoid redundant entries, each triangle is first canonicalized (sorted by vertex pointer address)
+ * and then inserted into a hash set to ensure uniqueness regardless of traversal order or permutation.
+ *
+ * After constructing the set of unique potential triangles, the function checks all pairs of these
+ * triangles to determine whether they form a valid "neck" configuration using Is_A_Neck().
+ *
+ * @return A vector of paired potential triangles representing detected neck structures in the mesh.
+ */
+    std::vector<pot_triangle> trinagle_frame;
+    std::vector<fission_site> pair_list;
+
+    std::unordered_set<PotTriangleKey, PotTriangleKeyHash> unique_tris;
+
     int id = 0;
-    std::vector<pot_triangle> list;
-    std::vector<links*> all_link = m_pActiveL;
-    
-    // Use a set to track which links have been processed/removed
-    std::set<links*> removed_links;
-    
-    for (std::vector<links*>::iterator il1 = all_link.begin(); il1 != all_link.end(); il1++) {
-        links* link1 = *il1;
+
+    for (auto *pv : m_pSurfV) {
         
-        // Skip if this link has already been removed
-        if (removed_links.find(link1) != removed_links.end()) {
-            continue;
-        }
-        
-        vertex *pv1 = link1->GetV1();
-        vertex *pv2 = link1->GetV2();
-        
-        std::vector<links*> v2_l = pv2->GetVLinkList();
-        for (std::vector<links*>::iterator il2 = v2_l.begin(); il2 != v2_l.end(); il2++) {
-            links* link2 = *il2;
-            
-            // Skip removed links
-            if (removed_links.find(link2) != removed_links.end()) {
-                continue;
-            }
-            
-            vertex *pv3 = link2->GetV2();
-            std::vector<links*> v3_l = pv3->GetVLinkList();
-            
-            for (std::vector<links*>::iterator il3 = v3_l.begin(); il3 != v3_l.end(); il3++) {
-                links* link3 = *il3;
-                
-                // Skip removed links
-                if (removed_links.find(link3) != removed_links.end()) {
-                    continue;
-                }
-                
-                // Check if this forms a triangle
-                if (pv1 == link3->GetV2() && link3->GetV3() != pv2 && 
-                    (link3->GetMirrorLink())->GetV3() != pv2) {
+
+        auto nv = pv->GetVNeighbourVertex();
+
+        for (size_t i = 0; i < nv.size(); i++) {
+            vertex* pv2 = nv[i];
+            for (size_t j = i + 1; j < nv.size(); j++) {
+                vertex* pv3 = nv[j];
+                vertex* pv1 = pv;
+                if (!pv1->IsAnyTriangle(pv2, pv3)) {  // vertices are nighbour of pv1 but not forming a triangle already
+                    if(!pv2->IsThereAConnectingLink(pv3)) // pv2-pv3 are connected
+                            continue;
                     
-                    if (pv2->m_VertexType == 0 && pv3->m_VertexType == 0 && pv1->m_VertexType == 0) {
-                        // pv1, pv2, pv3 are our vertices
-                        
+
+                   // ---- canonical ordering
+                    canonicalize(pv1, pv2, pv3);  // based on pointer value not location
+                        if(!(pv1->IsThereAConnectingLink(pv2)) ){
+        Nfunction::ConsolePrint_Error("--> error what the hell \n");
+        exit(0);
+    }
+                    // ---- uniqueness check
+                    PotTriangleKey key{pv1, pv2, pv3};
+                    if (unique_tris.insert(key).second) {
+
+
                         pot_triangle PotT;
-                        PotT.id = id;
-                        id++;
-                        PotT.cid = -1;
+                        PotT.id = id++;
                         PotT.pv1 = pv1;
                         PotT.pv2 = pv2;
                         PotT.pv3 = pv3;
-                        PotT.pl1 = link1;
-                        PotT.pl2 = link2;
-                        PotT.pl3 = link3;
-                        list.push_back(PotT);
-                        
-                        // Mark all these links and their mirrors as removed
-                        removed_links.insert(link1);
-                        removed_links.insert(link2);
-                        removed_links.insert(link3);
-                        removed_links.insert(link2->GetMirrorLink());
-                        removed_links.insert(link3->GetMirrorLink());
-                        removed_links.insert(link1->GetMirrorLink());
-                        
-                        // Break out of loops since we found a triangle with link1
-                        // Go to next il1
-                        goto next_link1;
+
+                        trinagle_frame.push_back(PotT);
+
                     }
                 }
             }
         }
-        next_link1:
-        continue;
     }
-    
-    //===================
-    std::vector<pair_pot_triangle> pair_list;
+
     int idpair = 0;
-    
-    for (int i = 0; i < (int)list.size(); i++) {
-        for (int j = i + 1; j < (int)list.size(); j++) {
-            pair_pot_triangle temp;
-            if (Is_A_Neck(list[i], list[j], temp)) {
-                temp.id = idpair;
-                idpair++;
+    for (int i = 0; i < (int)trinagle_frame.size(); i++) {
+        for (int j = i + 1; j < (int)trinagle_frame.size(); j++) {
+
+            fission_site temp;
+
+            if (Is_A_Neck(trinagle_frame[i], trinagle_frame[j], temp)) {
                 pair_list.push_back(temp);
             }
         }
     }
-    
+
     return pair_list;
 }
-/*std::vector<pair_pot_triangle> Three_Edge_Scission::FindNecks(){
-
-//---- this part searches through all the links and finds possible triangles that do not yet exsist. This means, it finds triple vertices (v1,v2,v3) that are connected by edges but such trinagle is not defined.
-    
-    int id = 0;
-    std::vector<pot_triangle> list;
-    std::vector<links*>  all_link =  m_pActiveL;
-    for (std::vector<links*>::iterator il1 = all_link.begin() ; il1 != all_link.end(); il1++){
-        vertex *pv1 = (*il1)->GetV1();
-        vertex *pv2 = (*il1)->GetV2();
-        if (pv1 == nullptr || pv2 == nullptr) {
-            fprintf(stderr, "Error: One or both vertices are null pointers\n");
-            exit(EXIT_FAILURE);
-        }
-
-        std::vector<links*>  v2_l = pv2->GetVLinkList();
-        for (std::vector<links*>::iterator il2 = v2_l.begin() ; il2 != v2_l.end(); il2++){
-            vertex *pv3 = (*il2)->GetV2();
-            std::vector<links*>  v3_l = pv3->GetVLinkList();
-                for (std::vector<links*>::iterator il3 = v3_l.begin() ; il3 != v3_l.end(); il3++){
-                    if(pv1==(*il3)->GetV2() && (*il3)->GetV3()!=pv2 && ((*il3)->GetMirrorLink())->GetV3()!=pv2 ){
-                        if( pv2->m_VertexType==0 && pv3->m_VertexType==0 && pv1->m_VertexType==0){
-                            // pv1, pv2, pv3 are our vertices
-                                                    
-                            pot_triangle PotT;
-                            PotT.id = id; id++;
-                            PotT.cid = -1;
-                            PotT.pv1 = pv1; PotT.pv2 = pv2; PotT.pv3 = pv3;
-                            PotT.pl1= (*il1); PotT.pl2= (*il2); PotT.pl3= (*il3);
-                            list.push_back(PotT);
-                            //--- we remove these links from all link containor so we do not search through them again
-                            all_link.erase(std::remove(all_link.begin(), all_link.end(), (*il2)), all_link.end());
-                            all_link.erase(std::remove(all_link.begin(), all_link.end(), (*il3)), all_link.end());
-                            all_link.erase(std::remove(all_link.begin(), all_link.end(), (*il2)->GetMirrorLink()), all_link.end());
-                            all_link.erase(std::remove(all_link.begin(), all_link.end(), (*il3)->GetMirrorLink()), all_link.end());
-                            all_link.erase(std::remove(all_link.begin(), all_link.end(), (*il1)->GetMirrorLink()), all_link.end());
-
-                        }
-                    }
-            }
-        }
-    }
-//===================
-std::vector <pair_pot_triangle> pair_list;
-    int idpair=0;
-for (int i=0;i<list.size();i++)
-{
-    for (int j=i+1;j<list.size();j++){
-        pair_pot_triangle temp;
-        if(Is_A_Neck(list[i],list[j], temp)){
-            temp.id = idpair;
-            idpair++;
-            pair_list.push_back(temp);
-        }
-    }
-}
-    
-    return pair_list;
-}*/
 //-- connected_2pot_triangles function check if the two potential trinagles are well connected for a fission. not, T1 and T2 do not exist yet, but they can apear if v1,v2,v3 get
 //          v1------------v4            disconnected from v4, v5, v6. This function checks for such cases
 //         /T1\         / T2\
 //        v2--v3-------v4---v6
-bool Three_Edge_Scission::Is_A_Neck(pot_triangle potT1, pot_triangle potT2, pair_pot_triangle & neck) {
+bool TopologyChangeByTriangularPrism::Is_A_Neck(pot_triangle potT1, pot_triangle potT2, fission_site & prism_site) {
     /**
      * @brief Checks if two potential triangles (pot_triangle) are well-connected to form a neck for fission.
-     *
-     * This function determines if two potential triangles (pot_triangle) form a neck for fission. The triangles do not yet exist
-     * but can appear if vertices v1, v2, and v3 are disconnected from v4, v5, and v6. The function ensures that the vertices of the first
-     * potential triangle are connected to at least one vertex of the second potential triangle and vice versa.
-     * If the triangles are well-connected, it updates their connection IDs and returns a pair of potential triangles
-     * with connecting links and triangles.
-     *
-     * The function performs the following steps:
-     * 1. Checks if either triangle is already connected to another potential triangle.
-     * 2. Ensures the two potential triangles do not share any vertices.
-     * 3. Verifies if the vertices of the first triangle are connected to the vertices of the second triangle.
-     * 4. Checks the orientation of the triangles to ensure valid neck formation.
-     * 5. Finds all links that connect the vertices of the first triangle to the second triangle and updates the connection information.
-     *
-     * @param potT1 First potential triangle.
-     * @param potT2 Second potential triangle.
-     * @param neck Reference to the pair_pot_triangle struct to store the result.
-     * @return true if the potential triangles form a neck, false otherwise.
-     //          v1------------v4            disconnected from v4, v5, v6. This function checks for such cases
-     //         /T1\         / T2\
-     //        v2--v3-------v4---v6
-     */
-    neck.state = false;
-    
-//--- Check if either triangle is already connected to another potential triangle.
-    // Maybe this is not needed as we only make one fission
-    if(potT2.cid != -1 || potT1.cid != -1){
-        return false;
-    }
-    
+*/
+
+std::array<vertex*, 3> v_ver = {potT1.pv1, potT1.pv2, potT1.pv3};
+std::array<vertex*, 3> u_ver = {potT2.pv1, potT2.pv2, potT2.pv3};
+
+int i = 0, j = 0;
+
 //---> if the two potential trinagles share a vertex, then they should be discarded
     // Ensure the two potential triangles do not share any vertices.
-    if (potT2.pv1 == potT1.pv1 || potT2.pv1 == potT1.pv2 || potT2.pv1 == potT1.pv3 ||
-        potT2.pv2 == potT1.pv1 || potT2.pv2 == potT1.pv2 || potT2.pv2 == potT1.pv3 ||
-        potT2.pv3 == potT1.pv1 || potT2.pv3 == potT1.pv2 || potT2.pv3 == potT1.pv3) {
+while (i < 3 && j < 3) {
+    if (v_ver[i] == u_ver[j]) {
         return false;
     }
+    (v_ver[i] < u_ver[j]) ? ++i : ++j;
+}
 
-//----> this check if the potential triangles are connected or not
-    links* linksToCheck1[] = { potT1.pl1, potT1.pl2, potT1.pl3 };
-    for (int i = 0; i < 3; ++i) {
-        links* oe_l = linksToCheck1[i];
-        links* me_l = oe_l->GetMirrorLink();
-
-        vertex* v3_oe = oe_l->GetV3();
-        vertex* v3_me = me_l->GetV3();
-
-        if (v3_oe != potT2.pv1 && v3_oe != potT2.pv2 && v3_oe != potT2.pv3 &&
-            v3_me != potT2.pv1 && v3_me != potT2.pv2 && v3_me != potT2.pv3) {
-            return false;
-        }
-    }
-    links* linksToCheck2[] = { potT2.pl1, potT2.pl2, potT2.pl3 };
-    for (int i = 0; i < 3; ++i) {
-        links* oe_l = linksToCheck2[i];
-        links* me_l = oe_l->GetMirrorLink();
-
-        vertex* v3_oe = oe_l->GetV3();
-        vertex* v3_me = me_l->GetV3();
-
-        if (v3_oe != potT1.pv1 && v3_oe != potT1.pv2 && v3_oe != potT1.pv3 &&
-            v3_me != potT1.pv1 && v3_me != potT1.pv2 && v3_me != potT1.pv3) {
-            return false;
-        }
+ //--    
+ //----> this check if the potential triangles are connected or not
+ std::vector<links*> bride_links;  // we collect all the links that can be removed if the neck is cut., we have to remove their mirror too
+int connections[3][3] = {};
+    for (int i = 0; i<3; i++){
+        for (int j=0; j<3; j++){
+            links* clink;
+            if(v_ver[i]->IsThereAConnectingLink(u_ver[j], clink)){
+                connections[i][j] = 1;
+                bride_links.push_back(clink);
+            }
+        }  
     }
 
-    //--- here we should find all the links that connects the  vertices of P1 to P2.
-    // how to return this
-    if(CorrectOrientation(potT1,potT2) && CorrectOrientation(potT2,potT1)){ // this means that the p1 edges should be so that the removal edge disconect
-                                                                 //vertices of p2 from p1, not any other vertices
-        
-        
-         
-        neck.PT1 = potT1;
-        neck.PT2 = potT2;
-        
-        if(!CheckFaceAngle(neck)){
-            //--> before doing more, lets check if this fission happens, could the angle be OK?
-            return false;
-        }
-        std::vector <links *> Clinks;
-        std::unordered_set <triangle *> Ctriangles;
-        neck.state = true;
 
-        // Iterate through the links connected to the first vertex of potT1
-        std::vector<links*> n_p1links = (potT1.pv1)->GetVLinkList();
-        for (std::vector<links*>::iterator it = n_p1links.begin(); it != n_p1links.end(); ++it) {
-            if ((*it)->GetV2() == potT2.pv1 || (*it)->GetV2() == potT2.pv2 || (*it)->GetV2() == potT2.pv3) {
-                Clinks.push_back(*it);
-                Ctriangles.insert((*it)->GetTriangle());
-            }
-        }
+    
+// Check if any row or column has sum of zero; this means it is well connected as a neck
+for (int i = 0; i < 3; i++) {
+    int rowSum = 0, colSum = 0;
+    for (int j = 0; j < 3; j++) {
+        rowSum += connections[i][j];
+        colSum += connections[j][i];
+    }
+    if (rowSum == 0 || colSum == 0) return false;
+}
 
-        // Iterate through the links connected to the second vertex of potT1
-        std::vector<links*> n_p2links = (potT1.pv2)->GetVLinkList();
-        for (std::vector<links*>::iterator it = n_p2links.begin(); it != n_p2links.end(); ++it) {
-            if ((*it)->GetV2() == potT2.pv1 || (*it)->GetV2() == potT2.pv2 || (*it)->GetV2() == potT2.pv3) {
-                Clinks.push_back(*it);
-                Ctriangles.insert((*it)->GetTriangle());
-            }
-        }
+// now fix the orientation and get the links
+    links *lv1_2;
+    
+    if(!v_ver[0]->IsThereAConnectingLink(v_ver[1], lv1_2)){
+        Nfunction::ConsolePrint_Error("--> error (v_ver0 is not connected to v_ver1): this should not happen \n");
+    }
 
-        // Iterate through the links connected to the third vertex of potT1
-        std::vector<links*> n_p3links = (potT1.pv3)->GetVLinkList();
-        for (std::vector<links*>::iterator it = n_p3links.begin(); it != n_p3links.end(); ++it) {
-            if ((*it)->GetV2() == potT2.pv1 || (*it)->GetV2() == potT2.pv2 || (*it)->GetV2() == potT2.pv3) {
-                Clinks.push_back(*it);
-                Ctriangles.insert((*it)->GetTriangle());
-            }
+    if(lv1_2->GetV3() != u_ver[0] && lv1_2->GetV3() != u_ver[1] && lv1_2->GetV3() != u_ver[2]){
+         v_ver[0] = potT1.pv2;   
+         v_ver[1] = potT1.pv1; 
+         if(lv1_2->GetMirrorFlag()){
+            lv1_2 = lv1_2->GetMirrorLink();
         }
-        
-        neck.ConnectingLinks = Clinks;
-        for (std::unordered_set<triangle *>::iterator it = Ctriangles.begin(); it != Ctriangles.end(); ++it) {
-            (neck.ConnectingTriangles).push_back(*it);
+        else{
+            Nfunction::ConsolePrint_Error("--> error (47473): this should not be tested \n");
         }
     }
-    else {
-        std::cout<<"---> error2922: this should not happen \n";
+    
+    links *lu1_2;
+    if(!u_ver[0]->IsThereAConnectingLink(u_ver[1], lu1_2)){
+        Nfunction::ConsolePrint_Error("--> error (47744): this should not happen \n");
+    }
+
+    if(lu1_2->GetV3() != v_ver[0] && lu1_2->GetV3() != v_ver[1] && lu1_2->GetV3() != v_ver[2]){
+         u_ver[0] = potT2.pv2;   
+         u_ver[1] = potT2.pv1; 
+         if(lu1_2->GetMirrorFlag()){
+            lu1_2 = lu1_2->GetMirrorLink();
+        }
+        else{
+            Nfunction::ConsolePrint_Error("--> error (47473): this should not be tested \n");
+        }
+    }
+ //== now orintation is fixed the below links does not need orintation fix because the trinagle is already fixed.   
+      links *lv2_3 = v_ver[1]->GetConnectingLink(v_ver[2]);
+      links *lv3_1 = v_ver[2]->GetConnectingLink(v_ver[0]);
+      links *lu2_3 = u_ver[1]->GetConnectingLink(u_ver[2]);
+      links *lu3_1 = u_ver[2]->GetConnectingLink(u_ver[0]);
+      
+        
+    std::array<links*, 3> v_links = {lv1_2, lv2_3, lv3_1};
+    std::array<links*, 3> u_links = {lu1_2, lu2_3, lu3_1};
+    
+    
+    prism_site.v_ver = v_ver;
+    prism_site.u_ver = u_ver;
+    prism_site.C_Links = bride_links;
+    prism_site.V_links = v_links;
+    prism_site.U_links = u_links;
+    
+    if(!CheckFaceAngleForFissionSite(prism_site)){
+        return false;
     }
     
     return true;
+
+
 }
-bool Three_Edge_Scission::CheckFaceAngle(pair_pot_triangle &pair){
+bool TopologyChangeByTriangularPrism::CheckFaceAngleForFissionSite(fission_site &f_site){
     
-    triangle t1(0, pair.PT1.pv1, pair.PT1.pv2, pair.PT1.pv3);
+    triangle t1(-1, f_site.v_ver[0], f_site.v_ver[1], f_site.v_ver[2]);
+    triangle t2(-2, f_site.u_ver[0], f_site.u_ver[1], f_site.u_ver[2]);
     Vec3D n1 = t1.CalculateNormal(m_Box);
-    Vec3D n1_1 = (pair.PT1.pl1)->GetMirrorLink()->GetTriangle()->GetNormalVector();
-    Vec3D n1_2 = (pair.PT1.pl2)->GetMirrorLink()->GetTriangle()->GetNormalVector();
-    Vec3D n1_3 = (pair.PT1.pl3)->GetMirrorLink()->GetTriangle()->GetNormalVector();
-
-    if( n1.dot(n1,n1_1) < m_MinAngle ||
-        n1.dot(n1,n1_2) < m_MinAngle ||
-        n1.dot(n1,n1_3) < m_MinAngle ){
-        return false;
-    }
-    
-    triangle t2(0, pair.PT2.pv1, pair.PT2.pv2, pair.PT2.pv3);
     Vec3D n2 = t2.CalculateNormal(m_Box);
-    Vec3D n2_1 = (pair.PT2.pl1)->GetMirrorLink()->GetTriangle()->GetNormalVector();
-    Vec3D n2_2 = (pair.PT2.pl2)->GetMirrorLink()->GetTriangle()->GetNormalVector();
-    Vec3D n2_3 = (pair.PT2.pl3)->GetMirrorLink()->GetTriangle()->GetNormalVector();
-    if( n1.dot(n2,n2_1) < m_MinAngle ||
-        n1.dot(n2,n2_2) < m_MinAngle ||
-        n1.dot(n2,n2_3) < m_MinAngle ) {
-        return false;
+
+    for(auto it_l : f_site.V_links){
+        Vec3D normal_v = it_l->GetMirrorLink()->GetTriangle()->GetNormalVector();
+        if( n1.dot(n1,normal_v) < m_MinAngle ){
+            return false;
+        }
+    }
+    
+    for(auto it_l : f_site.U_links){
+        Vec3D normal_v = it_l->GetMirrorLink()->GetTriangle()->GetNormalVector();
+        if( n1.dot(n2,normal_v) < m_MinAngle ){
+            return false;
+        }
     }
     
     return true;
 }
-//--- v1,v2 and v3 may not have the correct trinagluation Orientation.
- //      >v         ;correct orientation means to disconnect links connected to vertices in the pot_triangle 2
-//  l1  /  \>  l2   ;because for each triple of v1, v2 and v3, there is two ways to create a trinagle but each will
-//    v1<---v3      ; leads to removal of diffierent edges.
-bool Three_Edge_Scission::CorrectOrientation(pot_triangle &p1, pot_triangle &p2) {
-    /**
-     * @brief Ensures the correct triangulation orientation for the provided triangles.
-     *
-     * This function checks the orientation of the vertices in the `pot_triangle` p1 to ensure that
-     * the v3 of each edge from p1 exists in the vertices of p2. If the orientation is incorrect,
-     * it reverses it by swapping edges to mirror edges. If neither the original nor the mirrored links
-     * have the correct orientation, it returns false.
-     *
-     * @param p1 The first potential triangle with three edges and three vertices.
-     * @param p2 The second potential triangle with three vertices.
-     * @return true if the orientation is correct or successfully corrected, false otherwise.
-     */
-    
-    links* ml1 = (p1.pl1)->GetMirrorLink();
-    if((p1.pl1)->GetV3() == p2.pv1 || (p1.pl1)->GetV3() == p2.pv2 || (p1.pl1)->GetV3() == p2.pv3){
-        // Orientation is correct, no change is needed
-        return true;
-    }
-    else if(ml1->GetV3() == p2.pv1 || ml1->GetV3() == p2.pv2 || ml1->GetV3() == p2.pv3){
-        // Orientation is not correct, we reverse it
-        links* ml2 = (p1.pl2)->GetMirrorLink();
-        links* ml3 = (p1.pl3)->GetMirrorLink();
-        vertex *v1 = p1.pv1;
-        vertex *v2 = p1.pv2;
-        p1.pv1 = v2;
-        p1.pv2 = v1;
-        
-        p1.pl1 = ml1;
-        p1.pl2 = ml3;
-        p1.pl3 = ml2;
-
-
-        return true;
-    }
-    else {  // the triangles are not connected
-        return false;
-    }
-    
-    return true;
-}
-void Three_Edge_Scission::RemoveFromLinkList(links* z, std::vector<links*> &vect)
+void TopologyChangeByTriangularPrism::RemoveFromLinkList(links* z, std::vector<links*> &vect)
 {
     vect.erase(std::remove(vect.begin(), vect.end(), z), vect.end());
 }
-void Three_Edge_Scission::RemoveFromTriangleList(triangle* z, std::vector<triangle*> &vect)
+void TopologyChangeByTriangularPrism::RemoveFromTriangleList(triangle* z, std::vector<triangle*> &vect)
 {
     vect.erase(std::remove(vect.begin(), vect.end(), z), vect.end());
 }
-void Three_Edge_Scission::AddtoLinkList(links* z, std::vector<links*> &vect)
+void TopologyChangeByTriangularPrism::AddtoLinkList(links* z, std::vector<links*> &vect)
 {
     vect.push_back(z);
 }
-void Three_Edge_Scission::AddtoTriangleList(triangle* z, std::vector<triangle*> &vect)
+void TopologyChangeByTriangularPrism::AddtoTriangleList(triangle* z, std::vector<triangle*> &vect)
 {
     vect.push_back(z);
 }
 template<typename T>
-bool Three_Edge_Scission::AddtoVectorCarefully(T* item, std::vector<T*>& vect) {
+bool TopologyChangeByTriangularPrism::AddtoVectorCarefully(T* item, std::vector<T*>& vect) {
     // Check if the item already exists in the list
     for (typename std::vector<T*>::iterator it = vect.begin(); it != vect.end(); ++it) {
         if (*it == item)
@@ -1501,33 +1360,46 @@ bool Three_Edge_Scission::AddtoVectorCarefully(T* item, std::vector<T*>& vect) {
 // this should be deleted at the end
 
 template<typename T>
-void Three_Edge_Scission::KeepOneOccurrence(std::vector<T*> &vec){
+void TopologyChangeByTriangularPrism::KeepOneOccurrence(std::vector<T*> &vec){
    
     std::sort(vec.begin(), vec.end()); // Sort the vector
     vec.erase(std::unique(vec.begin(), vec.end()), vec.end()); // Remove duplicates
 }
-std::vector<links*> Three_Edge_Scission::GetEdgesWithInteractionChange(pair_pot_triangle &pair_t){
-    
-    /**
-     * @brief Retrieve edges with interaction changes due to inclusions or vector fields.
-     *
-     * This function identifies and returns the edges (links) associated with the vertices of
-     * two paired triangles that are expected to experience changes in interactions. The changes
-     * in interactions could be due to inclusions owned by the vertices or the presence of vector
-     * fields.
-     *
-     * The function operates as follows:
-     * 1. It gathers all links associated with the vertices of the two input triangles (`pair_t`).
-     * 2. It filters these links to include only those that either own inclusions or have associated
-     *    vector fields.
-     * 3. It removes duplicate links and links that are mirrors of each other.
-     *
-     * @param pair_t A reference to a pair of triangles, each represented by a `pair_pot_triangle` structure.
-     *               The vertices of these triangles are used to gather and filter the links.
-     * @return A vector of pointers to the `links` objects that have interaction changes.
-     *
-     * @note In development mode (`DEVELOPMENT_MODE == Enabled`),
-     */
+std::vector<links*> TopologyChangeByTriangularPrism::GetEdgesWithInteractionChange(fission_site &f_site){
+/**
+ * @brief Collects links whose interaction energies may change during a scission move.
+ *
+ * This function identifies the subset of mesh links whose inclusion or vector-field
+ * interaction energies must be recomputed after a topology modification at the
+ * specified fission site.
+ *
+ * The search is restricted to links connected to vertices participating in the
+ * scission (`f_site.v_ver` and `f_site.u_ver`). A link is considered potentially
+ * affected if:
+ * - The associated vertex hosts an inclusion, or
+ * - The system contains one or more vector-field layers.
+ *
+ * All neighboring links of such vertices are gathered and then filtered to
+ * produce a unique set of links. Duplicate entries and mirror-link pairs are
+ * removed to ensure that each physical interaction is represented only once.
+ *
+ * The returned links are typically used before and after a trial topology
+ * change to:
+ * - Store current interaction energies,
+ * - Recompute inclusion interaction energies,
+ * - Recompute vector-field interaction energies, and
+ * - Restore energies if the move is rejected.
+ *
+ * @param f_site
+ *        Description of the candidate scission region, including the vertices
+ *        whose local connectivity and interactions may be modified.
+ *
+ * @return A unique collection of links whose interaction energy contributions
+ *         may be affected by the proposed topology change.
+ *
+ * @note In development mode, a diagnostic message is printed indicating that
+ *       additional pre-filtering optimizations may be possible.
+ */
 #if DEVELOPMENT_MODE == Enabled
     std::cout<<" DEVELOPMENT_MODE ID 9595473: This function can be  made  better\n ";
     // for example, precheck to select only links that both has includioon ...
@@ -1535,42 +1407,23 @@ std::vector<links*> Three_Edge_Scission::GetEdgesWithInteractionChange(pair_pot_
     
     std::vector<links*> edge_with_interaction_change;
     std::vector<links *> all_temlinks;
-//---> get all the links
-    vertex *v11 = pair_t.PT1.pv1;
-    vertex *v12 = pair_t.PT1.pv2;
-    vertex *v13 = pair_t.PT1.pv3;
-    vertex *v21 = pair_t.PT2.pv1;
-    vertex *v22 = pair_t.PT2.pv2;
-    vertex *v23 = pair_t.PT2.pv3;
+
     bool system_has_vf = false;
-    if(v11->GetNumberOfVF() != 0){
+    if(m_No_Vectorfield != 0){
         system_has_vf = true;
     }
     
-    //=== inclusion interaction energy;
-    if(v11->VertexOwnInclusion() || system_has_vf ) {  // due to vector fields
-        std::vector <links *> n_edges = v11->GetVLinkList();
+    for (auto v_it : f_site.v_ver){
+        if(v_it->VertexOwnInclusion() || system_has_vf ) {  // due to vector fields
+        std::vector <links *> n_edges = v_it->GetVLinkList();
         all_temlinks.insert(all_temlinks.end(), n_edges.begin(), n_edges.end());
-    }
-    if(v12->VertexOwnInclusion() || system_has_vf ) {  // due to vector fields
-        std::vector <links *> n_edges = v12->GetVLinkList();
+        }
+    }  
+    for (auto v_it : f_site.u_ver){
+        if(v_it->VertexOwnInclusion() || system_has_vf ) {  // due to vector fields
+        std::vector <links *> n_edges = v_it->GetVLinkList();
         all_temlinks.insert(all_temlinks.end(), n_edges.begin(), n_edges.end());
-    }
-    if(v13->VertexOwnInclusion() || system_has_vf ) {  // due to vector fields
-        std::vector <links *> n_edges = v13->GetVLinkList();
-        all_temlinks.insert(all_temlinks.end(), n_edges.begin(), n_edges.end());
-    }
-    if(v21->VertexOwnInclusion() || system_has_vf ) {  // due to vector fields
-        std::vector <links *> n_edges = v21->GetVLinkList();
-        all_temlinks.insert(all_temlinks.end(), n_edges.begin(), n_edges.end());
-    }
-    if(v22->VertexOwnInclusion() || system_has_vf ) {  // due to vector fields
-        std::vector <links *> n_edges = v22->GetVLinkList();
-        all_temlinks.insert(all_temlinks.end(), n_edges.begin(), n_edges.end());
-    }
-    if(v23->VertexOwnInclusion() || system_has_vf ) {  // due to vector fields
-        std::vector <links *> n_edges = v23->GetVLinkList();
-        all_temlinks.insert(all_temlinks.end(), n_edges.begin(), n_edges.end());
+        }  
     }
 
     //-- now we remove the repeated links
@@ -1592,7 +1445,7 @@ std::vector<links*> Three_Edge_Scission::GetEdgesWithInteractionChange(pair_pot_
     }
     return edge_with_interaction_change;
 }
-bool Three_Edge_Scission::VoxelizeTriangles(double voxelsize) {
+bool TopologyChangeByTriangularPrism::VoxelizeTriangles(double voxelsize) {
 // Builds a voxelization of all active triangles using their PBC-correct centroids.
 // Centroids are updated before insertion to ensure consistent spatial hashing.
 // Returns a fully constructed voxel grid for triangle lookup / interaction queries.
@@ -1614,46 +1467,20 @@ bool Three_Edge_Scission::VoxelizeTriangles(double voxelsize) {
 
     return true;
 }
-std::string Three_Edge_Scission::CurrentState(){
+std::string TopologyChangeByTriangularPrism::CurrentState(){
     
     std::string state = AbstractDynamicTopology::GetBaseDefaultReadName() +" = "+ this->GetDerivedDefaultReadName();
-    state += " "+ Nfunction::D2S(m_Period);
+    state += " "+ Nfunction::D2S(m_Period) + " "+ m_PrismMapTopologyFile;
     return state;
 }
-
-
-/*
- 
- 
- for (std::vector<triangle *>::iterator it = m_pActiveT.begin() ; it != m_pActiveT.end(); ++it){
-     (*it)->UpdateNormal_Area(&m_Box);   //trinagule normal and area should be obtained
- }
- for (std::vector<links *>::iterator it = m_pActiveL.begin() ; it != m_pActiveL.end(); ++it){
-     (*it)->UpdateNormal();
-     (*it)->UpdateShapeOperator(&m_Box);
-
- }
- for (std::vector<vertex *>::iterator it = m_pSurfV.begin() ; it != m_pSurfV.end(); ++it){
-     (m_pState->GetCurvatureCalculator())->UpdateSurfVertexCurvature(*it);
- }
- for (std::vector<links *>::iterator it = m_pActiveL.begin() ; it != m_pActiveL.end(); ++it){
-     (m_pState->GetEnergyCalculator())->TwoInclusionsInteractionEnergy(*it);
- }
- */
-/*
-    Static registration for Three_Edge_Scission
-    Automatically registers the class with FactoryDynamicTopologyMethod
-    so it can be created dynamically from input streams.
-*/
-//
-class RegistryThree_Edge_Scission
+class RegistryTopologyChangeByTriangularPrism
 {
 public:
 
-    RegistryThree_Edge_Scission()
+    RegistryTopologyChangeByTriangularPrism()
     {
         FactoryDynamicTopologyMethod::Instance().Register(
-            Three_Edge_Scission::GetDefaultReadName(),
+            TopologyChangeByTriangularPrism::GetDefaultReadName(),
             Create);
     }
 
@@ -1669,7 +1496,7 @@ private:
         std::string inputdata;
         std::getline(input, inputdata);   // consume rest of line
         
-        return new Three_Edge_Scission(
+        return new TopologyChangeByTriangularPrism(
             inputdata,
             state);   // state is always last
     }
@@ -1681,6 +1508,6 @@ Static Registration Object
 */
 namespace
 {
-    RegistryThree_Edge_Scission
-        register_Three_Edge_Scission;
+    RegistryTopologyChangeByTriangularPrism
+        register_TopologyChangeByTriangularPrism;
 }

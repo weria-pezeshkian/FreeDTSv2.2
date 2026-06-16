@@ -24,8 +24,8 @@ public:
         inline vertex *GetV1()                   const      {return m_V1;}
         inline vertex *GetV2()                   const      {return m_V2;}
         inline vertex *GetV3()                   const      {return m_V3;}
-        inline  bool GetVisualize ()             const      {return m_Show;}
-        inline bool GetMirrorFlag ()             const      {return m_mirorflag;}
+        inline  bool GetVisualize()             const      {return m_Show;}
+        inline bool GetMirrorFlag()             const      {return m_mirorflag;}
         inline triangle *GetTriangle()           const      {return m_T1;}
         inline links   *GetMirrorLink()          const      {return m_mirorlink;}
         inline links   *GetNeighborLink1()       const      {return m_neighborlink1;}
