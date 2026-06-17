@@ -122,6 +122,16 @@ bool WritevtuFiles::WriteAFrame(int step){
     
     for (std::vector<triangle *>::iterator it = all_tri.begin() ; it != all_tri.end(); ++it){
         
+        vertex* v1 =  (*it)->GetV1();
+        vertex* v2 =  (*it)->GetV2();
+        vertex* v3 =  (*it)->GetV3();
+        
+        if (!v1 || !v2 || !v3) {
+            // Skip invalid triangle
+            std::cerr << "Warning: Triangle has null vertex pointer, skipping" << std::endl;
+            continue;
+        }
+        
         (*it)->UpdateRepresentation(true);
         double dx1=(*it)->GetV1()->GetXPos()-(*it)->GetV2()->GetXPos();
         double dy1=(*it)->GetV1()->GetYPos()-(*it)->GetV2()->GetYPos();

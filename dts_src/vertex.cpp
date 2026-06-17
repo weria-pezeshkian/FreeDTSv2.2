@@ -375,6 +375,8 @@ bool vertex::SetCopy(){
     m_OldEnergy = m_Energy;
     m_OldT_Local_2_Global = m_T_Local_2_Global;         //  Local to global transformation matrix
     m_OldT_Global_2_Local = m_T_Global_2_Local;        //  global to local transformation matrix
+    m_OldPrincipalCurvature_1 = m_PrincipalCurvature_1;
+    m_OldPrincipalCurvature_2 = m_PrincipalCurvature_2;
     m_OldpVoxel = m_pVoxel;
     m_OldGeodesic_Curvature = m_Geodesic_Curvature;          // Edge Vertex Curvature
     m_OldNormal_Curvature = m_Normal_Curvature;          // Edge Vertex Curvature
@@ -408,7 +410,8 @@ bool vertex::Reverse2PreviousCopy(){  // reverse the edge to the value set at th
     m_T_Local_2_Global = m_OldT_Local_2_Global ;         //  Local to global transformation matrix
     m_T_Global_2_Local = m_OldT_Global_2_Local ;        //  global to local transformation matrix
     m_pVoxel = m_OldpVoxel ;
-
+    m_PrincipalCurvature_1 = m_OldPrincipalCurvature_1;
+    m_PrincipalCurvature_2 = m_OldPrincipalCurvature_2;
     m_VertexType = m_OldVertexType;                   // 0 surface vertex; 1 edge vertex;
     m_VTraingleList = m_OldVTraingleList;
     m_VLinkList = m_OldVLinkList ;

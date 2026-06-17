@@ -32,6 +32,7 @@ public:
     static double SquarePBCDistanceOfTwoPoint(const Vec3D &P1, const Vec3D &P2, const Vec3D &Box);
     static void ConsolePrint_Note(const std::string &text);
     static void ConsolePrint_Error(const std::string &text);
+    static void ConsolePrint_Warning(const std::string &text);
 
 };
 

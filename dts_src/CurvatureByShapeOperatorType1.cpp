@@ -109,25 +109,26 @@ bool CurvatureByShapeOperatorType1::UpdateSurfVertexCurvature(vertex * pvertex){
             
             double ff = Se.norm(); // Get the norm
             if (ff == 0) {
-                std::cerr << "-----> Error: projection is zero error" << "\n";
+                std::cerr << "-----> Error: projection is zero error (UpdateSurfVertexCurvature)" << "\n";
                /* std::cout <<" normal "<<"\n";
                 std::cout <<currentLink->GetNormal()<<"\n";
-                
+                       std::cout<<" edge and mirror id: "<<currentLink->GetMirrorLink()->GetID()<<" "<<currentLink->GetID()<<"\n";
                        Vec3D norm1 = (currentLink->GetTriangle())->GetNormalVector();
                        Vec3D norm2 = currentLink->GetMirrorLink()->GetTriangle()->GetNormalVector();
-                                std::cout <<"trinagle normal: "<<norm1<<" "<<norm2<<"\n";
+                                std::cout <<"link trinagle normal: "<<norm1<<" "<<norm2<<"\n";
                                 
                                 (currentLink->GetTriangle())->UpdateNormal_Area(m_pBox);
                        norm1 = (currentLink->GetTriangle())->GetNormalVector();
                        norm2 = currentLink->GetMirrorLink()->GetTriangle()->GetNormalVector();
-                    std::cout <<"trinagle normal: "<<norm1<<" "<<norm2<<"\n";
+                    std::cout <<"link second trinagle normal: "<<norm1<<" "<<norm2<<"\n";
+                    std::cout <<"angle : "<<norm1.dot(norm1, norm2)<<"\n";
 
                 std::cout <<currentLink->GetNormal()<<"\n";
-                std::cout <<" -- cal normal ---- "<<"\n";
+                std::cout <<" -- manually updating normal ---- "<<"\n";
                 currentLink->UpdateNormal();
                 Vec3D vnorm = currentLink->GetNormal();
                 double sizess = vnorm.norm();
-                std::cout <<"print normal 2"<<sizess<<vnorm<<"\n";
+                std::cout <<"print normal 2: "<<sizess<<"   "<<vnorm<<"\n";
                 std::cout <<" ------ "<<"\n";
                 */
                 return false;

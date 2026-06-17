@@ -101,15 +101,6 @@ struct pot_triangle {
     links *pl3;   ///< Pointer to the link (edge) between pv3 and pv1.
 
 };
-struct pair_pot_triangle {    // data structure for a pair of potential_triangle
-        bool state;
-        int id;
-        pot_triangle PT1;
-        pot_triangle PT2;
-        std::vector <links *> ConnectingLinks;       // this does not include the mirror links
-        std::vector <triangle *> ConnectingTriangles;
-
-};
 struct fission_site {    // data structure for a pair of potential_triangle
     std::array<vertex*, 3> v_ver;
     std::array<vertex*, 3> u_ver;
@@ -155,7 +146,6 @@ public:
 private:
     //--- functions for fission
     bool CheckFaceAngleForFissionSite(fission_site &f_site);
-    bool Is_A_Neck(pot_triangle potT1, pot_triangle potT2, pair_pot_triangle & neck);
     //std::vector<pair_pot_triangle> FindNecks();
     std::vector <triangle *> DoAScission(fission_site &pair);
     bool ReverseAScission(fission_site &pair);   // this is the exact reverse action of DoAScission; different from DoAFussion

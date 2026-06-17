@@ -141,30 +141,30 @@ for (int step = m_Initial_Step; step <= m_Final_Step; step++){
     
     double elapsed_secs = double(end - start) / CLOCKS_PER_SEC;
     std::cout<<"---- Simulation has ended ----\n";
-    std::cout<<" The run took: "<<Nfunction::ConvertSecond2Time(elapsed_secs)<<"thread time and  ";
+    std::cout<<" The run took: "<<Nfunction::ConvertSecond2Time(elapsed_secs)<<" thread time  ";
 #ifdef _OPENMP
     double endwall_time = omp_get_wtime();
     endwall_time = endwall_time - startwall_time;
-    std::cout<<Nfunction::ConvertSecond2Time(endwall_time)<<" wall time \n";
+    std::cout<<"  and "<<Nfunction::ConvertSecond2Time(endwall_time)<<" wall time \n";
 #endif
 
     m_pState->GetCurvatureCalculator()->Initialize();
     double Final_energy = m_pState->GetEnergyCalculator()->CalculateAllLocalEnergy();
     double energy_leak = Final_energy - m_pState->GetEnergyCalculator()->GetEnergy();
-    std::cout << std::fixed << std::setprecision(4);
+    std::cout <<"\n";//std::fixed << std::setprecision(4);
     if(fabs(energy_leak) > 0.0001){
-        
-        std::cout<<"---> possible source of code error: energy leak... "<<energy_leak<<" with real energy of "<<Final_energy<<"  and stored energy of "<<m_pState->GetEnergyCalculator()->GetEnergy()<<"\n";
+        std::string message = "\n ---> possible source of code error: energy leak: Data Are:\n " + Nfunction::D2S(energy_leak) + " with real energy of "+ Nfunction::D2S(Final_energy) + "  and stored energy of "+ Nfunction::D2S(m_pState->GetEnergyCalculator()->GetEnergy()) + "\n";
+        Nfunction::ConsolePrint_Warning(message);
     }
 
     
     
     double vol = 0;
-    double g_c = 0;
+    double old_g_c = 0;
     double t_a = 0;
-    m_pState->GetVAHGlobalMeshProperties()->CalculateGlobalVariables(vol,t_a,g_c);
+    m_pState->GetVAHGlobalMeshProperties()->CalculateGlobalVariables(vol,t_a,old_g_c);
     vol -= m_pState->GetVAHGlobalMeshProperties()->GetTotalVolume();
-    g_c -= m_pState->GetVAHGlobalMeshProperties()->GetTotalMeanCurvature();
+    double new_g_c = m_pState->GetVAHGlobalMeshProperties()->GetTotalMeanCurvature();
     t_a -= m_pState->GetVAHGlobalMeshProperties()->GetTotalArea();
 
     if (m_pState->GetVAHGlobalMeshProperties()->VolumeIsActive())
@@ -172,9 +172,9 @@ for (int step = m_Initial_Step; step <= m_Final_Step; step++){
         std::cout<<fabs(vol)<<" volume leak\n";
     }
     if (m_pState->GetVAHGlobalMeshProperties()->GlobalCurvatureIsActive())
-    if(fabs(g_c) > 0.0001)
+    if(fabs(old_g_c - new_g_c) > 0.0001)
     {
-        std::cout<<fabs(g_c)<<" global curvature leak\n";
+        std::cout<<fabs(old_g_c - new_g_c)<<" global curvature leak. old global C: "<<old_g_c<<" new global C: "<<new_g_c<<"\n";
     }
     if (m_pState->GetVAHGlobalMeshProperties()->AreaIsActive())
     if(fabs(t_a) > 0.0001)

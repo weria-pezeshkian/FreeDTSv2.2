@@ -71,82 +71,7 @@ void VAHGlobalMeshProperties::Add2GlobalCurvature(double CG){
 #endif
     return;
 }
-void VAHGlobalMeshProperties::CalculateAPrismBasesContributionToGlobalVariables(triangle *t1, triangle *t2, double &vol, double &area, double& curvature){
-    
-    vol = 0.0;
-    area = 0.0;
-    curvature = 0.0;
-    std::vector<triangle *> all_triangles;
-    all_triangles.push_back(t1);
-    all_triangles.push_back(t2);
-    std::vector<vertex *> all_vertices;
 
-    for (auto it_t : all_triangles){
-        all_vertices.push_back(it_t->GetV1());
-        all_vertices.push_back(it_t->GetV2());
-        all_vertices.push_back(it_t->GetV3());
-
-    }
-
-    if(m_VolumeIsActive && m_AreaIsActive){
-        for (auto it_t : all_triangles){
-            vol += CalculateSingleTriangleVolume(it_t);
-            area += it_t->GetArea();
-        }
-    }
-    if(!m_VolumeIsActive && m_AreaIsActive){
-        for (auto it_t : all_triangles){
-            area += it_t->GetArea();
-        }
-    }
-    if(m_GlobalCurvatureIsActive){
-        
-        for (auto it_v : all_vertices){
-            double C = it_v->GetP1Curvature() + it_v->GetP2Curvature();
-            double A = it_v->GetArea();
-            curvature += C * A;
-        }
-    }
-
-    
-    return;
-}
-void VAHGlobalMeshProperties::CalculateAPrismFacesContributionToGlobalVariables(std::vector<links*> prism_links, double &vol, double &area, double& curvature){
-    
-    vol = 0.0;
-    area = 0.0;
-    curvature = 0.0;
-    std::vector<triangle *> all_triangles;
-    std::vector<vertex *> all_vertices;
-
-    for (auto it_l : prism_links){
-        all_triangles.push_back(it_l->GetTriangle());
-        all_vertices.push_back(it_l->GetV1());
-    }
-
-    if(m_VolumeIsActive && m_AreaIsActive){
-        for (auto it_t : all_triangles){
-            vol += CalculateSingleTriangleVolume(it_t);
-            area += it_t->GetArea();
-        }
-    }
-    if(!m_VolumeIsActive && m_AreaIsActive){
-        for (auto it_t : all_triangles){
-            area += it_t->GetArea();
-        }
-    }
-    if(m_GlobalCurvatureIsActive){
-        
-        for (auto it_v : all_vertices){
-            double C = it_v->GetP1Curvature() + it_v->GetP2Curvature();
-            double A = it_v->GetArea();
-            curvature += C * A;
-        }
-    }
-
-    
-    return;
-}
 void VAHGlobalMeshProperties::CalculateAVertexRingContributionToGlobalVariables(vertex *p_vertex, double &vol, double &area, double& curvature){
     
     vol = 0.0;
@@ -293,4 +218,78 @@ void VAHGlobalMeshProperties::CalculateGlobalVariables(double& vol, double& area
     }
     
     return;
+}
+void VAHGlobalMeshProperties::CalculateAPrismBasesContributionToGlobalVariables(triangle *t1, triangle *t2, double &vol, double &area, double& curvature){
+
+    vol = 0.0;
+    area = 0.0;
+    curvature = 0.0;
+    std::vector<triangle *> all_triangles;
+    all_triangles.push_back(t1);
+    all_triangles.push_back(t2);
+    std::vector<vertex *> all_vertices;
+
+    for (auto it_t : all_triangles){
+        all_vertices.push_back(it_t->GetV1());
+        all_vertices.push_back(it_t->GetV2());
+        all_vertices.push_back(it_t->GetV3());
+
+    }
+
+    if(m_VolumeIsActive && m_AreaIsActive){
+        for (auto it_t : all_triangles){
+            vol += CalculateSingleTriangleVolume(it_t);
+            area += it_t->GetArea();
+        }
+    }
+    if(!m_VolumeIsActive && m_AreaIsActive){
+        for (auto it_t : all_triangles){
+            area += it_t->GetArea();
+        }
+    }
+    if(m_GlobalCurvatureIsActive){
+        
+        for (auto it_v : all_vertices){
+            double C = it_v->GetP1Curvature() + it_v->GetP2Curvature();
+            double A = it_v->GetArea();
+            curvature += C * A;
+        }
+    }
+
+    
+    return;
+}
+#include <unordered_set>
+
+void VAHGlobalMeshProperties::CalculateAPrismFacesContributionToGlobalVariables(std::vector<vertex*> all_vertices, std::vector<links*> prism_links, double& vol, double& area, double& curvature)
+{
+    vol = 0.0;
+    area = 0.0;
+    curvature = 0.0;
+
+    std::unordered_set<triangle*> unique_triangles;
+
+    for (auto it_l : prism_links) {
+        unique_triangles.insert(it_l->GetTriangle());
+    }
+
+    if (m_VolumeIsActive && m_AreaIsActive) {
+        for (auto it_t : unique_triangles) {
+            vol += CalculateSingleTriangleVolume(it_t);
+            area += it_t->GetArea();
+        }
+    }
+    else if (!m_VolumeIsActive && m_AreaIsActive) {
+        for (auto it_t : unique_triangles) {
+            area += it_t->GetArea();
+        }
+    }
+
+    if (m_GlobalCurvatureIsActive) {
+        for (auto it_v : all_vertices) {
+            double C = it_v->GetP1Curvature() + it_v->GetP2Curvature();
+            double A = it_v->GetArea();
+            curvature += C * A;
+        }
+    }
 }

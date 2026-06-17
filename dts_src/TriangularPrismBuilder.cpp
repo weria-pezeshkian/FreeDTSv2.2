@@ -74,7 +74,7 @@ bool TriangularPrismBuilder::CheckPrismNormals(TriangularPrism &tp)
             const double angle = Vec3D::dot(normals[i], normals[j]);
 
             if (angle < m_MinAngle){
-               // return false;
+                return false;
             }
         }
     }
