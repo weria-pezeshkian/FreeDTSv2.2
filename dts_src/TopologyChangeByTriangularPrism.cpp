@@ -585,30 +585,7 @@ for (vertex* v : V_vertices) {
         }
     }
 }
-/*
-//-- check if they share any vertex with the vertex neighbour      
-std::unordered_set<vertex*> uSet = {u1, u2, u3};
-
-vertex* V_vertices[3] = {v1, v2, v3};
-
-for (vertex* v : V_vertices) {
-    const auto& neighbors = v->GetVNeighbourVertex();
-
-    for (vertex* n : neighbors) {
-        if (uSet.count(n)) {
-            return false;
-        }
-
-        const auto& neighbors_2 = n->GetVNeighbourVertex();
-        for (vertex* n2 : neighbors_2) {
-            if (uSet.count(n2)) {
-                return false;
-            }
-        }
-    }
-}*/
-    
-    
+  
     return true;
         
 }

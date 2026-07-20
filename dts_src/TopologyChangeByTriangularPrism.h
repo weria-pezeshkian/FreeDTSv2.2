@@ -170,8 +170,7 @@ private:
     triangle * CreateTriangleByTriple(std::array<vertex*, 3>& v_ver, std::array<links*, 3>& v_links);
 private:
    bool  VoxelizeTriangles(double voxsize);
-
-
+  // bool (*AcceptanceProbability)(double dE);
 
 private:
 template<typename T>
