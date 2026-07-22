@@ -303,7 +303,7 @@ bool State::ReadInputFile(std::string file)
     if (!Nfunction::FileExist(filename)) {
         std::cerr << "----> Error: the input file with the name " << filename << " does not exist" << std::endl;
         return false;
-    }
+    } 
     std::ifstream input_read(filename);
     if (!input_read) {
         std::cerr << "----> Error: failed to open the input file " << filename << std::endl;
@@ -906,6 +906,13 @@ bool State::HandleSimulationCommands(const std::string& firstword, std::istream&
         double beta,delta_beta;
         input>>str>>beta>>delta_beta;
         m_pSimulation->SetBeta(beta,delta_beta);
+        return true;
+    }
+    else if(firstword == "Check_Mesh_Frequency")
+    {
+        double rate;
+        input>>str>>rate;
+        m_pSimulation->CheckMeshFrequency(rate);
         return true;
     }
     

@@ -54,6 +54,8 @@
 #include <functional>
 #include "Nfunction.h"
 
+
+
 // Mathematical constants
 #define PI 3.14159265359  // Value of pi
 #define S60 0.8660254037844  // Square root of 3 divided by 2
@@ -111,3 +113,5 @@
 
 // For OpenMP
 #define Backoff_Factor   1   // ns
+
+

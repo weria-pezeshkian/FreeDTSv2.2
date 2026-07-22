@@ -40,6 +40,11 @@ void triangle::UpdateNormal_Area(Vec3D& norm, double& area){
     m_Area = area;
     return;
 }
+void triangle::UpdateVoxel(Voxel<triangle> * pVoxel){
+    
+    m_pVoxel = pVoxel;
+    return;
+}
 void triangle::ConstantMesh_Copy(){
 
     m_oldAreaVector = m_AreaVector;
@@ -212,4 +217,47 @@ double triangle::adjust_periodic(double d, double box_dim) {
     }
     return d;
 }
+void triangle::CalculateCentroid(const Vec3D& Box) {
+// Compute triangle centroid under single-step periodic boundary conditions (PBC).
+// Vertices are first locally unwrapped using minimum-image convention so the triangle
+// is treated as a continuous object even across box boundaries (assumes edge length << box size
+// and at most one box crossing per triangle).
+//
+// The centroid is then computed in this unwrapped space and finally wrapped back into
+// the simulation box to ensure compatibility with spatial hashing / voxel grids.
 
+    
+    
+    Vec3D P1 = m_V1->GetPos();
+    Vec3D P2 = m_V2->GetPos();
+    Vec3D P3 = m_V3->GetPos();
+
+    Vec3D r2 = P2;
+    Vec3D r3 = P3;
+
+    for (int d = 0; d < 3; d++)
+    {
+        double L = Box(d);
+
+        double dx2 = r2(d) - P1(d);
+        if (dx2 >  0.5 * L) r2(d) -= L;
+        else if (dx2 < -0.5 * L) r2(d) += L;
+
+        double dx3 = r3(d) - P1(d);
+        if (dx3 >  0.5 * L) r3(d) -= L;
+        else if (dx3 < -0.5 * L) r3(d) += L;
+    }
+
+    m_Centroid = (P1 + r2 + r3) * (1.0 / 3.0);
+
+    // fast single-wrap (safe under your assumptions)
+    for (int d = 0; d < 3; d++)
+    {
+        double L = Box(d);
+
+        if (m_Centroid(d) >= L) m_Centroid(d) -= L;
+        else if (m_Centroid(d) < 0) m_Centroid(d) += L;
+    }
+
+    return;
+}

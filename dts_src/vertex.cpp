@@ -148,6 +148,53 @@ void vertex::UpdateVZPos(double z) {
         m_Z = z;
     }
 }
+bool  vertex::IsAnyTriangle(vertex* v2, vertex* v3){
+ /**
+ * @brief Finds a triangle in the vertex's adjacency list that contains this vertex (v1)
+ *        and the two provided vertices (v2 and v3).
+ *
+ *  m_VTriangleList contains all triangles adjacent to this vertex.
+ *
+ * @param v2 Second vertex of the triangle
+ * @param v3 Third vertex of the triangle
+ * @return true Found triangle or false if none exists
+ */
+    for (auto *it_t : m_VTraingleList){
+        bool hasV2 = (it_t->GetV1() == v2) || (it_t->GetV2() == v2) || (it_t->GetV3() == v2);
+
+        bool hasV3 = (it_t->GetV1() == v3) || (it_t->GetV2() == v3) || (it_t->GetV3() == v3);
+
+        if (hasV2 && hasV3) {
+            return true;
+        }
+    }    
+    return false;   
+}
+
+triangle*  vertex::FindTriangleByVertices(vertex* v2, vertex* v3){
+/**
+ * @brief Finds a triangle in the vertex's adjacency list that contains this vertex (v1)
+ *        and the two provided vertices (v2 and v3).
+ *
+ *  m_VTriangleList contains all triangles adjacent to this vertex.
+ *
+ * @param v2 Second vertex of the triangle
+ * @param v3 Third vertex of the triangle
+ * @return triangle* Found triangle or nullptr if none exists
+ */
+    for (auto it_t : m_VTraingleList){
+        bool hasV2 = (it_t->GetV1() == v2) || (it_t->GetV2() == v2) || (it_t->GetV3() == v2);
+
+        bool hasV3 = (it_t->GetV1() == v3) || (it_t->GetV2() == v3) || (it_t->GetV3() == v3);
+
+        if (hasV2 && hasV3) {
+            return it_t;
+        }
+    }
+    Nfunction::ConsolePrint_Error("---> Error: No triangle contains the given pair of vertices \n ");
+    
+    return nullptr;
+}
 void vertex::AddtoLinkList(links* l)
 {
     m_VLinkList.push_back(l);
@@ -328,6 +375,8 @@ bool vertex::SetCopy(){
     m_OldEnergy = m_Energy;
     m_OldT_Local_2_Global = m_T_Local_2_Global;         //  Local to global transformation matrix
     m_OldT_Global_2_Local = m_T_Global_2_Local;        //  global to local transformation matrix
+    m_OldPrincipalCurvature_1 = m_PrincipalCurvature_1;
+    m_OldPrincipalCurvature_2 = m_PrincipalCurvature_2;
     m_OldpVoxel = m_pVoxel;
     m_OldGeodesic_Curvature = m_Geodesic_Curvature;          // Edge Vertex Curvature
     m_OldNormal_Curvature = m_Normal_Curvature;          // Edge Vertex Curvature
@@ -361,7 +410,8 @@ bool vertex::Reverse2PreviousCopy(){  // reverse the edge to the value set at th
     m_T_Local_2_Global = m_OldT_Local_2_Global ;         //  Local to global transformation matrix
     m_T_Global_2_Local = m_OldT_Global_2_Local ;        //  global to local transformation matrix
     m_pVoxel = m_OldpVoxel ;
-
+    m_PrincipalCurvature_1 = m_OldPrincipalCurvature_1;
+    m_PrincipalCurvature_2 = m_OldPrincipalCurvature_2;
     m_VertexType = m_OldVertexType;                   // 0 surface vertex; 1 edge vertex;
     m_VTraingleList = m_OldVTraingleList;
     m_VLinkList = m_OldVLinkList ;
@@ -528,6 +578,57 @@ bool vertex::ReverseVFLocalDirection(){
 
     return true;
 }
+bool vertex::IsThereAConnectingLink(vertex* v2, links* &mylink){
+    
+    for (auto* l : m_VLinkList) {
+        
+        if (l->GetV2() == v2){
+            mylink = l;
+            return true;
+        }
+    }
+    return  false;
+}
+bool vertex::IsThereAConnectingLink(vertex* v2){
+    for (auto* l : m_VLinkList) {
+        
+        if (l->GetV2() == v2)
+            return true;
+    }
+    return  false;
+}
+links*  vertex::GetConnectingLink(vertex* v){
+    links* mylink = nullptr;
+    bool ver_is = false;
+    for (auto* l : m_VLinkList)
+    {
+        if (l->GetV2() == v)
+        {
+                mylink = l;
+                ver_is = true;
+                break;
+        }
+    }
+    if(!ver_is){
+        Nfunction::ConsolePrint_Error("---> error: GetConnectingLink in vertex not found \n");
+    }
+    
+    return  mylink;
+}
+// static
+links*  vertex::GetConnectingLink(vertex* v1, vertex* v2){
+    links* mylink = nullptr;
+    for (auto* l : v1->GetVLinkList())
+    {
+        if (l->GetV2() == v2)
+        {
+                mylink = l;
+                break;
+        }
+    }
+    
+    return  mylink;
+}
 #ifdef _OPENMP
 bool vertex::CheckLockVertex(){
 return omp_test_lock(&m_Lock);
@@ -603,5 +704,8 @@ void vertex::UnockVectorVertex(std::vector <vertex *> V_ver){
     }
     return;
 }
+
+
+
 
 #endif // #ifdef _OPENMP

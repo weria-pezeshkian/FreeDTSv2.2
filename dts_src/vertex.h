@@ -73,7 +73,14 @@ public:
         inline links* GetEdgeLink()                 {return m_pEdgeLink;}// preceding link at the edge
 
     
-
+public:
+// expensive gets
+   static links*  GetConnectingLink(vertex* v1, vertex* v2);
+   links*  GetConnectingLink(vertex* v2);
+   bool IsThereAConnectingLink(vertex* v2);
+   bool IsThereAConnectingLink(vertex* v2, links* &l);
+   triangle*  FindTriangleByVertices(vertex* v2, vertex* v1);
+    bool  IsAnyTriangle(vertex* v2, vertex* v1);
 public:
     
     bool SetCopy();            // Copies the key ellements into the old type

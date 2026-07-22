@@ -109,7 +109,28 @@ bool CurvatureByShapeOperatorType1::UpdateSurfVertexCurvature(vertex * pvertex){
             
             double ff = Se.norm(); // Get the norm
             if (ff == 0) {
-                std::cerr << "-----> Error: projection is zero error" << "\n";
+                std::cerr << "-----> Error: projection is zero error (UpdateSurfVertexCurvature)" << "\n";
+               /* std::cout <<" normal "<<"\n";
+                std::cout <<currentLink->GetNormal()<<"\n";
+                       std::cout<<" edge and mirror id: "<<currentLink->GetMirrorLink()->GetID()<<" "<<currentLink->GetID()<<"\n";
+                       Vec3D norm1 = (currentLink->GetTriangle())->GetNormalVector();
+                       Vec3D norm2 = currentLink->GetMirrorLink()->GetTriangle()->GetNormalVector();
+                                std::cout <<"link trinagle normal: "<<norm1<<" "<<norm2<<"\n";
+                                
+                                (currentLink->GetTriangle())->UpdateNormal_Area(m_pBox);
+                       norm1 = (currentLink->GetTriangle())->GetNormalVector();
+                       norm2 = currentLink->GetMirrorLink()->GetTriangle()->GetNormalVector();
+                    std::cout <<"link second trinagle normal: "<<norm1<<" "<<norm2<<"\n";
+                    std::cout <<"angle : "<<norm1.dot(norm1, norm2)<<"\n";
+
+                std::cout <<currentLink->GetNormal()<<"\n";
+                std::cout <<" -- manually updating normal ---- "<<"\n";
+                currentLink->UpdateNormal();
+                Vec3D vnorm = currentLink->GetNormal();
+                double sizess = vnorm.norm();
+                std::cout <<"print normal 2: "<<sizess<<"   "<<vnorm<<"\n";
+                std::cout <<" ------ "<<"\n";
+                */
                 return false;
             } else {
                 Se = Se*(1.0 / ff); // Normalize the vector
@@ -117,11 +138,24 @@ bool CurvatureByShapeOperatorType1::UpdateSurfVertexCurvature(vertex * pvertex){
             
             Tensor2 Q = P.makeTen(Se); // Create the tensor
             SV = SV + Q * (we * he); // Update SV
-        } else {
-            std::cerr << "---> error: vertex, with id " << pvertex->GetVID() << " is wrongly here \n";
+        } 
+        else {
+                std::cerr << "\033[1;31m"  // Bold red
+              << "╔══════════════════════════════════════════════════════════════╗\n"
+              << "║                    !!! FATAL ERROR !!!                       ║\n"
+              << "╚══════════════════════════════════════════════════════════════╝\n"
+              << "\033[0m"  // Reset
+              << "\033[31m"  // Red
+              << "---> In UpdateSurfVertexCurvature function from CurvatureByShapeOperatorType1 class\n"
+              << "-------> Vertex with ID " << pvertex->GetVID() 
+              << " has a link which does not have a mirror\n"
+              << "    but the code is asked to make surface curvature calculation for it.\n"
+              << "    This is not possible because the vertex should be considered an edge vertex.\n"
+              << "\033[0m";  // Reset  
+              exit(-1);
             return false;
         }
-    }
+}
 
 
 
