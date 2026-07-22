@@ -5,7 +5,7 @@
  *      Started June 2024
  *      End: June 2026
  *
- *    Author: Weria Pezeshkian (weria.pezeshkian@gmail.com)
+ *   Author: Weria Pezeshkian (weria.pezeshkian@gmail.com)
  *   Copyright (c) Weria Pezeshkian
  *
  * This class implements topology-changing moves for triangulated membrane
@@ -151,10 +151,10 @@ private:
     bool ReverseAScission(fission_site &pair);   // this is the exact reverse action of DoAScission; different from DoAFussion
     std::vector<links*> GetEdgesWithInteractionChange(fission_site &f_site);
     triangle * CreateATriangleFromAPotentialTriangle(pot_triangle &p1);
-    bool ScissionByMC(fission_site &pair_t, double thermal);
+    bool ScissionByMC(fission_site &pair_t, double thermal,int n_fi_site);
     
     //--- functions for fussions
-    bool FusionByMove(fusion_site &pair_tri, double thermal);
+    bool FusionByMove(fusion_site &pair_tri, double thermal, int no_cur_fu_sites);
 
 
     std::vector<fusion_site> FindPotentialFusionSites();
@@ -210,8 +210,9 @@ private:
     Voxelization<triangle>  *m_pTriVoxelization;
     TriangularPrismBuilder *m_pTriangularPrismBuilder;
     
-    bool m_No_Vectorfield; 
-private:  
+    bool m_No_Vectorfield;
+    double m_Local_KG; // we have this because fission and fusion has discrete contribution to gaussain term, so, we do not need to calcute the energy for it. 
+private:
 std::string m_StreamInputs;    
 std::string m_PrismMapTopologyFile;    
 

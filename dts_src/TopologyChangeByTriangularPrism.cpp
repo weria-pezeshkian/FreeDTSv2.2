@@ -1,45 +1,58 @@
 /**
  * @class TopologyChangeByTriangularPrism
- * @brief Monte Carlo dynamic-topology algorithm based on triangular-prism
- *        topology transformations.
+ * @brief Monte Carlo dynamic topology algorithm for membrane fusion and fission
+ *        based on local triangular-prism transformations.
  *
- * This class implements topology-changing moves for triangulated membrane
- * surfaces by representing local fusion and scission events as transformations
- * of a six-vertex triangular prism. The method allows the mesh connectivity
- * and surface genus to evolve while preserving a valid triangulation.
+ * This class implements topology-changing Monte Carlo moves for triangulated
+ * membrane surfaces. Fusion and fission events are represented as local
+ * transformations of a six-vertex triangular-prism structure, allowing the
+ * membrane connectivity and topology to evolve while maintaining a valid
+ * oriented triangulation.
  *
- * The algorithm supports:
- * - Detection of neck-like structures that can undergo scission.
- * - Detection of nearby triangle pairs that can undergo fusion.
- * - Construction of admissible prism topologies using a
- *   TriangularPrismBuilder.
- * - Execution and reversal of local topology modifications.
- * - Monte Carlo acceptance/rejection using the Metropolis criterion.
- * - Consistent updates of mesh geometry, curvature, inclusion interactions,
- *   vector-field interactions, and global constraint energies.
+ * Candidate topology changes are generated dynamically:
+ * - Potential fission sites are identified from neck-like structures.
+ * - Potential fusion sites are identified from spatially separated nearby
+ *   triangle pairs.
  *
- * Topology changes are performed using preallocated ghost triangles and
- * ghost links, avoiding dynamic memory allocation during simulation.
- * Rejected moves are exactly reversible through stored local copies of
- * affected vertices, links, and interaction energies.
+ * Each proposed move is accepted or rejected according to the Metropolis-
+ * Hastings criterion. The proposal probability accounts for the number of
+ * available reverse moves, ensuring detailed balance when the number of
+ * possible fusion and fission sites changes after a successful topology
+ * transformation.
  *
- * Energy contributions considered during acceptance may include:
- * - Local vertex energies
- * - Inclusion interaction energies
- * - Vector-field interaction energies
+ * The Gaussian curvature energy is defined as:
+ *
+ *        E_G = K_G \int K dA
+ *
+ * where K_G follows the convention used in the literature. Since the Gaussian
+ * curvature integral is a topological quantity for closed surfaces, fusion
+ * and fission moves include the corresponding topological energy contribution.
+ *
+ * The total energy difference used in the acceptance criterion may include:
+ * - Local membrane bending energy
+ * - Inclusion interaction energy
+ * - Vector-field interaction energy
  * - Volume constraint energy
  * - Total area constraint energy
  * - Global curvature energy
+ * - Gaussian curvature energy
  *
- * The class operates periodically during the simulation and updates the
- * surface genus according to the current Euler characteristic of the mesh.
+ * The algorithm supports:
+ * - Detection of admissible fusion and fission configurations.
+ * - Local topology modification using triangular-prism transformations.
+ * - Exact reversal of rejected Monte Carlo moves.
+ * - Updating of mesh connectivity, curvature, and interaction energies.
+ * - Dynamic calculation of surface genus from the Euler characteristic.
+ *
+ * Memory management is optimized through the use of preallocated ghost
+ * triangles and ghost links, avoiding dynamic allocation during topology
+ * changes. Rejected moves are restored using stored local copies of affected
+ * vertices, links, and interaction states.
  *
  * Assumptions:
- * - The mesh is represented as an oriented triangular surface.
- * - Sufficient ghost triangles and ghost links are available for topology
- *   modifications.
+ * - The membrane is represented as an oriented triangular mesh.
  * - Local topology transformations preserve mesh validity and orientation.
- *
+ * - Sufficient ghost elements are available for proposed transformations.
  *
  * @see TriangularPrismBuilder
  * @see AbstractDynamicTopology
@@ -88,7 +101,8 @@ TopologyChangeByTriangularPrism::TopologyChangeByTriangularPrism(std::string inp
                 m_No_VectorFields_Per_V(pState->GetMesh()->GetNoVFPerVertex()),
                 m_Box(pState->GetMesh()->Link2ReferenceBox()),
                 m_pTriVoxelization(new Voxelization<triangle>()),
-                m_No_Vectorfield(0)
+                m_No_Vectorfield(0),
+                m_Local_KG(0)
 {
 
 }
@@ -104,11 +118,12 @@ std::vector<std::string> input_data = Nfunction::Split(m_StreamInputs);
     }   
 // Parse required parameter: Period
     m_Period = Nfunction::String_to_Int(input_data[0]);
-
+    m_Local_KG = Nfunction::String_to_Double(input_data[1]);
+    
 // Parse optional parameter: PrismMapTopologyFile
-    if (input_data.size() > 1 && !input_data[1].empty()) {
-        m_PrismMapTopologyFile = input_data[1];
-    } 
+    if (input_data.size() > 2 && !input_data[2].empty()) {
+        m_PrismMapTopologyFile = input_data[2];
+    }
     else {
             std::cout << "---> Note: No topology prism file provided for '" 
               << GetDefaultReadName() << "' command. Using default behavior." << std::endl;
@@ -142,7 +157,7 @@ bool TopologyChangeByTriangularPrism::MCMove(int step) {
         fission_site f_site = All_fission_Sites[n];    
         double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
         m_NumberOfAttemptedMoves++;
-        if(ScissionByMC(f_site, thermal)){
+        if(ScissionByMC(f_site, thermal, All_fission_Sites.size())){
             m_AcceptedMoves++;
         }
     } ///  if(pair_list.size() != 0) end ScissionByMC
@@ -156,7 +171,7 @@ bool TopologyChangeByTriangularPrism::MCMove(int step) {
         fusion_site pair_T = all_possible_sites[n];
         double thermal = m_pState->GetRandomNumberGenerator()->UniformRNG(1.0);
         m_NumberOfAttemptedMoves++;
-        if(FusionByMove(pair_T, thermal)){
+        if(FusionByMove(pair_T, thermal, all_possible_sites.size())){
             m_AcceptedMoves++;
         }
     } ///     if(all_possible_sites.size() != 0) {// end FussionByMove
@@ -164,7 +179,7 @@ bool TopologyChangeByTriangularPrism::MCMove(int step) {
     m_Surface_Genus = 1 - (m_pSurfV.size()-m_pLeftL.size()+m_pActiveT.size())/2;
     return true;
 }
-bool TopologyChangeByTriangularPrism::ScissionByMC(fission_site &f_site, double thermal){
+bool TopologyChangeByTriangularPrism::ScissionByMC(fission_site &f_site, double thermal, int n_fi_sites){
 /**
  * @brief Attempts a Monte Carlo scission move by splitting a triangular-prism neck region.
  *
@@ -289,9 +304,29 @@ bool TopologyChangeByTriangularPrism::ScissionByMC(fission_site &f_site, double 
     //==== MC
     double diff_energy = new_energy - old_energy;
     double tot_diff_energy = diff_energy + dE_volume + dE_t_area + dE_g_curv;
+    
+    // gaussian energy contribution
+    tot_diff_energy += m_Local_KG * 4 * PI;
+
+    
+    
     double U = m_Beta * tot_diff_energy - m_DBeta;
+    
+    
+    
+    std::vector<fusion_site> fu_sites = FindPotentialFusionSites(); // this gives us N+S
+    int n_fu_sites = fu_sites.size();
+    // n_fi_sites; is the number of fission site before the move (M)
+    if(n_fu_sites == 0){
+        std::cout<<"---> this should not happen 2023342 \n";
+    }
+    
+    double proposal_ratio = static_cast<double>(n_fi_sites) /
+                            static_cast<double>(n_fu_sites);
+    double P_acc = proposal_ratio * exp(-U);
+    
     //---> accept or reject the move
-    if(U <= 0 || exp(-U) > thermal ) {
+    if(P_acc > thermal ) {
         //--- Accepted
         m_pState->GetEnergyCalculator()->AddToTotalEnergy(diff_energy);
         
@@ -318,7 +353,7 @@ bool TopologyChangeByTriangularPrism::ScissionByMC(fission_site &f_site, double 
 //========================================================================
 //=====================  Fusion function =================================
 //========================================================================
-bool TopologyChangeByTriangularPrism::FusionByMove(fusion_site &fu_site, double thermal){
+bool TopologyChangeByTriangularPrism::FusionByMove(fusion_site &fu_site, double thermal, int no_fus_sites){
     
     // There is a lot to be added to this function
        // if(m_AcceptedMoves!=0)
@@ -423,9 +458,19 @@ bool TopologyChangeByTriangularPrism::FusionByMove(fusion_site &fu_site, double 
     double diff_energy = new_energy - old_energy;
     double tot_diff_energy = diff_energy + dE_volume + dE_t_area + dE_g_curv;
 
+    
+    tot_diff_energy -= m_Local_KG * 4 * PI;
     double U = m_Beta * tot_diff_energy - m_DBeta;
+    
+    std::vector<fission_site> fis_sites  = FindNecks();
+    double no_fis_sites = fis_sites.size(); // this is M+1, because we get this is right after the move is done
+    double proposal_ratio = static_cast<double>(no_fus_sites) /
+                            static_cast<double>(no_fis_sites); // N/(M+1)
+    
+    double P_acc = proposal_ratio * exp(-U);
+    
     //---> accept or reject the move
-    if(U <= 0 || exp(-U) > thermal ) {
+    if(P_acc > thermal ) {
             m_pState->GetEnergyCalculator()->AddToTotalEnergy(diff_energy);
             m_pState->GetVAHGlobalMeshProperties()->Add2Volume(new_Tvolume - old_Tvolume);
             m_pState->GetVAHGlobalMeshProperties()->Add2TotalArea(new_Tarea - old_Tarea);
