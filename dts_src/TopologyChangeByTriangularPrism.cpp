@@ -113,13 +113,26 @@ void TopologyChangeByTriangularPrism::Initialize() {
 
 
 std::vector<std::string> input_data = Nfunction::Split(m_StreamInputs);
-    if (input_data.empty()) {
+    if (input_data.size() < 2 ) {
         std::cerr << "---> Error: insufficient input data for '" << GetDefaultReadName() << "' command" << std::endl;
     }   
 // Parse required parameter: Period
     m_Period = Nfunction::String_to_Int(input_data[0]);
     m_Local_KG = Nfunction::String_to_Double(input_data[1]);
-    
+    if (m_Period < 0) {
+        throw std::invalid_argument(
+            "Period must be greater than zero for '" +
+            GetDefaultReadName() +
+            "' command."
+        );
+    }
+
+    if (m_Local_KG < 0.0) {
+        Nfunction::ConsolePrint_Warning(
+            "The input k_G is negative. Note that this command uses "
+            "E_b = k_G * integral(K dA)."
+        );
+    }
 // Parse optional parameter: PrismMapTopologyFile
     if (input_data.size() > 2 && !input_data[2].empty()) {
         m_PrismMapTopologyFile = input_data[2];
