@@ -1115,7 +1115,7 @@ void TopologyChangeByTriangularPrism::MakeATriangleGhost(triangle *p_tri){
     // what about ghost link
     return;
 }
-auto canonicalize = [](vertex*& a, vertex*& b, vertex*& c) {
+auto canonicalize_vertices = [](vertex*& a, vertex*& b, vertex*& c) {
     if (a > b) std::swap(a, b);
     if (a > c) std::swap(a, c);
     if (b > c) std::swap(b, c);
@@ -1159,7 +1159,7 @@ std::vector<fission_site> TopologyChangeByTriangularPrism::FindNecks() {
                     
 
                    // ---- canonical ordering
-                    canonicalize(pv1, pv2, pv3);  // based on pointer value not location
+                    canonicalize_vertices(pv1, pv2, pv3);  // based on pointer value not location
                         if(!(pv1->IsThereAConnectingLink(pv2)) ){
         Nfunction::ConsolePrint_Error("--> error what the hell \n");
         exit(0);
