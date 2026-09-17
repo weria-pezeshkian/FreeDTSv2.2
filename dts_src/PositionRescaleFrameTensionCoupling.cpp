@@ -60,7 +60,7 @@ bool PositionRescaleFrameTensionCoupling::ChangeBoxSize(int step){
      * @return true if the box size was changed, false otherwise.
      */
 //---> if does not match the preiod, return false
-    if(step%m_Period != 0)
+    if(m_Period == 0 || step%m_Period != 0)
         return false;
     //--- first check if the voxel size is fine
     double voxel_lx = m_pState->GetVoxelization()->GetXSideVoxel();
@@ -153,7 +153,7 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
     for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it){
         double x = (*it)->GetVXPos();
         double y = (*it)->GetVYPos();
-        double z = (*it)->GetVYPos();
+        double z = (*it)->GetVZPos();
         double dx = x * (lx - 1);
         double dy = y * (ly - 1);
         double dz = z * (lz - 1);
@@ -175,6 +175,11 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
     }
 
     if(!CheckFaces()){
+    	
+    (*m_pBox)(0) /= lx;
+    (*m_pBox)(1) /= ly;
+    (*m_pBox)(2) /= lz;
+    
         for (std::vector<vertex*>::iterator it =  m_pActiveV.begin(); it != m_pActiveV.end(); ++it) {
             (*it)->ScalePos(1.0/lx,1.0/ly,1.0/lz);
         }
@@ -237,7 +242,7 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
     //--> only elatsic energy
     double diff_energy = new_energy - old_energy;
     //--> sum of all the energies
-    double tot_diff_energy = diff_energy + dE_Cgroup + dE_force_from_inc + dE_volume + dE_t_area + dE_g_curv + dE_bonds;
+    double tot_diff_energy = diff_energy + dE_Cgroup + dE_force_from_inc + dE_force_from_vectorfields + dE_volume + dE_t_area + dE_g_curv + dE_bonds;
     double NV = m_pActiveV.size();
     
     for (int i=0;i<3;i++) {
@@ -248,11 +253,15 @@ bool PositionRescaleFrameTensionCoupling::AnAtemptToChangeBox(double lx,double l
     
     tot_diff_energy -= m_SigmaP * (new_systemsize - old_systemsize);
     
-
-
     //---> accept or reject the move
+    const double logJacobian =
+    NV * (std::log(lx)
+        + std::log(ly)
+        + std::log(lz));
 
-    if ( pow(lx*ly*lz , NV) * exp(-m_Beta * tot_diff_energy + m_DBeta) > temp ) {
+	const double logAcceptance = logJacobian - m_Beta * tot_diff_energy + m_DBeta;
+	if (std::log(temp) < logAcceptance){
+    //if ( pow(lx*ly*lz , NV) * exp(-m_Beta * tot_diff_energy + m_DBeta) > temp ) {
         // move is accepted
         (m_pState->GetEnergyCalculator())->AddToTotalEnergy(diff_energy);
         
@@ -343,7 +352,7 @@ bool PositionRescaleFrameTensionCoupling::VertexMoveIsFine(double lx,double ly, 
 
                     for (std::vector<vertex *>::iterator it1 = voxel_ver.begin() ; it1 != voxel_ver.end(); ++it1) {
                         for (std::vector<vertex *>::iterator it2 = voxel_ver2.begin() ; it2 != voxel_ver2.end(); ++it2) {
-                            if(it1 != it2){
+                            if( *it1 != *it2){
                                 double l2 = StretchedDistanceSquardBetweenTwoVertices(*it1, *it2, lx, ly, lz);
                                 if (l2 < m_MinLength2) {
                                     return false;

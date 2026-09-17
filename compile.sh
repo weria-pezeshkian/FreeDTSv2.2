@@ -6,7 +6,7 @@
 # University of Copenhagen
 
 cd dts_src
-g++ -c -O3 -flto -std=c++17 -O3 -march=native -mtune=native -ffast-math -funroll-loops *.cpp
+g++ -c -O3 -flto -std=c++17 -O3 -march=native -mtune=native -funroll-loops *.cpp
 g++ -o DTS -flto *.o
 mv DTS ../
 cd ..
