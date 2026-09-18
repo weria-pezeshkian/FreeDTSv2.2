@@ -179,6 +179,11 @@ bool BoxSizeCouplingToHarmonicPotentialAnisotropic::AnAtemptToChangeBox(double l
     }
 
     if(!CheckFaces()){
+    	
+    (*m_pBox)(0) /= lx;
+    (*m_pBox)(1) /= ly;
+    (*m_pBox)(2) /= lz;
+    
         for (std::vector<vertex*>::iterator it =  m_pActiveV.begin(); it != m_pActiveV.end(); ++it) {
             (*it)->ScalePos(1.0/lx,1.0/ly,1.0/lz);
         }

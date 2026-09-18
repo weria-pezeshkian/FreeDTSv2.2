@@ -153,11 +153,21 @@ bool InclusionPoseUpdateByMetropolisAlgorithmOpenMP::KawasakiMove(inclusion* p_i
     
 
     //--> elatsic energy
-    double diff_energy = new_energy - old_energy;
+        double diff_energy = new_energy - old_energy;
+	   // double U = m_Beta * diff_energy - m_DBeta;
+    	double logAcceptance = -m_Beta * diff_energy + m_DBeta;
 
-    double U = m_Beta * diff_energy - m_DBeta;
+	if (!has_inclusion) {
+    	double z_old = hver->GetVLinkList().size();
+    	double z_new = tver->GetVLinkList().size();
+
+    	logAcceptance += std::log(z_old / z_new);
+	}
+
+	if (std::log(temp) < logAcceptance) {
+    
     //---> accept or reject the move
-    if(U <= 0 || exp(-U) > temp ) {
+   // if(U <= 0 || exp(-U) > temp ) {
         // move is accepted
         (m_pState->GetEnergyCalculator())->AddToTotalEnergy(diff_energy);
         return true;
