@@ -16,10 +16,10 @@
 HMFFEnergy::HMFFEnergy(State *pState, std::string data) : Energy(pState){
   std::vector<std::string> ndata = Nfunction::Split(data);
 
-  if(ndata.size() < 5 || ndata.size() > 10){
+  if(ndata.size() < 5 || ndata.size() > 11){
     std::cerr << "MDFF Energy Parameters:\n"
               << "  Required: path xi theta_thr scaling offset\n"
-              << "  Optional: [inversion] [step_size] [padding_factor] [kernel_size] [data_percentile]\n\n"
+              << "  Optional: [inversion] [step_size] [padding_factor] [kernel_size] [data_percentile] [coherence_lambda]\n\n"
               << "  path       : Path to MRC file containing EM density map\n"
               << "  xi         : Force scaling factor (typical: 1.0-50.0)\n"
               << "  theta_thr  : Threshold value to exclude solvent contribution (typical 0.0) \n"
@@ -29,10 +29,11 @@ HMFFEnergy::HMFFEnergy(State *pState, std::string data) : Energy(pState){
               << "  step_size  : Step size along gradient (default: 0.0)\n"
               << "  padding    : Scaling factor for boundary padding (default: 0.4)\n"
               << "  kernel     : Gradient kernel size, must be odd (default: 3)\n"
-              << "  percentile : theta_max determined as percentile of data (0.0-1.0, default: 0.999)\n\n"
+              << "  percentile : theta_max determined as percentile of data (0.0-1.0, default: 0.999)\n"
+              << "  coherence  : Local coherence penalty strength (0=off, 1=on, default: 0.0)\n\n"
               << "Examples:\n"
               << "  Basic: path.mrc 5.0 0 0.005 24.0\n"
-              << "  Full:  path.mrc 5.0 0 0.005 24.0 1 0.0 0.4 3 0.999\n";
+              << "  Full:  path.mrc 5.0 0 0.005 24.0 1 0.0 0.4 3 0.999 1.0\n";
     exit(1);
   }
 
@@ -100,6 +101,10 @@ HMFFEnergy::HMFFEnergy(State *pState, std::string data) : Energy(pState){
     }
   }
 
+  if (ndata.size() >= 11) {
+    m_CoherenceLambda = Nfunction::String_to_Double(ndata[10]);
+  }
+
   MRCParser parser(ndata[0]);
   const std::vector<float> &mrcData = parser.getData();
   std::vector<int32_t> int32t_shape = parser.getShape();
@@ -122,6 +127,9 @@ HMFFEnergy::HMFFEnergy(State *pState, std::string data) : Energy(pState){
                  "Inclusion_Interaction_Map \n";
     exit(1);
   }
+
+  std::cout << std::left << std::setw(16) << "CoherenceLambda"
+            << ": " << m_CoherenceLambda << "\n\n";
 }
 
 Vec3D HMFFEnergy::CalculateGradient(vertex *p_vertex) {
@@ -137,9 +145,25 @@ double HMFFEnergy::SingleVertexEnergy(vertex *p_vertex) {
     double energy = Energy::SingleVertexEnergy(p_vertex);
 
     // Add HMFF contribution
-    energy += m_pCalculator->computeEnergy(
+    double hmff_energy = m_pCalculator->computeEnergy(
         p_vertex->GetXPos(), p_vertex->GetYPos(), p_vertex->GetZPos()
     );
+    energy += hmff_energy;
+
+    // Local coherence penalty: penalizes vertices whose HMFF energy deviates
+    // from their 1-ring neighbors. Prevents single vertices from sticking to
+    // isolated noise in the density map. The penalty auto-scales to Xi since
+    // computeEnergy returns values in [0, Xi].
+    if (m_CoherenceLambda > 0.0) {
+        std::vector<vertex*> neighbors = p_vertex->GetVNeighbourVertex();
+        double neighbor_sum = 0.0;
+        for (vertex* nb : neighbors) {
+            neighbor_sum += m_pCalculator->computeEnergy(
+                nb->GetXPos(), nb->GetYPos(), nb->GetZPos());
+        }
+        double neighbor_mean = neighbor_sum / neighbors.size();
+        energy += m_CoherenceLambda * std::abs(hmff_energy - neighbor_mean);
+    }
 
     // Update the vertex with the new total energy
     // Note: we are updating the vertex energy twice. This could be avoided
