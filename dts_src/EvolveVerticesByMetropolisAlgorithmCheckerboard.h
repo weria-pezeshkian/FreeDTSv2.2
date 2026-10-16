@@ -8,7 +8,7 @@
 #include "Vec3D.h"
 #include "RNG.h"
 #include "AbstractVertexPositionIntegrator.h"
-#include "CheckerboardCellGrid.h"
+#include "CheckerboardSchedule.h"
 #include "VertexMoveKernel.h"
 
 class State;
@@ -43,12 +43,13 @@ private:
     bool IsFrozen(vertex* p_vertex) const;
 
     State* m_pState;
-    CheckerboardCellGrid m_Grid;
+    CheckerboardSchedule m_Schedule;
     std::vector<std::unique_ptr<VertexMoveKernel> > m_Kernels;
     std::vector<std::vector<vertex*> > m_CellSurfV;
     std::vector<std::vector<vertex*> > m_CellEdgeV;
     std::vector<CellRecord> m_CellRecords;
     std::vector<int> m_ActiveCells;
+    std::vector<int> m_CellSizes;
     std::vector<char> m_Frozen;
 };
 
