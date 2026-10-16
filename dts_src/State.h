@@ -198,7 +198,8 @@ inline MESH                     *GetMesh()                                      
 inline Voxelization<vertex>     *GetVoxelization()                              {return m_pVoxelization;}
 inline AbstractSimulation           *GetSimulation()                                {return m_pSimulation;};
 //--- accessory objects
-inline  RNG            *GetRandomNumberGenerator()                 const { return m_RandomNumberGenerator; }
+RNG            *GetRandomNumberGenerator()                 const;
+    void            InitializeThreadRNGs();
 //--- some constant variables
 inline std::vector <std::string> GetCommandLineArgument()                       {return m_Argument;}
 inline std::string               GetRunTag()                                    {return m_GeneralOutputFilename;}
@@ -268,6 +269,7 @@ private:
 
 //--- accessory objects
     RNG      *m_RandomNumberGenerator;
+    std::vector<RNG*> m_ThreadRNGs;  // streams 1..n-1, stream 0 is m_RandomNumberGenerator
 //----
     Voxelization<vertex>  *m_pVoxelization;
     MESH                  *m_pMesh;

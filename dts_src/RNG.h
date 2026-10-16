@@ -3,6 +3,7 @@
 
 #include <random>
 #include <ctime>
+#include <cstdint>
 #include "SimDef.h"
 /*
     RNG.h
@@ -38,6 +39,9 @@ class RNG {
 public:
     // Constructor: Initialize RNG with a seed
     explicit RNG(int seed);
+
+    // Seed of an independent stream; stream 0 keeps the user seed
+    static int StreamSeed(int seed, int stream);
 
     // Generates a uniform random number in the range [0, A)
     double UniformRNG(double A);
