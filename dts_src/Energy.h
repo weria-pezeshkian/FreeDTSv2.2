@@ -59,8 +59,6 @@ private:
 private:
     State* m_pState;
     Vec3D  &m_Box;
-    double m_Angle3D;
-    double m_Angle2D;
 
 
 
