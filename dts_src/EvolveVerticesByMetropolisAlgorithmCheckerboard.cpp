@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <climits>
 #include <cmath>
 #include <cstdlib>
 #ifdef _OPENMP
@@ -59,51 +58,86 @@ double EvolveVerticesByMetropolisAlgorithmCheckerboard::MinimumCellWidth() {
     double max_length = std::sqrt(m_pState->GetSimulation()->GetMaxL2());
     return std::max(3 * max_length, 4 * voxel_side) + 2 * m_DR;
 }
-void EvolveVerticesByMetropolisAlgorithmCheckerboard::BuildCells() {
-    const CheckerboardCellGrid& grid = m_Schedule.GetGrid();
-    int n_cells = grid.NumberOfCells();
-    m_CellSurfV.resize(n_cells);
-    m_CellEdgeV.resize(n_cells);
+void EvolveVerticesByMetropolisAlgorithmCheckerboard::ResizeCells(int n_cells) {
+    if ((int)m_CellSurfV.size() == n_cells)
+        return;
+    m_CellSurfV.assign(n_cells, std::vector<vertex*>());
+    m_CellEdgeV.assign(n_cells, std::vector<vertex*>());
     m_CellRecords.resize(n_cells);
-    for (int c = 0; c < n_cells; c++) {
-        m_CellSurfV[c].clear();
-        m_CellEdgeV[c].clear();
+    m_OccupiedCells.clear();
+}
+// m_VertexCell holds the cell of every surface vertex, then every edge vertex (-1 if frozen)
+void EvolveVerticesByMetropolisAlgorithmCheckerboard::BuildCells() {
+    for (std::vector<int>::const_iterator it = m_OccupiedCells.begin(); it != m_OccupiedCells.end(); ++it) {
+        m_CellSurfV[*it].clear();
+        m_CellEdgeV[*it].clear();
     }
+    m_OccupiedCells.clear();
     const std::vector<vertex*>& surf_v = m_pState->GetMesh()->GetSurfV();
-    for (std::vector<vertex*>::const_iterator it = surf_v.begin(); it != surf_v.end(); ++it) {
-        if (!IsFrozen(*it))
-            m_CellSurfV[grid.CellIndex((*it)->GetXPos(), (*it)->GetYPos(), (*it)->GetZPos())].push_back(*it);
-    }
     const std::vector<vertex*>& edge_v = m_pState->GetMesh()->GetEdgeV();
-    for (std::vector<vertex*>::const_iterator it = edge_v.begin(); it != edge_v.end(); ++it) {
-        if (!IsFrozen(*it))
-            m_CellEdgeV[grid.CellIndex((*it)->GetXPos(), (*it)->GetYPos(), (*it)->GetZPos())].push_back(*it);
+    int n_surf = (int)surf_v.size();
+    for (int i = 0; i < (int)m_VertexCell.size(); i++) {
+        int cell = m_VertexCell[i];
+        if (cell < 0)
+            continue;
+        if (m_CellSurfV[cell].empty() && m_CellEdgeV[cell].empty())
+            m_OccupiedCells.push_back(cell);
+        if (i < n_surf)
+            m_CellSurfV[cell].push_back(surf_v[i]);
+        else
+            m_CellEdgeV[cell].push_back(edge_v[i - n_surf]);
+    }
+    std::sort(m_OccupiedCells.begin(), m_OccupiedCells.end());
+    m_Schedule.GroupByColor(m_OccupiedCells, m_ColorCells);
+    // largest cells first, so the last cells handed out are the short ones
+    m_ColorOrder = m_ColorCells;
+    for (int c = 0; c < CheckerboardCellGrid::NumberOfColors; c++) {
+        std::stable_sort(m_ColorOrder[c].begin(), m_ColorOrder[c].end(), [this](int a, int b) {
+            return m_CellSurfV[a].size() + m_CellEdgeV[a].size() > m_CellSurfV[b].size() + m_CellEdgeV[b].size();
+        });
     }
 }
 bool EvolveVerticesByMetropolisAlgorithmCheckerboard::EvolveOneStep(int) {
 
     m_Schedule.Draw(*m_pState->GetRandomNumberGenerator(), *(m_pState->GetMesh()->GetBox()), MinimumCellWidth());
-    BuildCells();
+    const CheckerboardCellGrid& grid = m_Schedule.GetGrid();
     int sweep_seed = m_Schedule.GetSweepSeed();
+    ResizeCells(grid.NumberOfCells());
 
-    int n_cells = m_Schedule.GetGrid().NumberOfCells();
-    m_CellSizes.resize(n_cells);
-    for (int cell = 0; cell < n_cells; cell++)
-        m_CellSizes[cell] = (int)(m_CellSurfV[cell].size() + m_CellEdgeV[cell].size());
-    for (int c = 0; c < CheckerboardCellGrid::NumberOfColors; c++) {
-        m_Schedule.ActiveCells(m_Schedule.GetColor(c), m_CellSizes, m_ActiveCells);
-        int n_active = (int)m_ActiveCells.size();
-        #pragma omp parallel for schedule(dynamic,1) num_threads((int)m_Kernels.size())
-        for (int i = 0; i < n_active; i++) {
-            int thread_id = 0;
+    const std::vector<vertex*>& surf_v = m_pState->GetMesh()->GetSurfV();
+    const std::vector<vertex*>& edge_v = m_pState->GetMesh()->GetEdgeV();
+    int n_surf = (int)surf_v.size();
+    int n_vertices = n_surf + (int)edge_v.size();
+    m_VertexCell.resize(n_vertices);
+
+    // one parallel region per sweep; forking per colour costs more than the work of a small colour
+    #pragma omp parallel num_threads((int)m_Kernels.size())
+    {
+        int thread_id = 0;
 #ifdef _OPENMP
-            thread_id = omp_get_thread_num();
+        thread_id = omp_get_thread_num();
 #endif
-            EvolveCell(m_ActiveCells[i], sweep_seed, *m_Kernels[thread_id]);
+        #pragma omp for schedule(static)
+        for (int i = 0; i < n_vertices; i++) {
+            vertex* p_vertex = i < n_surf ? surf_v[i] : edge_v[i - n_surf];
+            m_VertexCell[i] = IsFrozen(p_vertex) ? -1 : grid.CellIndex(p_vertex->GetXPos(), p_vertex->GetYPos(), p_vertex->GetZPos());
         }
-        // commit in cell order so the result does not depend on the thread count
-        for (int i = 0; i < n_active; i++)
-            CommitCell(m_CellRecords[m_ActiveCells[i]]);
+        #pragma omp single
+        BuildCells();
+
+        for (int c = 0; c < CheckerboardCellGrid::NumberOfColors; c++) {
+            const std::vector<int>& order = m_ColorOrder[m_Schedule.GetColor(c)];
+            #pragma omp for schedule(dynamic, 1)
+            for (int i = 0; i < (int)order.size(); i++)
+                EvolveCell(order[i], sweep_seed, *m_Kernels[thread_id]);
+            // commit in cell order so the result does not depend on the thread count
+            #pragma omp single
+            {
+                const std::vector<int>& cells = m_ColorCells[m_Schedule.GetColor(c)];
+                for (int i = 0; i < (int)cells.size(); i++)
+                    CommitCell(m_CellRecords[cells[i]]);
+            }
+        }
     }
     return true;
 }

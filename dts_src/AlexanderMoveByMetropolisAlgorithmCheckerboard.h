@@ -27,12 +27,14 @@ public:
     inline static std::string GetDefaultReadName() {return "MetropolisAlgorithmOpenMPCheckerboard";}
 
 private:
-    struct CellRecord {
+    // padded so threads filling neighbouring records do not share cache lines
+    struct alignas(128) CellRecord {
         double dE, dV, dA, dC;
         int accepted, attempted;
     };
 
     double MinimumCellWidth();
+    void ResizeCells(int n_cells);
     void BuildCells();
     void EvolveCell(int cell, int sweep_seed, EdgeFlipKernel& kernel);
     int MidpointCell(vertex* a, vertex* b) const;
@@ -43,8 +45,9 @@ private:
     std::vector<std::unique_ptr<EdgeFlipKernel> > m_Kernels;
     std::vector<std::vector<links*> > m_CellEdges;
     std::vector<CellRecord> m_CellRecords;
-    std::vector<int> m_ActiveCells;
-    std::vector<int> m_CellSizes;
+    std::vector<int> m_EdgeCell;
+    std::vector<int> m_OccupiedCells;
+    std::vector<std::vector<int> > m_ColorCells;
 };
 
 #endif

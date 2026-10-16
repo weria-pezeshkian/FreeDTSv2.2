@@ -15,11 +15,10 @@ void CheckerboardSchedule::Draw(RNG& master, const Vec3D& box, double min_width)
     for (int i = CheckerboardCellGrid::NumberOfColors - 1; i > 0; i--)
         std::swap(m_Colors[i], m_Colors[master.IntRNG(i + 1)]);
 }
-void CheckerboardSchedule::ActiveCells(int color, const std::vector<int>& cell_sizes, std::vector<int>& active) const {
-    active.clear();
-    int n_cells = m_Grid.NumberOfCells();
-    for (int cell = 0; cell < n_cells; cell++) {
-        if (m_Grid.Color(cell) == color && cell_sizes[cell] > 0)
-            active.push_back(cell);
-    }
+void CheckerboardSchedule::GroupByColor(const std::vector<int>& cells, std::vector<std::vector<int> >& by_color) const {
+    by_color.resize(CheckerboardCellGrid::NumberOfColors);
+    for (int c = 0; c < CheckerboardCellGrid::NumberOfColors; c++)
+        by_color[c].clear();
+    for (std::vector<int>::const_iterator it = cells.begin(); it != cells.end(); ++it)
+        by_color[m_Grid.Color(*it)].push_back(*it);
 }

@@ -15,8 +15,14 @@ void CheckerboardCellGrid::Build(const Vec3D& box, double min_width, const Vec3D
 
 int CheckerboardCellGrid::AxisIndex(double x, int axis) const {
     double L = m_Box[axis];
-    double w = std::fmod(x - m_Shift[axis], L);
+    // positions lie in [0, L] and the shift in [0, width), so one wrap suffices; fmod is slow
+    double w = x - m_Shift[axis];
     if (w < 0) w += L;
+    else if (w >= L) w -= L;
+    if (w < 0 || w >= L) {
+        w = std::fmod(x - m_Shift[axis], L);
+        if (w < 0) w += L;
+    }
     int i = (int)std::floor(w / m_Width[axis]);
     if (i >= m_NCells[axis]) i = m_NCells[axis] - 1;
     if (i < 0) i = 0;

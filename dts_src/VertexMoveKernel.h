@@ -16,7 +16,8 @@ struct VertexMoveOutcome {
 };
 
 // Type1's vertex move without global bookkeeping; holds scratch buffers, so use one per thread.
-class VertexMoveKernel {
+// one per thread; padded so their scratch buffers do not share cache lines
+class alignas(128) VertexMoveKernel {
 public:
     explicit VertexMoveKernel(State* pState);
     void Initialize();

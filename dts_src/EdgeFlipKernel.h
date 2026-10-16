@@ -16,7 +16,8 @@ struct EdgeFlipOutcome {
 };
 
 // the serial Alexander move without global bookkeeping; holds scratch buffers, so use one per thread.
-class EdgeFlipKernel {
+// one per thread; padded so their scratch buffers do not share cache lines
+class alignas(128) EdgeFlipKernel {
 public:
     explicit EdgeFlipKernel(State* pState);
     void Initialize();

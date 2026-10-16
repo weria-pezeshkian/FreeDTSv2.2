@@ -12,8 +12,8 @@ public:
     const CheckerboardCellGrid& GetGrid() const { return m_Grid; }
     int GetSweepSeed() const { return m_SweepSeed; }
     int GetColor(int i) const { return m_Colors[i]; }
-    // Cells of `color` with cell_sizes[cell] > 0, ascending.
-    void ActiveCells(int color, const std::vector<int>& cell_sizes, std::vector<int>& active) const;
+    // Splits ascending cells by colour, keeping the order.
+    void GroupByColor(const std::vector<int>& cells, std::vector<std::vector<int> >& by_color) const;
 
 private:
     CheckerboardCellGrid m_Grid;
