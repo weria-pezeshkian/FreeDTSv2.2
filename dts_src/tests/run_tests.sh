@@ -11,6 +11,7 @@ mkdir -p "$BUILD"
 
 newest_header=$(ls -t "$SRC"/*.h "$SRC"/Registry/*.h 2>/dev/null | head -1)
 objs=()
+pids=()
 for cpp in "$SRC"/*.cpp; do
     name=$(basename "$cpp" .cpp)
     [ "$name" = "FreeDTS" ] && continue
@@ -19,10 +20,11 @@ for cpp in "$SRC"/*.cpp; do
     if [ ! -f "$obj" ] || [ "$cpp" -nt "$obj" ] || [ "$newest_header" -nt "$obj" ]; then
         echo "compiling $name"
         $CXX -c $FLAGS "$cpp" -o "$obj" &
+        pids+=($!)
         while [ "$(jobs -r | wc -l)" -ge 8 ]; do sleep 0.2; done
     fi
 done
-wait
+for pid in "${pids[@]}"; do wait "$pid" || exit 1; done
 
 tests=("$@")
 if [ ${#tests[@]} -eq 0 ]; then
