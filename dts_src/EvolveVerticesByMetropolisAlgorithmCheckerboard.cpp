@@ -17,6 +17,14 @@ EvolveVerticesByMetropolisAlgorithmCheckerboard::EvolveVerticesByMetropolisAlgor
 EvolveVerticesByMetropolisAlgorithmCheckerboard::~EvolveVerticesByMetropolisAlgorithmCheckerboard() {
 }
 void EvolveVerticesByMetropolisAlgorithmCheckerboard::Initialize() {
+    // the kernel has no bond or vertex-vertex nonbonded terms, and bonds may span cells
+    if (m_pState->GetBondedPotentialBetweenVertices()->GetDerivedDefaultReadName() != "No" ||
+        m_pState->GetNonbondedInteractionBetweenVertices()->GetDerivedDefaultReadName() != "No") {
+        std::cout << "---> error: " << GetDerivedDefaultReadName() << " does not support "
+                  << AbstractBondedPotentialBetweenVertices::GetBaseDefaultReadName() << " or "
+                  << AbstractNonbondedInteractionBetweenVertices::GetBaseDefaultReadName() << "; use MetropolisAlgorithm \n";
+        exit(0);
+    }
     m_NumberOfAttemptedMoves = 0;
     m_AcceptedMoves = 0;
 
@@ -80,7 +88,7 @@ void EvolveVerticesByMetropolisAlgorithmCheckerboard::BuildCells() {
             m_CellEdgeV[m_Grid.CellIndex((*it)->GetXPos(), (*it)->GetYPos(), (*it)->GetZPos())].push_back(*it);
     }
 }
-bool EvolveVerticesByMetropolisAlgorithmCheckerboard::EvolveOneStep(int step) {
+bool EvolveVerticesByMetropolisAlgorithmCheckerboard::EvolveOneStep(int) {
 
     BuildCells();
     RNG* p_rng = m_pState->GetRandomNumberGenerator();
@@ -215,7 +223,7 @@ namespace
             << "Error: '"
             << EvolveVerticesByMetropolisAlgorithmCheckerboard::GetDefaultReadName()
             << "' requires OpenMP, but this build does not support it.\n"
-            << "' you can just change to the single thread algorithm .\n";
+            << "Use MetropolisAlgorithm instead.\n";
 
         return nullptr;
     }
