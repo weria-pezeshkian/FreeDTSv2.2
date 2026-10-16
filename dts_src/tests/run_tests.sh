@@ -6,7 +6,12 @@ SRC="$HERE/.."
 BUILD="$HERE/build"
 OMP="${OMP:-/opt/homebrew/opt/libomp}"
 CXX="${CXX:-clang++}"
-FLAGS="-O2 -std=c++17 -Xpreprocessor -fopenmp -I$OMP/include"
+case "$(basename "$CXX")" in
+    g++*) OMP_FLAGS="-fopenmp"; OMP_LIBS="-fopenmp" ;;
+    *) OMP_FLAGS="-Xpreprocessor -fopenmp -I$OMP/include"; OMP_LIBS="-L$OMP/lib -lomp" ;;
+esac
+FLAGS="${FLAGS:--O2 -std=c++17 $OMP_FLAGS}"
+LINK_FLAGS="${LINK_FLAGS:-$OMP_LIBS}"
 mkdir -p "$BUILD"
 
 newest_header=$(ls -t "$SRC"/*.h "$SRC"/Registry/*.h 2>/dev/null | head -1)
@@ -33,7 +38,7 @@ fi
 
 status=0
 for t in "${tests[@]}"; do
-    $CXX $FLAGS "$HERE/$t.cpp" "${objs[@]}" -L"$OMP/lib" -lomp -o "$BUILD/$t"
+    $CXX $FLAGS "$HERE/$t.cpp" "${objs[@]}" $LINK_FLAGS -o "$BUILD/$t"
     tmp=$(mktemp -d)
     cp "$HERE"/data/* "$tmp"/
     if (cd "$tmp" && "$BUILD/$t"); then echo "PASS $t"; else echo "FAIL $t"; status=1; fi
