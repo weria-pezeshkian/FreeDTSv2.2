@@ -15,7 +15,8 @@ class State;
 class vertex;
 
 // Moves vertices of one checkerboard colour in parallel, one serial Metropolis chain per cell;
-// global totals are committed after each colour.
+// global totals are committed after each colour, so within a colour every move sees them stale,
+// including the cell's own earlier moves.
 class EvolveVerticesByMetropolisAlgorithmCheckerboard : public AbstractVertexPositionIntegrator {
 public:
     EvolveVerticesByMetropolisAlgorithmCheckerboard(State* pState, double rate_surf, double rate_edge, double dr);
