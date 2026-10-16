@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <climits>
 #include <cmath>
+#include <cstdlib>
 #ifdef _OPENMP
 # include <omp.h>
 #endif
@@ -23,7 +24,7 @@ void EvolveVerticesByMetropolisAlgorithmCheckerboard::Initialize() {
         std::cout << "---> error: " << GetDerivedDefaultReadName() << " does not support "
                   << AbstractBondedPotentialBetweenVertices::GetBaseDefaultReadName() << " or "
                   << AbstractNonbondedInteractionBetweenVertices::GetBaseDefaultReadName() << "; use MetropolisAlgorithm \n";
-        exit(0);
+        exit(EXIT_FAILURE);
     }
     m_NumberOfAttemptedMoves = 0;
     m_AcceptedMoves = 0;
