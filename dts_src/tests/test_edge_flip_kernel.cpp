@@ -127,6 +127,9 @@ void test_midpoint_min_image() {
             CHECK(c(k) >= 0 && c(k) < L(k));
             CHECK(c(k) == d(k));
         }
+        Vec3D f = CanonicalMidpoint(e->GetV1(), e->GetV2(), L);
+        Vec3D r = CanonicalMidpoint(e->GetV2(), e->GetV1(), L);
+        for (int k = 0; k < 3; k++) CHECK(f(k) == r(k));
     }
     delete pState;
 }

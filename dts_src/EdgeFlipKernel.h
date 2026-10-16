@@ -7,6 +7,7 @@
 
 class State;
 class links;
+class vertex;
 
 struct EdgeFlipOutcome {
     bool   accepted;
@@ -40,5 +41,7 @@ private:
 // a, b inside the box; the result is wrapped into [0, L)
 Vec3D MinImageMidpoint(const Vec3D& a, const Vec3D& b, const Vec3D& box);
 Vec3D EdgeMidpoint(links* p_edge, const Vec3D& box);
+// lower vertex id first, so an edge and its reverse get bitwise-equal midpoints
+Vec3D CanonicalMidpoint(vertex* a, vertex* b, const Vec3D& box);
 
 #endif

@@ -1,4 +1,5 @@
 #include <cmath>
+#include <utility>
 #include "EdgeFlipKernel.h"
 #include "State.h"
 
@@ -28,6 +29,11 @@ Vec3D MinImageMidpoint(const Vec3D& a, const Vec3D& b, const Vec3D& box) {
 }
 Vec3D EdgeMidpoint(links* p_edge, const Vec3D& box) {
     return MinImageMidpoint(p_edge->GetV1()->GetPos(), p_edge->GetV2()->GetPos(), box);
+}
+Vec3D CanonicalMidpoint(vertex* a, vertex* b, const Vec3D& box) {
+    if (b->GetVID() < a->GetVID())
+        std::swap(a, b);
+    return MinImageMidpoint(a->GetPos(), b->GetPos(), box);
 }
 EdgeFlipKernel::EdgeFlipKernel(State* pState)
     : m_pState(pState), m_pBox(nullptr), m_pBeta(nullptr), m_pDBeta(nullptr),

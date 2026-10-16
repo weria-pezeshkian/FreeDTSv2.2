@@ -1,6 +1,8 @@
 #include <algorithm>
-#include "check.h"
+#include "kernel_fixtures.h"
 #include "../EvolveVerticesByMetropolisAlgorithmCheckerboard.h"
+#include "../AlexanderMoveByMetropolisAlgorithmCheckerboard.h"
+#include "../EdgeFlipKernel.h"
 
 struct RunResult {
     std::vector<double> positions;
@@ -85,7 +87,109 @@ void test_thread_count_independent() {
     CHECK(r1.acceptance == r4.acceptance);
 }
 
+struct AlexanderProbe : public AlexanderMoveByMetropolisAlgorithmCheckerboard {
+    using AlexanderMoveByMetropolisAlgorithmCheckerboard::AlexanderMoveByMetropolisAlgorithmCheckerboard;
+    double Accepted() const { return m_AcceptedMoves; }
+    double Attempted() const { return m_NumberOfAttemptedMoves; }
+};
+
+struct FlipRunResult {
+    std::vector<double> positions;
+    std::vector<std::vector<int> > neighbours;
+    double energy, reference_energy;
+    double accepted, attempted;
+    int left_cell, changed;
+};
+
+// replays the flip schedule's draws on a copy of the master rng
+static CheckerboardCellGrid predict_flip_grid(State* pState) {
+    RNG rng = *pState->GetRandomNumberGenerator();
+    CheckerboardSchedule schedule;
+    schedule.Draw(rng, *pState->GetMesh()->GetBox(), 3 * std::sqrt(pState->GetSimulation()->GetMaxL2()) * 1.01);
+    return schedule.GetGrid();
+}
+
+static FlipRunResult run_flips(int nthreads, int sweeps) {
+    State* pState = make_test_state("in.dts", "top.top", nthreads);
+    pState->GetVoxelization()->Voxelize(pState->GetMesh()->GetActiveV());
+    pState->GetEnergyCalculator()->UpdateTotalEnergy(pState->GetEnergyCalculator()->CalculateAllLocalEnergy());
+    EvolveVerticesByMetropolisAlgorithmCheckerboard vertex_moves(pState, 1, 1, 0.05);
+    vertex_moves.Initialize();
+    AlexanderProbe flips(pState, 1);
+    flips.Initialize();
+
+    const Vec3D& box = *pState->GetMesh()->GetBox();
+    const std::vector<links*>& edges = pState->GetMesh()->GetRightL();
+    FlipRunResult result;
+    result.left_cell = result.changed = 0;
+    for (int s = 0; s < sweeps; s++) {
+        vertex_moves.EvolveOneStep(s);
+        CheckerboardCellGrid grid = predict_flip_grid(pState);
+        std::vector<std::pair<vertex*, vertex*> > ends;
+        std::vector<int> cells;
+        for (links* e : edges) {
+            ends.push_back(std::make_pair(e->GetV1(), e->GetV2()));
+            Vec3D m = CanonicalMidpoint(e->GetV1(), e->GetV2(), box);
+            cells.push_back(grid.CellIndex(m(0), m(1), m(2)));
+        }
+        flips.EvolveOneStep(s);
+        for (size_t i = 0; i < edges.size(); i++) {
+            if (ends[i] == std::make_pair(edges[i]->GetV1(), edges[i]->GetV2())) continue;
+            result.changed++;
+            Vec3D m = CanonicalMidpoint(edges[i]->GetV1(), edges[i]->GetV2(), box);
+            if (grid.CellIndex(m(0), m(1), m(2)) != cells[i]) result.left_cell++;
+        }
+    }
+    for (vertex* v : pState->GetMesh()->GetActiveV()) {
+        result.positions.push_back(v->GetXPos());
+        result.positions.push_back(v->GetYPos());
+        result.positions.push_back(v->GetZPos());
+        std::vector<int> ids;
+        for (vertex* n : v->GetVNeighbourVertex()) ids.push_back(n->GetVID());
+        std::sort(ids.begin(), ids.end());
+        result.neighbours.push_back(ids);
+    }
+    result.energy = pState->GetEnergyCalculator()->GetEnergy();
+    result.accepted = flips.Accepted();
+    result.attempted = flips.Attempted();
+    result.reference_energy = reference_energy(pState);
+    std::cout << "flips nt " << nthreads << ": energy " << result.energy << " (recomputed " << result.reference_energy
+              << "), flips accepted " << result.accepted << " of " << result.attempted
+              << ", edges changed " << result.changed << "\n";
+    delete pState;
+    return result;
+}
+
+static const int g_flip_sweeps = 20;
+static FlipRunResult g_flip_nt1, g_flip_nt4;
+
+void test_flip_determinism() {
+    // the lattice fixture makes most flips length-inadmissible, so require a count, not a rate
+    CHECK(g_flip_nt1.accepted >= 20);
+    CHECK(g_flip_nt1.positions == g_flip_nt4.positions);
+    CHECK(g_flip_nt1.neighbours == g_flip_nt4.neighbours);
+    CHECK(g_flip_nt1.energy == g_flip_nt4.energy);
+    CHECK(g_flip_nt1.accepted == g_flip_nt4.accepted);
+    CHECK(g_flip_nt1.attempted == g_flip_nt4.attempted);
+}
+
+void test_flip_confinement() {
+    CHECK(g_flip_nt1.changed > 0);
+    CHECK(g_flip_nt1.left_cell == 0);
+    CHECK(g_flip_nt4.left_cell == 0);
+}
+
+void test_flip_energy_consistent() {
+    for (const FlipRunResult* r : {&g_flip_nt1, &g_flip_nt4})
+        CHECK_NEAR(r->energy, r->reference_energy, 1e-8 * std::max(1.0, std::fabs(r->reference_energy)));
+}
+
 int main() {
     test_thread_count_independent();
+    g_flip_nt1 = run_flips(1, g_flip_sweeps);
+    g_flip_nt4 = run_flips(4, g_flip_sweeps);
+    test_flip_determinism();
+    test_flip_confinement();
+    test_flip_energy_consistent();
     return check_report();
 }
