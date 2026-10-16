@@ -340,6 +340,7 @@ bool EvolveVerticesByMetropolisAlgorithmWithOpenMPType2::EvolveOneVertex(int ste
             pvertex->UpdateVoxelAfterAVertexMove();
         }
         //---> ApplyConstraintBetweenGroups
+        #pragma omp critical
         m_pState->GetApplyConstraintBetweenGroups()->AcceptVertexMove(pvertex, Dx);
         
         //---> global variables
