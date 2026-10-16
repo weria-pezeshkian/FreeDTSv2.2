@@ -22,9 +22,11 @@ inline int check_report() {
 }
 
 // Input files are looked up in the cwd; run_tests.sh copies tests/data there.
-inline State* make_test_state(const char* input, const char* top, int nthreads) {
+inline State* make_test_state(const char* input, const char* top, int nthreads,
+                                  const char* index = nullptr) {
     std::vector<std::string> args = {"DTS", "-in", input, "-top", top,
                                      "-nt", std::to_string(nthreads), "-seed", "4321"};
+    if (index) { args.push_back("-ndx"); args.push_back(index); }
     State* pState = new State(args);
     pState->Initialize();
     return pState;
