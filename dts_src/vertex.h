@@ -55,9 +55,9 @@ public:
         inline Vec3D *GetBox()                              {return m_pBox;}
         inline int GetGroup()                               {return m_Group;}
         inline std::string GetGroupName()                   {return m_GroupName;}
-        inline std::vector <links *> GetVLinkList()             {return m_VLinkList;}
-        inline std::vector <triangle *> GetVTraingleList()         {return m_VTraingleList;}
-        inline std::vector <vertex *> GetVNeighbourVertex()     {return m_VNeighbourVertex;}
+        inline const std::vector <links *>& GetVLinkList() const             {return m_VLinkList;}
+        inline const std::vector <triangle *>& GetVTraingleList() const         {return m_VTraingleList;}
+        inline const std::vector <vertex *>& GetVNeighbourVertex() const     {return m_VNeighbourVertex;}
     
 
 
