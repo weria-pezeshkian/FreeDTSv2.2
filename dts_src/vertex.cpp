@@ -31,12 +31,9 @@ vertex::vertex(MESH* pMesh, int id, double x, double y, double z) : m_pMesh(pMes
     m_Velocity(1) = 0;
     m_Velocity(2) = 0;
 
-    
-#ifdef _OPENMP
-omp_init_lock(&m_Lock);
-#endif
-    
+
 }
+
 vertex::vertex(MESH* pMesh, int id) : m_pMesh(pMesh) {
 
     m_ID=id;
@@ -57,15 +54,8 @@ vertex::vertex(MESH* pMesh, int id) : m_pMesh(pMesh) {
     m_VLength = 0;                       // length of the vertex
     m_PrincipalCurvature_1 = 0;
     m_PrincipalCurvature_2 = 0;
-    
-#ifdef _OPENMP
-omp_init_lock(&m_Lock);
-#endif
 }
 vertex::~vertex(){
-#ifdef _OPENMP
-omp_destroy_lock(&m_Lock);
-#endif
     // destructor
 }
 void vertex::UpdateGroupName(std::string group_name){
@@ -631,17 +621,17 @@ links*  vertex::GetConnectingLink(vertex* v1, vertex* v2){
 }
 #ifdef _OPENMP
 bool vertex::CheckLockVertex(){
-return omp_test_lock(&m_Lock);
+return omp_test_lock(m_Lock.Get());
 }
 void vertex::LockVertex(){
 
-omp_set_lock(&m_Lock);
+omp_set_lock(m_Lock.Get());
 
 return;
 }
 bool vertex::UnlockVertex(){
 
-omp_unset_lock(&m_Lock);
+omp_unset_lock(m_Lock.Get());
 
 return true;
 }
