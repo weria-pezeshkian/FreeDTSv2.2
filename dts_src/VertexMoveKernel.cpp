@@ -195,8 +195,9 @@ bool VertexMoveKernel::VertexMoveIsFine(vertex* p_vertex, const Vec3D& dx) {
     for (int n = -1; n < 2; n++)
     for (int m = -1; m < 2; m++)
     for (int s = -1; s < 2; s++) {
-        std::vector<vertex*> CV = new_pvox->GetANeighbourCell(n, m, s)->GetContentObjects();
-        for (std::vector<vertex*>::iterator it = CV.begin(); it != CV.end(); ++it) {
+        // the checkerboard keeps concurrent moves out of each other's voxel neighbourhoods
+        const std::vector<vertex*>& CV = new_pvox->GetANeighbourCell(n, m, s)->GetContentObjectsUnlocked();
+        for (std::vector<vertex*>::const_iterator it = CV.begin(); it != CV.end(); ++it) {
             if (*it != p_vertex && p_vertex->SquareDistanceOfAVertexFromAPoint(new_x, new_y, new_z, *it) < mindist2)
                 return false;
         }
