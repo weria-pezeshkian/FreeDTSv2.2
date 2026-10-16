@@ -43,69 +43,110 @@ static void check_same(const VertexSnapshot& a, const VertexSnapshot& b) {
     CHECK_NEAR(a.area, b.area, 1e-12);
 }
 
-void test_rejected_move_restores_state() {
-    State* pState = make_voxelized_state("in.dts");
+// recompute all geometry from positions so the reference does not share the kernel's incremental updates
+static double reference_energy(State* pState) {
+    pState->GetCurvatureCalculator()->Initialize();
+    return pState->GetEnergyCalculator()->CalculateAllLocalEnergy();
+}
+
+static std::vector<links*> all_links(State* pState) {
+    MESH* mesh = pState->GetMesh();
+    std::vector<links*> l = mesh->GetRightL();
+    l.insert(l.end(), mesh->GetLeftL().begin(), mesh->GetLeftL().end());
+    l.insert(l.end(), mesh->GetEdgeL().begin(), mesh->GetEdgeL().end());
+    return l;
+}
+
+// links whose interaction energy the move can change are the links of inclusion-owning neighbours
+static bool has_live_interaction(vertex* v) {
+    for (vertex* n : v->GetVNeighbourVertex()) {
+        if (!n->VertexOwnInclusion()) continue;
+        for (links* l : n->GetVLinkList())
+            if (std::fabs(l->GetIntEnergy()) > 1e-12) return true;
+    }
+    return false;
+}
+
+static int check_rejected_move_restores_state(const char* input) {
+    State* pState = make_voxelized_state(input);
     VAHGlobalMeshProperties* vah = pState->GetVAHGlobalMeshProperties();
     VertexMoveKernel kernel(pState);
     kernel.Initialize();
+    std::vector<links*> links_all = all_links(pState);
     std::mt19937 gen(11);
-    int rejected = 0, metropolis_rejected = 0;
+    int rejected = 0, metropolis_rejected = 0, live_interaction = 0;
     for (vertex* v : pick_vertices(pState, 20)) {
         std::vector<vertex*> ring = v->GetVNeighbourVertex();
-        std::vector<VertexSnapshot> before = {snap(v)};
-        for (vertex* n : ring) before.push_back(snap(n));
-        double E_tot = pState->GetEnergyCalculator()->GetEnergy();
-        double V = vah->GetTotalVolume(), A = vah->GetTotalArea(), C = vah->GetTotalMeanCurvature();
-
         bool done = false;
         Vec3D dx;
+        double E_ref = 0;
+        std::vector<VertexSnapshot> before;
+        std::vector<double> int_before;
         for (int attempt = 0; attempt < 50 && !done; attempt++) {
+            E_ref = reference_energy(pState);
+            before = {snap(v)};
+            for (vertex* n : ring) before.push_back(snap(n));
+            int_before.clear();
+            for (links* l : links_all) int_before.push_back(l->GetIntEnergy());
             dx = random_dx(gen, 0.05);
-            VertexMoveOutcome out = kernel.TryMove(v, dx, 1.0 - 1e-15);
-            done = !out.accepted;
-            if (out.accepted) {
-                before = {snap(v)};
-                for (vertex* n : ring) before.push_back(snap(n));
-            }
+            done = !kernel.TryMove(v, dx, 1.0 - 1e-15).accepted;
         }
         CHECK(done);
         if (!done) continue;
         rejected++;
+        if (has_live_interaction(v)) live_interaction++;
+        double V = vah->GetTotalVolume(), A = vah->GetTotalArea(), C = vah->GetTotalMeanCurvature();
         check_same(snap(v), before[0]);
         for (size_t i = 0; i < ring.size(); i++) check_same(snap(ring[i]), before[i + 1]);
-        CHECK_NEAR(pState->GetEnergyCalculator()->GetEnergy(), E_tot, 1e-12);
+        for (size_t i = 0; i < links_all.size(); i++) CHECK_NEAR(links_all[i]->GetIntEnergy(), int_before[i], 1e-12);
         CHECK_NEAR(vah->GetTotalVolume(), V, 1e-12);
         CHECK_NEAR(vah->GetTotalArea(), A, 1e-12);
         CHECK_NEAR(vah->GetTotalMeanCurvature(), C, 1e-12);
+        CHECK_NEAR(reference_energy(pState), E_ref, 1e-9 * std::max(1.0, std::fabs(E_ref)));
         // accepted at thermal 0 means the rejection above was energetic, not geometric
         if (kernel.TryMove(v, dx, 0.0).accepted) metropolis_rejected++;
     }
+    std::cout << input << ": metropolis rejections " << metropolis_rejected << " of " << rejected
+              << ", with live interaction " << live_interaction << "\n";
     CHECK(rejected == 20);
-    std::cout << "metropolis rejections " << metropolis_rejected << " of " << rejected << "\n";
     CHECK(metropolis_rejected >= 10);
     delete pState;
+    return live_interaction;
 }
 
-void test_accepted_dE_matches_total_energy() {
-    State* pState = make_voxelized_state("in.dts");
-    AbstractEnergy* energy = pState->GetEnergyCalculator();
+static int check_accepted_dE_matches_total_energy(const char* input) {
+    State* pState = make_voxelized_state(input);
     VertexMoveKernel kernel(pState);
     kernel.Initialize();
     std::mt19937 gen(13);
-    int checked = 0;
+    int checked = 0, live_interaction = 0;
     double max_diff = 0;
     for (vertex* v : pick_vertices(pState, 20)) {
-        double E0 = energy->CalculateAllLocalEnergy();
+        double E0 = reference_energy(pState);
+        bool live = has_live_interaction(v);
         VertexMoveOutcome out = kernel.TryMove(v, random_dx(gen, 0.05), 0.0);
         if (!out.accepted) continue;
-        double E1 = energy->CalculateAllLocalEnergy();
+        double E1 = reference_energy(pState);
         CHECK_NEAR(out.dE_elastic, E1 - E0, 1e-8 * std::max(1.0, std::fabs(E0)));
         max_diff = std::max(max_diff, std::fabs(out.dE_elastic - (E1 - E0)));
         checked++;
+        if (live) live_interaction++;
     }
-    std::cout << "dE checked " << checked << " vertices, max |diff| " << max_diff << "\n";
+    std::cout << input << ": dE checked " << checked << " vertices, max |diff| " << max_diff
+              << ", with live interaction " << live_interaction << "\n";
     CHECK(checked >= 10);
     delete pState;
+    return live_interaction;
+}
+
+void test_rejected_move_restores_state() {
+    check_rejected_move_restores_state("in.dts");
+    CHECK(check_rejected_move_restores_state("interaction.dts") > 0);
+}
+
+void test_accepted_dE_matches_total_energy() {
+    check_accepted_dE_matches_total_energy("in.dts");
+    CHECK(check_accepted_dE_matches_total_energy("interaction.dts") > 0);
 }
 
 void test_kernel_leaves_globals_untouched() {
