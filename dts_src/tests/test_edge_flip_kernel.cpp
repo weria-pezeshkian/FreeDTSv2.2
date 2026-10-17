@@ -265,10 +265,30 @@ void test_kernel_leaves_globals_untouched() {
     delete pState;
 }
 
+// the new v3-v4 edge carries interaction energy even when v1 and v2 have no inclusion
+void test_flip_joining_two_inclusions() {
+    State* pState = make_voxelized_state("interaction.dts");
+    EdgeFlipKernel kernel(pState);
+    kernel.Initialize();
+    int checked = 0;
+    for (links* e : shuffled_edges(pState)) {
+        if (e->GetV1()->VertexOwnInclusion() || e->GetV2()->VertexOwnInclusion()) continue;
+        if (!e->GetV3()->VertexOwnInclusion() || !e->GetMirrorLink()->GetV3()->VertexOwnInclusion()) continue;
+        double E0 = reference_energy(pState);
+        EdgeFlipOutcome out = kernel.TryFlip(e, 0.0);
+        if (!out.accepted) continue;
+        CHECK_NEAR(out.dE_elastic, reference_energy(pState) - E0, 1e-8 * std::max(1.0, std::fabs(E0)));
+        checked++;
+    }
+    CHECK(checked > 0);
+    delete pState;
+}
+
 int main() {
     test_midpoint_min_image();
     test_rejected_flip_restores_state();
     test_accepted_dE_matches_total_energy();
     test_kernel_leaves_globals_untouched();
+    test_flip_joining_two_inclusions();
     return check_report();
 }

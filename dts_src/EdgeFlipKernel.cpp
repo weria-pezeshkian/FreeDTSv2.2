@@ -236,6 +236,9 @@ void EdgeFlipKernel::GetEdgesWithInteractionChange(links* p_edge, std::vector<li
             if (v->m_VertexType == 1) {
                 m_CandidateLinks.push_back(v->m_pPrecedingEdgeLink);
             }
+            // the flip turns p_edge into the v3-v4 edge, which is in no link list yet
+            if (i >= 2)
+                m_CandidateLinks.push_back(p_edge);
         }
     }
     //--- drop repeated links and mirrors of links already kept
