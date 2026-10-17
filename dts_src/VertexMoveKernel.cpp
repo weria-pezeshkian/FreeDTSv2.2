@@ -15,7 +15,7 @@ void VertexMoveKernel::Initialize() {
     m_pMaxLength2 = &p_sim->GetMaxL2();
     m_pMinAngle = &p_sim->GetMinAngle();
 }
-VertexMoveOutcome VertexMoveKernel::TryMove(vertex* p_vertex, const Vec3D& dx, double thermal) {
+VertexMoveOutcome VertexMoveKernel::TryMove(vertex* p_vertex, const Vec3D& dx, double thermal, const PendingGlobalChange& pending) {
 
     VertexMoveOutcome outcome = {false, 0, 0, 0, 0};
     if (!VertexMoveIsFine(p_vertex, dx))
@@ -108,13 +108,11 @@ VertexMoveOutcome VertexMoveKernel::TryMove(vertex* p_vertex, const Vec3D& dx, d
     if (p_VAH->GetCalculateVAH()) {
         p_VAH->CalculateAVertexRingContributionToGlobalVariables(p_vertex, new_Tvolume, new_Tarea, new_Tcurvature);
     }
-    double dE_volume = m_pState->GetVolumeCoupling()->GetEnergyChange(old_Tarea, old_Tvolume, new_Tarea, new_Tvolume);
-    double dE_t_area = m_pState->GetTotalAreaCoupling()->CalculateEnergyChange(old_Tarea, new_Tarea);
-    double dE_g_curv = m_pState->GetGlobalCurvature()->CalculateEnergyChange(new_Tarea - old_Tarea, new_Tcurvature - old_Tcurvature);
+    double dE_global = GlobalCouplingEnergyChange(m_pState, pending, new_Tvolume - old_Tvolume, new_Tarea - old_Tarea, new_Tcurvature - old_Tcurvature);
 
     double diff_energy = new_energy - old_energy;
     double tot_diff_energy = diff_energy + dE_Cgroup + dE_force_on_vertex + dE_force_from_inc
-                           + dE_force_from_vector_fields + dE_volume + dE_t_area + dE_g_curv;
+                           + dE_force_from_vector_fields + dE_global;
     double U = (*m_pBeta) * tot_diff_energy - (*m_pDBeta);
     if (U <= 0 || exp(-U) > thermal) {
         if (!p_vertex->CheckVoxel()) {

@@ -4,6 +4,7 @@
 #include <vector>
 #include "SimDef.h"
 #include "Vec3D.h"
+#include "GlobalCouplingChange.h"
 
 class State;
 class vertex;
@@ -21,7 +22,7 @@ class alignas(128) VertexMoveKernel {
 public:
     explicit VertexMoveKernel(State* pState);
     void Initialize();
-    VertexMoveOutcome TryMove(vertex* p_vertex, const Vec3D& dx, double thermal);
+    VertexMoveOutcome TryMove(vertex* p_vertex, const Vec3D& dx, double thermal, const PendingGlobalChange& pending = PendingGlobalChange());
 
 private:
     bool VertexMoveIsFine(vertex* p_vertex, const Vec3D& dx);

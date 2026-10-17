@@ -4,6 +4,7 @@
 #include <vector>
 #include "SimDef.h"
 #include "Vec3D.h"
+#include "GlobalCouplingChange.h"
 
 class State;
 class links;
@@ -21,7 +22,7 @@ class alignas(128) EdgeFlipKernel {
 public:
     explicit EdgeFlipKernel(State* pState);
     void Initialize();
-    EdgeFlipOutcome TryFlip(links* p_edge, double thermal);
+    EdgeFlipOutcome TryFlip(links* p_edge, double thermal, const PendingGlobalChange& pending = PendingGlobalChange());
 
 private:
     bool EdgeCanBeFliped(links* p_edge);

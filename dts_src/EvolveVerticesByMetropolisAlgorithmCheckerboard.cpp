@@ -174,7 +174,7 @@ void EvolveVerticesByMetropolisAlgorithmCheckerboard::MoveCellVertices(int cell,
         if (m_Schedule.GetGrid().CellIndex(p_vertex->GetXPos() + Dx(0), p_vertex->GetYPos() + Dx(1), p_vertex->GetZPos() + Dx(2)) != cell)
             continue;
         double thermal = rng.UniformRNG(1.0);
-        VertexMoveOutcome outcome = kernel.TryMove(p_vertex, Dx, thermal);
+        VertexMoveOutcome outcome = kernel.TryMove(p_vertex, Dx, thermal, {record.dV, record.dA, record.dC});
         if (outcome.accepted) {
             record.accepted++;
             record.dE += outcome.dE_elastic;

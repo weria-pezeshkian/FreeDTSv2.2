@@ -116,7 +116,7 @@ void AlexanderMoveByMetropolisAlgorithmCheckerboard::EvolveCell(int cell, int sw
         if (p_edge->GetMirrorFlag() &&
             MidpointCell(p_edge->GetMirrorLink()->GetV3(), p_edge->GetV3()) != cell)
             continue;
-        EdgeFlipOutcome outcome = kernel.TryFlip(p_edge, rng.UniformRNG(1.0));
+        EdgeFlipOutcome outcome = kernel.TryFlip(p_edge, rng.UniformRNG(1.0), {record.dV, record.dA, record.dC});
         if (outcome.accepted) {
             record.accepted++;
             record.dE += outcome.dE_elastic;
