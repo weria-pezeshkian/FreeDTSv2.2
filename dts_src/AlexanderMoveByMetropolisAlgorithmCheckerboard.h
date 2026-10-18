@@ -23,8 +23,8 @@ public:
     bool Initialize();
     bool EvolveOneStep(int step);
     std::string CurrentState();
-    inline std::string GetDerivedDefaultReadName() {return "MetropolisAlgorithmOpenMPCheckerboard";}
-    inline static std::string GetDefaultReadName() {return "MetropolisAlgorithmOpenMPCheckerboard";}
+    inline std::string GetDerivedDefaultReadName() {return "MetropolisCheckerboard";}
+    inline static std::string GetDefaultReadName() {return "MetropolisCheckerboard";}
 
 private:
     // padded so threads filling neighbouring records do not share cache lines
