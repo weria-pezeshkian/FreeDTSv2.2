@@ -37,6 +37,7 @@ public:
 
 private:
   HarmonicPotentialCalculator *m_pCalculator = nullptr;
+  double m_CoherenceLambda = 0.0;
 };
 
 #endif
