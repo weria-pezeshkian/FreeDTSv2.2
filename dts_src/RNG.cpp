@@ -9,6 +9,16 @@ RNG::RNG(int seed) : m_seed(seed) {
     m_distribution = std::normal_distribution<double> (0, 1);
 
 }
+int RNG::StreamSeed(int seed, int stream) {
+    if (stream == 0) {
+        return seed;
+    }
+    uint64_t z = ((uint64_t)(uint32_t)seed << 32) + (uint64_t)stream * 0x9E3779B97F4A7C15ULL;
+    z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ULL;
+    z = (z ^ (z >> 27)) * 0x94D049BB133111EBULL;
+    z ^= z >> 31;
+    return (int)(z & 0x7FFFFFFF);
+}
 void RNG::SetGaussianDistribution(double mean, double stddev) {
     m_distribution = std::normal_distribution<double> (mean, stddev);
     return;

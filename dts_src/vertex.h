@@ -17,6 +17,19 @@
  Vertex object: can be defined by and integer and three double numbers for the positions of the vertices
  Also there are a few lists pointing to the nighbouring links and trinagles and also the inclusion if the vertex own one.
  *******************/
+#ifdef _OPENMP
+// libomp's omp_lock_t is a handle, so a copied vertex must own a fresh lock
+class OmpLock {
+public:
+    OmpLock()                          { omp_init_lock(&m_Lock); }
+    OmpLock(const OmpLock&)            { omp_init_lock(&m_Lock); }
+    OmpLock& operator=(const OmpLock&) { return *this; }
+    ~OmpLock()                         { omp_destroy_lock(&m_Lock); }
+    omp_lock_t* Get()                  { return &m_Lock; }
+private:
+    omp_lock_t m_Lock;
+};
+#endif
 class links;
 class triangle;
 class MESH;
@@ -42,9 +55,9 @@ public:
         inline Vec3D *GetBox()                              {return m_pBox;}
         inline int GetGroup()                               {return m_Group;}
         inline std::string GetGroupName()                   {return m_GroupName;}
-        inline std::vector <links *> GetVLinkList()             {return m_VLinkList;}
-        inline std::vector <triangle *> GetVTraingleList()         {return m_VTraingleList;}
-        inline std::vector <vertex *> GetVNeighbourVertex()     {return m_VNeighbourVertex;}
+        inline const std::vector <links *>& GetVLinkList() const             {return m_VLinkList;}
+        inline const std::vector <triangle *>& GetVTraingleList() const         {return m_VTraingleList;}
+        inline const std::vector <vertex *>& GetVNeighbourVertex() const     {return m_VNeighbourVertex;}
     
 
 
@@ -213,7 +226,7 @@ private:
     double m_OldMeanCurvature;
     double m_OldGaussianCurvature;
     
-// OpenMP methods Oct 2024    
+// OpenMP methods Oct 2024
 #ifdef _OPENMP
 public:
 bool CheckLockVertex();
@@ -225,7 +238,7 @@ bool CheckLockNeighbourVertex();
     static bool CheckLockVectorVertex(const std::vector<vertex*>&);
     static void UnockVectorVertex(std::vector <vertex *>);
 private:
-omp_lock_t m_Lock;
+OmpLock m_Lock;
 #endif
 };
 

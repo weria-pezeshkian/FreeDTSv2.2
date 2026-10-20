@@ -482,6 +482,8 @@ std::vector<links*> AlexanderMoveByMetropolisAlgorithm::GetEdgesWithInteractionC
             temlinklist.insert(temlinklist.end(), ltem.begin(), ltem.end());
             if(v3->m_VertexType==1)
             temlinklist.push_back(v3->m_pPrecedingEdgeLink);
+            // the flip turns p_edge into the v3-v4 edge, which is in no link list yet
+            temlinklist.push_back(p_edge);
         }
         if(v4->VertexOwnInclusion() || v4->GetNumberOfVF() != 0  )
         {
@@ -489,6 +491,7 @@ std::vector<links*> AlexanderMoveByMetropolisAlgorithm::GetEdgesWithInteractionC
             temlinklist.insert(temlinklist.end(), ltem.begin(), ltem.end());
             if(v4->m_VertexType==1)
             temlinklist.push_back(v4->m_pPrecedingEdgeLink);
+            temlinklist.push_back(p_edge);
         }
 
 // Remove duplicates and mirror edges from the list

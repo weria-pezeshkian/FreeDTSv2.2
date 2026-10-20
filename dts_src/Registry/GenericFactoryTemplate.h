@@ -128,6 +128,7 @@
 
  ===============================================================
 */
+#include <unordered_map>
 template <typename Base>
 class Factory {
 public:

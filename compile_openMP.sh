@@ -7,8 +7,8 @@
 
 cd dts_src
 ##g++ -c -O3  -fopenmp -std=c++11 *.cpp
-g++-15 -c -O3  -fopenmp -std=c++11 *.cpp
-g++-14 -fopenmp -o DTS *.o
+g++-15 -c -O3 -flto -fopenmp -std=c++17 *.cpp
+g++-15 -O3 -flto -fopenmp -o DTS *.o
 mv DTS ../
 cd ..
 cd dts_convert
