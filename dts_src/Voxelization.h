@@ -362,7 +362,7 @@ private:
     Vec3D *m_pBox;
     Vec3D Voxel_Size_Default;
  //   Voxel<Type> *m_AllVoxel[2][2][2];
-    Voxel<Type> ****m_AllVoxel;
+    Voxel<Type> ****m_AllVoxel = nullptr;
 
 public:
     // Add other member functions here
