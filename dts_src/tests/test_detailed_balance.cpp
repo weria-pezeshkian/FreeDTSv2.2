@@ -7,7 +7,7 @@
 // proposed moves in equilibrium. Per shell B > 0 the expected accepted uphill flux sum_{U in B} exp(-U)
 // therefore equals the downhill count N(-B); unlike a ratio of histograms this has no binning bias.
 struct ShellBalance {
-    double max_z, max_rel;
+    double max_z;
     long n_shells;
 };
 
@@ -26,7 +26,7 @@ static ShellBalance shell_balance(const std::vector<double>& U, const char* labe
             down[b] += 1;
         }
     }
-    ShellBalance result = {0, 0, 0};
+    ShellBalance result = {0, 0};
     std::cout << label << ": " << U.size() << " proposals\n   shell      uphill flux  downhill   z\n";
     for (int b = 0; b < n_bins; b++) {
         if (down[b] < 200)
@@ -34,7 +34,6 @@ static ShellBalance shell_balance(const std::vector<double>& U, const char* labe
         double z = (up[b] - down[b]) / std::sqrt(up2[b] + down[b]);
         std::cout << "  [" << b * width << "," << (b + 1) * width << ")  " << up[b] << "  " << down[b] << "  " << z << "\n";
         result.max_z = std::max(result.max_z, std::fabs(z));
-        result.max_rel = std::max(result.max_rel, std::fabs(up[b] - down[b]) / down[b]);
         result.n_shells++;
     }
     return result;
@@ -71,10 +70,10 @@ void test_local_energy_balance() {
     ShellBalance v = shell_balance(logs.vertex_U, "vertex moves, in.dts");
     ShellBalance f = shell_balance(logs.flip_U, "edge flips, in.dts");
     CHECK(v.n_shells >= 3);
-    // samples are correlated, so z is only indicative; the relative bound carries the check
-    CHECK(v.max_rel < 0.05);
-    if (f.n_shells > 0)
-        CHECK(f.max_rel < 0.1);
+    CHECK(f.n_shells >= 3);
+    // z assumes independent proposals; correlations inflate it, hence the loose bound
+    CHECK(v.max_z < 4);
+    CHECK(f.max_z < 4);
 }
 
 int main() {
