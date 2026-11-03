@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <memory>
 #include "VertexVectorFields.h"
 #include "MESH.h"
 
