@@ -17,7 +17,7 @@ void VertexMoveKernel::Initialize() {
 }
 VertexMoveOutcome VertexMoveKernel::TryMove(vertex* p_vertex, const Vec3D& dx, double thermal, const PendingGlobalChange& pending) {
 
-    VertexMoveOutcome outcome = {false, 0, 0, 0, 0};
+    VertexMoveOutcome outcome = {false, 0, 0, 0, 0, false, 0};
     if (!VertexMoveIsFine(p_vertex, dx))
         return outcome;
 
@@ -114,6 +114,8 @@ VertexMoveOutcome VertexMoveKernel::TryMove(vertex* p_vertex, const Vec3D& dx, d
     double tot_diff_energy = diff_energy + dE_Cgroup + dE_force_on_vertex + dE_force_from_inc
                            + dE_force_from_vector_fields + dE_global;
     double U = (*m_pBeta) * tot_diff_energy - (*m_pDBeta);
+    outcome.evaluated = true;
+    outcome.U = U;
     if (U <= 0 || exp(-U) > thermal) {
         if (!p_vertex->CheckVoxel()) {
             p_vertex->UpdateVoxelAfterAVertexMove();

@@ -23,6 +23,8 @@ public:
     bool Initialize();
     bool EvolveOneStep(int step);
     std::string CurrentState();
+    // collects the exponent of every evaluated proposal, in commit order; nullptr disables
+    void SetProposalLog(std::vector<double>* p_log) {m_pProposalLog = p_log;}
     inline std::string GetDerivedDefaultReadName() {return "MetropolisCheckerboard";}
     inline static std::string GetDefaultReadName() {return "MetropolisCheckerboard";}
 
@@ -31,6 +33,7 @@ private:
     struct alignas(128) CellRecord {
         double dE, dV, dA, dC;
         int accepted, attempted;
+        std::vector<double> proposed_U;
     };
 
     double MinimumCellWidth();
@@ -48,6 +51,7 @@ private:
     std::vector<int> m_EdgeCell;
     std::vector<int> m_OccupiedCells;
     std::vector<std::vector<int> > m_ColorCells;
+    std::vector<double>* m_pProposalLog = nullptr;
 };
 
 #endif

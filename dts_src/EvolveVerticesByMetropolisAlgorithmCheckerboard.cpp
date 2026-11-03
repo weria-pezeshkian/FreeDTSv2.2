@@ -146,6 +146,7 @@ void EvolveVerticesByMetropolisAlgorithmCheckerboard::EvolveCell(int cell, int s
     record.dE = record.dV = record.dA = record.dC = 0;
     record.accepted = record.attempted = 0;
     record.accepted_moves.clear();
+    record.proposed_U.clear();
 
     RNG rng(RNG::StreamSeed(sweep_seed, cell));
     MoveCellVertices(cell, m_CellSurfV[cell], m_NumberOfMovePerStep_Surf, rng, kernel, record);
@@ -175,6 +176,8 @@ void EvolveVerticesByMetropolisAlgorithmCheckerboard::MoveCellVertices(int cell,
             continue;
         double thermal = rng.UniformRNG(1.0);
         VertexMoveOutcome outcome = kernel.TryMove(p_vertex, Dx, thermal, {record.dV, record.dA, record.dC});
+        if (m_pProposalLog && outcome.evaluated)
+            record.proposed_U.push_back(outcome.U);
         if (outcome.accepted) {
             record.accepted++;
             record.dE += outcome.dE_elastic;
@@ -198,6 +201,8 @@ void EvolveVerticesByMetropolisAlgorithmCheckerboard::CommitCell(CellRecord& rec
         p_constraint->AcceptVertexMove(it->first, it->second);
     m_AcceptedMoves += record.accepted;
     m_NumberOfAttemptedMoves += record.attempted;
+    if (m_pProposalLog)
+        m_pProposalLog->insert(m_pProposalLog->end(), record.proposed_U.begin(), record.proposed_U.end());
 }
 std::string EvolveVerticesByMetropolisAlgorithmCheckerboard::CurrentState() {
 

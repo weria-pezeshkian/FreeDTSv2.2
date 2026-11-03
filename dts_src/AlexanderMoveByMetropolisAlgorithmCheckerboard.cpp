@@ -97,6 +97,7 @@ void AlexanderMoveByMetropolisAlgorithmCheckerboard::EvolveCell(int cell, int sw
     CellRecord& record = m_CellRecords[cell];
     record.dE = record.dV = record.dA = record.dC = 0;
     record.accepted = record.attempted = 0;
+    record.proposed_U.clear();
 
     const std::vector<links*>& cell_edges = m_CellEdges[cell];
     int n_e = (int)cell_edges.size();
@@ -117,6 +118,8 @@ void AlexanderMoveByMetropolisAlgorithmCheckerboard::EvolveCell(int cell, int sw
             MidpointCell(p_edge->GetMirrorLink()->GetV3(), p_edge->GetV3()) != cell)
             continue;
         EdgeFlipOutcome outcome = kernel.TryFlip(p_edge, rng.UniformRNG(1.0), {record.dV, record.dA, record.dC});
+        if (m_pProposalLog && outcome.evaluated)
+            record.proposed_U.push_back(outcome.U);
         if (outcome.accepted) {
             record.accepted++;
             record.dE += outcome.dE_elastic;
@@ -136,6 +139,8 @@ void AlexanderMoveByMetropolisAlgorithmCheckerboard::CommitCell(const CellRecord
     }
     m_AcceptedMoves += record.accepted;
     m_NumberOfAttemptedMoves += record.attempted;
+    if (m_pProposalLog)
+        m_pProposalLog->insert(m_pProposalLog->end(), record.proposed_U.begin(), record.proposed_U.end());
 }
 std::string AlexanderMoveByMetropolisAlgorithmCheckerboard::CurrentState() {
 

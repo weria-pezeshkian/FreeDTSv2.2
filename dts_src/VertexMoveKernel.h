@@ -14,6 +14,9 @@ struct VertexMoveOutcome {
     bool   accepted;
     double dE_elastic;
     double dVolume, dArea, dCurvature;
+    // Metropolis exponent, set once the energy was evaluated (hard constraints passed)
+    bool evaluated;
+    double U;
 };
 
 // Type1's vertex move without global bookkeeping; holds scratch buffers, so use one per thread.

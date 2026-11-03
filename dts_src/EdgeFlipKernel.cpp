@@ -50,7 +50,7 @@ void EdgeFlipKernel::Initialize() {
 }
 EdgeFlipOutcome EdgeFlipKernel::TryFlip(links* p_edge, double thermal, const PendingGlobalChange& pending) {
 
-    EdgeFlipOutcome outcome = {false, 0, 0, 0, 0};
+    EdgeFlipOutcome outcome = {false, 0, 0, 0, 0, false, 0};
     if (!EdgeCanBeFliped(p_edge))
         return outcome;
 
@@ -145,6 +145,8 @@ EdgeFlipOutcome EdgeFlipKernel::TryFlip(links* p_edge, double thermal, const Pen
     double diff_energy = new_energy - old_energy;
     double tot_diff_energy = diff_energy + dE_global;
     double U = (*m_pBeta) * tot_diff_energy - (*m_pDBeta);
+    outcome.evaluated = true;
+    outcome.U = U;
     if (U <= 0 || exp(-U) > thermal) {
         outcome.accepted = true;
         outcome.dE_elastic = diff_energy;
