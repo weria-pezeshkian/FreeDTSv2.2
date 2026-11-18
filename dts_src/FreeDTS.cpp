@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <iostream>
 #include "SimDef.h"
 #include "Job.h"
@@ -35,6 +36,12 @@ For more information and updates, please visit the project repository:
 ---------------------------------------------------------------------------
 */
 int main(int argc, char* argv[]) {
+#if defined(_OPENMP) && defined(__APPLE__)
+    // macOS libomp puts idle threads to sleep at once; waking them at every barrier costs more than a
+    // small checkerboard colour, so spin briefly unless the user set a wait policy
+    if (!std::getenv("OMP_WAIT_POLICY"))
+        setenv("KMP_BLOCKTIME", "1", 0);
+#endif
     // Print program header
 std::cout << "\033[1;36m" 
           << "╔══════════════════════════════════════════════════════════════════════════════════════╗\n"

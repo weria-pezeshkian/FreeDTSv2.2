@@ -5,6 +5,9 @@
 #include "MESH.h"
 #include "CreateMashBluePrint.h"
 #include "State.h"
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 #include "Traj_tsi.h"
 #include "WritevtuFiles.h"
 #include "BTSFile.h"
@@ -134,6 +137,9 @@ State::~State()
     delete m_pOpenEdgeEvolution;
     delete m_pInclusionConversion;
     delete m_RandomNumberGenerator;
+    for (RNG* pRNG : m_ThreadRNGs) {
+        delete pRNG;
+    }
     delete m_pEnergyCalculator;
     delete m_pSimulation;
     delete m_pVoxelization;
@@ -782,6 +788,7 @@ bool State::Initialize(){
     //-------->
             m_NonbondedInteractionBetweenVertices->Initialize();
     }
+    InitializeThreadRNGs();
     if(m_NumberOfErrors != 0){
         std::cout<<" There were "<<m_NumberOfErrors<<" errors in the input files "<<std::endl;
         return false;
@@ -793,6 +800,26 @@ bool State::Initialize(){
         std::cout<<" All input files are valid, and the State has been successfully initialized! "<<std::endl;
     }
     return true;
+}
+RNG* State::GetRandomNumberGenerator() const {
+#ifdef _OPENMP
+    int t = omp_get_thread_num();
+    if (t > 0 && t <= (int)m_ThreadRNGs.size()) {
+        return m_ThreadRNGs[t - 1];
+    }
+#endif
+    return m_RandomNumberGenerator;
+}
+void State::InitializeThreadRNGs() {
+    for (RNG* pRNG : m_ThreadRNGs) {
+        delete pRNG;
+    }
+    m_ThreadRNGs.clear();
+#ifdef _OPENMP
+    for (int t = 1; t < m_Total_no_Threads; t++) {
+        m_ThreadRNGs.push_back(new RNG(RNG::StreamSeed(m_RandomNumberGenerator->GetSeed(), t)));
+    }
+#endif
 }
 bool State::ReadInclusionType(std::ifstream& input) {
     /*

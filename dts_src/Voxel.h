@@ -70,6 +70,8 @@ public:
    
     
     
+// only safe when no other thread can modify this voxel
+const std::vector<Type*>& GetContentObjectsUnlocked() const { return m_List; }
 std::vector<Type*> GetContentObjects() {
 #ifdef _OPENMP
         omp_set_lock(&m_Lock);  // Lock before accessing shared variable

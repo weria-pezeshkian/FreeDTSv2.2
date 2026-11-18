@@ -1,0 +1,3 @@
+# Compiled object files
+*.o
+dts_src/tests/build/

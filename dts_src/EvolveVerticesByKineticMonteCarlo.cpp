@@ -297,7 +297,7 @@ bool EvolveVerticesByKineticMonteCarlo::EvolveOneVertex(int step, vertex *pverte
             pvertex->UpdateVoxelAfterAVertexMove();
         }
         //---> ApplyConstraintBetweenGroups
-        m_pState->GetApplyConstraintBetweenGroups()->AcceptMove();
+        m_pState->GetApplyConstraintBetweenGroups()->AcceptVertexMove(pvertex, Dx);
         
         //---> global variables
         if(m_pState->GetVAHGlobalMeshProperties()->GetCalculateVAH()){

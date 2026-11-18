@@ -8,6 +8,7 @@ VAHGlobalMeshProperties::VAHGlobalMeshProperties() :
                                                                   m_TotalVolume(0.0),
                                                                   m_TotalArea(0.0),
                                                                   m_TotalCurvature(0.0),
+                                                                  m_CalculatedGlobalVariable(false),
                                                                   m_VolumeIsActive(false),
                                                                   m_AreaIsActive(false),
                                                                   m_GlobalCurvatureIsActive(false){

@@ -3,6 +3,7 @@
 
 #include <random>
 #include <ctime>
+#include <cstdint>
 #include "SimDef.h"
 /*
     RNG.h
@@ -39,6 +40,9 @@ public:
     // Constructor: Initialize RNG with a seed
     explicit RNG(int seed);
 
+    // Seed of an independent stream; stream 0 keeps the user seed
+    static int StreamSeed(int seed, int stream);
+
     // Generates a uniform random number in the range [0, A)
     double UniformRNG(double A);
 	inline int GetSeed()        {return m_seed;}
@@ -54,7 +58,8 @@ private:
     int m_seed;  // Seed for the random number generator
 
     // C++11 random number generator and distribution (used if RNGTYPE == UNIFORMTYPE1)
-    std::default_random_engine m_generator;  // Random number generator (C++11)
+    // default_random_engine is a 31-bit minstd lcg in libc++ and libstdc++, too weak for long MC runs
+    std::mt19937_64 m_generator;
     std::uniform_real_distribution<double> m_uniform_dist;  // Uniform real distribution [0, 1]
     
     std::normal_distribution<double> m_distribution;

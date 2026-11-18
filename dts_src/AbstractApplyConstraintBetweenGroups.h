@@ -30,6 +30,7 @@ public:
     virtual std::string Output_DataString() = 0;
 
     virtual void AcceptMove() = 0;
+    virtual void AcceptVertexMove(vertex* p_vertex, const Vec3D& Dx) = 0;
 
     virtual std::string GetDerivedDefaultReadName() = 0;
     virtual std::string CurrentState() = 0;
@@ -67,6 +68,8 @@ public:
     }
     void AcceptMove() {
         // No action needed for NoConstraint
+    }
+    void AcceptVertexMove(vertex* p_vertex, const Vec3D& Dx) {
     }
     void AcceptMove(double lx, double ly, double z){
         // No action needed for NoConstraint

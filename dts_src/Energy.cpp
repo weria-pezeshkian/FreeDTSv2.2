@@ -240,20 +240,14 @@ double Energy::TwoInclusionsInteractionEnergy(links * p_edge) {
              break;
         }
         case 2:{
-             m_Angle3D = 0;
-             m_Angle2D = 0;
             e_int = F2(p_v1, p_v2, ff);
              break;
         }
         case 10:{
-             m_Angle3D = 0;
-             m_Angle2D = 0;
             e_int = F10(p_v1, p_v2, ff);
              break;
         }
         case 11:{
-             m_Angle3D = 0;
-             m_Angle2D = 0;
             e_int = F11(p_v1, p_v2, ff);
              break;
         }
@@ -468,7 +462,7 @@ double Energy::F2(vertex *v1, vertex *v2, std::vector<double> var)
     /// 
 
     double E = 0;
-    m_Angle2D = Geo_Theta(v1,v2);
+    double angle2D = Geo_Theta(v1,v2);
     Vec3D N1 = v1->GetNormalVector();
     Vec3D N2 = v2->GetNormalVector();
     double beta = acos(N1.dot(N1,N2));
@@ -490,7 +484,7 @@ double Energy::F2(vertex *v1, vertex *v2, std::vector<double> var)
     Vec3D l1 = N2-N1+(P2-P1)*(1.0/l);
     if(l1.norm()<1)
         beta=-beta;
-    E = -e0-e1*cos(N*(m_Angle2D-theta0))+e2*(beta-beta0)*(beta-beta0);
+    E = -e0-e1*cos(N*(angle2D-theta0))+e2*(beta-beta0)*(beta-beta0);
 
     return E;
 }
@@ -541,16 +535,16 @@ double Energy::F10(vertex *v1, vertex *v2, std::vector<double> var)
     double cos2 = y1.dot(y2,d2);
     double sin2 = n.dot(n*y2,d2);
     double S_an = sin1*sin2+cos1*cos2;
-    m_Angle2D=acos(S_an);
+    double angle2D=acos(S_an);
     
     
     Vec3D gd1 = (v2->GetL2GTransferMatrix())*d1;
     Vec3D gd2 = (v2->GetL2GTransferMatrix())*d2;
     
-    m_Angle2D  = acos(n.dot(gd1,gd2));
+    angle2D  = acos(n.dot(gd1,gd2));
     theta0 = theta0/180.0*3.14;
     
-    E = e0+e1*cos(N*(m_Angle2D-phi0))+e2*exp(-alpha*(m_Angle2D-theta0)*(m_Angle2D-theta0));
+    E = e0+e1*cos(N*(angle2D-phi0))+e2*exp(-alpha*(angle2D-theta0)*(angle2D-theta0));
     E = -E;
     
     return E;
@@ -606,7 +600,7 @@ double Energy::F11(vertex *v1, vertex *v2, std::vector<double> var)
     double cos2 = y1.dot(y2,d2);
     double sin2 = n.dot(n*y2,d2);
     double S_an = sin1*sin2+cos1*cos2;
-    m_Angle2D=acos(S_an);
+    double angle2D=acos(S_an);
     
     Vec3D q0(0,0,tan(Q0));
     Vec3D gd1 = d1+q0;
@@ -620,7 +614,7 @@ double Energy::F11(vertex *v1, vertex *v2, std::vector<double> var)
     double Q2=gd2.dot(gd2,GEOUnit);
     
     
-    E = e0+e1*cos(N*(m_Angle2D-phi0))+e2*(3*Q1*Q2-n.dot(gd1,gd2));
+    E = e0+e1*cos(N*(angle2D-phi0))+e2*(3*Q1*Q2-n.dot(gd1,gd2));
     E = -E;
     
     return E;
