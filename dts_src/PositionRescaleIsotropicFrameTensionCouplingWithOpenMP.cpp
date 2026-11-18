@@ -154,11 +154,11 @@ bool PositionRescaleIsotropicFrameTensionCouplingWithOpenMP::AnAtemptToChangeBox
     // while if we do it after the move, it will be from final configurations
     double dE_force_from_inc = 0;
     double dE_force_from_vectorfields = 0;
-#pragma omp parallel for
+#pragma omp parallel for reduction(+:dE_force_from_inc, dE_force_from_vectorfields)
     for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it){
         double x = (*it)->GetVXPos();
         double y = (*it)->GetVYPos();
-        double z = (*it)->GetVYPos();
+        double z = (*it)->GetVZPos();
         double dx = x * (lx - 1);
         double dy = y * (ly - 1);
         double dz = z * (lz - 1);

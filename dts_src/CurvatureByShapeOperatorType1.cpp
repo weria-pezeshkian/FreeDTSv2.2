@@ -92,7 +92,7 @@ bool CurvatureByShapeOperatorType1::UpdateSurfVertexCurvature(vertex * pvertex){
     Tensor2 IT('I');
     Tensor2 P=IT-IT.makeTen(Normal);
     Tensor2 Pt=P.Transpose();
-    std::vector<links *> NLinks=pvertex->GetVLinkList();
+    const std::vector<links *>& NLinks=pvertex->GetVLinkList();
 
     // Assuming necessary includes and context are already provided
 
@@ -266,8 +266,6 @@ Tensor2 CurvatureByShapeOperatorType1::Householder(const Vec3D& N){
 }
 Vec3D CurvatureByShapeOperatorType1::Calculate_Vertex_Normal(vertex *pvertex, double &area){
     // first we obtain the vertex area and normal.
-    std::vector<triangle *> Ntr=pvertex->GetVTraingleList();
-    
     area=0.0;
     Vec3D Normal;
     

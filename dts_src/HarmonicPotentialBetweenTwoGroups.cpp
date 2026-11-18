@@ -113,15 +113,13 @@ bool HarmonicPotentialBetweenTwoGroups::DistanceCheck() {
 }
 double HarmonicPotentialBetweenTwoGroups::CalculateEnergyChange(vertex* p_vertex, Vec3D Dx) {
 
-    m_T_Group1COG = m_Group1COG;
-    m_T_Group2COG = m_Group2COG;
+    Vec3D t_Group1COG = m_Group1COG;
+    Vec3D t_Group2COG = m_Group2COG;
     if(p_vertex->GetGroupName() == m_Group1Name) {
-        
-        m_T_Group1COG = m_T_Group1COG + Dx*(1.0/m_G1Size);
+        t_Group1COG = t_Group1COG + Dx*(1.0/m_G1Size);
     }
     else if(p_vertex->GetGroupName() == m_Group2Name){
-        
-        m_T_Group2COG = m_T_Group2COG + Dx*(1.0/m_G2Size);
+        t_Group2COG = t_Group2COG + Dx*(1.0/m_G2Size);
     }
     else { // meaning the vertex move does not affect the distance between the two group
         return 0;
@@ -130,10 +128,22 @@ double HarmonicPotentialBetweenTwoGroups::CalculateEnergyChange(vertex* p_vertex
         exit(EXIT_FAILURE);
     }
     
-    double dist = Vec3D::dot(m_Direction,m_T_Group2COG - m_T_Group1COG);
-    m_DE = m_K*(dist-m_L0)*(dist-m_L0) - m_Energy;
-    
-    return m_DE;
+    double dist = Vec3D::dot(m_Direction,t_Group2COG - t_Group1COG);
+    return m_K*(dist-m_L0)*(dist-m_L0) - m_Energy;
+}
+void HarmonicPotentialBetweenTwoGroups::AcceptVertexMove(vertex* p_vertex, const Vec3D& Dx) {
+
+    if(p_vertex->GetGroupName() == m_Group1Name) {
+        m_Group1COG = m_Group1COG + Dx*(1.0/m_G1Size);
+    }
+    else if(p_vertex->GetGroupName() == m_Group2Name){
+        m_Group2COG = m_Group2COG + Dx*(1.0/m_G2Size);
+    }
+    else {
+        return;
+    }
+    double dist = Vec3D::dot(m_Direction,m_Group2COG - m_Group1COG);
+    m_Energy = m_K*(dist-m_L0)*(dist-m_L0);
 }
 double HarmonicPotentialBetweenTwoGroups::CalculateEnergyChange(double lx, double ly, double lz) {
 
