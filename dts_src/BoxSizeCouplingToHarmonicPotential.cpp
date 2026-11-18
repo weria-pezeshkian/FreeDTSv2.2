@@ -152,7 +152,7 @@ bool BoxSizeCouplingToHarmonicPotential::AnAtemptToChangeBox(double lx,double ly
     for (std::vector<vertex *>::iterator it = m_pActiveV.begin() ; it != m_pActiveV.end(); ++it){
         double x = (*it)->GetVXPos();
         double y = (*it)->GetVYPos();
-        double z = (*it)->GetVYPos();
+        double z = (*it)->GetVZPos();
         double dx = x * (lx - 1);
         double dy = y * (ly - 1);
         double dz = z * (lz - 1);
