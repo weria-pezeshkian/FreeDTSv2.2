@@ -17,7 +17,7 @@ WritevtuFiles::WritevtuFiles(State* pState) :
     
     m_pState = pState;
     m_FolderName = "VTU_Frames";
-    m_Period = 10;
+    m_Period = 1000;
 }
 WritevtuFiles::~WritevtuFiles(){
     
