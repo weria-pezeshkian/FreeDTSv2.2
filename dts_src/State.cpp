@@ -1,7 +1,6 @@
 
 #include <fstream>
 #include <time.h>
-#include <algorithm>
 #include <sstream>
 #include "MESH.h"
 #include "CreateMashBluePrint.h"
@@ -817,8 +816,7 @@ void State::InitializeThreadRNGs() {
     }
     m_ThreadRNGs.clear();
 #ifdef _OPENMP
-    int n = std::max(m_Total_no_Threads, omp_get_max_threads());
-    for (int t = 1; t < n; t++) {
+    for (int t = 1; t < m_Total_no_Threads; t++) {
         m_ThreadRNGs.push_back(new RNG(RNG::StreamSeed(m_RandomNumberGenerator->GetSeed(), t)));
     }
 #endif
